@@ -8825,6 +8825,7 @@
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: 24px;
+            max-width: 1200px;
         }
 
         .report-downloads h2 {
