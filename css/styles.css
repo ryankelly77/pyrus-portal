@@ -9736,3 +9736,149 @@
         .clients-grid.list-view .client-card-paused-overlay {
             display: none;
         }
+
+        /* ============================================
+           ADMIN TOP HEADER BAR
+           ============================================ */
+
+        .admin-top-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .admin-top-header-left h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .admin-top-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border-light);
+            background: var(--bg-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-page);
+            border-color: var(--border-default);
+        }
+
+        .btn-icon svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--pyrus-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .admin-content {
+            padding: 24px 32px;
+        }
+
+        /* Client Detail Admin Wrapper */
+        .admin-client-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .admin-client-view .client-detail-content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        /* View as Client Banner */
+        .view-mode-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 32px;
+            background: var(--accent-purple-bg);
+            border-bottom: 1px solid var(--accent-purple);
+        }
+
+        .view-mode-banner .banner-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent-purple);
+        }
+
+        .view-mode-banner .banner-text svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .view-mode-banner .btn-exit-preview {
+            padding: 6px 16px;
+            background: var(--accent-purple);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .view-mode-banner .btn-exit-preview:hover {
+            background: var(--accent-purple-dark, #6D28D9);
+        }
+
+        /* Hide admin elements in client view mode */
+        body.client-view-mode .admin-only {
+            display: none !important;
+        }
+
+        body.client-view-mode .admin-sidebar {
+            display: none !important;
+        }
+
+        body.client-view-mode .admin-main {
+            margin-left: 0;
+        }
+
+        body.client-view-mode .admin-top-header {
+            display: none !important;
+        }
