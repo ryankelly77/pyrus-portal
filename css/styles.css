@@ -716,6 +716,11 @@
             color: var(--accent-purple);
         }
 
+        .activity-icon.alert {
+            background: var(--accent-purple-bg);
+            color: var(--accent-purple);
+        }
+
         .activity-icon.report {
             background: var(--accent-orange-pale);
             color: var(--accent-orange);
@@ -9545,4 +9550,207 @@
         .ai-upgrade-link:hover {
             background: var(--accent-purple-dark, #6D28D9);
             transform: translateY(-1px);
+        }
+
+        /* ============================================
+           CLIENTS LIST VIEW & VIEW TOGGLE
+           ============================================ */
+
+        /* View Toggle Styles */
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+
+        .view-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .view-toggle-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-page);
+        }
+
+        .view-toggle-btn.active {
+            color: var(--pyrus-green);
+            background: var(--pyrus-green-pale);
+        }
+
+        .view-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Services Link */
+        .services-link {
+            color: var(--pyrus-green);
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .services-link:hover {
+            color: var(--pyrus-green-dark, #0A5C5F);
+            text-decoration: underline;
+        }
+
+        /* Client Card Link wrapper */
+        .client-card-link {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            height: 100%;
+        }
+
+        /* Load More Container */
+        .load-more-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 32px 0;
+        }
+
+        .clients-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .load-more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .load-more-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Client Toolbar with View Toggle */
+        .clients-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .clients-toolbar .filter-buttons {
+            flex: 1;
+        }
+
+        /* List View Styles */
+        .clients-grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .clients-grid.list-view .client-card {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0;
+        }
+
+        .clients-grid.list-view .client-card-link {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            padding: 16px 20px;
+            gap: 20px;
+        }
+
+        .clients-grid.list-view .client-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0;
+            border-bottom: none;
+            flex-shrink: 0;
+        }
+
+        .clients-grid.list-view .client-card-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 14px;
+        }
+
+        .clients-grid.list-view .client-card-body {
+            flex: 1;
+            min-width: 0;
+            padding: 0;
+        }
+
+        .clients-grid.list-view .client-card-body h3 {
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+
+        .clients-grid.list-view .client-card-email {
+            font-size: 13px;
+        }
+
+        .clients-grid.list-view .client-card-meta {
+            font-size: 12px;
+        }
+
+        .clients-grid.list-view .client-card-stats {
+            display: flex;
+            gap: 24px;
+            padding: 0;
+            border-top: none;
+            flex-shrink: 0;
+        }
+
+        .clients-grid.list-view .client-stat {
+            text-align: right;
+            min-width: 70px;
+        }
+
+        .clients-grid.list-view .client-stat-value {
+            font-size: 15px;
+        }
+
+        .clients-grid.list-view .client-stat-label {
+            font-size: 11px;
+        }
+
+        .clients-grid.list-view .client-card-paused-overlay {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            left: auto;
+            width: auto;
+            height: auto;
+            background: rgba(107, 114, 128, 0.9);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+        }
+
+        .clients-grid.list-view .client-card-paused-overlay svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .clients-grid.list-view .client-card-paused-overlay span {
+            font-size: 13px;
         }

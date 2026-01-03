@@ -95,7 +95,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" placeholder="Search clients...">
+                <input type="text" placeholder="Search clients..." id="clientSearch">
             </div>
             <div class="filter-buttons">
                 <button class="filter-btn active" data-filter="all">All Clients</button>
@@ -103,202 +103,450 @@
                 <button class="filter-btn" data-filter="onboarding">Onboarding</button>
                 <button class="filter-btn" data-filter="paused">Paused</button>
             </div>
+            <div class="view-toggle">
+                <button class="view-toggle-btn active" data-view="grid" title="Grid view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+                <button class="view-toggle-btn" data-view="list" title="List view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Clients Grid -->
-        <div class="clients-grid">
+        <div class="clients-grid" id="clientsGrid">
             <!-- TC Clinical Services -->
-            <a href="getting-started.html" class="client-card" data-status="active">
-                <div class="client-card-header">
-                    <div class="client-card-avatar">TC</div>
-                    <span class="status-badge active">Active</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>TC Clinical Services</h3>
-                    <p class="client-card-email">tom@tcclinical.com</p>
-                    <div class="client-card-meta">
-                        <span>Harvest Bundle</span>
-                        <span>•</span>
-                        <span>Since Sep 2025</span>
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar">TC</div>
+                        <span class="status-badge active">Active</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value">2,847</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>TC Clinical Services</h3>
+                        <p class="client-card-email">tom@tcclinical.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">4 services</span>
+                            <span>•</span>
+                            <span>Since Sep 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">28</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">2,847</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">28</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+32%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value positive">+32%</span>
-                        <span class="client-stat-label">Growth</span>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
 
             <!-- Raptor Vending -->
-            <a href="getting-started.html" class="client-card" data-status="active">
-                <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #2563EB;">RV</div>
-                    <span class="status-badge active">Active</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>Raptor Vending</h3>
-                    <p class="client-card-email">info@raptorvending.com</p>
-                    <div class="client-card-meta">
-                        <span>Growth Bundle</span>
-                        <span>•</span>
-                        <span>Since Jun 2025</span>
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #2563EB;">RV</div>
+                        <span class="status-badge active">Active</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value">4,521</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>Raptor Vending</h3>
+                        <p class="client-card-email">info@raptorvending.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">3 services</span>
+                            <span>•</span>
+                            <span>Since Jun 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">45</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">4,521</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">45</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+28%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value positive">+28%</span>
-                        <span class="client-stat-label">Growth</span>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
 
             <!-- Raptor Services -->
-            <a href="getting-started.html" class="client-card" data-status="active">
-                <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #7C3AED;">RS</div>
-                    <span class="status-badge active">Active</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>Raptor Services</h3>
-                    <p class="client-card-email">contact@raptorservices.com</p>
-                    <div class="client-card-meta">
-                        <span>Harvest Bundle</span>
-                        <span>•</span>
-                        <span>Since Mar 2025</span>
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #7C3AED;">RS</div>
+                        <span class="status-badge active">Active</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value">3,892</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>Raptor Services</h3>
+                        <p class="client-card-email">contact@raptorservices.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">5 services</span>
+                            <span>•</span>
+                            <span>Since Mar 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">52</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">3,892</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">52</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+41%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value positive">+41%</span>
-                        <span class="client-stat-label">Growth</span>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
 
             <!-- Gohfr -->
-            <a href="getting-started.html" class="client-card" data-status="onboarding">
-                <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #0B7277;">GO</div>
-                    <span class="status-badge onboarding">Onboarding</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>Gohfr</h3>
-                    <p class="client-card-email">hello@gohfr.com</p>
-                    <div class="client-card-meta">
-                        <span>Seed Bundle</span>
-                        <span>•</span>
-                        <span>Since Dec 2025</span>
+            <div class="client-card" data-status="onboarding">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #0B7277;">GO</div>
+                        <span class="status-badge onboarding">Onboarding</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value">--</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>Gohfr</h3>
+                        <p class="client-card-email">hello@gohfr.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">3 services</span>
+                            <span>•</span>
+                            <span>Since Dec 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">--</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">--</span>
-                        <span class="client-stat-label">Growth</span>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
 
             <!-- Espronceda Law -->
-            <a href="getting-started.html" class="client-card" data-status="active">
-                <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #DC2626;">EL</div>
-                    <span class="status-badge active">Active</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>Espronceda Law</h3>
-                    <p class="client-card-email">maria@espronceda.law</p>
-                    <div class="client-card-meta">
-                        <span>Growth Bundle</span>
-                        <span>•</span>
-                        <span>Since Aug 2025</span>
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #DC2626;">EL</div>
+                        <span class="status-badge active">Active</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value">1,245</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>Espronceda Law</h3>
+                        <p class="client-card-email">maria@espronceda.law</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">4 services</span>
+                            <span>•</span>
+                            <span>Since Aug 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value">18</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">1,245</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">18</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+15%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value positive">+15%</span>
-                        <span class="client-stat-label">Growth</span>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
 
             <!-- American Fence & Deck -->
-            <a href="getting-started.html" class="client-card" data-status="paused">
-                <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #6B7280;">AF</div>
-                    <span class="status-badge paused">Paused</span>
-                </div>
-                <div class="client-card-body">
-                    <h3>American Fence & Deck</h3>
-                    <p class="client-card-email">sales@americanfence.com</p>
-                    <div class="client-card-meta">
-                        <span>Harvest Bundle</span>
-                        <span>•</span>
-                        <span>Since Jan 2025</span>
+            <div class="client-card" data-status="paused">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #6B7280;">AF</div>
+                        <span class="status-badge paused">Paused</span>
                     </div>
-                </div>
-                <div class="client-card-stats">
-                    <div class="client-stat">
-                        <span class="client-stat-value muted">6,234</span>
-                        <span class="client-stat-label">Visitors</span>
+                    <div class="client-card-body">
+                        <h3>American Fence & Deck</h3>
+                        <p class="client-card-email">sales@americanfence.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">5 services</span>
+                            <span>•</span>
+                            <span>Since Jan 2025</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value muted">87</span>
-                        <span class="client-stat-label">Leads</span>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">6,234</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">87</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">Paused</span>
+                            <span class="client-stat-label">Status</span>
+                        </div>
                     </div>
-                    <div class="client-stat">
-                        <span class="client-stat-value muted">Paused</span>
-                        <span class="client-stat-label">Status</span>
+                    <div class="client-card-paused-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                        <span>Campaign Paused</span>
                     </div>
-                </div>
-                <div class="client-card-paused-overlay">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="6" y="4" width="4" height="16"></rect>
-                        <rect x="14" y="4" width="4" height="16"></rect>
-                    </svg>
-                    <span>Campaign Paused</span>
-                </div>
-            </a>
+                </a>
+            </div>
+
+            <!-- Peak Performance Gym -->
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #EA580C;">PP</div>
+                        <span class="status-badge active">Active</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Peak Performance Gym</h3>
+                        <p class="client-card-email">owner@peakperformancegym.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">4 services</span>
+                            <span>•</span>
+                            <span>Since Oct 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">1,892</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">34</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+24%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Sunrise Dental -->
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #0891B2;">SD</div>
+                        <span class="status-badge active">Active</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Sunrise Dental</h3>
+                        <p class="client-card-email">dr.smith@sunrisedental.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">3 services</span>
+                            <span>•</span>
+                            <span>Since Jul 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">2,156</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">41</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+19%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Metro Plumbing -->
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #4F46E5;">MP</div>
+                        <span class="status-badge active">Active</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Metro Plumbing</h3>
+                        <p class="client-card-email">dispatch@metroplumbing.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">5 services</span>
+                            <span>•</span>
+                            <span>Since Apr 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">5,234</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">89</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+45%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Green Thumb Landscaping -->
+            <div class="client-card" data-status="onboarding">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #16A34A;">GT</div>
+                        <span class="status-badge onboarding">Onboarding</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Green Thumb Landscaping</h3>
+                        <p class="client-card-email">info@greenthumb.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">4 services</span>
+                            <span>•</span>
+                            <span>Since Dec 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">--</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Horizon Real Estate -->
+            <div class="client-card" data-status="active">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #9333EA;">HR</div>
+                        <span class="status-badge active">Active</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Horizon Real Estate</h3>
+                        <p class="client-card-email">broker@horizonre.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">3 services</span>
+                            <span>•</span>
+                            <span>Since May 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value">3,421</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value">56</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value positive">+37%</span>
+                            <span class="client-stat-label">Growth</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Coastal Insurance -->
+            <div class="client-card" data-status="paused">
+                <a href="getting-started.html" class="client-card-link">
+                    <div class="client-card-header">
+                        <div class="client-card-avatar" style="background: #6B7280;">CI</div>
+                        <span class="status-badge paused">Paused</span>
+                    </div>
+                    <div class="client-card-body">
+                        <h3>Coastal Insurance</h3>
+                        <p class="client-card-email">agent@coastalins.com</p>
+                        <div class="client-card-meta">
+                            <span class="services-link" onclick="event.preventDefault(); window.location.href='recommendations.html'">4 services</span>
+                            <span>•</span>
+                            <span>Since Feb 2025</span>
+                        </div>
+                    </div>
+                    <div class="client-card-stats">
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">4,128</span>
+                            <span class="client-stat-label">Visitors</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">62</span>
+                            <span class="client-stat-label">Leads</span>
+                        </div>
+                        <div class="client-stat">
+                            <span class="client-stat-value muted">Paused</span>
+                            <span class="client-stat-label">Status</span>
+                        </div>
+                    </div>
+                    <div class="client-card-paused-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                        <span>Campaign Paused</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Load More -->
+        <div class="load-more-container">
+            <p class="clients-count">Showing 12 of 147 clients</p>
+            <button class="btn btn-secondary load-more-btn" onclick="loadMoreClients()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                Load More
+            </button>
         </div>
             </div>
         </main>
@@ -665,6 +913,110 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script>
+        // View Toggle Functionality
+        const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
+        const clientsGrid = document.getElementById('clientsGrid');
+
+        viewToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.getAttribute('data-view');
+
+                // Update active button
+                viewToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Toggle view class
+                if (view === 'list') {
+                    clientsGrid.classList.add('list-view');
+                } else {
+                    clientsGrid.classList.remove('list-view');
+                }
+            });
+        });
+
+        // Client Search Functionality
+        const clientSearch = document.getElementById('clientSearch');
+        const clientCards = document.querySelectorAll('.client-card');
+
+        clientSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+
+            clientCards.forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const email = card.querySelector('.client-card-email').textContent.toLowerCase();
+
+                if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            updateClientCount();
+        });
+
+        // Filter Functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.getAttribute('data-filter');
+
+                // Update active button
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Filter cards
+                clientCards.forEach(card => {
+                    const status = card.getAttribute('data-status');
+                    if (filter === 'all' || status === filter) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                updateClientCount();
+            });
+        });
+
+        // Update visible client count
+        function updateClientCount() {
+            const visibleCards = document.querySelectorAll('.client-card:not([style*="display: none"])').length;
+            const countText = document.querySelector('.clients-count');
+            if (countText) {
+                countText.textContent = `Showing ${visibleCards} of 147 clients`;
+            }
+        }
+
+        // Load More Clients (simulated)
+        function loadMoreClients() {
+            const btn = document.querySelector('.load-more-btn');
+            const countText = document.querySelector('.clients-count');
+
+            // Simulate loading
+            btn.innerHTML = `
+                <svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"></circle>
+                </svg>
+                Loading...
+            `;
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // Simulate more clients loaded
+                countText.textContent = 'Showing 24 of 147 clients';
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    Load More
+                `;
+                btn.disabled = false;
+            }, 1000);
+        }
+    </script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
