@@ -6827,3 +6827,348 @@
             font-weight: 600;
             color: var(--accent-orange);
         }
+
+        /* ======================= */
+        /* SMART RECOMMENDATIONS CARDS */
+        /* ======================= */
+
+        .rec-cards-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .rec-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .rec-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
+        }
+
+        .rec-card.featured {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 1px var(--accent-orange);
+        }
+
+        .rec-card.premium {
+            border-color: var(--pear-green);
+            background: linear-gradient(135deg, #f8fdf9 0%, #eef7f0 100%);
+        }
+
+        .rec-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .rec-card.featured .rec-card-header {
+            background: linear-gradient(135deg, var(--accent-orange-pale) 0%, #fff 100%);
+        }
+
+        .rec-card.premium .rec-card-header {
+            background: linear-gradient(135deg, var(--pear-green) 0%, var(--pear-green-light) 100%);
+        }
+
+        .rec-type-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .rec-type-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .rec-type-icon.scale {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .rec-type-icon.upgrade {
+            background: var(--accent-teal-bg);
+            color: var(--accent-teal);
+        }
+
+        .rec-type-icon.add {
+            background: var(--accent-purple-bg);
+            color: var(--accent-purple);
+        }
+
+        .rec-type-icon.premium {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .rec-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .rec-card.premium .rec-title {
+            color: white;
+        }
+
+        .rec-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .rec-card.premium .rec-subtitle {
+            color: rgba(255,255,255,0.85);
+        }
+
+        .rec-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .confidence-badge.high {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .confidence-badge.medium {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        .featured-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--accent-orange);
+            color: white;
+        }
+
+        .premium-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .rec-card-body {
+            padding: 20px 24px;
+        }
+
+        .rec-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .rec-metric {
+            padding: 12px;
+            background: var(--bg-page);
+            border-radius: var(--radius-sm);
+        }
+
+        .rec-metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+
+        .rec-metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rec-metric-value.highlight {
+            color: var(--success-text);
+        }
+
+        .rec-reasoning {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding: 14px;
+            background: var(--pyrus-green-wash);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--pyrus-green);
+        }
+
+        .rec-reasoning strong {
+            color: var(--text-primary);
+        }
+
+        .rec-card-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-page);
+        }
+
+        .rec-investment {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rec-investment-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .rec-investment-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .rec-investment-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .rec-cta {
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: none;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rec-cta svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .rec-cta.primary {
+            background: var(--accent-orange);
+            color: white;
+        }
+
+        .rec-cta.primary:hover {
+            background: var(--accent-orange-hover);
+        }
+
+        .rec-cta.upgrade {
+            background: var(--accent-teal);
+            color: white;
+        }
+
+        .rec-cta.upgrade:hover {
+            background: #096669;
+        }
+
+        .rec-cta.add {
+            background: white;
+            color: var(--accent-teal);
+            border: 2px solid var(--accent-teal);
+        }
+
+        .rec-cta.add:hover {
+            background: var(--accent-teal-bg);
+        }
+
+        .rec-cta.premium {
+            background: var(--pear-green);
+            color: white;
+        }
+
+        .rec-cta.premium:hover {
+            background: #153d24;
+        }
+
+        .rec-card.premium .rec-card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .pear-features {
+            list-style: none;
+        }
+
+        .pear-features li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .pear-features li:last-child {
+            border-bottom: none;
+        }
+
+        .pear-features li svg {
+            width: 16px;
+            height: 16px;
+            color: var(--pear-green);
+            flex-shrink: 0;
+        }
+
+        .pear-story {
+            padding: 20px;
+            background: var(--pyrus-green-wash);
+            border-radius: var(--radius-md);
+        }
+
+        .pear-story h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--pear-green);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pear-story p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
