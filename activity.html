@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity - Pyrus Digital Client Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="index.html">Dashboard</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="index.html">Clients</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span>TC Clinical Services</span>
+        </nav>
+
+        <!-- Client Header Card -->
+        <div class="client-header-card">
+            <div class="client-header">
+                <div class="client-info">
+                    <div class="client-avatar">TC</div>
+                    <div class="client-details">
+                        <h1>
+                            TC Clinical Services
+                            <span class="status-badge active">Active</span>
+                        </h1>
+                        <p class="client-meta">tom@tcclinical.com • Client since Sep 2025 • Harvest Bundle</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="openModal('resultAlertModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Send Result Alert
+                    </button>
+                    <button class="btn btn-secondary" onclick="openModal('resendInviteModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Resend Invitation
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal('editClientModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Edit Client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <a href="getting-started.html" class="tab-btn">Getting Started</a>
+            <a href="results.html" class="tab-btn">Results</a>
+            <a href="activity.html" class="tab-btn active">Activity</a>
+            <a href="communication.html" class="tab-btn">Communication</a>
+            <a href="recommendations.html" class="tab-btn">Recommendations</a>
+        </div>
+
+        <!-- Activity Content -->
+        <div class="activity-content">
+            <div class="activity-filters">
+                <button class="filter-chip active">All Activity</button>
+                <button class="filter-chip">Tasks</button>
+                <button class="filter-chip">Updates</button>
+                <button class="filter-chip">Milestones</button>
+                <button class="filter-chip">Reports</button>
+            </div>
+
+            <div class="activity-card">
+                <ul class="activity-list">
+                    <li class="activity-item">
+                        <div class="activity-icon milestone">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Keyword reached Page 1!</div>
+                            <div class="activity-desc">"precision wound care San Antonio" moved to position #7</div>
+                        </div>
+                        <div class="activity-time">Today, 2:45 PM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Monthly blog post published</div>
+                            <div class="activity-desc">"5 Signs Your Wound Care Needs a Specialist" is now live</div>
+                        </div>
+                        <div class="activity-time">Today, 10:30 AM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Ads campaign optimized</div>
+                            <div class="activity-desc">Adjusted bid strategy based on conversion data</div>
+                        </div>
+                        <div class="activity-time">Yesterday, 3:00 PM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">December report generated</div>
+                            <div class="activity-desc">Monthly performance report is ready for review</div>
+                        </div>
+                        <div class="activity-time">Dec 31, 8:00 AM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon milestone">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Website launched!</div>
+                            <div class="activity-desc">tcclinical.com is now live and indexed by Google</div>
+                        </div>
+                        <div class="activity-time">Dec 30, 4:00 PM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">On-page SEO completed</div>
+                            <div class="activity-desc">12 pages optimized with meta tags, headers, and schema markup</div>
+                        </div>
+                        <div class="activity-time">Dec 28, 2:15 PM</div>
+                    </li>
+                    <li class="activity-item">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Keyword research completed</div>
+                            <div class="activity-desc">47 target keywords identified for wound care niche</div>
+                        </div>
+                        <div class="activity-time">Dec 20, 11:00 AM</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+
+    <!-- Success Toast -->
+    <div class="toast" id="successToast">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <div class="toast-message">Action completed successfully!</div>
+        <button class="toast-close" onclick="hideToast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>

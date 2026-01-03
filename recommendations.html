@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations - Pyrus Digital Client Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="index.html">Dashboard</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="index.html">Clients</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span>TC Clinical Services</span>
+        </nav>
+
+        <!-- Client Header Card -->
+        <div class="client-header-card">
+            <div class="client-header">
+                <div class="client-info">
+                    <div class="client-avatar">TC</div>
+                    <div class="client-details">
+                        <h1>
+                            TC Clinical Services
+                            <span class="status-badge active">Active</span>
+                        </h1>
+                        <p class="client-meta">tom@tcclinical.com • Client since Sep 2025 • Harvest Bundle</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="openModal('resultAlertModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Send Result Alert
+                    </button>
+                    <button class="btn btn-secondary" onclick="openModal('resendInviteModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Resend Invitation
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal('editClientModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Edit Client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <a href="getting-started.html" class="tab-btn">Getting Started</a>
+            <a href="results.html" class="tab-btn">Results</a>
+            <a href="activity.html" class="tab-btn">Activity</a>
+            <a href="communication.html" class="tab-btn">Communication</a>
+            <a href="recommendations.html" class="tab-btn active">Recommendations</a>
+        </div>
+
+        <!-- Recommendations Content -->
+        <div class="recommendations-content">
+            <!-- Growth Stage & Refresh Cycle Header -->
+            <div class="stage-refresh-header">
+                <!-- Growth Stage Card -->
+                <div class="growth-stage-card">
+                    <div class="stage-icon">🌿</div>
+                    <div class="stage-info">
+                        <div class="stage-label">Growth Stage</div>
+                        <div class="stage-name">
+                            Sprouting
+                            <span class="month-badge">Month 4</span>
+                        </div>
+                        <div class="stage-description">
+                            Building momentum with early results appearing. You're on track for Blooming stage!
+                        </div>
+                        <div class="stage-progress">
+                            <div class="progress-track">
+                                <div class="progress-segment completed" style="width: 25%;"></div>
+                                <div class="progress-segment current" style="width: 25%;"></div>
+                                <div class="progress-segment upcoming" style="width: 25%;"></div>
+                                <div class="progress-segment upcoming" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-labels">
+                            <span>Seedling</span>
+                            <span class="active">Sprouting</span>
+                            <span>Blooming</span>
+                            <span>Harvesting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Refresh Cycle Card -->
+                <div class="refresh-card">
+                    <div class="refresh-header">
+                        <div class="refresh-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="refresh-title">Recommendations Refresh</div>
+                            <div class="refresh-subtitle">Personalized every 90 days</div>
+                        </div>
+                    </div>
+                    <div class="refresh-countdown">
+                        <div class="countdown-unit">
+                            <span class="countdown-value">47</span>
+                            <span class="countdown-label">Days</span>
+                        </div>
+                        <div class="countdown-unit">
+                            <span class="countdown-value">14</span>
+                            <span class="countdown-label">Hours</span>
+                        </div>
+                        <div class="countdown-unit">
+                            <span class="countdown-value">32</span>
+                            <span class="countdown-label">Mins</span>
+                        </div>
+                    </div>
+                    <div class="refresh-date">
+                        Next refresh: <strong>February 18, 2026</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-tabs -->
+            <div class="rec-subtabs">
+                <button class="rec-subtab active" data-rec-tab="smart-recommendations">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Smart Recommendations
+                    <span class="count">4</span>
+                </button>
+                <button class="rec-subtab" data-rec-tab="original-plan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Original Plan
+                </button>
+                <button class="rec-subtab" data-rec-tab="approved-changes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    Approved Changes
+                    <span class="count">1</span>
+                </button>
+            </div>
+
+            <!-- Smart Recommendations Content -->
+            <div class="rec-content active" id="smart-recommendations">
+                <!-- Recommendation Cards Grid -->
+                <div class="rec-cards-grid">
+                    <!-- Featured Recommendation: Scale Ads -->
+                    <div class="rec-card featured">
+                        <div class="rec-card-header">
+                            <div>
+                                <div class="rec-type-icon scale">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="rec-title">Boost Google Ads Budget</div>
+                                <div class="rec-subtitle">Scale your profitable campaigns</div>
+                            </div>
+                            <div class="rec-badges">
+                                <span class="featured-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    Top Pick
+                                </span>
+                                <span class="confidence-badge high">94% confidence</span>
+                            </div>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-metrics">
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Current Spend</div>
+                                    <div class="rec-metric-value">$1,500/mo</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Proposed Spend</div>
+                                    <div class="rec-metric-value highlight">$2,250/mo</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Current Leads</div>
+                                    <div class="rec-metric-value">28/mo</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Projected Leads</div>
+                                    <div class="rec-metric-value highlight">42/mo (+14)</div>
+                                </div>
+                            </div>
+                            <div class="rec-reasoning">
+                                <strong>Why we recommend this:</strong> Your Google Ads are performing exceptionally well with a $53 cost-per-lead, well below the healthcare industry average of $85. Your current campaigns have room to scale without diminishing returns.
+                            </div>
+                        </div>
+                        <div class="rec-card-footer">
+                            <div class="rec-investment">
+                                <span class="rec-investment-label">Additional Investment</span>
+                                <span class="rec-investment-value">+$750/mo</span>
+                                <span class="rec-investment-detail">50% increase from current</span>
+                            </div>
+                            <button class="rec-cta primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Approve Increase
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upgrade SEO -->
+                    <div class="rec-card">
+                        <div class="rec-card-header">
+                            <div>
+                                <div class="rec-type-icon upgrade">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </div>
+                                <div class="rec-title">Upgrade to Harvest SEO</div>
+                                <div class="rec-subtitle">Accelerate your organic growth</div>
+                            </div>
+                            <div class="rec-badges">
+                                <span class="confidence-badge high">89% confidence</span>
+                            </div>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-metrics">
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Current Plan</div>
+                                    <div class="rec-metric-value">Growth SEO</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Keywords Ranking</div>
+                                    <div class="rec-metric-value">47 keywords</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Pages Optimized</div>
+                                    <div class="rec-metric-value">12 pages</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Projected Growth</div>
+                                    <div class="rec-metric-value highlight">+85% traffic</div>
+                                </div>
+                            </div>
+                            <div class="rec-reasoning">
+                                <strong>Why we recommend this:</strong> With 47 keywords now ranking, you've built strong SEO momentum. Harvest SEO accelerates growth through content clusters and authority building.
+                            </div>
+                        </div>
+                        <div class="rec-card-footer">
+                            <div class="rec-investment">
+                                <span class="rec-investment-label">Investment</span>
+                                <span class="rec-investment-value">$1,499/mo</span>
+                                <span class="rec-investment-detail">Currently $899/mo</span>
+                            </div>
+                            <button class="rec-cta upgrade">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18 15 12 9 6 15"></polyline>
+                                </svg>
+                                Upgrade Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add AI Visibility -->
+                    <div class="rec-card">
+                        <div class="rec-card-header">
+                            <div>
+                                <div class="rec-type-icon add">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="rec-title">Add AI Visibility Foundation</div>
+                                <div class="rec-subtitle">Get discovered in AI search results</div>
+                            </div>
+                            <div class="rec-badges">
+                                <span class="confidence-badge high">91% confidence</span>
+                            </div>
+                        </div>
+                        <div class="rec-card-body">
+                            <div class="rec-metrics">
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Current AI Score</div>
+                                    <div class="rec-metric-value">23/100</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Industry Average</div>
+                                    <div class="rec-metric-value">45/100</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Target Score</div>
+                                    <div class="rec-metric-value highlight">78+/100</div>
+                                </div>
+                                <div class="rec-metric">
+                                    <div class="rec-metric-label">Emerging Channel</div>
+                                    <div class="rec-metric-value highlight">15-20% leads</div>
+                                </div>
+                            </div>
+                            <div class="rec-reasoning">
+                                <strong>Why we recommend this:</strong> Your AI visibility score of 23 is below the industry average of 45. Early movers are capturing 15-20% of leads from AI search channels.
+                            </div>
+                        </div>
+                        <div class="rec-card-footer">
+                            <div class="rec-investment">
+                                <span class="rec-investment-label">Investment</span>
+                                <span class="rec-investment-value">$3,000</span>
+                                <span class="rec-investment-detail">One-time or $300/mo x 12</span>
+                            </div>
+                            <button class="rec-cta add">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add to Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pear Analytics Premium -->
+                    <div class="rec-card premium full-width">
+                        <div class="rec-card-header">
+                            <div>
+                                <div class="rec-type-icon premium">
+                                    <svg viewBox="0 0 100 120" width="28" height="34" style="fill: white;">
+                                        <ellipse cx="50" cy="85" rx="35" ry="30" />
+                                        <ellipse cx="50" cy="45" rx="22" ry="25" />
+                                        <path d="M50 5 Q55 0 60 8 Q55 12 50 20" />
+                                    </svg>
+                                </div>
+                                <div class="rec-title">Pear Analytics Premium</div>
+                                <div class="rec-subtitle">The pear that grew from the seed - Full-service agency partnership</div>
+                            </div>
+                            <div class="rec-badges">
+                                <span class="premium-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                        <path d="M2 17l10 5 10-5"></path>
+                                        <path d="M2 12l10 5 10-5"></path>
+                                    </svg>
+                                    Premium Tier
+                                </span>
+                                <span class="confidence-badge medium" style="background: rgba(255,255,255,0.2); color: white;">
+                                    Invitation Only
+                                </span>
+                            </div>
+                        </div>
+                        <div class="rec-card-body">
+                            <div>
+                                <ul class="pear-features">
+                                    <li>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Dedicated Marketing Strategist
+                                    </li>
+                                    <li>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Monthly 60-min Strategy Meetings
+                                    </li>
+                                    <li>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Custom Reporting Dashboard
+                                    </li>
+                                    <li>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Priority Support (4-hour response)
+                                    </li>
+                                    <li>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        All Pyrus Services Included
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="pear-story">
+                                <h4>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    Why This Invitation?
+                                </h4>
+                                <p>
+                                    You've grown from a seedling into a thriving business with Pyrus. With $2,300/mo invested across 4 services and strong results, you're ready for the full Pear Analytics experience - the natural evolution from self-serve to full-service.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="rec-card-footer" style="background: var(--pyrus-green-wash);">
+                            <div class="rec-investment">
+                                <span class="rec-investment-label">Starting Investment</span>
+                                <span class="rec-investment-value">$5,000/mo</span>
+                                <span class="rec-investment-detail">Includes all current services + premium support</span>
+                            </div>
+                            <button class="rec-cta premium">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Schedule Discovery Call
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Services Summary -->
+                <div class="current-services-card">
+                    <div class="current-services-header">
+                        <h3>Your Current Services</h3>
+                        <div class="total-investment">
+                            Total monthly investment: <strong>$2,347/mo</strong>
+                        </div>
+                    </div>
+                    <div class="services-list">
+                        <div class="service-item">
+                            <div class="service-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                            </div>
+                            <div class="service-details">
+                                <div class="service-name">WordPress Hosting</div>
+                                <div class="service-price">$49/mo</div>
+                            </div>
+                        </div>
+                        <div class="service-item">
+                            <div class="service-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <div class="service-details">
+                                <div class="service-name">Growth SEO Plan</div>
+                                <div class="service-price">$899/mo</div>
+                            </div>
+                        </div>
+                        <div class="service-item">
+                            <div class="service-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
+                            <div class="service-details">
+                                <div class="service-name">Google Ads Management</div>
+                                <div class="service-price">$399/mo + $1,500 spend</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Plan Content -->
+            <div class="rec-content" id="original-plan">
+                <div class="original-plan-card">
+                    <div class="original-plan-header">
+                        <div class="plan-header-info">
+                            <div class="plan-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Original Service Plan</h3>
+                                <p>Established September 16, 2025 - Last updated December 30, 2025</p>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-secondary" style="font-size: 13px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download PDF
+                        </a>
+                    </div>
+
+                    <!-- Website Development Section -->
+                    <div class="plan-section">
+                        <div class="plan-section-header">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                Website Development
+                            </h4>
+                            <span class="plan-status completed">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Completed
+                            </span>
+                        </div>
+                        <div class="plan-description">
+                            Professional WordPress website with WooCommerce integration, custom homepage, product showcase pages, and mobile-responsive design.
+                        </div>
+                        <div class="plan-deliverables">
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Custom homepage with medical breakthrough focus</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>2 product showcase pages (Wound Care & PoNS)</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>WooCommerce setup with contact forms</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Blog section & 5 additional content pages</span>
+                            </div>
+                        </div>
+                        <div class="plan-pricing">
+                            <div class="price-tag one-time">
+                                <span class="price-label">One-Time</span>
+                                <span class="price-value">$4,200</span>
+                            </div>
+                            <span class="price-or">or</span>
+                            <div class="price-tag monthly">
+                                <span class="price-label">Payment Plan</span>
+                                <span class="price-value">$400/mo x 12</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hosting Section -->
+                    <div class="plan-section">
+                        <div class="plan-section-header">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                </svg>
+                                Web Hosting & Maintenance
+                            </h4>
+                            <span class="plan-status active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="plan-description">
+                            Secure, reliable WordPress hosting with regular security updates, backups, SSL certificate, and 99.9% uptime guarantee.
+                        </div>
+                        <div class="plan-pricing">
+                            <div class="price-tag monthly">
+                                <span class="price-label">Monthly</span>
+                                <span class="price-value">$49/mo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEO Section -->
+                    <div class="plan-section">
+                        <div class="plan-section-header">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                Growth SEO Plan
+                            </h4>
+                            <span class="plan-status active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="plan-description">
+                            Foundation SEO to help healthcare professionals find you online. Includes keyword research, on-page optimization, and monthly reporting.
+                        </div>
+                        <div class="plan-deliverables">
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>47 target keywords identified & tracked</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>On-page SEO for all service pages</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Monthly blog content (1 post/month)</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Technical SEO audits & fixes</span>
+                            </div>
+                        </div>
+                        <div class="plan-pricing">
+                            <div class="price-tag monthly">
+                                <span class="price-label">Monthly</span>
+                                <span class="price-value">$899/mo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Google Ads Section -->
+                    <div class="plan-section">
+                        <div class="plan-section-header">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                Google Ads Management
+                            </h4>
+                            <span class="plan-status active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                Active
+                            </span>
+                        </div>
+                        <div class="plan-description">
+                            Professional Google Ads campaign management targeting healthcare providers searching for wound care and PoNS therapy solutions.
+                        </div>
+                        <div class="plan-deliverables">
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Campaign setup & keyword research</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Ad copywriting & A/B testing</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Conversion tracking & optimization</span>
+                            </div>
+                            <div class="deliverable-item">
+                                <span class="deliverable-check">✓</span>
+                                <span>Weekly bid adjustments</span>
+                            </div>
+                        </div>
+                        <div class="plan-pricing">
+                            <div class="price-tag monthly">
+                                <span class="price-label">Management Fee</span>
+                                <span class="price-value">$399/mo</span>
+                            </div>
+                            <span class="price-plus">+</span>
+                            <div class="price-tag monthly">
+                                <span class="price-label">Ad Spend</span>
+                                <span class="price-value">$1,500/mo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Investment Summary -->
+                    <div class="plan-summary">
+                        <div class="summary-row">
+                            <span>One-Time Investment</span>
+                            <span class="summary-value">$4,200</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Monthly Recurring</span>
+                            <span class="summary-value">$2,847/mo</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Current Monthly Total</span>
+                            <span class="summary-value">$2,847/mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Changes Content -->
+            <div class="rec-content" id="approved-changes">
+                <div class="approved-changes-header">
+                    <div class="changes-summary-card">
+                        <div class="changes-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="changes-summary-info">
+                            <h3>1 Approved Change</h3>
+                            <p>Changes you've approved will take effect on the next billing cycle</p>
+                        </div>
+                    </div>
+                    <div class="changes-impact-card">
+                        <div class="impact-item">
+                            <span class="impact-label">Monthly Impact</span>
+                            <span class="impact-value positive">+$750/mo</span>
+                        </div>
+                        <div class="impact-item">
+                            <span class="impact-label">New Total</span>
+                            <span class="impact-value">$3,097/mo</span>
+                        </div>
+                        <div class="impact-item">
+                            <span class="impact-label">Effective Date</span>
+                            <span class="impact-value">Feb 1, 2026</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved Change Item -->
+                <div class="approved-change-card">
+                    <div class="change-status-banner">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Approved on January 2, 2026
+                    </div>
+                    <div class="change-card-content">
+                        <div class="change-header">
+                            <div class="change-type-icon scale">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="change-info">
+                                <h4>Google Ads Budget Increase</h4>
+                                <p>Scale your profitable campaigns</p>
+                            </div>
+                            <div class="change-badge">
+                                <span class="badge-pending">Pending Activation</span>
+                            </div>
+                        </div>
+                        <div class="change-details">
+                            <div class="change-comparison">
+                                <div class="comparison-item before">
+                                    <span class="comparison-label">Previous</span>
+                                    <span class="comparison-value">$1,500/mo ad spend</span>
+                                </div>
+                                <div class="comparison-arrow">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="comparison-item after">
+                                    <span class="comparison-label">New</span>
+                                    <span class="comparison-value">$2,250/mo ad spend</span>
+                                </div>
+                            </div>
+                            <div class="change-projection">
+                                <div class="projection-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                                    </svg>
+                                    <span>Projected: <strong>42 leads/mo</strong> (up from 28)</span>
+                                </div>
+                                <div class="projection-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                    <span>Cost per lead maintained at <strong>~$54</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="change-approval-info">
+                            <div class="approval-detail">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Approved by: <strong>Tom Chen</strong></span>
+                            </div>
+                            <div class="approval-detail">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span>Effective: <strong>February 1, 2026</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="change-card-footer">
+                        <button class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            Cancel Change
+                        </button>
+                        <button class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Modify
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="no-more-changes">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <p>No additional changes pending. Visit <strong>Smart Recommendations</strong> to explore growth opportunities.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+
+    <!-- Success Toast -->
+    <div class="toast" id="successToast">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <div class="toast-message">Action completed successfully!</div>
+        <button class="toast-close" onclick="hideToast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>
