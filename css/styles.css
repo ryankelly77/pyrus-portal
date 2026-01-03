@@ -10679,3 +10679,66 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ======================= */
+        /* RECOMMENDATIONS TABS */
+        /* ======================= */
+        .recommendations-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-white);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .recommendations-tab {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .recommendations-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-page);
+        }
+
+        .recommendations-tab.active {
+            background: var(--pyrus-green);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .recommendations-tab svg {
+            flex-shrink: 0;
+        }
+
+        .recommendations-tab-content {
+            display: none;
+        }
+
+        .recommendations-tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .recommendations-tabs {
+                flex-direction: column;
+            }
+
+            .recommendations-tab {
+                justify-content: flex-start;
+            }
+        }

@@ -164,8 +164,30 @@
 
         <!-- Recommendations Content -->
         <div class="recommendations-content">
-            <!-- Growth Stage & Refresh Cycle Header -->
-            <div class="stage-refresh-header">
+            <!-- Main Recommendations Tabs -->
+            <div class="recommendations-tabs">
+                <button class="recommendations-tab active" data-recommendations-tab="growth-projection">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Your Growth Projection
+                </button>
+                <button class="recommendations-tab" data-recommendations-tab="current-services">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Your Current Services
+                </button>
+            </div>
+
+            <!-- Growth Projection Tab Content -->
+            <div class="recommendations-tab-content active" id="growth-projection-tab">
+                <!-- Growth Stage & Refresh Cycle Header -->
+                <div class="stage-refresh-header">
                 <!-- Growth Stage Card -->
                 <div class="growth-stage-card">
                     <div class="stage-icon">🌿</div>
@@ -749,128 +771,6 @@
                     </div>
                 </div>
 
-                <!-- Your Progress Since Signup -->
-                <div class="progress-since-signup">
-                    <div class="progress-since-header">
-                        <div class="progress-since-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                                <polyline points="17 6 23 6 23 12"></polyline>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="progress-since-title">Your Progress Since Signup</div>
-                            <div class="progress-since-subtitle">Here's how far you've come since Sep 16, 2025</div>
-                        </div>
-                    </div>
-                    <div class="progress-since-stats">
-                        <div class="progress-stat">
-                            <div class="progress-stat-value">4</div>
-                            <div class="progress-stat-label">Months Active</div>
-                        </div>
-                        <div class="progress-stat">
-                            <div class="progress-stat-value">4</div>
-                            <div class="progress-stat-label">Active Services</div>
-                        </div>
-                        <div class="progress-stat">
-                            <div class="progress-stat-value">+14.5%</div>
-                            <div class="progress-stat-label">Traffic Growth</div>
-                        </div>
-                        <div class="progress-stat">
-                            <div class="progress-stat-value">42</div>
-                            <div class="progress-stat-label">Monthly Leads</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Your Current Services -->
-                <div class="current-services-list">
-                    <div class="current-services-list-header">
-                        <h3>Your Current Services</h3>
-                        <span>Monthly Investment</span>
-                    </div>
-                    <div class="current-service-row">
-                        <div class="current-service-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </div>
-                        <div class="current-service-info">
-                            <div class="current-service-name">Seedling SEO Plan</div>
-                            <div class="current-service-desc">Foundational on-page SEO & performance tracking</div>
-                        </div>
-                        <div class="current-service-price">
-                            <strong>$599</strong><br>
-                            <span>/month</span>
-                        </div>
-                    </div>
-                    <div class="current-service-row">
-                        <div class="current-service-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                <line x1="8" y1="21" x2="16" y2="21"></line>
-                                <line x1="12" y1="17" x2="12" y2="21"></line>
-                            </svg>
-                        </div>
-                        <div class="current-service-info">
-                            <div class="current-service-name">Google Ads Management</div>
-                            <div class="current-service-desc">Campaign management & optimization</div>
-                        </div>
-                        <div class="current-service-price">
-                            <strong>$499</strong><br>
-                            <span>/month</span>
-                        </div>
-                    </div>
-                    <div class="current-service-row">
-                        <div class="current-service-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="current-service-info">
-                            <div class="current-service-name">Google Business Profile Management</div>
-                            <div class="current-service-desc">Local search optimization & posting</div>
-                        </div>
-                        <div class="current-service-price">
-                            <strong>$199</strong><br>
-                            <span>/month</span>
-                        </div>
-                    </div>
-                    <div class="current-service-row">
-                        <div class="current-service-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                        </div>
-                        <div class="current-service-info">
-                            <div class="current-service-name">Analytics & Tracking Setup</div>
-                            <div class="current-service-desc">Performance monitoring & reporting</div>
-                        </div>
-                        <div class="current-service-price">
-                            <strong>$99</strong><br>
-                            <span>/month</span>
-                        </div>
-                    </div>
-                    <div class="current-services-total">
-                        <div class="current-services-total-label">
-                            Total Monthly Investment
-                            <span>4 active services</span>
-                        </div>
-                        <div class="current-services-total-value">
-                            $1,396<span> per month</span>
-                        </div>
-                    </div>
-                    <div class="ad-spend-note">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
-                        <span>Plus Google Ads spend (paid directly to Google)</span>
-                        <strong>$1,500/mo</strong>
-                    </div>
-                </div>
             </div>
 
             <!-- Approved Changes Content -->
@@ -1012,6 +912,132 @@
                     <p>No additional changes pending. Visit <strong>Smart Recommendations</strong> to explore growth opportunities.</p>
                 </div>
             </div>
+            </div>
+
+            <!-- Current Services Tab Content -->
+            <div class="recommendations-tab-content" id="current-services-tab">
+                <!-- Your Progress Since Signup -->
+                <div class="progress-since-signup">
+                    <div class="progress-since-header">
+                        <div class="progress-since-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="progress-since-title">Your Progress Since Signup</div>
+                            <div class="progress-since-subtitle">Here's how far you've come since Sep 16, 2025</div>
+                        </div>
+                    </div>
+                    <div class="progress-since-stats">
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">4</div>
+                            <div class="progress-stat-label">Months Active</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">4</div>
+                            <div class="progress-stat-label">Active Services</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">+14.5%</div>
+                            <div class="progress-stat-label">Traffic Growth</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">42</div>
+                            <div class="progress-stat-label">Monthly Leads</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Your Current Services -->
+                <div class="current-services-list">
+                    <div class="current-services-list-header">
+                        <h3>Your Current Services</h3>
+                        <span>Monthly Investment</span>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Seedling SEO Plan</div>
+                            <div class="current-service-desc">Foundational on-page SEO & performance tracking</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$599</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Google Ads Management</div>
+                            <div class="current-service-desc">Campaign management & optimization</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$499</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Google Business Profile Management</div>
+                            <div class="current-service-desc">Local search optimization & posting</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$199</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Analytics & Tracking Setup</div>
+                            <div class="current-service-desc">Performance monitoring & reporting</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$99</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-services-total">
+                        <div class="current-services-total-label">
+                            Total Monthly Investment
+                            <span>4 active services</span>
+                        </div>
+                        <div class="current-services-total-value">
+                            $1,396<span> per month</span>
+                        </div>
+                    </div>
+                    <div class="ad-spend-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Plus Google Ads spend (paid directly to Google)</span>
+                        <strong>$1,500/mo</strong>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

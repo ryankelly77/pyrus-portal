@@ -277,3 +277,23 @@
                 }, 2000);
             }, 1000);
         }
+
+        // Recommendations main tabs switching
+        document.querySelectorAll('.recommendations-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.recommendationsTab;
+
+                // Update tab buttons
+                document.querySelectorAll('.recommendations-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Update tab content
+                document.querySelectorAll('.recommendations-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                const targetContent = document.getElementById(targetTab + '-tab');
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+            });
+        });
