@@ -927,6 +927,344 @@
     <!-- Modal Backdrop -->
     <div class="modal-backdrop" id="modalBackdrop"></div>
 
+    <!-- Send Result Alert Modal -->
+    <div class="modal" id="resultAlertModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: var(--accent-purple-bg); color: var(--accent-purple);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Send Result Alert</h2>
+                    <p class="modal-subtitle">Notify the client about a marketing win or milestone</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('resultAlertModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Alert Type</label>
+                    <div class="alert-type-grid">
+                        <label class="alert-type-option selected">
+                            <input type="radio" name="alertType" value="keyword" checked>
+                            <div class="alert-type-icon" style="background: var(--accent-teal-bg); color: var(--accent-teal);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <span>Keyword Ranking</span>
+                        </label>
+                        <label class="alert-type-option">
+                            <input type="radio" name="alertType" value="traffic">
+                            <div class="alert-type-icon" style="background: var(--accent-blue-bg); color: var(--accent-blue);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                            <span>Traffic Milestone</span>
+                        </label>
+                        <label class="alert-type-option">
+                            <input type="radio" name="alertType" value="leads">
+                            <div class="alert-type-icon" style="background: var(--success-bg); color: var(--success-text);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                                </svg>
+                            </div>
+                            <span>Lead Generation</span>
+                        </label>
+                        <label class="alert-type-option">
+                            <input type="radio" name="alertType" value="custom">
+                            <div class="alert-type-icon" style="background: var(--accent-orange-pale); color: var(--accent-orange);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </div>
+                            <span>Custom Win</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Headline</label>
+                    <input type="text" class="form-input" placeholder="e.g., Your keyword is now ranking on Page 1!" value="Your keyword is now ranking on Page 1!">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Metric Name</label>
+                        <input type="text" class="form-input" placeholder="e.g., Keyword" value="precision wound care San Antonio">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Value</label>
+                        <input type="text" class="form-input" placeholder="e.g., Position #7" value="Position #7">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Context (optional)</label>
+                    <textarea class="form-textarea" rows="3" placeholder="Add any additional context or celebration message...">Moved from position #24 → #7 (up 17 spots!) • First page visibility achieved</textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('resultAlertModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="sendResultAlert()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Send Result Alert
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resend Invitation Modal -->
+    <div class="modal" id="resendInviteModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: var(--info-bg); color: var(--info-text);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Resend Portal Invitation</h2>
+                    <p class="modal-subtitle">Send a new invitation email to the client</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('resendInviteModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="invite-history">
+                    <h4>Previous Invitations</h4>
+                    <div class="invite-history-item failed">
+                        <div class="invite-date">Dec 29, 2025 • 2:30 PM</div>
+                        <span class="status-pill failed">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            Failed
+                        </span>
+                    </div>
+                    <div class="invite-history-item success">
+                        <div class="invite-date">Jan 2, 2026 • 8:00 AM (Reminder)</div>
+                        <span class="status-pill clicked">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Activated
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" value="tom@tcclinical.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message Type</label>
+                    <select class="form-select">
+                        <option>Fresh Invitation</option>
+                        <option>Gentle Reminder</option>
+                        <option>Urgent - Action Required</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox">
+                        <span>Include recent results preview in email</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('resendInviteModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="resendInvitation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Send Invitation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div class="modal" id="editClientModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: var(--pyrus-green-pale); color: var(--pyrus-green);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Edit Client</h2>
+                    <p class="modal-subtitle">Update client information and settings</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('editClientModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-tabs">
+                    <button class="edit-tab active" data-edit-tab="general">General</button>
+                    <button class="edit-tab" data-edit-tab="billing">Billing</button>
+                    <button class="edit-tab" data-edit-tab="notifications">Notifications</button>
+                </div>
+                <div class="edit-tab-content active" id="edit-general">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" class="form-input" value="TC Clinical Services">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-select">
+                                <option selected>Active</option>
+                                <option>Paused</option>
+                                <option>Churned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Primary Contact Name</label>
+                            <input type="text" class="form-input" value="Tom Chen">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" value="tom@tcclinical.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" value="(210) 555-0199">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Website</label>
+                            <input type="url" class="form-input" value="https://tcclinical.com">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Growth Stage</label>
+                        <div class="stage-selector">
+                            <label class="stage-option">
+                                <input type="radio" name="stage" value="seedling">
+                                <span>Seedling</span>
+                            </label>
+                            <label class="stage-option selected">
+                                <input type="radio" name="stage" value="sprouting" checked>
+                                <span>Sprouting</span>
+                            </label>
+                            <label class="stage-option">
+                                <input type="radio" name="stage" value="blooming">
+                                <span>Blooming</span>
+                            </label>
+                            <label class="stage-option">
+                                <input type="radio" name="stage" value="harvesting">
+                                <span>Harvesting</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Internal Notes</label>
+                        <textarea class="form-textarea" rows="3" placeholder="Add private notes about this client...">Medical device reseller specializing in wound care. Very engaged, responds quickly. Interested in expanding to VA hospitals.</textarea>
+                    </div>
+                </div>
+                <div class="edit-tab-content" id="edit-billing">
+                    <div class="form-group">
+                        <label class="form-label">Billing Contact Email</label>
+                        <input type="email" class="form-input" value="billing@tcclinical.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Payment Method</label>
+                        <div class="payment-card">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            <span>**** **** **** 4242</span>
+                            <a href="#">Update</a>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Billing Cycle</label>
+                        <select class="form-select">
+                            <option selected>Monthly</option>
+                            <option>Quarterly (5% discount)</option>
+                            <option>Annual (15% discount)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="edit-tab-content" id="edit-notifications">
+                    <div class="notification-settings">
+                        <label class="notification-toggle">
+                            <div class="notification-info">
+                                <strong>Monthly Reports</strong>
+                                <span>Send automated monthly performance reports</span>
+                            </div>
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label class="notification-toggle">
+                            <div class="notification-info">
+                                <strong>Result Alerts</strong>
+                                <span>Notify when significant milestones are achieved</span>
+                            </div>
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label class="notification-toggle">
+                            <div class="notification-info">
+                                <strong>Recommendation Updates</strong>
+                                <span>Notify when new recommendations are available</span>
+                            </div>
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label class="notification-toggle">
+                            <div class="notification-info">
+                                <strong>Weekly Digest</strong>
+                                <span>Send weekly summary of activity and results</span>
+                            </div>
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editClientModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveClientChanges()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Success Toast -->
     <div class="toast" id="successToast">
         <div class="toast-icon">
