@@ -9205,3 +9205,183 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* ============================================
+           GETTING STARTED SUB-TABS & ONBOARDING SUMMARY
+           ============================================ */
+
+        .getting-started-subtabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 16px;
+        }
+
+        .getting-started-subtab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .getting-started-subtab:hover {
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green);
+        }
+
+        .getting-started-subtab.active {
+            background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
+            color: white;
+        }
+
+        .getting-started-subtab svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .gs-tab-content {
+            display: none;
+        }
+
+        .gs-tab-content.active {
+            display: block;
+        }
+
+        /* Onboarding Summary Styles */
+        .onboarding-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .summary-section {
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .summary-section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-page);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .summary-section-title svg {
+            color: var(--pyrus-green);
+        }
+
+        .summary-grid,
+        .summary-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1px;
+            background: var(--border-light);
+        }
+
+        .summary-field {
+            padding: 14px 20px;
+            background: var(--bg-white);
+        }
+
+        .summary-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .summary-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .summary-field span,
+        .summary-field a {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .summary-field a {
+            color: var(--accent-purple);
+            text-decoration: none;
+        }
+
+        .summary-field a:hover {
+            text-decoration: underline;
+        }
+
+        .summary-field .empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .summary-field .code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-page);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .summary-field .badge-yes {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .summary-field .badge-no {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .summary-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .summary-links a {
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .summary-grid,
+            .summary-content {
+                grid-template-columns: 1fr;
+            }
+
+            .getting-started-subtabs {
+                flex-wrap: wrap;
+            }
+        }

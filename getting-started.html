@@ -71,8 +71,30 @@
             <a href="recommendations.html" class="tab-btn">Recommendations</a>
         </div>
 
-        <!-- Getting Started Content -->
-        <div class="onboarding-grid">
+        <!-- Getting Started Sub-tabs -->
+        <div class="getting-started-subtabs">
+            <button class="getting-started-subtab active" data-gs-tab="checklist">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Checklist
+            </button>
+            <button class="getting-started-subtab" data-gs-tab="onboarding-summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Onboarding Summary
+            </button>
+        </div>
+
+        <!-- Checklist Tab Content -->
+        <div class="gs-tab-content active" id="checklist">
+            <div class="onboarding-grid">
             <div class="checklist-card">
                 <div class="checklist-header">
                     <h3>Onboarding Checklist</h3>
@@ -174,6 +196,474 @@
                             <span class="video-duration">2:45</span>
                         </div>
                         <p class="video-caption">Learn how to navigate your portal, track results, and get the most from your marketing partnership.</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Onboarding Summary Tab Content -->
+        <div class="gs-tab-content" id="onboarding-summary">
+            <div class="onboarding-summary">
+                <!-- Client Info -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Client Info
+                    </h3>
+                    <div class="summary-grid">
+                        <div class="summary-field">
+                            <label>Name</label>
+                            <span>Jennifer Espronceda</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Company</label>
+                            <span>Espronceda Law</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Email</label>
+                            <span>jennifer@esproncedalaw.com</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Phone</label>
+                            <span>(210) 504-1514</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Mobile Phone</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Website</label>
+                            <a href="https://alamodivorcelawyer.com" target="_blank">https://alamodivorcelawyer.com</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Info -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        Location Info
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field full-width">
+                            <label>Address and phone number for each location</label>
+                            <span>1202 S Alamo St, San Antonio, TX 78210 • Phone: (210) 504-1514</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Social media account links</label>
+                            <div class="summary-links">
+                                <a href="https://x.com/esproncedalaw" target="_blank">x.com/esproncedalaw</a>
+                                <a href="https://www.facebook.com/esproncedalaw" target="_blank">facebook.com/esproncedalaw</a>
+                                <a href="https://www.linkedin.com/company/espronceda-law-pllc" target="_blank">linkedin.com/company/espronceda-law-pllc</a>
+                            </div>
+                        </div>
+                        <div class="summary-field">
+                            <label>Do you have Google Business Profiles?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Google Business Profile link</label>
+                            <a href="https://share.google/vVlHrhCHyIDsAJX6a" target="_blank">https://share.google/vVlHrhCHyIDsAJX6a</a>
+                        </div>
+                        <div class="summary-field">
+                            <label>Pyrus added as Manager users?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ad Accounts -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        Ad Accounts
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Pyrus managing paid advertising?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Advertising accounts included</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Company differentiators for ad copy</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Top competitors</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Geographical service areas</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Run ads on weekends?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Analytics
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Running Google Analytics 4?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Measurement ID</label>
+                            <span class="code">G-2P8JMYRNZE</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Pyrus added as Admin users?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Google Tag Manager installed?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>GTM - Pyrus added as Admin?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Info -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        SEO Info
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Seedling or Harvest SEO plan?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Website access link</label>
+                            <a href="https://alamodivorcelawyer.com/wp-admin" target="_blank">alamodivorcelawyer.com/wp-admin</a>
+                        </div>
+                        <div class="summary-field">
+                            <label>Google Search Console account?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Pyrus added as Admin?</label>
+                            <span class="badge-yes">Yes</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Target keywords</label>
+                            <span>See keywords added to Agency Dashboard</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Competitors</label>
+                            <div class="summary-links">
+                                <a href="https://www.benkelaw.com" target="_blank">benkelaw.com</a>
+                                <a href="https://www.rjc-lawfirm.com" target="_blank">rjc-lawfirm.com</a>
+                                <a href="https://www.mwfamilylaw.com" target="_blank">mwfamilylaw.com</a>
+                                <a href="https://www.hhzfamilylaw.com" target="_blank">hhzfamilylaw.com</a>
+                                <a href="https://www.ldheard.com" target="_blank">ldheard.com</a>
+                                <a href="https://www.oureasydivorce.com" target="_blank">oureasydivorce.com</a>
+                                <a href="https://www.jmichaelclay.com" target="_blank">jmichaelclay.com</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leads & Goals -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Leads & Goals
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>CRM & Lead Tracking Plan?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Current leads per month</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Target leads per month</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Current cost per lead</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Target cost per lead</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Sales pipeline steps</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointment Setting -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Appointment Setting
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Appointment types</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Charge fee for appointments?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Pyrus added as Stripe Developer?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Number of users with appointments</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Current calendar system</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email & SMS Reminders -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Email & SMS Reminders
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Allow appointment rescheduling?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Allow appointment cancellation?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Preferred SMS area code</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Business name (for A2P compliance)</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>EIN / Federal Tax ID</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Writing -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Content Writing
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field full-width">
+                            <label>Content creation focus</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Content posting process</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Chat
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Chat option selected</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Admin website access provided?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Chatbot engagement goals</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Training documents/URLs</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Management -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        Review Management
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field full-width">
+                            <label>Current review collection method</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Review platforms used</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Reviews displayed on website?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Branding Foundation -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                        </svg>
+                        Business Branding Foundation
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field full-width">
+                            <label>What does your business do?</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Ideal customers</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Competitors and differentiators</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Desired brand perception</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Important industry terms/values</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Website Design & Development -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        Website Design & Development
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field full-width">
+                            <label>Primary website goal</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Ideal customer description</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Required pages/sections</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Existing content available?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field full-width">
+                            <label>Reference websites</label>
+                            <span class="empty">Not provided</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hosting & Web Maintenance -->
+                <div class="summary-section">
+                    <h3 class="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                        </svg>
+                        Hosting & Web Maintenance
+                    </h3>
+                    <div class="summary-content">
+                        <div class="summary-field">
+                            <label>Current hosting provider known?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>DNS records access?</label>
+                            <span class="empty">Not specified</span>
+                        </div>
+                        <div class="summary-field">
+                            <label>Domain ownership</label>
+                            <span class="empty">Not specified</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -541,6 +1031,29 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script>
+        // Getting Started Sub-tab Navigation
+        const gsSubtabs = document.querySelectorAll('.getting-started-subtab');
+        const gsTabContents = document.querySelectorAll('.gs-tab-content');
+
+        gsSubtabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-gs-tab');
+
+                // Update active tab
+                gsSubtabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Show corresponding content
+                gsTabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
