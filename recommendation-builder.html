@@ -232,51 +232,408 @@
                     </div>
 
                     <!-- Growth Services -->
-                    <div class="service-category service-category-growth">
+                    <div class="service-category service-category-growth expanded">
                         <button class="service-category-header">
                             <span>Growth Services</span>
-                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <div class="service-category-items"></div>
+                        <div class="service-category-items">
+                            <div class="service-item" draggable="true" data-monthly="300" data-onetime="3000">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">AI Visibility Foundation</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($300/mo) - ($3,000 onetime)</div>
+                                <p class="service-item-desc">Help AI assistants find and recommend your business.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="299" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">AI Visibility Monitoring</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($299/mo)</div>
+                                <p class="service-item-desc">Track how AI platforms find and recommend you—with monthly reports and competitive intelligence.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="199" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Google Business Profile Optimization</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($199/mo)</div>
+                                <p class="service-item-desc">Local search visibility and profile management.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="599" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Seedling SEO Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($599/mo)</div>
+                                <p class="service-item-desc">Foundational on-page SEO & performance tracking.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="1799" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Harvest SEO Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($1,799/mo)</div>
+                                <p class="service-item-desc">Advanced SEO with content, link building & authority signals.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Content Writing</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Monthly 1,000-word SEO-optimized article.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="699" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Organic Social Media</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($699/mo)</div>
+                                <p class="service-item-desc">Consistent, engaging content across your social platforms that builds authentic connections with your audience.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="699" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Paid Social Media</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($699/mo)</div>
+                                <p class="service-item-desc">Strategic paid campaigns that put your business in front of ready-to-buy customers across multiple platforms.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="999" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Complete Social Media</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($999/mo)</div>
+                                <p class="service-item-desc">The complete package—organic content builds your reputation while paid campaigns drive immediate results.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="298" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">AI Creative Assets</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($298/mo)</div>
+                                <p class="service-item-desc">Custom AI-generated images, short-form videos, and premium stock photography to elevate your social content with eye-catching visuals.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="599" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Google Search Ads</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($599/mo)</div>
+                                <p class="service-item-desc">Targeted text ads on Google Search.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="149" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Google Local Service Ads</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($149/mo)</div>
+                                <p class="service-item-desc">Pay-per-lead ads with Google Guaranteed badge.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Cultivation Tools -->
-                    <div class="service-category service-category-cultivation">
+                    <div class="service-category service-category-cultivation expanded">
                         <button class="service-category-header">
                             <span>Cultivation Tools</span>
-                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <div class="service-category-items"></div>
+                        <div class="service-category-items">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">CRM & Lead Tracking</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Mobile-friendly system to track and convert leads.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Appointment Setting</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Booking calendar with calendar integrations.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Email & SMS Reminders</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Automated customer communication.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Web Chat</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Lead capture from website directly to your phone.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Conversational AI Chat</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Smart chatbot trained on your business content.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Review Management</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Automated collection and response for Google/Facebook reviews.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Bundled Packages -->
-                    <div class="service-category">
+                    <div class="service-category expanded">
                         <button class="service-category-header">
                             <span>Bundled Packages</span>
-                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <div class="service-category-items"></div>
+                        <div class="service-category-items">
+                            <div class="service-item" draggable="true" data-monthly="999" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Harvest Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($999/mo)</div>
+                                <p class="service-item-desc">All Grow features + Harvest SEO + Google Search Ads.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="499" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Grow Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($499/mo)</div>
+                                <p class="service-item-desc">All Seed features + Seedling SEO.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="249" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Seed Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($249/mo)</div>
+                                <p class="service-item-desc">Google Business Profile Optimization, Google Local Service Ads, Analytics Tracking, CRM + Lead Tracking.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Fertilizer Add-Ons -->
-                    <div class="service-category">
+                    <div class="service-category expanded">
                         <button class="service-category-header">
                             <span>Fertilizer Add-Ons</span>
-                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <div class="service-category-items"></div>
+                        <p class="service-category-desc">Curated bundles of engagement tools to boost lead conversion and customer communication.</p>
+                        <div class="service-category-items">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Nitrogen</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">Appointment Setting + Web Chat.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="199" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Phosphorous</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($199/mo)</div>
+                                <p class="service-item-desc">Adds Email & SMS Reminders.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="499" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Potassium</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($499/mo)</div>
+                                <p class="service-item-desc">Adds AI Chat + Review Management.</p>
+                            </div>
+                        </div>
                     </div>
                 </aside>
 
