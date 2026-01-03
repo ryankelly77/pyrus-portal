@@ -71,8 +71,29 @@
             <a href="recommendations.html" class="tab-btn">Recommendations</a>
         </div>
 
-        <!-- Results Content -->
-        <div class="results-content">
+        <!-- Results Sub-tabs -->
+        <div class="results-subtabs">
+            <button class="results-subtab active" data-results-tab="overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Overview
+            </button>
+            <button class="results-subtab" data-results-tab="pro-dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                Pro Dashboard
+                <span class="pro-badge">PRO</span>
+            </button>
+        </div>
+
+        <!-- Overview Content -->
+        <div class="results-content results-tab-content active" id="overview">
             <div class="results-header">
                 <h3 style="font-size: 15px; font-weight: 600; color: var(--text-primary);">Performance Overview</h3>
                 <div class="results-period">
@@ -174,16 +195,75 @@
                             <option>Monthly</option>
                         </select>
                     </div>
-                    <div class="chart-placeholder">
-                        Traffic chart visualization would appear here
+                    <div class="chart-area">
+                        <div class="chart-y-axis">
+                            <span>3k</span>
+                            <span>2k</span>
+                            <span>1k</span>
+                            <span>0</span>
+                        </div>
+                        <div class="line-chart">
+                            <svg viewBox="0 0 400 150" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="trafficGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#B57841;stop-opacity:0.3" />
+                                        <stop offset="100%" style="stop-color:#B57841;stop-opacity:0.05" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M0,120 L50,100 L100,110 L150,80 L200,70 L250,50 L300,40 L350,30 L400,20 L400,150 L0,150 Z" fill="url(#trafficGradient)"/>
+                                <path d="M0,120 L50,100 L100,110 L150,80 L200,70 L250,50 L300,40 L350,30 L400,20" fill="none" stroke="#B57841" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="400" cy="20" r="5" fill="#B57841"/>
+                            </svg>
+                        </div>
+                        <div class="chart-x-axis">
+                            <span>Dec 1</span>
+                            <span>Dec 8</span>
+                            <span>Dec 15</span>
+                            <span>Dec 22</span>
+                            <span>Dec 29</span>
+                        </div>
                     </div>
                 </div>
                 <div class="chart-card">
                     <div class="chart-header">
                         <h3>Lead Sources</h3>
                     </div>
-                    <div class="chart-placeholder">
-                        Lead source breakdown chart would appear here
+                    <div class="donut-chart-container">
+                        <div class="donut-chart">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#E8EDE7" stroke-width="12"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#B57841" stroke-width="12" stroke-dasharray="100.5 251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#DE393A" stroke-width="12" stroke-dasharray="62.8 251.3" stroke-dashoffset="-100.5" transform="rotate(-90 50 50)"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#2563EB" stroke-width="12" stroke-dasharray="50.3 251.3" stroke-dashoffset="-163.3" transform="rotate(-90 50 50)"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#7C3AED" stroke-width="12" stroke-dasharray="37.7 251.3" stroke-dashoffset="-213.6" transform="rotate(-90 50 50)"/>
+                            </svg>
+                            <div class="donut-center">
+                                <span class="donut-total">28</span>
+                                <span class="donut-label">Leads</span>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #B57841;"></span>
+                                <span class="legend-label">Google Ads</span>
+                                <span class="legend-value">40%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #DE393A;"></span>
+                                <span class="legend-label">Organic Search</span>
+                                <span class="legend-value">25%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #2563EB;"></span>
+                                <span class="legend-label">Direct</span>
+                                <span class="legend-value">20%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #7C3AED;"></span>
+                                <span class="legend-label">Referral</span>
+                                <span class="legend-value">15%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,9 +280,121 @@
                         Export Report
                     </button>
                 </div>
-                <div class="chart-placeholder" style="height: 200px;">
-                    Keyword ranking trends would appear here
+                <div class="keywords-table">
+                    <div class="keywords-table-header">
+                        <span>Keyword</span>
+                        <span>Current</span>
+                        <span>Previous</span>
+                        <span>Change</span>
+                        <span>Progress</span>
+                    </div>
+                    <div class="keywords-table-row">
+                        <span class="keyword-name">precision wound care san antonio</span>
+                        <span class="keyword-position">#7</span>
+                        <span class="keyword-previous">#24</span>
+                        <span class="keyword-change positive">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                            +17
+                        </span>
+                        <div class="keyword-progress">
+                            <div class="keyword-progress-bar" style="width: 85%;"></div>
+                        </div>
+                    </div>
+                    <div class="keywords-table-row">
+                        <span class="keyword-name">wound care clinic near me</span>
+                        <span class="keyword-position">#12</span>
+                        <span class="keyword-previous">#18</span>
+                        <span class="keyword-change positive">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                            +6
+                        </span>
+                        <div class="keyword-progress">
+                            <div class="keyword-progress-bar" style="width: 70%;"></div>
+                        </div>
+                    </div>
+                    <div class="keywords-table-row">
+                        <span class="keyword-name">diabetic wound treatment texas</span>
+                        <span class="keyword-position">#15</span>
+                        <span class="keyword-previous">#22</span>
+                        <span class="keyword-change positive">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                            +7
+                        </span>
+                        <div class="keyword-progress">
+                            <div class="keyword-progress-bar" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                    <div class="keywords-table-row">
+                        <span class="keyword-name">chronic wound specialist</span>
+                        <span class="keyword-position">#23</span>
+                        <span class="keyword-previous">#31</span>
+                        <span class="keyword-change positive">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                            +8
+                        </span>
+                        <div class="keyword-progress">
+                            <div class="keyword-progress-bar" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                    <div class="keywords-table-row">
+                        <span class="keyword-name">advanced wound care products</span>
+                        <span class="keyword-position">#34</span>
+                        <span class="keyword-previous">#32</span>
+                        <span class="keyword-change negative">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                            -2
+                        </span>
+                        <div class="keyword-progress">
+                            <div class="keyword-progress-bar" style="width: 30%;"></div>
+                        </div>
+                    </div>
                 </div>
+                <div class="keywords-summary">
+                    <span>Showing 5 of 47 tracked keywords</span>
+                    <a href="#">View all keywords →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pro Dashboard Content -->
+        <div class="results-tab-content" id="pro-dashboard">
+            <div class="pro-dashboard-header">
+                <div class="pro-dashboard-info">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Pro Dashboard
+                    </h3>
+                    <p>Deep-dive analytics with real-time data from all your marketing channels</p>
+                </div>
+                <a href="https://agencydashboard.io/campaign/detail/MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM=" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    Open in New Tab
+                </a>
+            </div>
+            <div class="pro-dashboard-embed">
+                <iframe
+                    src="https://agencydashboard.io/campaign/detail/MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM="
+                    frameborder="0"
+                    allowfullscreen>
+                </iframe>
             </div>
         </div>
     </div>

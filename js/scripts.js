@@ -36,6 +36,17 @@
             });
         });
 
+        // Results sub-tabs
+        document.querySelectorAll('.results-subtab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.results-subtab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.results-tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-results-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
         // Edit Client Tabs
         document.querySelectorAll('.edit-tab').forEach(tab => {
             tab.addEventListener('click', () => {
