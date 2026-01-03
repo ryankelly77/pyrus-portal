@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyrus Admin - Recommendations Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="admin-users.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="admin-notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Header Bar -->
+            <div class="admin-top-header">
+                <div class="admin-top-header-left">
+                    <nav class="breadcrumb">
+                        <a href="admin-recommendations.html">Recommendations</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        <span>TC Clinical Services</span>
+                    </nav>
+                </div>
+                <div class="admin-top-header-right">
+                    <button class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </button>
+                    <div class="user-avatar-small">
+                        <span>RK</span>
+                    </div>
+                    <span class="user-name">Ryan Kelly</span>
+                </div>
+            </div>
+
+            <div class="rec-builder-layout">
+                <!-- Services Sidebar -->
+                <aside class="services-sidebar">
+                    <!-- Root Services -->
+                    <div class="service-category expanded">
+                        <button class="service-category-header">
+                            <span>Root Services</span>
+                            <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div class="service-category-items">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="899">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Business Branding Foundation</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo) - ($899 onetime)</div>
+                                <p class="service-item-desc">Establish a professional brand identity that helps customers remember, trust, and choose your business.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="249" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Seed Site</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($249/mo)</div>
+                                <p class="service-item-desc">A fast, affordable website solution powered by AI technology to get your business online quickly.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="300" data-onetime="3000">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Sprout Site</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($300/mo) - ($3,000 onetime)</div>
+                                <p class="service-item-desc">A professional starter WordPress website to establish your digital presence.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="450" data-onetime="4500">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Bloom Site</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($450/mo) - ($4,500 onetime)</div>
+                                <p class="service-item-desc">A complete business website with enhanced features and expanded content areas.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="600" data-onetime="6000">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Harvest Site</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($600/mo) - ($6,000 onetime)</div>
+                                <p class="service-item-desc">A comprehensive digital platform with advanced functionality and custom features.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="49" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">WordPress Care Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($49/mo)</div>
+                                <p class="service-item-desc">Secure, updated hosting for WordPress sites.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="149" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Website Care Plan</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($149/mo)</div>
+                                <p class="service-item-desc">Keep your website healthy and thriving. We handle all of your website updates for you.</p>
+                            </div>
+
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0">
+                                <div class="service-item-header">
+                                    <span class="service-item-title">Analytics Tracking</span>
+                                    <button class="info-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="service-item-price">($99/mo)</div>
+                                <p class="service-item-desc">GA4 setup and marketing performance dashboards.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Growth Services -->
+                    <div class="service-category">
+                        <button class="service-category-header">
+                            <span>Growth Services</span>
+                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div class="service-category-items"></div>
+                    </div>
+
+                    <!-- Cultivation Tools -->
+                    <div class="service-category">
+                        <button class="service-category-header">
+                            <span>Cultivation Tools</span>
+                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div class="service-category-items"></div>
+                    </div>
+
+                    <!-- Bundled Packages -->
+                    <div class="service-category">
+                        <button class="service-category-header">
+                            <span>Bundled Packages</span>
+                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div class="service-category-items"></div>
+                    </div>
+
+                    <!-- Fertilizer Add-Ons -->
+                    <div class="service-category">
+                        <button class="service-category-header">
+                            <span>Fertilizer Add-Ons</span>
+                            <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div class="service-category-items"></div>
+                    </div>
+                </aside>
+
+                <!-- Builder Main Area -->
+                <div class="rec-builder-main">
+                    <!-- Client Selector -->
+                    <div class="client-selector-bar">
+                        <div class="prepared-for">
+                            <span class="prepared-label">Prepared for</span>
+                            <a href="#" class="add-client-link">Add Client</a>
+                        </div>
+                        <div class="client-dropdown-wrapper">
+                            <label>Client</label>
+                            <select class="client-dropdown">
+                                <option>Select Client</option>
+                                <option>TC Clinical Services</option>
+                                <option>Raptor Vending</option>
+                                <option>Raptor Services</option>
+                                <option>Gohfr</option>
+                                <option>Espronceda Law</option>
+                                <option>American Fence & Deck</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary save-plan-btn">Save Plan</button>
+                    </div>
+
+                    <!-- Good / Better / Best Columns -->
+                    <div class="pricing-tiers">
+                        <!-- Good Column -->
+                        <div class="pricing-tier" data-tier="good">
+                            <h2 class="tier-title">Good</h2>
+                            <div class="tier-dropzone" data-tier="good">
+                                <div class="dropzone-placeholder">
+                                    <span>Drag drop service here</span>
+                                </div>
+                            </div>
+                            <div class="tier-pricing">
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">/month</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span>$</span>
+                                    <span class="total-amount">0</span>
+                                    <span>/mo Total</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-purchase">Purchase Now</button>
+                        </div>
+
+                        <!-- Better Column -->
+                        <div class="pricing-tier" data-tier="better">
+                            <h2 class="tier-title">Better</h2>
+                            <div class="tier-dropzone" data-tier="better">
+                                <div class="dropzone-placeholder">
+                                    <span>Drag drop service here</span>
+                                </div>
+                            </div>
+                            <div class="tier-pricing">
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">/month</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span>$</span>
+                                    <span class="total-amount">0</span>
+                                    <span>/mo Total</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-purchase">Purchase Now</button>
+                        </div>
+
+                        <!-- Best Column -->
+                        <div class="pricing-tier" data-tier="best">
+                            <h2 class="tier-title">Best</h2>
+                            <div class="tier-dropzone" data-tier="best">
+                                <div class="dropzone-placeholder">
+                                    <span>Drag drop service here</span>
+                                </div>
+                            </div>
+                            <div class="tier-pricing">
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">/month</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="price-symbol">$</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" checked>
+                                        <span class="toggle-slider-sm"></span>
+                                    </label>
+                                    <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span>$</span>
+                                    <span class="total-amount">0</span>
+                                    <span>/mo Total</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-purchase">Purchase Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script>
+        // Service Category Toggle
+        document.querySelectorAll('.service-category-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const category = header.closest('.service-category');
+                category.classList.toggle('expanded');
+            });
+        });
+
+        // Basic Drag and Drop
+        const serviceItems = document.querySelectorAll('.service-item');
+        const dropzones = document.querySelectorAll('.tier-dropzone');
+
+        serviceItems.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', item.outerHTML);
+                item.classList.add('dragging');
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+            });
+        });
+
+        dropzones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const html = e.dataTransfer.getData('text/plain');
+                const placeholder = zone.querySelector('.dropzone-placeholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                const droppedItem = wrapper.firstChild;
+                droppedItem.classList.add('dropped');
+                droppedItem.removeAttribute('draggable');
+
+                // Get pricing data
+                const monthly = droppedItem.getAttribute('data-monthly');
+                const onetime = droppedItem.getAttribute('data-onetime');
+                const hasBothPricing = monthly && onetime && parseInt(monthly) > 0 && parseInt(onetime) > 0;
+
+                // Add pricing selector if item has both monthly and onetime pricing
+                if (hasBothPricing) {
+                    const uniqueId = 'pricing-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    const pricingSelector = document.createElement('div');
+                    pricingSelector.className = 'pricing-selector';
+                    pricingSelector.innerHTML = `
+                        <label class="pricing-option monthly">
+                            <input type="radio" name="${uniqueId}" value="monthly" checked>
+                            <span>$${monthly} for 12 months</span>
+                        </label>
+                        <label class="pricing-option onetime">
+                            <input type="radio" name="${uniqueId}" value="onetime">
+                            <span>$${onetime} one-time</span>
+                        </label>
+                    `;
+                    droppedItem.appendChild(pricingSelector);
+                }
+
+                // Add remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-service-btn';
+                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                removeBtn.onclick = () => {
+                    droppedItem.remove();
+                    if (zone.children.length === 0) {
+                        zone.innerHTML = '<div class="dropzone-placeholder"><span>Drag drop service here</span></div>';
+                    }
+                };
+                droppedItem.appendChild(removeBtn);
+
+                zone.appendChild(droppedItem);
+            });
+        });
+    </script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>
