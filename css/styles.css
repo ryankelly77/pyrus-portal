@@ -7945,6 +7945,16 @@
             color: var(--text-muted);
         }
 
+        .status-badge.prospect {
+            background: var(--accent-blue-bg);
+            color: var(--accent-blue);
+        }
+
+        .status-badge.inactive {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+
         /* Paused Client Card */
         .client-card[data-status="paused"] {
             position: relative;
