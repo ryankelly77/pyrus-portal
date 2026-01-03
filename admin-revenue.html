@@ -381,6 +381,202 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script>
+        // Revenue Chart Filter Functionality
+        const dateRangeSelect = document.querySelector('.revenue-filters .filter-select:first-of-type');
+        const periodSelect = document.querySelector('.revenue-filters .filter-select:last-of-type');
+
+        // Chart data configurations for different date ranges
+        const chartData = {
+            'All time': {
+                mrr: {
+                    value: '$4,934.00',
+                    points: '0,190 80,190 80,175 120,175 120,155 180,155 180,120 220,120 220,85 280,85 280,55 340,55 340,45 400,45 400,40 470,40',
+                    xAxis: ['Jan 1, 2024', 'Jul 1, 2024', 'Jan 1, 2025', 'Jul 1, 2025']
+                },
+                mrrGrowth: {
+                    value: '$4,934.00',
+                    bars: [
+                        { x: 200, y: 100, height: 40, positive: true },
+                        { x: 240, y: 40, height: 100, positive: true },
+                        { x: 280, y: 80, height: 60, positive: true },
+                        { x: 320, y: 100, height: 40, positive: true },
+                        { x: 360, y: 110, height: 30, positive: true },
+                        { x: 400, y: 120, height: 20, positive: true },
+                        { x: 440, y: 140, height: 25, positive: false }
+                    ],
+                    xAxis: ['Dec 2023', 'Jun 2024', 'Jan 2025', 'Jul 2025', 'Jan 2026']
+                },
+                netVolume: {
+                    value: '$38,284.24',
+                    path: 'M 0,190 L 0,190 L 100,188 L 150,185 L 200,180 L 250,160 L 300,120 L 350,80 L 400,50 L 450,35 L 470,30 L 470,190 Z',
+                    line: '0,190 100,188 150,185 200,180 250,160 300,120 350,80 400,50 450,35 470,30',
+                    xAxis: ['Jan 2024', 'Jul 2024', 'Jan 2025', 'Jan 2026']
+                },
+                growthRate: {
+                    value: '0.0%',
+                    points: '0,155 100,155 150,155 200,140 250,100 280,30 300,120 350,140 400,150 450,155 470,155',
+                    xAxis: ['Jan 1, 2024', 'Jul 1, 2024', 'Jan 1, 2025', 'Jul 1, 2025']
+                }
+            },
+            'Last 12 months': {
+                mrr: {
+                    value: '$4,934.00',
+                    points: '0,120 60,120 60,100 120,100 120,85 180,85 180,70 240,70 240,55 300,55 300,45 360,45 360,42 420,42 420,40 470,40',
+                    xAxis: ['Jan 2025', 'Apr 2025', 'Jul 2025', 'Oct 2025']
+                },
+                mrrGrowth: {
+                    value: '$1,834.00',
+                    bars: [
+                        { x: 60, y: 90, height: 50, positive: true },
+                        { x: 120, y: 100, height: 40, positive: true },
+                        { x: 180, y: 85, height: 55, positive: true },
+                        { x: 240, y: 110, height: 30, positive: true },
+                        { x: 300, y: 115, height: 25, positive: true },
+                        { x: 360, y: 125, height: 15, positive: true },
+                        { x: 420, y: 140, height: 20, positive: false }
+                    ],
+                    xAxis: ['Jan 2025', 'Apr 2025', 'Jul 2025', 'Oct 2025', 'Jan 2026']
+                },
+                netVolume: {
+                    value: '$24,150.00',
+                    path: 'M 0,190 L 0,160 L 80,145 L 160,120 L 240,95 L 320,70 L 400,50 L 470,35 L 470,190 Z',
+                    line: '0,160 80,145 160,120 240,95 320,70 400,50 470,35',
+                    xAxis: ['Jan 2025', 'Apr 2025', 'Jul 2025', 'Jan 2026']
+                },
+                growthRate: {
+                    value: '-2.5%',
+                    points: '0,120 80,100 160,70 240,50 280,30 320,80 400,130 470,160',
+                    xAxis: ['Jan 2025', 'Apr 2025', 'Jul 2025', 'Oct 2025']
+                }
+            },
+            'Last 6 months': {
+                mrr: {
+                    value: '$4,934.00',
+                    points: '0,85 80,80 160,70 240,55 320,48 400,42 470,40',
+                    xAxis: ['Jul 2025', 'Sep 2025', 'Nov 2025', 'Jan 2026']
+                },
+                mrrGrowth: {
+                    value: '$634.00',
+                    bars: [
+                        { x: 80, y: 100, height: 40, positive: true },
+                        { x: 160, y: 110, height: 30, positive: true },
+                        { x: 240, y: 115, height: 25, positive: true },
+                        { x: 320, y: 120, height: 20, positive: true },
+                        { x: 400, y: 140, height: 15, positive: false }
+                    ],
+                    xAxis: ['Jul 2025', 'Sep 2025', 'Nov 2025', 'Jan 2026']
+                },
+                netVolume: {
+                    value: '$12,480.00',
+                    path: 'M 0,190 L 0,150 L 100,130 L 200,100 L 300,70 L 400,45 L 470,35 L 470,190 Z',
+                    line: '0,150 100,130 200,100 300,70 400,45 470,35',
+                    xAxis: ['Jul 2025', 'Sep 2025', 'Nov 2025', 'Jan 2026']
+                },
+                growthRate: {
+                    value: '-3.2%',
+                    points: '0,100 100,90 200,120 300,140 400,155 470,160',
+                    xAxis: ['Jul 2025', 'Sep 2025', 'Nov 2025', 'Jan 2026']
+                }
+            },
+            'Last 3 months': {
+                mrr: {
+                    value: '$4,934.00',
+                    points: '0,55 120,50 240,45 360,42 470,40',
+                    xAxis: ['Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026']
+                },
+                mrrGrowth: {
+                    value: '$234.00',
+                    bars: [
+                        { x: 120, y: 120, height: 20, positive: true },
+                        { x: 240, y: 125, height: 15, positive: true },
+                        { x: 360, y: 140, height: 10, positive: false }
+                    ],
+                    xAxis: ['Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026']
+                },
+                netVolume: {
+                    value: '$5,120.00',
+                    path: 'M 0,190 L 0,130 L 160,90 L 320,55 L 470,35 L 470,190 Z',
+                    line: '0,130 160,90 320,55 470,35',
+                    xAxis: ['Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026']
+                },
+                growthRate: {
+                    value: '-1.8%',
+                    points: '0,130 160,145 320,155 470,158',
+                    xAxis: ['Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026']
+                }
+            }
+        };
+
+        function updateCharts() {
+            const dateRange = dateRangeSelect.value;
+            const data = chartData[dateRange];
+
+            if (!data) return;
+
+            // Update MRR chart
+            const mrrChart = document.querySelector('.mrr-chart');
+            const mrrLine = mrrChart.querySelector('.mrr-line');
+            const mrrValue = mrrChart.closest('.revenue-chart-card').querySelector('.chart-value');
+            const mrrXAxis = mrrChart.closest('.revenue-chart-card').querySelector('.chart-x-axis');
+
+            mrrLine.setAttribute('points', data.mrr.points);
+            mrrValue.textContent = data.mrr.value;
+            mrrXAxis.innerHTML = data.mrr.xAxis.map(label => `<span>${label}</span>`).join('');
+
+            // Update MRR Growth chart
+            const mrrGrowthChart = document.querySelector('.mrr-growth-chart');
+            const mrrGrowthValue = mrrGrowthChart.closest('.revenue-chart-card').querySelector('.chart-value');
+            const mrrGrowthXAxis = mrrGrowthChart.closest('.revenue-chart-card').querySelector('.chart-x-axis');
+
+            // Remove existing bars
+            mrrGrowthChart.querySelectorAll('rect').forEach(rect => rect.remove());
+
+            // Add new bars
+            const zeroLine = mrrGrowthChart.querySelector('.chart-zero-line');
+            data.mrrGrowth.bars.forEach(bar => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', bar.x);
+                rect.setAttribute('y', bar.positive ? bar.y : 140);
+                rect.setAttribute('width', 25);
+                rect.setAttribute('height', bar.height);
+                rect.setAttribute('class', bar.positive ? 'bar-positive' : 'bar-negative');
+                zeroLine.after(rect);
+            });
+
+            mrrGrowthValue.textContent = data.mrrGrowth.value;
+            mrrGrowthXAxis.innerHTML = data.mrrGrowth.xAxis.map(label => `<span>${label}</span>`).join('');
+
+            // Update Net Volume chart
+            const netVolumeChart = document.querySelector('.net-volume-chart');
+            const areaFill = netVolumeChart.querySelector('.area-fill');
+            const areaLine = netVolumeChart.querySelector('.area-line');
+            const netVolumeValue = netVolumeChart.closest('.revenue-chart-card').querySelector('.chart-value');
+            const netVolumeXAxis = netVolumeChart.closest('.revenue-chart-card').querySelector('.chart-x-axis');
+
+            areaFill.setAttribute('d', data.netVolume.path);
+            areaLine.setAttribute('points', data.netVolume.line);
+            netVolumeValue.textContent = data.netVolume.value;
+            netVolumeXAxis.innerHTML = data.netVolume.xAxis.map(label => `<span>${label}</span>`).join('');
+
+            // Update Growth Rate chart
+            const growthRateChart = document.querySelector('.growth-rate-chart');
+            const rateLine = growthRateChart.querySelector('.rate-line');
+            const growthRateValue = growthRateChart.closest('.revenue-chart-card').querySelector('.chart-value');
+            const growthRateXAxis = growthRateChart.closest('.revenue-chart-card').querySelector('.chart-x-axis');
+
+            rateLine.setAttribute('points', data.growthRate.points);
+            growthRateValue.textContent = data.growthRate.value;
+            growthRateXAxis.innerHTML = data.growthRate.xAxis.map(label => `<span>${label}</span>`).join('');
+        }
+
+        // Event listeners
+        dateRangeSelect.addEventListener('change', updateCharts);
+        periodSelect.addEventListener('change', () => {
+            // Period changes could adjust granularity - for prototype, just trigger visual feedback
+            updateCharts();
+        });
+    </script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
