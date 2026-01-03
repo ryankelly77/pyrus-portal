@@ -144,42 +144,44 @@
                             </div>
                         </div>
                         <div class="chart-body">
-                            <svg class="mrr-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
-                                <!-- Y-axis labels -->
-                                <text x="485" y="15" class="chart-axis-label">$6K</text>
-                                <text x="485" y="50" class="chart-axis-label">$5K</text>
-                                <text x="485" y="85" class="chart-axis-label">$4K</text>
-                                <text x="485" y="120" class="chart-axis-label">$3K</text>
-                                <text x="485" y="155" class="chart-axis-label">$2K</text>
-                                <text x="485" y="190" class="chart-axis-label">$1K</text>
+                            <div class="chart-wrapper">
+                                <svg class="mrr-chart" viewBox="0 0 470 200" preserveAspectRatio="none">
+                                    <!-- Grid lines -->
+                                    <line x1="0" y1="35" x2="470" y2="35" class="chart-grid-line"/>
+                                    <line x1="0" y1="70" x2="470" y2="70" class="chart-grid-line"/>
+                                    <line x1="0" y1="105" x2="470" y2="105" class="chart-grid-line"/>
+                                    <line x1="0" y1="140" x2="470" y2="140" class="chart-grid-line"/>
+                                    <line x1="0" y1="175" x2="470" y2="175" class="chart-grid-line"/>
 
-                                <!-- Grid lines -->
-                                <line x1="0" y1="35" x2="470" y2="35" class="chart-grid-line"/>
-                                <line x1="0" y1="70" x2="470" y2="70" class="chart-grid-line"/>
-                                <line x1="0" y1="105" x2="470" y2="105" class="chart-grid-line"/>
-                                <line x1="0" y1="140" x2="470" y2="140" class="chart-grid-line"/>
-                                <line x1="0" y1="175" x2="470" y2="175" class="chart-grid-line"/>
-
-                                <!-- MRR Step Line -->
-                                <polyline class="mrr-line" points="
-                                    0,190
-                                    80,190
-                                    80,175
-                                    120,175
-                                    120,155
-                                    180,155
-                                    180,120
-                                    220,120
-                                    220,85
-                                    280,85
-                                    280,55
-                                    340,55
-                                    340,45
-                                    400,45
-                                    400,40
-                                    470,40
-                                "/>
-                            </svg>
+                                    <!-- MRR Step Line -->
+                                    <polyline class="mrr-line" points="
+                                        0,190
+                                        80,190
+                                        80,175
+                                        120,175
+                                        120,155
+                                        180,155
+                                        180,120
+                                        220,120
+                                        220,85
+                                        280,85
+                                        280,55
+                                        340,55
+                                        340,45
+                                        400,45
+                                        400,40
+                                        470,40
+                                    "/>
+                                </svg>
+                                <div class="chart-y-axis">
+                                    <span>$6K</span>
+                                    <span>$5K</span>
+                                    <span>$4K</span>
+                                    <span>$3K</span>
+                                    <span>$2K</span>
+                                    <span>$1K</span>
+                                </div>
+                            </div>
                             <div class="chart-x-axis">
                                 <span>Jan 1, 2024</span>
                                 <span>Jul 1, 2024</span>
@@ -206,26 +208,28 @@
                             </div>
                         </div>
                         <div class="chart-body">
-                            <svg class="mrr-growth-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
-                                <!-- Y-axis labels -->
-                                <text x="485" y="20" class="chart-axis-label">$3K</text>
-                                <text x="485" y="60" class="chart-axis-label">$2K</text>
-                                <text x="485" y="100" class="chart-axis-label">$1K</text>
-                                <text x="485" y="140" class="chart-axis-label">$0</text>
-                                <text x="485" y="180" class="chart-axis-label">-$1K</text>
+                            <div class="chart-wrapper">
+                                <svg class="mrr-growth-chart" viewBox="0 0 470 200" preserveAspectRatio="none">
+                                    <!-- Zero line -->
+                                    <line x1="0" y1="140" x2="470" y2="140" class="chart-zero-line"/>
 
-                                <!-- Zero line -->
-                                <line x1="0" y1="140" x2="470" y2="140" class="chart-zero-line"/>
-
-                                <!-- Bars -->
-                                <rect x="200" y="100" width="25" height="40" class="bar-positive"/>
-                                <rect x="240" y="40" width="25" height="100" class="bar-positive"/>
-                                <rect x="280" y="80" width="25" height="60" class="bar-positive"/>
-                                <rect x="320" y="100" width="25" height="40" class="bar-positive"/>
-                                <rect x="360" y="110" width="25" height="30" class="bar-positive"/>
-                                <rect x="400" y="120" width="25" height="20" class="bar-positive"/>
-                                <rect x="440" y="140" width="25" height="25" class="bar-negative"/>
-                            </svg>
+                                    <!-- Bars -->
+                                    <rect x="200" y="100" width="25" height="40" class="bar-positive"/>
+                                    <rect x="240" y="40" width="25" height="100" class="bar-positive"/>
+                                    <rect x="280" y="80" width="25" height="60" class="bar-positive"/>
+                                    <rect x="320" y="100" width="25" height="40" class="bar-positive"/>
+                                    <rect x="360" y="110" width="25" height="30" class="bar-positive"/>
+                                    <rect x="400" y="120" width="25" height="20" class="bar-positive"/>
+                                    <rect x="440" y="140" width="25" height="25" class="bar-negative"/>
+                                </svg>
+                                <div class="chart-y-axis">
+                                    <span>$3K</span>
+                                    <span>$2K</span>
+                                    <span>$1K</span>
+                                    <span>$0</span>
+                                    <span>-$1K</span>
+                                </div>
+                            </div>
                             <div class="chart-x-axis">
                                 <span>Dec 2023</span>
                                 <span>Jun 2024</span>
@@ -253,46 +257,48 @@
                             </div>
                         </div>
                         <div class="chart-body">
-                            <svg class="net-volume-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
-                                <!-- Y-axis labels -->
-                                <text x="485" y="15" class="chart-axis-label">$6K</text>
-                                <text x="485" y="50" class="chart-axis-label">$5K</text>
-                                <text x="485" y="85" class="chart-axis-label">$4K</text>
-                                <text x="485" y="120" class="chart-axis-label">$3K</text>
-                                <text x="485" y="155" class="chart-axis-label">$2K</text>
-                                <text x="485" y="190" class="chart-axis-label">$0</text>
+                            <div class="chart-wrapper">
+                                <svg class="net-volume-chart" viewBox="0 0 470 200" preserveAspectRatio="none">
+                                    <!-- Area fill -->
+                                    <path class="area-fill" d="
+                                        M 0,190
+                                        L 0,190
+                                        L 100,188
+                                        L 150,185
+                                        L 200,180
+                                        L 250,160
+                                        L 300,120
+                                        L 350,80
+                                        L 400,50
+                                        L 450,35
+                                        L 470,30
+                                        L 470,190
+                                        Z
+                                    "/>
 
-                                <!-- Area fill -->
-                                <path class="area-fill" d="
-                                    M 0,190
-                                    L 0,190
-                                    L 100,188
-                                    L 150,185
-                                    L 200,180
-                                    L 250,160
-                                    L 300,120
-                                    L 350,80
-                                    L 400,50
-                                    L 450,35
-                                    L 470,30
-                                    L 470,190
-                                    Z
-                                "/>
-
-                                <!-- Line -->
-                                <polyline class="area-line" points="
-                                    0,190
-                                    100,188
-                                    150,185
-                                    200,180
-                                    250,160
-                                    300,120
-                                    350,80
-                                    400,50
-                                    450,35
-                                    470,30
-                                "/>
-                            </svg>
+                                    <!-- Line -->
+                                    <polyline class="area-line" points="
+                                        0,190
+                                        100,188
+                                        150,185
+                                        200,180
+                                        250,160
+                                        300,120
+                                        350,80
+                                        400,50
+                                        450,35
+                                        470,30
+                                    "/>
+                                </svg>
+                                <div class="chart-y-axis">
+                                    <span>$6K</span>
+                                    <span>$5K</span>
+                                    <span>$4K</span>
+                                    <span>$3K</span>
+                                    <span>$2K</span>
+                                    <span>$0</span>
+                                </div>
+                            </div>
                             <div class="chart-x-axis">
                                 <span>Jan 2024</span>
                                 <span>Jul 2024</span>
@@ -325,33 +331,35 @@
                             </div>
                         </div>
                         <div class="chart-body">
-                            <svg class="growth-rate-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
-                                <!-- Y-axis labels -->
-                                <text x="475" y="20" class="chart-axis-label">250%</text>
-                                <text x="475" y="55" class="chart-axis-label">150%</text>
-                                <text x="475" y="90" class="chart-axis-label">100%</text>
-                                <text x="475" y="125" class="chart-axis-label">50%</text>
-                                <text x="485" y="155" class="chart-axis-label">0%</text>
-                                <text x="475" y="190" class="chart-axis-label">-50%</text>
+                            <div class="chart-wrapper">
+                                <svg class="growth-rate-chart" viewBox="0 0 470 200" preserveAspectRatio="none">
+                                    <!-- Zero line -->
+                                    <line x1="0" y1="155" x2="470" y2="155" class="chart-zero-line"/>
 
-                                <!-- Zero line -->
-                                <line x1="0" y1="155" x2="470" y2="155" class="chart-zero-line"/>
-
-                                <!-- Growth rate line -->
-                                <polyline class="rate-line" points="
-                                    0,155
-                                    100,155
-                                    150,155
-                                    200,140
-                                    250,100
-                                    280,30
-                                    300,120
-                                    350,140
-                                    400,150
-                                    450,155
-                                    470,155
-                                "/>
-                            </svg>
+                                    <!-- Growth rate line -->
+                                    <polyline class="rate-line" points="
+                                        0,155
+                                        100,155
+                                        150,155
+                                        200,140
+                                        250,100
+                                        280,30
+                                        300,120
+                                        350,140
+                                        400,150
+                                        450,155
+                                        470,155
+                                    "/>
+                                </svg>
+                                <div class="chart-y-axis">
+                                    <span>250%</span>
+                                    <span>150%</span>
+                                    <span>100%</span>
+                                    <span>50%</span>
+                                    <span>0%</span>
+                                    <span>-50%</span>
+                                </div>
+                            </div>
                             <div class="chart-x-axis">
                                 <span>Jan 1, 2024</span>
                                 <span>Jul 1, 2024</span>
