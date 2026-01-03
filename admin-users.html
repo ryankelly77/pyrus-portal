@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyrus Admin - Users</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="admin-users.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="admin-notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-header-content">
+                        <h1>Users</h1>
+                        <p>Manage portal users and their access</p>
+                    </div>
+                    <button class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Invite User
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="users-filters">
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" placeholder="Search users..." class="search-input" id="userSearch">
+                    </div>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All Users</button>
+                        <button class="filter-tab" data-filter="registered">Registered</button>
+                        <button class="filter-tab" data-filter="invited">Invited</button>
+                    </div>
+                    <select class="filter-select" id="clientFilter">
+                        <option value="all">All Clients</option>
+                        <option value="TC Clinical Services">TC Clinical Services</option>
+                        <option value="Raptor Vending">Raptor Vending</option>
+                        <option value="Raptor Services">Raptor Services</option>
+                        <option value="Espronceda Law">Espronceda Law</option>
+                        <option value="Summit Dental">Summit Dental</option>
+                        <option value="Coastal Properties">Coastal Properties</option>
+                    </select>
+                </div>
+
+                <!-- Users Table -->
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Client</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-status="registered" data-client="TC Clinical Services" data-is-client="true">
+                                <td class="user-name">
+                                    <div class="user-avatar">TC</div>
+                                    <span>Tom Chen</span>
+                                </td>
+                                <td>TC Clinical Services</td>
+                                <td>(555) 123-4567</td>
+                                <td>tom@tcclinical.com</td>
+                                <td><span class="status-badge status-registered">Registered</span></td>
+                                <td>
+                                    <a href="smart-recommendation.html" class="recommendation-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                        </svg>
+                                        Smart Recommendation
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="registered" data-client="Raptor Vending" data-is-client="true">
+                                <td class="user-name">
+                                    <div class="user-avatar">MJ</div>
+                                    <span>Mike Johnson</span>
+                                </td>
+                                <td>Raptor Vending</td>
+                                <td>(555) 234-5678</td>
+                                <td>mike@raptorvending.com</td>
+                                <td><span class="status-badge status-registered">Registered</span></td>
+                                <td>
+                                    <a href="smart-recommendation.html" class="recommendation-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                        </svg>
+                                        Smart Recommendation
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="registered" data-client="Raptor Services" data-is-client="true">
+                                <td class="user-name">
+                                    <div class="user-avatar">SM</div>
+                                    <span>Sarah Martinez</span>
+                                </td>
+                                <td>Raptor Services</td>
+                                <td>(555) 345-6789</td>
+                                <td>sarah@raptorservices.com</td>
+                                <td><span class="status-badge status-registered">Registered</span></td>
+                                <td>
+                                    <a href="smart-recommendation.html" class="recommendation-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                        </svg>
+                                        Smart Recommendation
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="registered" data-client="Espronceda Law" data-is-client="true">
+                                <td class="user-name">
+                                    <div class="user-avatar">ME</div>
+                                    <span>Maria Espronceda</span>
+                                </td>
+                                <td>Espronceda Law</td>
+                                <td>(555) 456-7890</td>
+                                <td>maria@espronceda.law</td>
+                                <td><span class="status-badge status-registered">Registered</span></td>
+                                <td>
+                                    <a href="smart-recommendation.html" class="recommendation-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                        </svg>
+                                        Smart Recommendation
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="invited" data-client="Summit Dental" data-is-client="false">
+                                <td class="user-name">
+                                    <div class="user-avatar">JW</div>
+                                    <span>James Wilson</span>
+                                </td>
+                                <td>Summit Dental</td>
+                                <td>(555) 567-8901</td>
+                                <td>james@summitdental.com</td>
+                                <td><span class="status-badge status-invited">Invited</span></td>
+                                <td>
+                                    <a href="recommendation.html" class="recommendation-link original">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        </svg>
+                                        Original Plan
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="invited" data-client="Coastal Properties" data-is-client="false">
+                                <td class="user-name">
+                                    <div class="user-avatar">LB</div>
+                                    <span>Lisa Brown</span>
+                                </td>
+                                <td>Coastal Properties</td>
+                                <td>(555) 678-9012</td>
+                                <td>lisa@coastalproperties.com</td>
+                                <td><span class="status-badge status-invited">Invited</span></td>
+                                <td>
+                                    <a href="recommendation.html" class="recommendation-link original">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        </svg>
+                                        Original Plan
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="registered" data-client="Summit Dental" data-is-client="true">
+                                <td class="user-name">
+                                    <div class="user-avatar">RD</div>
+                                    <span>Rachel Davis</span>
+                                </td>
+                                <td>Summit Dental</td>
+                                <td>(555) 789-0123</td>
+                                <td>rachel@summitdental.com</td>
+                                <td><span class="status-badge status-registered">Registered</span></td>
+                                <td>
+                                    <a href="smart-recommendation.html" class="recommendation-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                        </svg>
+                                        Smart Recommendation
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr data-status="invited" data-client="TC Clinical Services" data-is-client="false">
+                                <td class="user-name">
+                                    <div class="user-avatar">KT</div>
+                                    <span>Kevin Thompson</span>
+                                </td>
+                                <td>TC Clinical Services</td>
+                                <td>(555) 890-1234</td>
+                                <td>kevin@tcclinical.com</td>
+                                <td><span class="status-badge status-invited">Invited</span></td>
+                                <td>
+                                    <a href="recommendation.html" class="recommendation-link original">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        </svg>
+                                        Original Plan
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="table-pagination">
+                    <span class="pagination-info">Showing 1-8 of 8 users</span>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="pagination-btn active">1</button>
+                        <button class="pagination-btn" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script>
+        // User Filters
+        const filterTabs = document.querySelectorAll('.users-filters .filter-tab');
+        const clientFilter = document.getElementById('clientFilter');
+        const searchInput = document.getElementById('userSearch');
+        const userRows = document.querySelectorAll('.users-table tbody tr');
+
+        function filterUsers() {
+            const activeTab = document.querySelector('.users-filters .filter-tab.active');
+            const statusFilter = activeTab ? activeTab.getAttribute('data-filter') : 'all';
+            const clientValue = clientFilter.value;
+            const searchValue = searchInput.value.toLowerCase();
+
+            let visibleCount = 0;
+
+            userRows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                const rowClient = row.getAttribute('data-client');
+                const rowName = row.querySelector('.user-name span').textContent.toLowerCase();
+                const rowEmail = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                const rowPhone = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+
+                const matchesStatus = statusFilter === 'all' || rowStatus === statusFilter;
+                const matchesClient = clientValue === 'all' || rowClient === clientValue;
+                const matchesSearch = searchValue === '' ||
+                    rowName.includes(searchValue) ||
+                    rowEmail.includes(searchValue) ||
+                    rowPhone.includes(searchValue) ||
+                    rowClient.toLowerCase().includes(searchValue);
+
+                if (matchesStatus && matchesClient && matchesSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Update pagination info
+            const paginationInfo = document.querySelector('.pagination-info');
+            const total = userRows.length;
+            paginationInfo.textContent = `Showing 1-${visibleCount} of ${visibleCount} users`;
+        }
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                filterUsers();
+            });
+        });
+
+        clientFilter.addEventListener('change', filterUsers);
+        searchInput.addEventListener('input', filterUsers);
+    </script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>

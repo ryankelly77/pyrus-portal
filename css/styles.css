@@ -8969,3 +8969,235 @@
             text-align: center;
             border-top: 1px solid var(--border-light);
         }
+
+        /* ============================================
+           USERS PAGE STYLES
+           ============================================ */
+
+        .users-filters {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            flex: 1;
+            min-width: 200px;
+            max-width: 320px;
+        }
+
+        .search-box svg {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: var(--text-primary);
+            width: 100%;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .users-filters .filter-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .users-filters .filter-tab {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .users-filters .filter-tab:hover {
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green);
+        }
+
+        .users-filters .filter-tab.active {
+            background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
+            color: white;
+        }
+
+        .users-table-container {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table thead {
+            background: var(--bg-page);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .users-table th {
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .users-table td {
+            padding: 16px 20px;
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .users-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .users-table tbody tr:hover {
+            background: var(--pyrus-green-wash);
+        }
+
+        .user-name {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--pyrus-green);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-name span {
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-registered {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .status-invited {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        .recommendation-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+
+        .recommendation-link:hover {
+            background: var(--accent-purple-bg);
+        }
+
+        .recommendation-link.original {
+            color: var(--pyrus-green);
+        }
+
+        .recommendation-link.original:hover {
+            background: var(--pyrus-green-pale);
+        }
+
+        .table-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 0 4px;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-white);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green);
+        }
+
+        .pagination-btn.active {
+            background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
+            color: white;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
