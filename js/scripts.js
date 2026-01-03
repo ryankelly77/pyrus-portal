@@ -29,7 +29,10 @@
         document.querySelectorAll('.rec-subtab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.rec-subtab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.rec-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
+                const tabId = tab.getAttribute('data-rec-tab');
+                document.getElementById(tabId).classList.add('active');
             });
         });
 

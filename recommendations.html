@@ -488,229 +488,296 @@
 
             <!-- Original Plan Content -->
             <div class="rec-content" id="original-plan">
-                <div class="original-plan-card">
-                    <div class="original-plan-header">
-                        <div class="plan-header-info">
-                            <div class="plan-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3>Original Service Plan</h3>
-                                <p>Established September 16, 2025 - Last updated December 30, 2025</p>
+                <!-- Header -->
+                <div class="original-plan-header-new">
+                    <h2>Your Original Growth Recommendations</h2>
+                    <p>These are the personalized recommendations we presented when you signed up on Sep 16, 2025.</p>
+                </div>
+
+                <!-- Good / Better / Best Pricing Tiers -->
+                <div class="pricing-tiers">
+                    <!-- Good Tier -->
+                    <div class="pricing-tier">
+                        <div class="pricing-tier-header">
+                            <div class="pricing-tier-label">Good</div>
+                            <div class="pricing-tier-desc">Establish a professional brand identity that helps customers remember, trust, and choose your business.</div>
+                        </div>
+                        <div class="pricing-tier-services">
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Business Branding Foundation</div>
+                                    <div class="pricing-service-desc">Logo, brand guidelines & messaging foundation</div>
+                                </div>
+                                <div class="pricing-service-price">$899<br><span>one-time</span></div>
                             </div>
                         </div>
-                        <a href="#" class="btn btn-secondary" style="font-size: 13px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download PDF
-                        </a>
+                        <div class="pricing-tier-footer">
+                            <div class="pricing-tier-type">One-time</div>
+                            <div class="pricing-tier-total">$899</div>
+                            <button class="pricing-tier-btn secondary">Starter Option</button>
+                        </div>
                     </div>
 
-                    <!-- Website Development Section -->
-                    <div class="plan-section">
-                        <div class="plan-section-header">
-                            <h4>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                </svg>
-                                Website Development
-                            </h4>
-                            <span class="plan-status completed">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <!-- Better Tier (Selected) -->
+                    <div class="pricing-tier selected">
+                        <div class="pricing-tier-header">
+                            <div class="pricing-tier-label">
+                                Better
+                                <span class="selected-badge">Selected</span>
+                            </div>
+                            <div class="pricing-tier-desc">Build your online presence and start attracting qualified leads through search.</div>
+                        </div>
+                        <div class="pricing-tier-services">
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check included">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Seedling SEO Plan</div>
+                                    <div class="pricing-service-desc">Foundational on-page SEO & performance tracking</div>
+                                </div>
+                                <div class="pricing-service-price">$599<br><span>/month</span></div>
+                            </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check included">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Google Ads Management</div>
+                                    <div class="pricing-service-desc">Campaign setup, management & optimization</div>
+                                </div>
+                                <div class="pricing-service-price">$499<br><span>/month</span></div>
+                            </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check included">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Analytics Tracking</div>
+                                    <div class="pricing-service-desc">Monitor website performance and lead generation</div>
+                                </div>
+                                <div class="pricing-service-price">$99<br><span>/month</span></div>
+                            </div>
+                        </div>
+                        <div class="pricing-tier-footer">
+                            <div class="pricing-tier-type">Monthly</div>
+                            <div class="pricing-tier-total">$1,197<span>/mo</span></div>
+                            <button class="pricing-tier-btn selected">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
-                                Completed
-                            </span>
-                        </div>
-                        <div class="plan-description">
-                            Professional WordPress website with WooCommerce integration, custom homepage, product showcase pages, and mobile-responsive design.
-                        </div>
-                        <div class="plan-deliverables">
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Custom homepage with medical breakthrough focus</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>2 product showcase pages (Wound Care & PoNS)</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>WooCommerce setup with contact forms</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Blog section & 5 additional content pages</span>
-                            </div>
-                        </div>
-                        <div class="plan-pricing">
-                            <div class="price-tag one-time">
-                                <span class="price-label">One-Time</span>
-                                <span class="price-value">$4,200</span>
-                            </div>
-                            <span class="price-or">or</span>
-                            <div class="price-tag monthly">
-                                <span class="price-label">Payment Plan</span>
-                                <span class="price-value">$400/mo x 12</span>
-                            </div>
+                                Your Selected Plan
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Hosting Section -->
-                    <div class="plan-section">
-                        <div class="plan-section-header">
-                            <h4>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                                </svg>
-                                Web Hosting & Maintenance
-                            </h4>
-                            <span class="plan-status active">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                Active
-                            </span>
+                    <!-- Best Tier -->
+                    <div class="pricing-tier">
+                        <div class="pricing-tier-header">
+                            <div class="pricing-tier-label">Best</div>
+                            <div class="pricing-tier-desc">Comprehensive marketing to dominate your local market across all channels.</div>
                         </div>
-                        <div class="plan-description">
-                            Secure, reliable WordPress hosting with regular security updates, backups, SSL certificate, and 99.9% uptime guarantee.
-                        </div>
-                        <div class="plan-pricing">
-                            <div class="price-tag monthly">
-                                <span class="price-label">Monthly</span>
-                                <span class="price-value">$49/mo</span>
+                        <div class="pricing-tier-services">
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Harvest SEO Plan</div>
+                                    <div class="pricing-service-desc">Advanced SEO with content, link building & authority signals</div>
+                                </div>
+                                <div class="pricing-service-price">$1,799<br><span>/month</span></div>
                             </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Google Ads Management</div>
+                                    <div class="pricing-service-desc">Campaign setup, management & optimization</div>
+                                </div>
+                                <div class="pricing-service-price">$499<br><span>/month</span></div>
+                            </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Content Writing (2 articles)</div>
+                                    <div class="pricing-service-desc">Monthly SEO-optimized articles</div>
+                                </div>
+                                <div class="pricing-service-price">$198<br><span>/month</span></div>
+                            </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Google Business Profile Management</div>
+                                    <div class="pricing-service-desc">Local search optimization & posting</div>
+                                </div>
+                                <div class="pricing-service-price">$199<br><span>/month</span></div>
+                            </div>
+                            <div class="pricing-service-item">
+                                <div class="pricing-service-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="pricing-service-info">
+                                    <div class="pricing-service-name">Analytics Tracking</div>
+                                    <div class="pricing-service-desc">Monitor website performance and lead generation</div>
+                                </div>
+                                <div class="pricing-service-price">$99<br><span>/month</span></div>
+                            </div>
+                        </div>
+                        <div class="pricing-tier-footer">
+                            <div class="pricing-tier-type">Monthly</div>
+                            <div class="pricing-tier-total">$2,794<span>/mo</span></div>
+                            <button class="pricing-tier-btn secondary">Premium Option</button>
                         </div>
                     </div>
+                </div>
 
-                    <!-- SEO Section -->
-                    <div class="plan-section">
-                        <div class="plan-section-header">
-                            <h4>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                                Growth SEO Plan
-                            </h4>
-                            <span class="plan-status active">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                Active
-                            </span>
+                <!-- Your Progress Since Signup -->
+                <div class="progress-since-signup">
+                    <div class="progress-since-header">
+                        <div class="progress-since-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
                         </div>
-                        <div class="plan-description">
-                            Foundation SEO to help healthcare professionals find you online. Includes keyword research, on-page optimization, and monthly reporting.
-                        </div>
-                        <div class="plan-deliverables">
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>47 target keywords identified & tracked</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>On-page SEO for all service pages</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Monthly blog content (1 post/month)</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Technical SEO audits & fixes</span>
-                            </div>
-                        </div>
-                        <div class="plan-pricing">
-                            <div class="price-tag monthly">
-                                <span class="price-label">Monthly</span>
-                                <span class="price-value">$899/mo</span>
-                            </div>
+                        <div>
+                            <div class="progress-since-title">Your Progress Since Signup</div>
+                            <div class="progress-since-subtitle">Here's how far you've come since Sep 16, 2025</div>
                         </div>
                     </div>
-
-                    <!-- Google Ads Section -->
-                    <div class="plan-section">
-                        <div class="plan-section-header">
-                            <h4>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                                </svg>
-                                Google Ads Management
-                            </h4>
-                            <span class="plan-status active">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                Active
-                            </span>
+                    <div class="progress-since-stats">
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">4</div>
+                            <div class="progress-stat-label">Months Active</div>
                         </div>
-                        <div class="plan-description">
-                            Professional Google Ads campaign management targeting healthcare providers searching for wound care and PoNS therapy solutions.
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">4</div>
+                            <div class="progress-stat-label">Active Services</div>
                         </div>
-                        <div class="plan-deliverables">
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Campaign setup & keyword research</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Ad copywriting & A/B testing</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Conversion tracking & optimization</span>
-                            </div>
-                            <div class="deliverable-item">
-                                <span class="deliverable-check">✓</span>
-                                <span>Weekly bid adjustments</span>
-                            </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">+14.5%</div>
+                            <div class="progress-stat-label">Traffic Growth</div>
                         </div>
-                        <div class="plan-pricing">
-                            <div class="price-tag monthly">
-                                <span class="price-label">Management Fee</span>
-                                <span class="price-value">$399/mo</span>
-                            </div>
-                            <span class="price-plus">+</span>
-                            <div class="price-tag monthly">
-                                <span class="price-label">Ad Spend</span>
-                                <span class="price-value">$1,500/mo</span>
-                            </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">42</div>
+                            <div class="progress-stat-label">Monthly Leads</div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Investment Summary -->
-                    <div class="plan-summary">
-                        <div class="summary-row">
-                            <span>One-Time Investment</span>
-                            <span class="summary-value">$4,200</span>
+                <!-- Your Current Services -->
+                <div class="current-services-list">
+                    <div class="current-services-list-header">
+                        <h3>Your Current Services</h3>
+                        <span>Monthly Investment</span>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
                         </div>
-                        <div class="summary-row">
-                            <span>Monthly Recurring</span>
-                            <span class="summary-value">$2,847/mo</span>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Seedling SEO Plan</div>
+                            <div class="current-service-desc">Foundational on-page SEO & performance tracking</div>
                         </div>
-                        <div class="summary-row total">
-                            <span>Current Monthly Total</span>
-                            <span class="summary-value">$2,847/mo</span>
+                        <div class="current-service-price">
+                            <strong>$599</strong><br>
+                            <span>/month</span>
                         </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Google Ads Management</div>
+                            <div class="current-service-desc">Campaign management & optimization</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$499</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Google Business Profile Management</div>
+                            <div class="current-service-desc">Local search optimization & posting</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$199</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-service-row">
+                        <div class="current-service-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="current-service-info">
+                            <div class="current-service-name">Analytics & Tracking Setup</div>
+                            <div class="current-service-desc">Performance monitoring & reporting</div>
+                        </div>
+                        <div class="current-service-price">
+                            <strong>$99</strong><br>
+                            <span>/month</span>
+                        </div>
+                    </div>
+                    <div class="current-services-total">
+                        <div class="current-services-total-label">
+                            Total Monthly Investment
+                            <span>4 active services</span>
+                        </div>
+                        <div class="current-services-total-value">
+                            $1,396<span> per month</span>
+                        </div>
+                    </div>
+                    <div class="ad-spend-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Plus Google Ads spend (paid directly to Google)</span>
+                        <strong>$1,500/mo</strong>
                     </div>
                 </div>
             </div>
