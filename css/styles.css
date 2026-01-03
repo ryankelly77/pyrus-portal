@@ -6628,11 +6628,11 @@
 
         /* Progress Since Signup Card */
         .progress-since-signup {
-            background: linear-gradient(135deg, var(--pyrus-green) 0%, #2d7a54 100%);
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: 24px 32px;
             margin-bottom: 24px;
-            color: white;
         }
 
         .progress-since-header {
@@ -6645,11 +6645,12 @@
         .progress-since-icon {
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--pyrus-green-wash);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--pyrus-green);
         }
 
         .progress-since-icon svg {
@@ -6660,11 +6661,12 @@
         .progress-since-title {
             font-size: 16px;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         .progress-since-subtitle {
             font-size: 13px;
-            opacity: 0.85;
+            color: var(--text-secondary);
         }
 
         .progress-since-stats {
@@ -6681,11 +6683,12 @@
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 4px;
+            color: var(--pyrus-green);
         }
 
         .progress-stat-label {
             font-size: 12px;
-            opacity: 0.85;
+            color: var(--text-secondary);
         }
 
         /* Current Services List - Updated */
@@ -10955,42 +10958,38 @@
             display: flex;
             gap: 8px;
             margin-bottom: 24px;
-            background: var(--bg-white);
-            padding: 6px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
         }
 
         .recommendations-tab {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
             font-size: 14px;
             font-weight: 500;
             color: var(--text-secondary);
-            background: transparent;
-            border: none;
-            border-radius: var(--radius-md);
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
             cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
-            justify-content: center;
+            transition: all 0.15s ease;
         }
 
         .recommendations-tab:hover {
-            color: var(--text-primary);
-            background: var(--bg-page);
+            background: var(--pyrus-green-pale);
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green);
         }
 
         .recommendations-tab.active {
             background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
             color: white;
-            box-shadow: var(--shadow-sm);
         }
 
         .recommendations-tab svg {
-            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
         }
 
         .recommendations-tab-content {
