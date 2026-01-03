@@ -223,3 +223,57 @@
                 });
             }
         });
+
+        // Toggle expandable card
+        function toggleExpand(headerElement) {
+            const card = headerElement.closest('.expandable-card');
+            if (card) {
+                card.classList.toggle('expanded');
+            }
+        }
+
+        // Resend invite functionality
+        function resendInvite(button) {
+            const userRow = button.closest('tr');
+            const userName = userRow.querySelector('.user-name').textContent;
+
+            // Disable button temporarily
+            button.disabled = true;
+            button.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" class="spin">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+                Sending...
+            `;
+
+            // Simulate sending (in production, this would be an API call)
+            setTimeout(() => {
+                button.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Sent!
+                `;
+                button.style.color = 'var(--success-text)';
+                button.style.borderColor = 'var(--success-border)';
+
+                // Show toast notification
+                if (typeof showToast === 'function') {
+                    showToast(`Invitation resent to ${userName}`);
+                }
+
+                // Reset button after delay
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Resend
+                    `;
+                    button.style.color = '';
+                    button.style.borderColor = '';
+                }, 2000);
+            }, 1000);
+        }
