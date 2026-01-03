@@ -9734,23 +9734,5 @@
         }
 
         .clients-grid.list-view .client-card-paused-overlay {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            left: auto;
-            width: auto;
-            height: auto;
-            background: rgba(107, 114, 128, 0.9);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-        }
-
-        .clients-grid.list-view .client-card-paused-overlay svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .clients-grid.list-view .client-card-paused-overlay span {
-            font-size: 13px;
+            display: none;
         }
