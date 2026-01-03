@@ -7249,3 +7249,184 @@
             color: var(--text-secondary);
             line-height: 1.5;
         }
+
+        /* Approve Increase Modal */
+        .approve-summary-card {
+            background: var(--pyrus-green-pale);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .approve-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .approve-summary-item {
+            text-align: center;
+        }
+
+        .approve-summary-item.highlight {
+            background: white;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .approve-summary-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .approve-summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .approve-summary-item.highlight .approve-summary-value {
+            color: var(--success-text);
+        }
+
+        .approve-summary-arrow {
+            color: var(--text-muted);
+        }
+
+        .approve-summary-arrow svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .approve-results {
+            margin-bottom: 24px;
+        }
+
+        .approve-results h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .approve-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .approve-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .approve-result-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .approve-result-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .approve-result-icon.leads {
+            background: var(--accent-blue-bg);
+            color: var(--accent-blue);
+        }
+
+        .approve-result-icon.cost {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .approve-result-icon.roi {
+            background: var(--accent-purple-bg);
+            color: var(--accent-purple);
+        }
+
+        .approve-result-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .approve-result-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .approve-billing {
+            background: var(--bg-page);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .approve-billing h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .approve-billing-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .approve-billing-row:last-child {
+            border-bottom: none;
+        }
+
+        .approve-billing-value {
+            font-weight: 600;
+            color: var(--success-text);
+        }
+
+        .approve-agreement {
+            padding: 16px;
+            background: #FFFBEB;
+            border: 1px solid #FCD34D;
+            border-radius: var(--radius-md);
+        }
+
+        .approve-agreement .checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .approve-agreement .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .approve-agreement .checkbox-label span {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }

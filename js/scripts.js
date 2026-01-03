@@ -126,6 +126,12 @@
             showToast('Client information updated!');
         }
 
+        // Approve Increase Functions
+        function approveIncrease() {
+            closeModal('approveIncreaseModal');
+            showToast('Budget increase approved! Changes will take effect on your next billing cycle.');
+        }
+
         // Connect header buttons to modals
         document.addEventListener('DOMContentLoaded', () => {
             const buttons = document.querySelectorAll('.header-actions .btn');
@@ -138,4 +144,13 @@
                     btn.onclick = () => openModal('editClientModal');
                 }
             });
+
+            // Approve Increase checkbox handler
+            const approveCheckbox = document.getElementById('approveAgreement');
+            const approveBtn = document.getElementById('approveIncreaseBtn');
+            if (approveCheckbox && approveBtn) {
+                approveCheckbox.addEventListener('change', () => {
+                    approveBtn.disabled = !approveCheckbox.checked;
+                });
+            }
         });

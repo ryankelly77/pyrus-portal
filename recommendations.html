@@ -220,7 +220,7 @@
                                 <span class="rec-investment-value">+$750/mo</span>
                                 <span class="rec-investment-detail">50% increase from current</span>
                             </div>
-                            <button class="rec-cta primary">
+                            <button class="rec-cta primary" onclick="openModal('approveIncreaseModal')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
@@ -1260,6 +1260,130 @@
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve Increase Modal -->
+    <div class="modal" id="approveIncreaseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: var(--success-bg); color: var(--success-text);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Approve Budget Increase</h2>
+                    <p class="modal-subtitle">Boost your Google Ads to capture more leads</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('approveIncreaseModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Card -->
+                <div class="approve-summary-card">
+                    <div class="approve-summary-row">
+                        <div class="approve-summary-item">
+                            <div class="approve-summary-label">Current Monthly Spend</div>
+                            <div class="approve-summary-value">$1,500</div>
+                        </div>
+                        <div class="approve-summary-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </div>
+                        <div class="approve-summary-item highlight">
+                            <div class="approve-summary-label">New Monthly Spend</div>
+                            <div class="approve-summary-value">$2,250</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projected Results -->
+                <div class="approve-results">
+                    <h4>Projected Results</h4>
+                    <div class="approve-results-grid">
+                        <div class="approve-result-item">
+                            <div class="approve-result-icon leads">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </div>
+                            <div class="approve-result-content">
+                                <div class="approve-result-value">+14 leads/mo</div>
+                                <div class="approve-result-label">From 28 to 42 leads</div>
+                            </div>
+                        </div>
+                        <div class="approve-result-item">
+                            <div class="approve-result-icon cost">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                            </div>
+                            <div class="approve-result-content">
+                                <div class="approve-result-value">$53/lead</div>
+                                <div class="approve-result-label">Maintained cost efficiency</div>
+                            </div>
+                        </div>
+                        <div class="approve-result-item">
+                            <div class="approve-result-icon roi">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="approve-result-content">
+                                <div class="approve-result-value">4.2x ROI</div>
+                                <div class="approve-result-label">Projected return</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing Info -->
+                <div class="approve-billing">
+                    <h4>Billing Details</h4>
+                    <div class="approve-billing-row">
+                        <span>Additional monthly charge</span>
+                        <span class="approve-billing-value">+$750/mo</span>
+                    </div>
+                    <div class="approve-billing-row">
+                        <span>Effective date</span>
+                        <span>Next billing cycle (Jan 15, 2026)</span>
+                    </div>
+                    <div class="approve-billing-row">
+                        <span>Payment method</span>
+                        <span>•••• 4242</span>
+                    </div>
+                </div>
+
+                <!-- Agreement Checkbox -->
+                <div class="approve-agreement">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="approveAgreement">
+                        <span>I authorize Pyrus Digital to increase my Google Ads budget by $750/month. I understand this change will take effect on my next billing cycle and can be adjusted at any time.</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('approveIncreaseModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="approveIncrease()" id="approveIncreaseBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Approve $750/mo Increase
                 </button>
             </div>
         </div>
