@@ -8591,3 +8591,218 @@
             background: var(--accent-orange);
             color: white;
         }
+
+        /* Revenue Dashboard */
+        .revenue-filters {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-white);
+            color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        .revenue-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .revenue-chart-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .chart-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .chart-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s ease;
+        }
+
+        .chart-btn:hover {
+            background: var(--bg-page);
+            color: var(--text-secondary);
+        }
+
+        .chart-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .chart-body {
+            position: relative;
+        }
+
+        .chart-body svg {
+            width: 100%;
+            height: 180px;
+        }
+
+        .chart-axis-label {
+            font-size: 10px;
+            fill: #9CA3AF;
+            text-anchor: end;
+        }
+
+        .chart-grid-line {
+            stroke: #F3F4F6;
+            stroke-width: 1;
+        }
+
+        .chart-zero-line {
+            stroke: #E5E7EB;
+            stroke-width: 1;
+        }
+
+        /* MRR Step Line Chart */
+        .mrr-line {
+            fill: none;
+            stroke: #7C3AED;
+            stroke-width: 2;
+        }
+
+        /* Bar Chart */
+        .bar-positive {
+            fill: #7C3AED;
+        }
+
+        .bar-negative {
+            fill: #FBBF24;
+        }
+
+        /* Area Chart */
+        .area-fill {
+            fill: rgba(124, 58, 237, 0.15);
+        }
+
+        .area-line {
+            fill: none;
+            stroke: #7C3AED;
+            stroke-width: 2;
+        }
+
+        /* Rate Line Chart */
+        .rate-line {
+            fill: none;
+            stroke: #7C3AED;
+            stroke-width: 2;
+        }
+
+        .chart-x-axis {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 10px;
+        }
+
+        .chart-x-axis span {
+            font-size: 11px;
+            color: #9CA3AF;
+        }
+
+        /* Report Downloads */
+        .report-downloads {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        .report-downloads h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .report-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-page);
+            border-radius: var(--radius-sm);
+        }
+
+        .report-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .report-info svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+        }
+
+        .report-info span {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }

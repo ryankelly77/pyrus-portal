@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyrus Admin - Revenue / MRR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-header-content">
+                        <h1>Revenue / MRR</h1>
+                        <p>Track your monthly recurring revenue and growth metrics</p>
+                    </div>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="revenue-filters">
+                    <div class="filter-group">
+                        <label>Date range</label>
+                        <select class="filter-select">
+                            <option>All time</option>
+                            <option>Last 12 months</option>
+                            <option>Last 6 months</option>
+                            <option>Last 3 months</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <select class="filter-select">
+                            <option>Monthly</option>
+                            <option>Weekly</option>
+                            <option>Daily</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="revenue-charts-grid">
+                    <!-- MRR Chart -->
+                    <div class="revenue-chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <span class="chart-label">MRR</span>
+                                <div class="chart-value">$4,934.00</div>
+                            </div>
+                            <div class="chart-actions">
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 2L11 13"></path>
+                                        <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                    </svg>
+                                </button>
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="7 17 17 7"></polyline>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <svg class="mrr-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <text x="485" y="15" class="chart-axis-label">$6K</text>
+                                <text x="485" y="50" class="chart-axis-label">$5K</text>
+                                <text x="485" y="85" class="chart-axis-label">$4K</text>
+                                <text x="485" y="120" class="chart-axis-label">$3K</text>
+                                <text x="485" y="155" class="chart-axis-label">$2K</text>
+                                <text x="485" y="190" class="chart-axis-label">$1K</text>
+
+                                <!-- Grid lines -->
+                                <line x1="0" y1="35" x2="470" y2="35" class="chart-grid-line"/>
+                                <line x1="0" y1="70" x2="470" y2="70" class="chart-grid-line"/>
+                                <line x1="0" y1="105" x2="470" y2="105" class="chart-grid-line"/>
+                                <line x1="0" y1="140" x2="470" y2="140" class="chart-grid-line"/>
+                                <line x1="0" y1="175" x2="470" y2="175" class="chart-grid-line"/>
+
+                                <!-- MRR Step Line -->
+                                <polyline class="mrr-line" points="
+                                    0,190
+                                    80,190
+                                    80,175
+                                    120,175
+                                    120,155
+                                    180,155
+                                    180,120
+                                    220,120
+                                    220,85
+                                    280,85
+                                    280,55
+                                    340,55
+                                    340,45
+                                    400,45
+                                    400,40
+                                    470,40
+                                "/>
+                            </svg>
+                            <div class="chart-x-axis">
+                                <span>Jan 1, 2024</span>
+                                <span>Jul 1, 2024</span>
+                                <span>Jan 1, 2025</span>
+                                <span>Jul 1, 2025</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MRR Growth Chart -->
+                    <div class="revenue-chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <span class="chart-label">MRR growth</span>
+                                <div class="chart-value">$4,934.00</div>
+                            </div>
+                            <div class="chart-actions">
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="7 17 17 7"></polyline>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <svg class="mrr-growth-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <text x="485" y="20" class="chart-axis-label">$3K</text>
+                                <text x="485" y="60" class="chart-axis-label">$2K</text>
+                                <text x="485" y="100" class="chart-axis-label">$1K</text>
+                                <text x="485" y="140" class="chart-axis-label">$0</text>
+                                <text x="485" y="180" class="chart-axis-label">-$1K</text>
+
+                                <!-- Zero line -->
+                                <line x1="0" y1="140" x2="470" y2="140" class="chart-zero-line"/>
+
+                                <!-- Bars -->
+                                <rect x="200" y="100" width="25" height="40" class="bar-positive"/>
+                                <rect x="240" y="40" width="25" height="100" class="bar-positive"/>
+                                <rect x="280" y="80" width="25" height="60" class="bar-positive"/>
+                                <rect x="320" y="100" width="25" height="40" class="bar-positive"/>
+                                <rect x="360" y="110" width="25" height="30" class="bar-positive"/>
+                                <rect x="400" y="120" width="25" height="20" class="bar-positive"/>
+                                <rect x="440" y="140" width="25" height="25" class="bar-negative"/>
+                            </svg>
+                            <div class="chart-x-axis">
+                                <span>Dec 2023</span>
+                                <span>Jun 2024</span>
+                                <span>Jan 2025</span>
+                                <span>Jul 2025</span>
+                                <span>Jan 2026</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Net Volume Chart -->
+                    <div class="revenue-chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <span class="chart-label">Net volume</span>
+                                <div class="chart-value">$38,284.24</div>
+                            </div>
+                            <div class="chart-actions">
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="7 17 17 7"></polyline>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <svg class="net-volume-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <text x="485" y="15" class="chart-axis-label">$6K</text>
+                                <text x="485" y="50" class="chart-axis-label">$5K</text>
+                                <text x="485" y="85" class="chart-axis-label">$4K</text>
+                                <text x="485" y="120" class="chart-axis-label">$3K</text>
+                                <text x="485" y="155" class="chart-axis-label">$2K</text>
+                                <text x="485" y="190" class="chart-axis-label">$0</text>
+
+                                <!-- Area fill -->
+                                <path class="area-fill" d="
+                                    M 0,190
+                                    L 0,190
+                                    L 100,188
+                                    L 150,185
+                                    L 200,180
+                                    L 250,160
+                                    L 300,120
+                                    L 350,80
+                                    L 400,50
+                                    L 450,35
+                                    L 470,30
+                                    L 470,190
+                                    Z
+                                "/>
+
+                                <!-- Line -->
+                                <polyline class="area-line" points="
+                                    0,190
+                                    100,188
+                                    150,185
+                                    200,180
+                                    250,160
+                                    300,120
+                                    350,80
+                                    400,50
+                                    450,35
+                                    470,30
+                                "/>
+                            </svg>
+                            <div class="chart-x-axis">
+                                <span>Jan 2024</span>
+                                <span>Jul 2024</span>
+                                <span>Jan 2025</span>
+                                <span>Jan 2026</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MRR Growth Rate Chart -->
+                    <div class="revenue-chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <span class="chart-label">MRR growth rate</span>
+                                <div class="chart-value">0.0%</div>
+                            </div>
+                            <div class="chart-actions">
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 2L11 13"></path>
+                                        <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                    </svg>
+                                </button>
+                                <button class="chart-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="7 17 17 7"></polyline>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <svg class="growth-rate-chart" viewBox="0 0 500 200" preserveAspectRatio="none">
+                                <!-- Y-axis labels -->
+                                <text x="475" y="20" class="chart-axis-label">250%</text>
+                                <text x="475" y="55" class="chart-axis-label">150%</text>
+                                <text x="475" y="90" class="chart-axis-label">100%</text>
+                                <text x="475" y="125" class="chart-axis-label">50%</text>
+                                <text x="485" y="155" class="chart-axis-label">0%</text>
+                                <text x="475" y="190" class="chart-axis-label">-50%</text>
+
+                                <!-- Zero line -->
+                                <line x1="0" y1="155" x2="470" y2="155" class="chart-zero-line"/>
+
+                                <!-- Growth rate line -->
+                                <polyline class="rate-line" points="
+                                    0,155
+                                    100,155
+                                    150,155
+                                    200,140
+                                    250,100
+                                    280,30
+                                    300,120
+                                    350,140
+                                    400,150
+                                    450,155
+                                    470,155
+                                "/>
+                            </svg>
+                            <div class="chart-x-axis">
+                                <span>Jan 1, 2024</span>
+                                <span>Jul 1, 2024</span>
+                                <span>Jan 1, 2025</span>
+                                <span>Jul 1, 2025</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Downloads Section -->
+                <div class="report-downloads">
+                    <h2>Report downloads</h2>
+                    <div class="report-list">
+                        <div class="report-item">
+                            <div class="report-info">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>Revenue Report - December 2025</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Download CSV</button>
+                        </div>
+                        <div class="report-item">
+                            <div class="report-info">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>MRR Summary - Q4 2025</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Download CSV</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>
