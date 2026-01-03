@@ -12,8 +12,8 @@
             --accent-blue-bg: #DBEAFE;
             --accent-teal: #0B7277;
             --accent-teal-bg: #E6F4F5;
-            --pear-green: #1a4d2e;
-            --pear-green-light: #2d6a4f;
+            --pear-green: #1a1a1a;
+            --pear-green-light: #2d2d2d;
             --text-primary: #1A1F16;
             --text-secondary: #5A6358;
             --text-muted: #8A928A;
@@ -1806,7 +1806,7 @@
         }
 
         .rec-cta.premium:hover {
-            background: #153d24;
+            background: #000000;
         }
 
         .rec-card.premium .rec-card-body {
@@ -1842,7 +1842,7 @@
 
         .pear-story {
             padding: 20px;
-            background: var(--pyrus-green-wash);
+            background: #f5f5f5;
             border-radius: var(--radius-md);
         }
 
@@ -7117,7 +7117,7 @@
         }
 
         .rec-cta.premium:hover {
-            background: #153d24;
+            background: #000000;
         }
 
         .rec-card.premium .rec-card-body {
@@ -7153,7 +7153,7 @@
 
         .pear-story {
             padding: 20px;
-            background: var(--pyrus-green-wash);
+            background: #f5f5f5;
             border-radius: var(--radius-md);
         }
 
