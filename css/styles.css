@@ -1,11 +1,11 @@
         :root {
-            --pyrus-green: #2D5A27;
-            --pyrus-green-light: #3D7A35;
-            --pyrus-green-pale: #E8F0E7;
-            --pyrus-green-wash: #F4F8F3;
-            --accent-orange: #E07F3C;
-            --accent-orange-hover: #C96B2E;
-            --accent-orange-pale: #FEF3E7;
+            --pyrus-green: #B57841;
+            --pyrus-green-light: #C4895A;
+            --pyrus-green-pale: #F5EBE0;
+            --pyrus-green-wash: #FCF7EF;
+            --accent-orange: #DE393A;
+            --accent-orange-hover: #C53030;
+            --accent-orange-pale: #FBE9E9;
             --accent-purple: #7C3AED;
             --accent-purple-bg: #EDE9FE;
             --accent-blue: #2563EB;
@@ -20,7 +20,7 @@
             --border-color: #D4DCD2;
             --border-light: #E8EDE7;
             --bg-white: #FFFFFF;
-            --bg-page: #F8FAF7;
+            --bg-page: #FCF7EF;
             --success-bg: #DCFCE7;
             --success-text: #166534;
             --success-border: #22C55E;
