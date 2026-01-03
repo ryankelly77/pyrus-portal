@@ -8232,12 +8232,13 @@
         .service-item {
             background: var(--pyrus-green-wash);
             border: 1px solid var(--border-light);
-            border-left: 3px solid var(--pyrus-green);
+            border-left: 3px solid var(--accent-teal);
             border-radius: var(--radius-sm);
-            padding: 12px;
+            padding: 14px 12px;
             margin-bottom: 8px;
             cursor: grab;
             transition: all 0.15s ease;
+            text-align: center;
         }
 
         .service-item:hover {
@@ -8252,10 +8253,10 @@
 
         .service-item-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 4px;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
         }
 
         .service-item-title {
@@ -8273,6 +8274,9 @@
             border: none;
             cursor: pointer;
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .info-btn svg {
@@ -8285,13 +8289,13 @@
             font-size: 11px;
             font-weight: 600;
             color: var(--text-secondary);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .service-item-desc {
             font-size: 11px;
             color: var(--text-muted);
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         /* Builder Main Area */
