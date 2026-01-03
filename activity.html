@@ -74,16 +74,16 @@
         <!-- Activity Content -->
         <div class="activity-content">
             <div class="activity-filters">
-                <button class="filter-chip active">All Activity</button>
-                <button class="filter-chip">Tasks</button>
-                <button class="filter-chip">Updates</button>
-                <button class="filter-chip">Milestones</button>
-                <button class="filter-chip">Reports</button>
+                <button class="filter-chip active" data-filter="all">All Activity</button>
+                <button class="filter-chip" data-filter="task">Tasks</button>
+                <button class="filter-chip" data-filter="update">Updates</button>
+                <button class="filter-chip" data-filter="milestone">Milestones</button>
+                <button class="filter-chip" data-filter="report">Reports</button>
             </div>
 
             <div class="activity-card">
                 <ul class="activity-list">
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="milestone">
                         <div class="activity-icon milestone">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -95,7 +95,7 @@
                         </div>
                         <div class="activity-time">Today, 2:45 PM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="task">
                         <div class="activity-icon task">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 11 12 14 22 4"></polyline>
@@ -108,7 +108,7 @@
                         </div>
                         <div class="activity-time">Today, 10:30 AM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="update">
                         <div class="activity-icon update">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="23 4 23 10 17 10"></polyline>
@@ -121,7 +121,20 @@
                         </div>
                         <div class="activity-time">Yesterday, 3:00 PM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Business Profile updated</div>
+                            <div class="activity-desc">Added new photos and updated business hours</div>
+                        </div>
+                        <div class="activity-time">Yesterday, 11:15 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
                         <div class="activity-icon report">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -136,7 +149,7 @@
                         </div>
                         <div class="activity-time">Dec 31, 8:00 AM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="milestone">
                         <div class="activity-icon milestone">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -150,7 +163,20 @@
                         </div>
                         <div class="activity-time">Dec 30, 4:00 PM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Landing page A/B test started</div>
+                            <div class="activity-desc">Testing new headline and CTA button variations</div>
+                        </div>
+                        <div class="activity-time">Dec 29, 9:30 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
                         <div class="activity-icon task">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 11 12 14 22 4"></polyline>
@@ -163,7 +189,32 @@
                         </div>
                         <div class="activity-time">Dec 28, 2:15 PM</div>
                     </li>
-                    <li class="activity-item">
+                    <li class="activity-item" data-type="milestone">
+                        <div class="activity-icon milestone">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">First 10 leads generated!</div>
+                            <div class="activity-desc">Google Ads campaign reached first major milestone</div>
+                        </div>
+                        <div class="activity-time">Dec 27, 5:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Conversion tracking installed</div>
+                            <div class="activity-desc">Google Analytics 4 and Tag Manager configured</div>
+                        </div>
+                        <div class="activity-time">Dec 26, 3:45 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
                         <div class="activity-icon update">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -175,6 +226,88 @@
                             <div class="activity-desc">47 target keywords identified for wound care niche</div>
                         </div>
                         <div class="activity-time">Dec 20, 11:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Competitor analysis delivered</div>
+                            <div class="activity-desc">Detailed report on top 5 competitors in your market</div>
+                        </div>
+                        <div class="activity-time">Dec 18, 2:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Ads campaign launched</div>
+                            <div class="activity-desc">Initial campaign with 15 ad groups now running</div>
+                        </div>
+                        <div class="activity-time">Dec 15, 10:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Website design approved</div>
+                            <div class="activity-desc">Final mockups approved, moving to development</div>
+                        </div>
+                        <div class="activity-time">Dec 12, 4:30 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="milestone">
+                        <div class="activity-icon milestone">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Onboarding completed!</div>
+                            <div class="activity-desc">All setup tasks finished, project officially kicked off</div>
+                        </div>
+                        <div class="activity-time">Dec 10, 9:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Marketing strategy presented</div>
+                            <div class="activity-desc">90-day growth plan reviewed and approved</div>
+                        </div>
+                        <div class="activity-time">Dec 8, 11:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Branding assets received</div>
+                            <div class="activity-desc">Logo, colors, and brand guidelines added to project</div>
+                        </div>
+                        <div class="activity-time">Dec 5, 2:00 PM</div>
                     </li>
                 </ul>
             </div>
@@ -542,6 +675,31 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script>
+        // Activity Filter Functionality
+        const filterChips = document.querySelectorAll('.activity-filters .filter-chip');
+        const activityItems = document.querySelectorAll('.activity-item');
+
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const filterType = chip.getAttribute('data-filter');
+
+                // Update active chip
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+
+                // Filter activities
+                activityItems.forEach(item => {
+                    const itemType = item.getAttribute('data-type');
+                    if (filterType === 'all' || itemType === filterType) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
