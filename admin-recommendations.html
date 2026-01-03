@@ -460,6 +460,29 @@
                 droppedItem.classList.add('dropped');
                 droppedItem.removeAttribute('draggable');
 
+                // Get pricing data
+                const monthly = droppedItem.getAttribute('data-monthly');
+                const onetime = droppedItem.getAttribute('data-onetime');
+                const hasBothPricing = monthly && onetime && parseInt(monthly) > 0 && parseInt(onetime) > 0;
+
+                // Add pricing selector if item has both monthly and onetime pricing
+                if (hasBothPricing) {
+                    const uniqueId = 'pricing-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    const pricingSelector = document.createElement('div');
+                    pricingSelector.className = 'pricing-selector';
+                    pricingSelector.innerHTML = `
+                        <label class="pricing-option monthly">
+                            <input type="radio" name="${uniqueId}" value="monthly" checked>
+                            <span>$${monthly} for 12 months</span>
+                        </label>
+                        <label class="pricing-option onetime">
+                            <input type="radio" name="${uniqueId}" value="onetime">
+                            <span>$${onetime} one-time</span>
+                        </label>
+                    `;
+                    droppedItem.appendChild(pricingSelector);
+                }
+
                 // Add remove button
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-service-btn';

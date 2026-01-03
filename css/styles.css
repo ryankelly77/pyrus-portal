@@ -8413,6 +8413,9 @@
         .tier-dropzone .service-item {
             cursor: default;
             position: relative;
+            background: #FEF9E7;
+            border: 1px solid #E8DFC0;
+            border-left: 3px solid var(--accent-teal);
         }
 
         .tier-dropzone .service-item.dropped {
@@ -8444,6 +8447,41 @@
             width: 12px;
             height: 12px;
             color: var(--error-text);
+        }
+
+        /* Pricing Selector for Dropped Items */
+        .pricing-selector {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #E8DFC0;
+        }
+
+        .pricing-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .pricing-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-teal);
+        }
+
+        .pricing-option.monthly span {
+            color: var(--success-text);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .pricing-option.onetime span {
+            color: var(--accent-orange);
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .tier-pricing {
