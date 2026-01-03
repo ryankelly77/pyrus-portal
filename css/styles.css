@@ -10772,6 +10772,39 @@
             cursor: grabbing;
         }
 
+        /* Root Services - Gold/Yellow */
+        .service-category-root .service-item {
+            background: #FFF2D9;
+            border-color: #D4A72C;
+        }
+
+        .service-category-root .service-item:hover {
+            border-color: #B8922A;
+            box-shadow: 0 2px 8px rgba(212, 167, 44, 0.25);
+        }
+
+        /* Growth Services - Green */
+        .service-category-growth .service-item {
+            background: #E6F2D9;
+            border-color: #7A9C3A;
+        }
+
+        .service-category-growth .service-item:hover {
+            border-color: #5F7A2D;
+            box-shadow: 0 2px 8px rgba(122, 156, 58, 0.25);
+        }
+
+        /* Cultivation Services - Orange */
+        .service-category-cultivation .service-item {
+            background: #FFE8D4;
+            border-color: #E07830;
+        }
+
+        .service-category-cultivation .service-item:hover {
+            border-color: #C46828;
+            box-shadow: 0 2px 8px rgba(224, 120, 48, 0.25);
+        }
+
         .service-item-header {
             display: flex;
             align-items: flex-start;
