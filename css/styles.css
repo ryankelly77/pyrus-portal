@@ -9385,3 +9385,164 @@
                 flex-wrap: wrap;
             }
         }
+
+        /* ============================================
+           AI VISIBILITY SECTION
+           ============================================ */
+
+        .results-grid.three-col {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        @media (max-width: 1024px) {
+            .results-grid.three-col {
+                grid-template-columns: 1fr 1fr;
+            }
+            .results-grid.three-col .ai-visibility-card {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .results-grid.three-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ai-visibility-card .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ai-plan-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .ai-plan-badge.not-included {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+
+        .ai-plan-badge.included {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .ai-visibility-content {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ai-score-gauge {
+            position: relative;
+            width: 180px;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .ai-score-value {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .ai-score-value .score-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .ai-score-value .score-max {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .ai-score-label {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: -8px;
+        }
+
+        .ai-score-label.low {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .ai-score-label.medium {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+
+        .ai-score-label.high {
+            background: #D1FAE5;
+            color: #059669;
+        }
+
+        .ai-visibility-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+        }
+
+        .ai-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-detail-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .ai-detail-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .ai-upgrade-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--accent-purple);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .ai-upgrade-link:hover {
+            background: var(--accent-purple-dark, #6D28D9);
+            transform: translateY(-1px);
+        }
