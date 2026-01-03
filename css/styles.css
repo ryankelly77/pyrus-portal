@@ -8806,3 +8806,166 @@
             padding: 8px 16px;
             font-size: 13px;
         }
+
+        /* Notifications / Activity Feed */
+        .notifications-filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .notifications-filters .filter-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .notifications-filters .filter-tab {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-white);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .notifications-filters .filter-tab:hover {
+            background: var(--bg-page);
+        }
+
+        .notifications-filters .filter-tab.active {
+            background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
+            color: white;
+        }
+
+        .activity-feed {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .activity-date-group {
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .activity-date-group:last-of-type {
+            border-bottom: none;
+        }
+
+        .activity-date-header {
+            padding: 12px 24px;
+            background: var(--bg-page);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.15s ease;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: var(--bg-page);
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .activity-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .activity-icon.login {
+            background: var(--accent-blue-bg);
+            color: var(--accent-blue);
+        }
+
+        .activity-icon.view {
+            background: var(--accent-purple-bg);
+            color: var(--accent-purple);
+        }
+
+        .activity-icon.click {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .activity-icon.action {
+            background: var(--accent-orange-pale);
+            color: var(--accent-orange);
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .activity-user {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .activity-company {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .activity-company::before {
+            content: "•";
+            margin-right: 8px;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .activity-description strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .activity-time {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .activity-load-more {
+            padding: 20px 24px;
+            text-align: center;
+            border-top: 1px solid var(--border-light);
+        }

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyrus Admin - Notifications</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="admin-notifications.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="#" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-header-content">
+                        <h1>Notifications</h1>
+                        <p>Activity feed showing client portal interactions</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            Export Activity
+                        </button>
+                        <button class="btn btn-secondary">Mark All Read</button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="notifications-filters">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All Activity</button>
+                        <button class="filter-tab" data-filter="logins">Logins</button>
+                        <button class="filter-tab" data-filter="views">Page Views</button>
+                        <button class="filter-tab" data-filter="actions">Actions</button>
+                    </div>
+                    <div class="filter-group">
+                        <select class="filter-select">
+                            <option>All Clients</option>
+                            <option>TC Clinical Services</option>
+                            <option>Raptor Vending</option>
+                            <option>Raptor Services</option>
+                            <option>Gohfr</option>
+                            <option>Espronceda Law</option>
+                            <option>American Fence & Deck</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Activity Feed -->
+                <div class="activity-feed">
+                    <!-- Today -->
+                    <div class="activity-date-group">
+                        <div class="activity-date-header">Today</div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon login">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Tom Chen</span>
+                                    <span class="activity-company">TC Clinical Services</span>
+                                </div>
+                                <p class="activity-description">Logged into the portal</p>
+                            </div>
+                            <div class="activity-time">2 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon view">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Tom Chen</span>
+                                    <span class="activity-company">TC Clinical Services</span>
+                                </div>
+                                <p class="activity-description">Viewed <strong>Results</strong> page</p>
+                            </div>
+                            <div class="activity-time">2 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon action">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Tom Chen</span>
+                                    <span class="activity-company">TC Clinical Services</span>
+                                </div>
+                                <p class="activity-description">Downloaded <strong>Monthly Report - December 2025</strong></p>
+                            </div>
+                            <div class="activity-time">5 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon view">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Mike Johnson</span>
+                                    <span class="activity-company">Raptor Vending</span>
+                                </div>
+                                <p class="activity-description">Viewed <strong>Recommendations</strong> page</p>
+                            </div>
+                            <div class="activity-time">23 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon click">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Mike Johnson</span>
+                                    <span class="activity-company">Raptor Vending</span>
+                                </div>
+                                <p class="activity-description">Approved <strong>SEO Content Package</strong> recommendation</p>
+                            </div>
+                            <div class="activity-time">25 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon login">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Mike Johnson</span>
+                                    <span class="activity-company">Raptor Vending</span>
+                                </div>
+                                <p class="activity-description">Logged into the portal</p>
+                            </div>
+                            <div class="activity-time">28 minutes ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon view">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Maria Espronceda</span>
+                                    <span class="activity-company">Espronceda Law</span>
+                                </div>
+                                <p class="activity-description">Viewed <strong>Getting Started</strong> page</p>
+                            </div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon login">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Maria Espronceda</span>
+                                    <span class="activity-company">Espronceda Law</span>
+                                </div>
+                                <p class="activity-description">Logged into the portal</p>
+                            </div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+
+                    <!-- Yesterday -->
+                    <div class="activity-date-group">
+                        <div class="activity-date-header">Yesterday</div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon view">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Sarah Martinez</span>
+                                    <span class="activity-company">Raptor Services</span>
+                                </div>
+                                <p class="activity-description">Viewed <strong>Results</strong> page</p>
+                            </div>
+                            <div class="activity-time">Yesterday at 4:32 PM</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon click">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="7 17 17 7"></polyline>
+                                    <polyline points="7 7 17 7 17 17"></polyline>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Sarah Martinez</span>
+                                    <span class="activity-company">Raptor Services</span>
+                                </div>
+                                <p class="activity-description">Clicked <strong>Pro Dashboard</strong> link</p>
+                            </div>
+                            <div class="activity-time">Yesterday at 4:35 PM</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon login">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Sarah Martinez</span>
+                                    <span class="activity-company">Raptor Services</span>
+                                </div>
+                                <p class="activity-description">Logged into the portal</p>
+                            </div>
+                            <div class="activity-time">Yesterday at 4:30 PM</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon view">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Tom Chen</span>
+                                    <span class="activity-company">TC Clinical Services</span>
+                                </div>
+                                <p class="activity-description">Viewed <strong>Recommendations</strong> page</p>
+                            </div>
+                            <div class="activity-time">Yesterday at 11:15 AM</div>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon login">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">Tom Chen</span>
+                                    <span class="activity-company">TC Clinical Services</span>
+                                </div>
+                                <p class="activity-description">Logged into the portal</p>
+                            </div>
+                            <div class="activity-time">Yesterday at 11:14 AM</div>
+                        </div>
+                    </div>
+
+                    <!-- January 1, 2026 -->
+                    <div class="activity-date-group">
+                        <div class="activity-date-header">January 1, 2026</div>
+
+                        <div class="activity-item">
+                            <div class="activity-icon action">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <span class="activity-user">System</span>
+                                    <span class="activity-company">Automated</span>
+                                </div>
+                                <p class="activity-description">Monthly reports generated for all active clients</p>
+                            </div>
+                            <div class="activity-time">Jan 1 at 12:00 AM</div>
+                        </div>
+                    </div>
+
+                    <!-- Load More -->
+                    <div class="activity-load-more">
+                        <button class="btn btn-secondary">Load More Activity</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>
