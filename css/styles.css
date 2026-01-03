@@ -7495,6 +7495,7 @@
         /* Chart Area Styles */
         .chart-area {
             display: flex;
+            flex-wrap: wrap;
             gap: 12px;
             padding: 20px 0;
         }
@@ -7513,6 +7514,7 @@
         .line-chart {
             flex: 1;
             height: 150px;
+            min-width: 0;
         }
 
         .line-chart svg {
@@ -7525,7 +7527,9 @@
             justify-content: space-between;
             font-size: 11px;
             color: var(--text-muted);
-            padding: 12px 40px 0 40px;
+            padding: 8px 0 0 38px;
+            width: 100%;
+            flex-basis: 100%;
         }
 
         /* Donut Chart Styles */
