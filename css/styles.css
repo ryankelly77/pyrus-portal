@@ -7935,3 +7935,79 @@
             background: var(--bg-page);
             color: var(--text-muted);
         }
+
+        /* Paused Client Card */
+        .client-card[data-status="paused"] {
+            position: relative;
+            opacity: 0.85;
+        }
+
+        .client-card[data-status="paused"]:hover {
+            opacity: 1;
+        }
+
+        .client-card[data-status="paused"] .client-card-avatar {
+            filter: grayscale(50%);
+        }
+
+        .client-stat-value.muted {
+            color: var(--text-muted);
+        }
+
+        .client-card-paused-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            background: #F3F4F6;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            color: #6B7280;
+        }
+
+        .client-card-paused-overlay svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Client Card Hidden State (for filtering) */
+        .client-card.hidden {
+            display: none;
+        }
+
+        /* Empty State for Filtered Results */
+        .clients-empty-state {
+            display: none;
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-white);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+        }
+
+        .clients-empty-state.visible {
+            display: block;
+        }
+
+        .clients-empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .clients-empty-state h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .clients-empty-state p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }

@@ -36,17 +36,17 @@
                 <input type="text" placeholder="Search clients...">
             </div>
             <div class="filter-buttons">
-                <button class="filter-btn active">All Clients</button>
-                <button class="filter-btn">Active</button>
-                <button class="filter-btn">Onboarding</button>
-                <button class="filter-btn">Paused</button>
+                <button class="filter-btn active" data-filter="all">All Clients</button>
+                <button class="filter-btn" data-filter="active">Active</button>
+                <button class="filter-btn" data-filter="onboarding">Onboarding</button>
+                <button class="filter-btn" data-filter="paused">Paused</button>
             </div>
         </div>
 
         <!-- Clients Grid -->
         <div class="clients-grid">
             <!-- TC Clinical Services -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="active">
                 <div class="client-card-header">
                     <div class="client-card-avatar">TC</div>
                     <span class="status-badge active">Active</span>
@@ -77,7 +77,7 @@
             </a>
 
             <!-- Raptor Vending -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="active">
                 <div class="client-card-header">
                     <div class="client-card-avatar" style="background: #2563EB;">RV</div>
                     <span class="status-badge active">Active</span>
@@ -108,7 +108,7 @@
             </a>
 
             <!-- Raptor Services -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="active">
                 <div class="client-card-header">
                     <div class="client-card-avatar" style="background: #7C3AED;">RS</div>
                     <span class="status-badge active">Active</span>
@@ -139,7 +139,7 @@
             </a>
 
             <!-- Gohfr -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="onboarding">
                 <div class="client-card-header">
                     <div class="client-card-avatar" style="background: #0B7277;">GO</div>
                     <span class="status-badge onboarding">Onboarding</span>
@@ -170,7 +170,7 @@
             </a>
 
             <!-- Espronceda Law -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="active">
                 <div class="client-card-header">
                     <div class="client-card-avatar" style="background: #DC2626;">EL</div>
                     <span class="status-badge active">Active</span>
@@ -201,10 +201,10 @@
             </a>
 
             <!-- American Fence & Deck -->
-            <a href="getting-started.html" class="client-card">
+            <a href="getting-started.html" class="client-card" data-status="paused">
                 <div class="client-card-header">
-                    <div class="client-card-avatar" style="background: #059669;">AF</div>
-                    <span class="status-badge active">Active</span>
+                    <div class="client-card-avatar" style="background: #6B7280;">AF</div>
+                    <span class="status-badge paused">Paused</span>
                 </div>
                 <div class="client-card-body">
                     <h3>American Fence & Deck</h3>
@@ -217,17 +217,24 @@
                 </div>
                 <div class="client-card-stats">
                     <div class="client-stat">
-                        <span class="client-stat-value">6,234</span>
+                        <span class="client-stat-value muted">6,234</span>
                         <span class="client-stat-label">Visitors</span>
                     </div>
                     <div class="client-stat">
-                        <span class="client-stat-value">87</span>
+                        <span class="client-stat-value muted">87</span>
                         <span class="client-stat-label">Leads</span>
                     </div>
                     <div class="client-stat">
-                        <span class="client-stat-value positive">+52%</span>
-                        <span class="client-stat-label">Growth</span>
+                        <span class="client-stat-value muted">Paused</span>
+                        <span class="client-stat-label">Status</span>
                     </div>
+                </div>
+                <div class="client-card-paused-overlay">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                    <span>Campaign Paused</span>
                 </div>
             </a>
         </div>

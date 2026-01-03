@@ -25,6 +25,64 @@
             });
         });
 
+        // Client filter buttons
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active button
+                document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const filter = btn.getAttribute('data-filter');
+                const cards = document.querySelectorAll('.client-card[data-status]');
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    if (filter === 'all' || card.getAttribute('data-status') === filter) {
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                // Show/hide empty state
+                const emptyState = document.querySelector('.clients-empty-state');
+                if (emptyState) {
+                    if (visibleCount === 0) {
+                        emptyState.classList.add('visible');
+                    } else {
+                        emptyState.classList.remove('visible');
+                    }
+                }
+            });
+        });
+
+        // Client search functionality
+        const searchBox = document.querySelector('.search-box input');
+        if (searchBox) {
+            searchBox.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const cards = document.querySelectorAll('.client-card[data-status]');
+                const activeFilter = document.querySelector('.filter-btn[data-filter].active');
+                const filter = activeFilter ? activeFilter.getAttribute('data-filter') : 'all';
+
+                cards.forEach(card => {
+                    const name = card.querySelector('h3').textContent.toLowerCase();
+                    const email = card.querySelector('.client-card-email').textContent.toLowerCase();
+                    const status = card.getAttribute('data-status');
+
+                    const matchesSearch = name.includes(query) || email.includes(query);
+                    const matchesFilter = filter === 'all' || status === filter;
+
+                    if (matchesSearch && matchesFilter) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
         // Recommendation sub-tabs
         document.querySelectorAll('.rec-subtab').forEach(tab => {
             tab.addEventListener('click', () => {
