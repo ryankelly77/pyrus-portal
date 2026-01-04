@@ -13364,3 +13364,67 @@ input[type="date"].form-control {
     color: #DC2626;
     text-decoration: line-through;
 }
+
+/* ===== Session Information ===== */
+.session-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.session-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+}
+
+.session-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--pyrus-green-wash);
+    color: var(--pyrus-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.session-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.session-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.session-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.session-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.session-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 900px) {
+    .session-grid {
+        grid-template-columns: 1fr;
+    }
+}
