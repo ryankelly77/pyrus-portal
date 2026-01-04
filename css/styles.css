@@ -13805,11 +13805,17 @@ input[type="date"].form-control {
 }
 
 .rewards-savings {
+    margin-top: 12px;
+}
+
+.savings-callout {
     padding: 12px 16px;
-    background: linear-gradient(135deg, var(--pyrus-green) 0%, var(--pyrus-green-dark) 100%);
+    background: var(--pyrus-green-dark);
     border-radius: var(--radius-md);
     color: white;
     text-align: center;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .savings-label {
@@ -13840,6 +13846,33 @@ input[type="date"].form-control {
 
 .max-rewards-badge::before {
     content: '⭐';
+}
+
+/* Purchase Now Button */
+.btn-purchase {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px 24px;
+    background: var(--pyrus-green);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-purchase:hover {
+    background: var(--pyrus-green-dark);
+}
+
+/* Free item styling for reward unlocks */
+.service-item-price.free-item {
+    color: var(--pyrus-green);
+    font-weight: 600;
 }
 
 .no-rewards-message {

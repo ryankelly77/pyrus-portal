@@ -707,7 +707,7 @@
                                 </div>
                             </div>
                             <div class="growth-rewards" data-tier="good">
-                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-header">Your Growth Rewards</div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -738,7 +738,7 @@
                                 </div>
                             </div>
                             <div class="growth-rewards" data-tier="better">
-                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-header">Your Growth Rewards</div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -769,7 +769,7 @@
                                 </div>
                             </div>
                             <div class="growth-rewards" data-tier="best">
-                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-header">Your Growth Rewards</div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -869,10 +869,10 @@
             // Build unlocked rewards
             let unlockedHtml = '';
             currentTier.freeProducts.forEach(product => {
-                unlockedHtml += `<div class="reward-item unlocked"><span class="reward-icon">✓</span><span class="reward-label">UNLOCKED:</span> ${product}</div>`;
+                unlockedHtml += `<div class="reward-item unlocked">${product}</div>`;
             });
             if (currentTier.discount > 0) {
-                unlockedHtml += `<div class="reward-item unlocked"><span class="reward-icon">✓</span><span class="reward-label">UNLOCKED:</span> ${currentTier.discount}% off your plan</div>`;
+                unlockedHtml += `<div class="reward-item unlocked">${currentTier.discount}% off your plan</div>`;
             }
             unlockedDiv.innerHTML = unlockedHtml;
 
@@ -909,7 +909,7 @@
                 }
 
                 upcomingTiers.forEach(item => {
-                    lockedHtml += `<div class="reward-item locked"><span class="lock-icon">🔒</span> Add <strong>$${item.amount.toLocaleString()}</strong> to unlock ${item.text}</div>`;
+                    lockedHtml += `<div class="reward-item locked">Add <strong>$${item.amount.toLocaleString()}</strong> to unlock ${item.text}</div>`;
                 });
             }
             lockedDiv.innerHTML = lockedHtml;
@@ -935,9 +935,43 @@
             let totalMonthly = 0;
             let totalOnetime = 0;
 
+            // First pass: calculate total without free items to determine reward tier
+            let baseTotalMonthly = 0;
             items.forEach(item => {
+                const title = item.querySelector('.service-item-title')?.textContent || '';
+                const isAnalyticsTracking = title.includes('Analytics Tracking');
+                if (isAnalyticsTracking) return; // Skip analytics for base calculation
+
+                const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
+                const pricingSelector = item.querySelector('.pricing-selector');
+                if (pricingSelector) {
+                    const selectedOption = pricingSelector.querySelector('input:checked');
+                    if (!selectedOption || selectedOption.value !== 'onetime') {
+                        baseTotalMonthly += monthly;
+                    }
+                } else {
+                    baseTotalMonthly += monthly;
+                }
+            });
+
+            // Determine if Analytics Tracking should be free based on rewards
+            const rewardTierIndex = getRewardTier(baseTotalMonthly);
+            const analyticsIsFree = rewardTierIndex >= 0; // Analytics is free at all tiers
+
+            items.forEach(item => {
+                const title = item.querySelector('.service-item-title')?.textContent || '';
+                const isAnalyticsTracking = title.includes('Analytics Tracking');
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 const onetime = parseInt(item.getAttribute('data-onetime')) || 0;
+                const priceDisplay = item.querySelector('.service-item-price');
+
+                // Update Analytics Tracking price label if free
+                if (isAnalyticsTracking && analyticsIsFree && priceDisplay) {
+                    priceDisplay.textContent = 'Free';
+                    priceDisplay.classList.add('free-item');
+                    // Don't add to total - it's free
+                    return;
+                }
 
                 // Check if item has pricing selector (both options available)
                 const pricingSelector = item.querySelector('.pricing-selector');
@@ -1044,7 +1078,7 @@
                         </label>
                         <label class="pricing-option">
                             <input type="radio" name="${uniqueId}" value="onetime">
-                            <span>$${onetime.toLocaleString()}</span>
+                            <span>$${onetime.toLocaleString()} onetime</span>
                         </label>
                     `;
                     droppedItem.appendChild(pricingSelector);
