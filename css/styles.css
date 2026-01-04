@@ -10482,6 +10482,20 @@
             color: var(--text-primary);
         }
 
+        .user-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            padding: 4px 8px 4px 4px;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s ease;
+        }
+
+        .user-menu-link:hover {
+            background: var(--bg-page);
+        }
+
         .admin-content {
             padding: 24px 32px;
         }
