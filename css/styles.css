@@ -13467,6 +13467,16 @@ input[type="date"].form-control {
     color: var(--pyrus-green);
 }
 
+.tier-pricing .discount-row {
+    margin-top: 8px;
+}
+
+.tier-pricing .discount-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #8B4513;
+}
+
 /* Pricing Selector for items with both monthly and onetime options */
 .pricing-selector {
     display: flex;

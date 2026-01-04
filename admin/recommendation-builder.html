@@ -705,6 +705,9 @@
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
                                 </div>
+                                <div class="price-row discount-row" style="display: none;">
+                                    <span class="discount-text"></span>
+                                </div>
                             </div>
                             <div class="growth-rewards" data-tier="good">
                                 <div class="rewards-header">Your Growth Rewards</div>
@@ -736,6 +739,9 @@
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
                                 </div>
+                                <div class="price-row discount-row" style="display: none;">
+                                    <span class="discount-text"></span>
+                                </div>
                             </div>
                             <div class="growth-rewards" data-tier="better">
                                 <div class="rewards-header">Your Growth Rewards</div>
@@ -766,6 +772,9 @@
                                 </div>
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
+                                </div>
+                                <div class="price-row discount-row" style="display: none;">
+                                    <span class="discount-text"></span>
                                 </div>
                             </div>
                             <div class="growth-rewards" data-tier="best">
@@ -1014,6 +1023,19 @@
                 onetimeRowEl.style.display = 'none';
             } else {
                 onetimeRowEl.style.display = '';
+            }
+
+            // Show discount row if applicable
+            const discountRowEl = tierElement.querySelector('.discount-row');
+            const discountText = tierElement.querySelector('.discount-text');
+            const currentTier = REWARD_TIERS[getRewardTier(totalMonthly)];
+
+            if (currentTier.discount > 0 && totalMonthly > 0) {
+                const discountedTotal = totalMonthly * (1 - currentTier.discount / 100);
+                discountText.textContent = '$' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo with discount. Use code ' + currentTier.coupon + ' at checkout';
+                discountRowEl.style.display = '';
+            } else {
+                discountRowEl.style.display = 'none';
             }
 
             // Update Growth Rewards
