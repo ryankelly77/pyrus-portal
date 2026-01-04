@@ -1767,6 +1767,7 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script src="components/modals/modal.js"></script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
@@ -1779,8 +1780,8 @@
             sessionStorage.setItem('clientViewMode', 'true');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
-            // Show welcome banner in client view
-            showWelcomeBanner();
+            // Show welcome modal in client view
+            showWelcomeModal();
         }
 
         function exitClientView() {
@@ -1789,41 +1790,23 @@
             sessionStorage.removeItem('clientViewMode');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
-            // Hide welcome banner
-            document.getElementById('welcomeBanner').style.display = 'none';
-        }
-
-        // Welcome Banner Functions
-        function showWelcomeBanner() {
-            const banner = document.getElementById('welcomeBanner');
-            if (banner && !sessionStorage.getItem('welcomeBannerDismissed')) {
-                banner.style.display = 'block';
-                // Update client name if available
-                const firstName = sessionStorage.getItem('clientFirstName');
-                if (firstName) {
-                    document.getElementById('clientFirstName').textContent = firstName;
-                }
+            // Close welcome modal if open
+            if (typeof closeModal === 'function') {
+                closeModal('welcomeModal');
             }
         }
 
-        function dismissWelcomeBanner() {
-            document.getElementById('welcomeBanner').style.display = 'none';
-            sessionStorage.setItem('welcomeBannerDismissed', 'true');
-        }
-
-        function dismissAnnouncement(id) {
-            const announcement = document.querySelector(`[data-announcement="${id}"]`);
-            if (announcement) {
-                announcement.style.display = 'none';
-                // Store dismissed announcements
-                const dismissed = JSON.parse(sessionStorage.getItem('dismissedAnnouncements') || '[]');
-                dismissed.push(id);
-                sessionStorage.setItem('dismissedAnnouncements', JSON.stringify(dismissed));
+        // Show Welcome Modal
+        function showWelcomeModal() {
+            // Set personalized title
+            const firstName = sessionStorage.getItem('clientFirstName');
+            const titleEl = document.getElementById('welcomeTitle');
+            if (firstName && titleEl) {
+                titleEl.textContent = `Welcome Back, ${firstName}!`;
             }
-            // Check if all announcements are dismissed
-            const remaining = document.querySelectorAll('.welcome-announcement:not([style*="display: none"])');
-            if (remaining.length === 0) {
-                document.querySelector('.welcome-announcements').style.display = 'none';
+            // Show modal if not dismissed
+            if (!sessionStorage.getItem('welcomeModalDismissed') && typeof openModal === 'function') {
+                setTimeout(() => openModal('welcomeModal'), 300);
             }
         }
 
@@ -1885,7 +1868,6 @@
             });
         });
     </script>
-    <script src="components/modals/modal.js"></script>
 
     <!-- Welcome Modal -->
     <div class="modal-overlay welcome-modal" id="welcomeModal">

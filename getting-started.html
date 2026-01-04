@@ -1179,6 +1179,7 @@
     </div>
 
     <script src="js/scripts.js"></script>
+    <script src="components/modals/modal.js"></script>
     <script>
         // Getting Started Sub-tab Navigation
         const gsSubtabs = document.querySelectorAll('.getting-started-subtab');
@@ -1211,6 +1212,9 @@
             // Show client-only buttons, hide admin-only buttons
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
+
+            // Show welcome modal
+            showWelcomeModal();
         }
 
         function exitClientView() {
@@ -1221,6 +1225,25 @@
             // Show admin-only buttons, hide client-only buttons
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
+
+            // Close welcome modal if open
+            if (typeof closeModal === 'function') {
+                closeModal('welcomeModal');
+            }
+        }
+
+        // Show Welcome Modal
+        function showWelcomeModal() {
+            // Set personalized title
+            const firstName = sessionStorage.getItem('clientFirstName');
+            const titleEl = document.getElementById('welcomeTitle');
+            if (firstName && titleEl) {
+                titleEl.textContent = `Welcome Back, ${firstName}!`;
+            }
+            // Show modal if not dismissed
+            if (!sessionStorage.getItem('welcomeModalDismissed') && typeof openModal === 'function') {
+                setTimeout(() => openModal('welcomeModal'), 300);
+            }
         }
 
         // Restore client view mode on page load
@@ -1228,7 +1251,6 @@
             toggleClientView();
         }
     </script>
-    <script src="components/modals/modal.js"></script>
     <script
         src="https://widgets.leadconnectorhq.com/loader.js"
         data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
