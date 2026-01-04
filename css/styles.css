@@ -1,8 +1,19 @@
         :root {
-            --pyrus-green: #B57841;
-            --pyrus-green-light: #C4895A;
+            /* Admin brown color scheme */
+            --pyrus-brown: #885430;
+            --pyrus-brown-light: #A66B3F;
+            --pyrus-brown-pale: #F5EBE0;
+            --pyrus-brown-wash: #FCF7EF;
+            /* Legacy variable names for compatibility */
+            --pyrus-green: #885430;
+            --pyrus-green-light: #A66B3F;
             --pyrus-green-pale: #F5EBE0;
             --pyrus-green-wash: #FCF7EF;
+            /* Client green color scheme */
+            --client-green: #324438;
+            --client-green-light: #4A5C50;
+            --client-green-pale: #E8EDEA;
+            --client-green-wash: #F5F7F6;
             --accent-orange: #DE393A;
             --accent-orange-hover: #C53030;
             --accent-orange-pale: #FBE9E9;
@@ -12166,9 +12177,19 @@
             }
         }
 
-        /* ======================= */
-        /* CLIENT VIEW LINK COLORS */
-        /* ======================= */
+        /* ============================================ */
+        /* CLIENT VIEW MODE - GREEN COLOR OVERRIDES   */
+        /* ============================================ */
+
+        /* Override CSS variables for client view */
+        .client-view-mode {
+            --pyrus-green: #324438;
+            --pyrus-green-light: #4A5C50;
+            --pyrus-green-pale: #E8EDEA;
+            --pyrus-green-wash: #F5F7F6;
+        }
+
+        /* Links */
         .client-view-mode a:not(.btn):not(.admin-nav-item):not(.client-nav-item):not(.tab-btn):not(.recommendations-tab) {
             color: #324438;
         }
@@ -12177,7 +12198,34 @@
             color: #243228;
         }
 
-        /* Client view sub-navigation tabs */
+        /* Primary buttons */
+        .client-view-mode .btn-primary {
+            background: #324438;
+            border-color: #324438;
+        }
+
+        .client-view-mode .btn-primary:hover {
+            background: #283830;
+            border-color: #283830;
+        }
+
+        /* Secondary buttons hover */
+        .client-view-mode .btn-secondary:hover {
+            border-color: #324438;
+            color: #324438;
+        }
+
+        /* Tab navigation */
+        .client-view-mode .tab-btn:hover {
+            color: #324438;
+        }
+
+        .client-view-mode .tab-btn.active {
+            color: #324438;
+            border-color: #324438;
+        }
+
+        /* Sub-navigation tabs */
         .client-view-mode .recommendations-tabs .recommendations-tab {
             color: var(--text-secondary);
             border-color: transparent;
@@ -12186,19 +12234,86 @@
         .client-view-mode .recommendations-tabs .recommendations-tab:hover {
             color: #324438;
             background: rgba(50, 68, 56, 0.05);
+            border-color: #324438;
         }
 
         .client-view-mode .recommendations-tabs .recommendations-tab.active {
-            color: #324438;
+            color: white;
             border-color: #324438;
-            background: rgba(50, 68, 56, 0.08);
+            background: #324438;
         }
 
         .client-view-mode .recommendations-tabs .recommendations-tab.active svg {
+            color: white;
+        }
+
+        /* Filter tabs */
+        .client-view-mode .filter-tab:hover,
+        .client-view-mode .filter-tab.active {
+            color: #324438;
+            border-color: #324438;
+        }
+
+        /* Form inputs focus */
+        .client-view-mode .form-input:focus,
+        .client-view-mode .form-select:focus,
+        .client-view-mode textarea:focus {
+            border-color: #324438;
+            box-shadow: 0 0 0 3px rgba(50, 68, 56, 0.1);
+        }
+
+        /* Status badges and indicators */
+        .client-view-mode .status-active,
+        .client-view-mode .status-registered {
+            background: rgba(50, 68, 56, 0.1);
             color: #324438;
         }
 
-        /* Client view text links and spans that look like links */
+        /* Progress bars */
+        .client-view-mode .progress-bar-fill {
+            background: linear-gradient(90deg, #324438 0%, #4A5C50 100%);
+        }
+
+        /* Icons and accents */
+        .client-view-mode .metric-card-icon,
+        .client-view-mode .card-icon {
+            background: rgba(50, 68, 56, 0.1);
+            color: #324438;
+        }
+
+        /* Pricing tiers */
+        .client-view-mode .pricing-tier.recommended {
+            border-color: #324438;
+        }
+
+        .client-view-mode .pricing-tier.recommended .tier-badge {
+            background: #324438;
+        }
+
+        .client-view-mode .pricing-tier-header .tier-name {
+            color: #324438;
+        }
+
+        /* Checklist items */
+        .client-view-mode .checklist-checkbox.completed {
+            background: #324438;
+            border-color: #324438;
+        }
+
+        /* Sidebar active state (already handled by client-sidebar) */
+
+        /* Card headers and accents */
+        .client-view-mode .section-header-icon {
+            background: rgba(50, 68, 56, 0.1);
+            color: #324438;
+        }
+
+        /* Service items and plan cards */
+        .client-view-mode .plan-summary-header {
+            background: linear-gradient(135deg, #324438 0%, #4A5C50 100%);
+        }
+
+        /* Text links and spans that look like links */
         .client-view-mode .current-services-total-label span {
             color: #324438;
         }
