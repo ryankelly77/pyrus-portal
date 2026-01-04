@@ -1549,7 +1549,33 @@
         .progress-stage.current .progress-dot {
             background: white;
             border-color: white;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        .progress-stage .stage-icon {
+            font-size: 24px;
+            filter: grayscale(100%) brightness(10);
+            opacity: 0.5;
+            margin-bottom: 4px;
+        }
+
+        .progress-stage.completed .stage-icon,
+        .progress-stage.current .stage-icon {
+            opacity: 1;
+        }
+
+        .progress-stage.current .stage-icon {
+            filter: grayscale(100%) brightness(10) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
         }
 
         .progress-stage span {
@@ -1568,6 +1594,7 @@
             height: 3px;
             background: rgba(255, 255, 255, 0.3);
             margin: 0 8px;
+            margin-top: 36px;
             margin-bottom: 28px;
         }
 
@@ -4808,8 +4835,8 @@
         /* ======================= */
 
         .rec-cards-grid {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
         }
 
