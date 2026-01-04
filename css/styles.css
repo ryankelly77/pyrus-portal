@@ -13466,3 +13466,44 @@ input[type="date"].form-control {
     font-weight: 600;
     color: var(--pyrus-green);
 }
+
+/* Pricing Selector for items with both monthly and onetime options */
+.pricing-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.pricing-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-page);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+
+.pricing-option:hover {
+    border-color: var(--pyrus-green-light);
+}
+
+.pricing-option:has(input:checked) {
+    border-color: var(--pyrus-green);
+    background: var(--pyrus-green-wash);
+}
+
+.pricing-option input[type="radio"] {
+    accent-color: var(--pyrus-green);
+}
+
+.pricing-option span {
+    font-weight: 500;
+    color: var(--text-primary);
+}

@@ -784,8 +784,23 @@
             items.forEach(item => {
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 const onetime = parseInt(item.getAttribute('data-onetime')) || 0;
-                totalMonthly += monthly;
-                totalOnetime += onetime;
+
+                // Check if item has pricing selector (both options available)
+                const pricingSelector = item.querySelector('.pricing-selector');
+                if (pricingSelector) {
+                    const selectedOption = pricingSelector.querySelector('input:checked');
+                    if (selectedOption && selectedOption.value === 'onetime') {
+                        // User chose onetime payment
+                        totalOnetime += onetime;
+                    } else {
+                        // User chose monthly (default)
+                        totalMonthly += monthly;
+                    }
+                } else {
+                    // No selector - add both (monthly only or onetime only items)
+                    totalMonthly += monthly;
+                    totalOnetime += onetime;
+                }
             });
 
             // Update display
@@ -853,12 +868,41 @@
                 droppedItem.classList.add('dropped');
                 droppedItem.removeAttribute('draggable');
 
+                const tier = zone.getAttribute('data-tier');
+
+                // Get pricing data
+                const monthly = parseInt(droppedItem.getAttribute('data-monthly')) || 0;
+                const onetime = parseInt(droppedItem.getAttribute('data-onetime')) || 0;
+                const hasBothPricing = monthly > 0 && onetime > 0;
+
+                // Add pricing selector if item has both monthly and onetime pricing
+                if (hasBothPricing) {
+                    const uniqueId = 'pricing-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    const pricingSelector = document.createElement('div');
+                    pricingSelector.className = 'pricing-selector';
+                    pricingSelector.innerHTML = `
+                        <label class="pricing-option">
+                            <input type="radio" name="${uniqueId}" value="monthly" checked>
+                            <span>$${monthly}/mo for 12 months</span>
+                        </label>
+                        <label class="pricing-option">
+                            <input type="radio" name="${uniqueId}" value="onetime">
+                            <span>$${onetime.toLocaleString()} one-time</span>
+                        </label>
+                    `;
+                    droppedItem.appendChild(pricingSelector);
+
+                    // Update pricing when selection changes
+                    pricingSelector.querySelectorAll('input').forEach(radio => {
+                        radio.addEventListener('change', () => updateTierPricing(tier));
+                    });
+                }
+
                 // Add remove button
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-service-btn';
                 removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
-                const tier = zone.getAttribute('data-tier');
                 removeBtn.onclick = () => {
                     droppedItem.remove();
                     if (zone.children.length === 0) {
