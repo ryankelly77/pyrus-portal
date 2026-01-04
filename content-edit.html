@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Content - Pyrus Digital Client Portal</title>
+    <title>Edit Content - Pyrus Digital Client Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -203,33 +203,36 @@
 
             <div class="admin-content">
                 <!-- Back Link -->
-                <a href="content.html" class="back-link">
+                <a href="content-review.html" class="back-link">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
-                    Back to Content
+                    Back to Review
                 </a>
 
-                <!-- Content Review Card -->
-                <div class="content-review-card">
+                <!-- Edit Content Card -->
+                <div class="content-edit-card">
                     <!-- Content Header -->
-                    <div class="content-review-header">
-                        <div class="content-review-badges">
-                            <span class="platform-badge website">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                </svg>
-                                Website Content
-                            </span>
-                            <span class="content-type-badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                </svg>
-                                Blog Post
-                            </span>
+                    <div class="content-edit-header">
+                        <div class="content-edit-info">
+                            <div class="content-edit-badges">
+                                <span class="platform-badge website">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Website Content
+                                </span>
+                                <span class="content-type-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Blog Post
+                                </span>
+                            </div>
+                            <h1 class="content-edit-title">Edit: Black Friday Sale Announcement</h1>
                         </div>
                         <div class="countdown-timer urgent">
                             <div class="countdown-icon">
@@ -245,77 +248,127 @@
                         </div>
                     </div>
 
-                    <!-- Content Title -->
-                    <h1 class="content-review-title">Black Friday Sale Announcement</h1>
-
-                    <!-- Content Meta -->
-                    <div class="content-review-meta">
-                        <span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            Submitted Nov 15, 2025
-                        </span>
-                        <span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            By Pyrus Digital Team
-                        </span>
-                        <span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                            </svg>
-                            First Draft
-                        </span>
+                    <!-- Editor Toolbar -->
+                    <div class="editor-toolbar">
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" title="Bold" onclick="document.execCommand('bold')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" title="Italic" onclick="document.execCommand('italic')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <line x1="19" y1="4" x2="10" y2="4"></line>
+                                    <line x1="14" y1="20" x2="5" y2="20"></line>
+                                    <line x1="15" y1="4" x2="9" y2="20"></line>
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" title="Underline" onclick="document.execCommand('underline')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path>
+                                    <line x1="4" y1="21" x2="20" y2="21"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="toolbar-divider"></div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" title="Heading 1" onclick="document.execCommand('formatBlock', false, 'h2')">
+                                H1
+                            </button>
+                            <button class="toolbar-btn" title="Heading 2" onclick="document.execCommand('formatBlock', false, 'h3')">
+                                H2
+                            </button>
+                            <button class="toolbar-btn" title="Paragraph" onclick="document.execCommand('formatBlock', false, 'p')">
+                                P
+                            </button>
+                        </div>
+                        <div class="toolbar-divider"></div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" title="Bullet List" onclick="document.execCommand('insertUnorderedList')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" title="Numbered List" onclick="document.execCommand('insertOrderedList')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <line x1="10" y1="6" x2="21" y2="6"></line>
+                                    <line x1="10" y1="12" x2="21" y2="12"></line>
+                                    <line x1="10" y1="18" x2="21" y2="18"></line>
+                                    <path d="M4 6h1v4"></path>
+                                    <path d="M4 10h2"></path>
+                                    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="toolbar-divider"></div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" title="Link" onclick="insertLink()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="toolbar-spacer"></div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" title="Undo" onclick="document.execCommand('undo')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="1 4 1 10 7 10"></polyline>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                </svg>
+                            </button>
+                            <button class="toolbar-btn" title="Redo" onclick="document.execCommand('redo')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Content Body -->
-                    <div class="content-review-body">
-                        <h2>Get Ready for Our Biggest Sale of the Year!</h2>
+                    <!-- Rich Text Editor -->
+                    <div class="editor-container">
+                        <div class="rich-text-editor" id="contentEditor" contenteditable="true">
+                            <h2>Get Ready for Our Biggest Sale of the Year!</h2>
 
-                        <p>This Black Friday, TC Clinical Services is offering unprecedented savings on our most popular healthcare packages. Whether you're looking for comprehensive wellness checks, specialized treatments, or preventive care services, now is the perfect time to invest in your health.</p>
+                            <p>This Black Friday, TC Clinical Services is offering unprecedented savings on our most popular healthcare packages. Whether you're looking for comprehensive wellness checks, specialized treatments, or preventive care services, now is the perfect time to invest in your health.</p>
 
-                        <h3>What's Included:</h3>
-                        <ul>
-                            <li><strong>30% off</strong> all comprehensive wellness packages</li>
-                            <li><strong>Free consultation</strong> with any service booking over $200</li>
-                            <li><strong>Extended payment plans</strong> available for qualifying patients</li>
-                            <li><strong>Priority scheduling</strong> for all Black Friday bookings</li>
-                        </ul>
+                            <h3>What's Included:</h3>
+                            <ul>
+                                <li><strong>30% off</strong> all comprehensive wellness packages</li>
+                                <li><strong>Free consultation</strong> with any service booking over $200</li>
+                                <li><strong>Extended payment plans</strong> available for qualifying patients</li>
+                                <li><strong>Priority scheduling</strong> for all Black Friday bookings</li>
+                            </ul>
 
-                        <h3>Limited Time Offer</h3>
-                        <p>This exclusive offer runs from <strong>November 24th through November 30th</strong>. Don't miss out on these incredible savings – spots are filling up fast!</p>
+                            <h3>Limited Time Offer</h3>
+                            <p>This exclusive offer runs from <strong>November 24th through November 30th</strong>. Don't miss out on these incredible savings – spots are filling up fast!</p>
 
-                        <p>Our team of experienced healthcare professionals is ready to help you achieve your health goals. With state-of-the-art facilities and personalized care plans, we're committed to providing the highest quality service to our community.</p>
+                            <p>Our team of experienced healthcare professionals is ready to help you achieve your health goals. With state-of-the-art facilities and personalized care plans, we're committed to providing the highest quality service to our community.</p>
 
-                        <h3>How to Book</h3>
-                        <p>Call our office at <strong>(555) 123-4567</strong> or visit our website to schedule your appointment today. Mention code <strong>BLACKFRIDAY2025</strong> to ensure you receive your discount.</p>
+                            <h3>How to Book</h3>
+                            <p>Call our office at <strong>(555) 123-4567</strong> or visit our website to schedule your appointment today. Mention code <strong>BLACKFRIDAY2025</strong> to ensure you receive your discount.</p>
 
-                        <p>We look forward to seeing you soon!</p>
+                            <p>We look forward to seeing you soon!</p>
 
-                        <p><em>– The TC Clinical Services Team</em></p>
+                            <p><em>– The TC Clinical Services Team</em></p>
+                        </div>
+                    </div>
+
+                    <!-- Edit Note -->
+                    <div class="edit-note-section">
+                        <label for="editNote">Add a note about your changes (optional)</label>
+                        <textarea id="editNote" placeholder="Describe what you changed or why..."></textarea>
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="content-review-actions">
-                        <button class="btn btn-success btn-lg" onclick="openModal('quickApproveModal')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            Quick Approve
-                        </button>
-                        <a href="content-edit.html" class="btn btn-primary btn-lg">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            Review & Edit
-                        </a>
+                    <div class="content-edit-actions">
                         <a href="content-reject.html" class="btn btn-danger btn-lg">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -324,123 +377,63 @@
                             </svg>
                             Reject
                         </a>
+                        <button class="btn btn-success btn-lg" onclick="openModal('approveSuccessModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Approve & Publish
+                        </button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Quick Approve Confirmation Modal -->
-    <div class="modal-overlay" id="quickApproveModal">
+    <!-- Approve Success Modal -->
+    <div class="modal-overlay" id="approveSuccessModal">
         <div class="modal">
-            <div class="modal-header">
-                <h2>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #22C55E;">
+            <div class="modal-header success-header">
+                <div class="success-icon-large">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
-                    Approve Content
-                </h2>
-                <button class="modal-close" onclick="closeModal('quickApproveModal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="approve-confirmation">
-                    <div class="approve-content-summary">
-                        <h4>Black Friday Sale Announcement</h4>
-                        <div class="summary-meta">
-                            <span class="platform-badge website" style="font-size: 11px;">Website Content</span>
-                            <span class="content-type-badge" style="font-size: 11px;">Blog Post</span>
+            <div class="modal-body text-center">
+                <h2 class="success-title">Content Approved!</h2>
+                <p class="success-message">Your content has been approved and is now in the publishing queue.</p>
+
+                <div class="next-steps">
+                    <h4>What Happens Next</h4>
+                    <div class="next-steps-list">
+                        <div class="next-step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <strong>Review Queue</strong>
+                                <p>Our team will review your approved content</p>
+                            </div>
+                        </div>
+                        <div class="next-step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <strong>Final Polish</strong>
+                                <p>Any formatting adjustments will be made</p>
+                            </div>
+                        </div>
+                        <div class="next-step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <strong>Published</strong>
+                                <p>Content goes live within 1-2 business days</p>
+                            </div>
                         </div>
                     </div>
-                    <p class="approve-message">By approving this content, it will be scheduled for publishing. Are you sure you want to proceed?</p>
-                    <div class="approve-note">
-                        <label for="approveNote">Add a note (optional)</label>
-                        <textarea id="approveNote" placeholder="e.g., Looks great! Ready to publish."></textarea>
-                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('quickApproveModal')">Cancel</button>
-                <button class="btn btn-success" onclick="approveContent()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Confirm & Approve
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Review & Edit Modal (placeholder) -->
-    <div class="modal-overlay" id="reviewEditModal">
-        <div class="modal modal-lg">
-            <div class="modal-header">
-                <h2>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #2563EB;">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                    Review & Edit Content
-                </h2>
-                <button class="modal-close" onclick="closeModal('reviewEditModal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Full editing functionality coming soon...</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('reviewEditModal')">Cancel</button>
-                <button class="btn btn-primary">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reject Modal -->
-    <div class="modal-overlay" id="rejectModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #DC2626;">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="15" y1="9" x2="9" y2="15"></line>
-                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                    Reject Content
-                </h2>
-                <button class="modal-close" onclick="closeModal('rejectModal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="reject-form">
-                    <p class="reject-warning">Please provide a reason for rejection so the content team can make the necessary changes.</p>
-                    <div class="form-group">
-                        <label for="rejectReason">Reason for Rejection <span class="required">*</span></label>
-                        <textarea id="rejectReason" placeholder="Explain what needs to be changed..." required></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('rejectModal')">Cancel</button>
-                <button class="btn btn-danger" onclick="rejectContent()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="15" y1="9" x2="9" y2="15"></line>
-                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                    Reject Content
-                </button>
+                <a href="content.html" class="btn btn-primary btn-lg" style="width: 100%;">
+                    Return to Content Manager
+                </a>
             </div>
         </div>
     </div>
@@ -488,27 +481,12 @@
             toggleClientView();
         }
 
-        // Approve content
-        function approveContent() {
-            closeModal('quickApproveModal');
-            showToast('Content approved successfully! It will be published shortly.');
-            setTimeout(() => {
-                window.location.href = 'content.html';
-            }, 2000);
-        }
-
-        // Reject content
-        function rejectContent() {
-            const reason = document.getElementById('rejectReason').value.trim();
-            if (!reason) {
-                alert('Please provide a reason for rejection.');
-                return;
+        // Insert link
+        function insertLink() {
+            const url = prompt('Enter URL:');
+            if (url) {
+                document.execCommand('createLink', false, url);
             }
-            closeModal('rejectModal');
-            showToast('Content rejected. The team has been notified.');
-            setTimeout(() => {
-                window.location.href = 'content.html';
-            }, 2000);
         }
     </script>
     <script
