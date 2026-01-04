@@ -984,7 +984,8 @@
         }
 
         .filter-tab .count {
-            background: rgba(255,255,255,0.2);
+            background: var(--accent-orange);
+            color: white;
             padding: 2px 7px;
             border-radius: 10px;
             font-size: 11px;
@@ -992,8 +993,8 @@
         }
 
         .filter-tab:not(.active) .count {
-            background: var(--bg-page);
-            color: var(--text-muted);
+            background: var(--accent-orange);
+            color: white;
         }
 
         .filter-actions {
@@ -1441,6 +1442,7 @@
             align-items: center;
             justify-content: center;
             font-size: 42px;
+            filter: grayscale(100%) brightness(10);
         }
 
         .stage-content {
@@ -1567,6 +1569,10 @@
             filter: grayscale(100%) brightness(10);
             opacity: 0.5;
             margin-bottom: 4px;
+            width: auto;
+            height: auto;
+            background: none;
+            border-radius: 0;
         }
 
         .progress-stage.completed .stage-icon,
@@ -1618,15 +1624,17 @@
         }
 
         .tab-count {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--accent-orange);
+            color: white;
             padding: 2px 8px;
             border-radius: 10px;
             font-size: 12px;
+            font-weight: 600;
             margin-left: 6px;
         }
 
         .recommendations-tab.active .tab-count {
-            background: var(--accent-teal);
+            background: var(--accent-orange);
             color: white;
         }
 
@@ -1893,7 +1901,7 @@
         }
 
         .rec-subtab .count {
-            background: var(--pyrus-green);
+            background: var(--accent-orange);
             color: white;
             font-size: 11px;
             padding: 2px 8px;
@@ -1902,8 +1910,8 @@
         }
 
         .rec-subtab:not(.active) .count {
-            background: var(--bg-page);
-            color: var(--text-muted);
+            background: var(--accent-orange);
+            color: white;
         }
 
         .rec-cards-grid {
