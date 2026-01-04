@@ -121,6 +121,14 @@
                 <button class="filter-btn" data-filter="onboarding">Onboarding</button>
                 <button class="filter-btn" data-filter="paused">Paused</button>
             </div>
+            <div class="sort-dropdown">
+                <label class="sort-label">Sort by:</label>
+                <select id="clientSort" class="sort-select">
+                    <option value="name">Name</option>
+                    <option value="growth-desc">Growth (High to Low)</option>
+                    <option value="growth-asc">Growth (Low to High)</option>
+                </select>
+            </div>
             <div class="view-toggle">
                 <button class="view-toggle-btn active" data-view="grid" title="Grid view">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -146,7 +154,7 @@
         <!-- Clients Grid -->
         <div class="clients-grid" id="clientsGrid">
             <!-- TC Clinical Services -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="32" data-name="TC Clinical Services">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar">TC</div>
@@ -179,7 +187,7 @@
             </div>
 
             <!-- Raptor Vending -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="28" data-name="Raptor Vending">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #2563EB;">RV</div>
@@ -212,7 +220,7 @@
             </div>
 
             <!-- Raptor Services -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="41" data-name="Raptor Services">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #7C3AED;">RS</div>
@@ -245,7 +253,7 @@
             </div>
 
             <!-- Gohfr -->
-            <div class="client-card" data-status="onboarding">
+            <div class="client-card" data-status="onboarding" data-growth="0" data-name="Gohfr">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #0B7277;">GO</div>
@@ -278,7 +286,7 @@
             </div>
 
             <!-- Espronceda Law -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="15" data-name="Espronceda Law">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #DC2626;">EL</div>
@@ -311,7 +319,7 @@
             </div>
 
             <!-- American Fence & Deck -->
-            <div class="client-card" data-status="paused">
+            <div class="client-card" data-status="paused" data-growth="0" data-name="American Fence & Deck">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #6B7280;">AF</div>
@@ -351,7 +359,7 @@
             </div>
 
             <!-- Peak Performance Gym -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="24" data-name="Peak Performance Gym">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #EA580C;">PP</div>
@@ -384,7 +392,7 @@
             </div>
 
             <!-- Sunrise Dental -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="19" data-name="Sunrise Dental">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #0891B2;">SD</div>
@@ -417,7 +425,7 @@
             </div>
 
             <!-- Metro Plumbing -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="36" data-name="Metro Plumbing">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #4F46E5;">MP</div>
@@ -450,7 +458,7 @@
             </div>
 
             <!-- Green Thumb Landscaping -->
-            <div class="client-card" data-status="onboarding">
+            <div class="client-card" data-status="onboarding" data-growth="0" data-name="Green Thumb Landscaping">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #16A34A;">GT</div>
@@ -483,7 +491,7 @@
             </div>
 
             <!-- Horizon Real Estate -->
-            <div class="client-card" data-status="active">
+            <div class="client-card" data-status="active" data-growth="37" data-name="Horizon Real Estate">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #9333EA;">HR</div>
@@ -516,7 +524,7 @@
             </div>
 
             <!-- Coastal Insurance -->
-            <div class="client-card" data-status="paused">
+            <div class="client-card" data-status="paused" data-growth="0" data-name="Coastal Insurance">
                 <a href="getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #6B7280;">CI</div>
@@ -1091,6 +1099,36 @@
                 updateClientCount();
             });
         });
+
+        // Sort Functionality
+        const clientSort = document.getElementById('clientSort');
+        if (clientSort) {
+            clientSort.addEventListener('change', (e) => {
+                const sortBy = e.target.value;
+                const grid = document.getElementById('clientsGrid');
+                const cards = Array.from(grid.querySelectorAll('.client-card'));
+
+                cards.sort((a, b) => {
+                    if (sortBy === 'name') {
+                        const nameA = a.getAttribute('data-name') || '';
+                        const nameB = b.getAttribute('data-name') || '';
+                        return nameA.localeCompare(nameB);
+                    } else if (sortBy === 'growth-desc') {
+                        const growthA = parseInt(a.getAttribute('data-growth')) || 0;
+                        const growthB = parseInt(b.getAttribute('data-growth')) || 0;
+                        return growthB - growthA;
+                    } else if (sortBy === 'growth-asc') {
+                        const growthA = parseInt(a.getAttribute('data-growth')) || 0;
+                        const growthB = parseInt(b.getAttribute('data-growth')) || 0;
+                        return growthA - growthB;
+                    }
+                    return 0;
+                });
+
+                // Re-append cards in sorted order
+                cards.forEach(card => grid.appendChild(card));
+            });
+        }
 
         // Update visible client count
         function updateClientCount() {
