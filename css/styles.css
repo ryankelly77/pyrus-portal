@@ -10325,6 +10325,16 @@
     color: #166534;
 }
 
+.platform-badge.social {
+    background: #FCE7F3;
+    color: #9D174D;
+}
+
+.platform-badge.ai-creative {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
 .platform-badge svg {
     flex-shrink: 0;
 }
