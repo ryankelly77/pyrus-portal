@@ -264,19 +264,37 @@
 .welcome-announcements {
     display: flex;
     flex-direction: column;
+    padding: 16px 24px;
+    gap: 12px;
 }
 
 .welcome-announcement {
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    padding: 16px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
     position: relative;
 }
 
-.welcome-announcement:last-child {
-    border-bottom: none;
+/* Welcome Modal Header - stacked layout */
+.modal-overlay.welcome-modal .modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+}
+
+.modal-overlay.welcome-modal .modal-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.modal-overlay.welcome-modal .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
 }
 
 .welcome-announcement .announcement-icon {

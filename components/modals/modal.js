@@ -81,6 +81,13 @@ const ModalSystem = {
         const welcomeModal = document.getElementById('welcomeModal');
         if (!welcomeModal) return;
 
+        // Set personalized title if first name is available
+        const firstName = sessionStorage.getItem('clientFirstName');
+        const titleEl = document.getElementById('welcomeTitle');
+        if (firstName && titleEl) {
+            titleEl.textContent = `Welcome Back, ${firstName}!`;
+        }
+
         // Check if user has dismissed the welcome modal in this session
         const dismissed = sessionStorage.getItem('welcomeModalDismissed');
         if (!dismissed) {
