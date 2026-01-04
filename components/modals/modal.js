@@ -22,8 +22,7 @@ const ModalSystem = {
             }
         });
 
-        // Check for welcome modal on page load
-        this.checkWelcomeModal();
+        // Note: Welcome modal is shown via toggleClientView(), not automatically on page load
     },
 
     // Open a modal by ID

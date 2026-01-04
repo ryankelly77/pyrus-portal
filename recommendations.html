@@ -1799,14 +1799,14 @@
         // Show Welcome Modal
         function showWelcomeModal() {
             // Set personalized title
-            const firstName = sessionStorage.getItem('clientFirstName');
+            const firstName = sessionStorage.getItem('clientFirstName') || 'Client';
             const titleEl = document.getElementById('welcomeTitle');
-            if (firstName && titleEl) {
+            if (titleEl) {
                 titleEl.textContent = `Welcome Back, ${firstName}!`;
             }
-            // Show modal if not dismissed
-            if (!sessionStorage.getItem('welcomeModalDismissed') && typeof openModal === 'function') {
-                setTimeout(() => openModal('welcomeModal'), 300);
+            // Always show modal when toggling to client view
+            if (typeof openModal === 'function') {
+                openModal('welcomeModal');
             }
         }
 
