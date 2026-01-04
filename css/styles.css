@@ -11703,14 +11703,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: var(--pyrus-blue);
+    min-width: 28px;
+    width: 28px;
+    height: 28px;
+    background: #3B82F6;
     color: white;
     border-radius: 50%;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 /* Responsive Styles */
