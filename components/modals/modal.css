@@ -1,0 +1,369 @@
+/* ============================================
+   UNIFIED MODAL SYSTEM
+   ============================================ */
+
+/* Modal Overlay - the backdrop */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal Container */
+.modal-overlay .modal {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(20px) scale(0.98);
+    transition: transform 0.2s ease;
+}
+
+.modal-overlay.active .modal {
+    transform: translateY(0) scale(1);
+}
+
+/* Modal Sizes */
+.modal-overlay .modal.modal-sm {
+    max-width: 400px;
+}
+
+.modal-overlay .modal.modal-lg {
+    max-width: 900px;
+}
+
+.modal-overlay .modal.modal-xl {
+    max-width: 1100px;
+}
+
+/* Modal Header */
+.modal-overlay .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #E8EDE7;
+}
+
+.modal-overlay .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modal-overlay .modal-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-overlay .modal-header-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.modal-overlay .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1A1F16;
+    margin: 0 0 4px;
+}
+
+.modal-overlay .modal-subtitle {
+    font-size: 14px;
+    color: #5A6358;
+    margin: 0;
+}
+
+.modal-overlay .modal-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: #8A928A;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.modal-overlay .modal-close:hover {
+    background: #F5F7F6;
+    color: #1A1F16;
+}
+
+.modal-overlay .modal-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Modal Body */
+.modal-overlay .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Modal Footer */
+.modal-overlay .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #E8EDE7;
+    background: #FEFBF7;
+}
+
+/* Form Styles for Modals */
+.modal-form .form-group {
+    margin-bottom: 20px;
+}
+
+.modal-form .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.modal-form .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1A1F16;
+    margin-bottom: 6px;
+}
+
+.modal-form .form-label .required {
+    color: #DC2626;
+}
+
+.modal-form .form-input,
+.modal-form .form-select,
+.modal-form .form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #D4DCD2;
+    border-radius: 6px;
+    background: #fff;
+    color: #1A1F16;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal-form .form-input:focus,
+.modal-form .form-select:focus,
+.modal-form .form-textarea:focus {
+    outline: none;
+    border-color: #885430;
+    box-shadow: 0 0 0 3px rgba(136, 84, 48, 0.1);
+}
+
+/* Client view uses green focus */
+.client-view-mode .modal-form .form-input:focus,
+.client-view-mode .modal-form .form-select:focus,
+.client-view-mode .modal-form .form-textarea:focus {
+    border-color: #324438;
+    box-shadow: 0 0 0 3px rgba(50, 68, 56, 0.1);
+}
+
+.modal-form .form-input::placeholder {
+    color: #8A928A;
+}
+
+.modal-form .form-hint {
+    font-size: 12px;
+    color: #8A928A;
+    margin-top: 4px;
+}
+
+.modal-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 480px) {
+    .modal-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   WELCOME MODAL (Special Banner Style)
+   ============================================ */
+
+.modal-overlay.welcome-modal .modal {
+    max-width: 600px;
+    background: linear-gradient(135deg, #324438 0%, #4A5C50 100%);
+    color: white;
+}
+
+.modal-overlay.welcome-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 24px;
+}
+
+.modal-overlay.welcome-modal .modal-close {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.modal-overlay.welcome-modal .modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.modal-overlay.welcome-modal .modal-title {
+    color: white;
+    font-size: 22px;
+}
+
+.modal-overlay.welcome-modal .modal-subtitle {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.modal-overlay.welcome-modal .modal-body {
+    padding: 0;
+}
+
+.modal-overlay.welcome-modal .modal-footer {
+    background: rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    justify-content: center;
+}
+
+/* Welcome Announcements */
+.welcome-announcements {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-announcement {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.welcome-announcement:last-child {
+    border-bottom: none;
+}
+
+.welcome-announcement .announcement-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.welcome-announcement .announcement-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.welcome-announcement .announcement-content {
+    flex: 1;
+    min-width: 0;
+    padding-right: 30px;
+}
+
+.welcome-announcement .announcement-content strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.welcome-announcement .announcement-content span {
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+.welcome-announcement .announcement-dismiss {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+}
+
+.welcome-announcement .announcement-dismiss:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.welcome-announcement .announcement-dismiss svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .modal-overlay {
+        padding: 10px;
+    }
+
+    .modal-overlay .modal {
+        max-height: 95vh;
+    }
+
+    .modal-overlay .modal-header {
+        padding: 16px 20px;
+    }
+
+    .modal-overlay .modal-body {
+        padding: 20px;
+    }
+
+    .modal-overlay .modal-footer {
+        padding: 12px 20px;
+    }
+
+    .modal-overlay.welcome-modal .modal-title {
+        font-size: 18px;
+    }
+}

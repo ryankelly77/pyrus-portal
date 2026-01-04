@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="components/modals/modal.css">
 </head>
 <body>
     <div class="admin-layout">
@@ -1884,5 +1885,88 @@
             });
         });
     </script>
+    <script src="components/modals/modal.js"></script>
+
+    <!-- Welcome Modal -->
+    <div class="modal-overlay welcome-modal" id="welcomeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h2 class="modal-title">Welcome Back!</h2>
+                    <p class="modal-subtitle">Here's what's new in your portal</p>
+                </div>
+                <button class="modal-close" onclick="dismissWelcome()" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="welcome-announcements">
+                    <div class="welcome-announcement">
+                        <div class="announcement-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div class="announcement-content">
+                            <strong>New Smart Recommendations</strong>
+                            <span>AI-powered suggestions tailored to your business goals</span>
+                        </div>
+                        <button class="announcement-dismiss" onclick="dismissAnnouncement(this)" aria-label="Dismiss">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="welcome-announcement">
+                        <div class="announcement-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <div class="announcement-content">
+                            <strong>Performance Dashboard Updated</strong>
+                            <span>View real-time metrics and insights in your new dashboard</span>
+                        </div>
+                        <button class="announcement-dismiss" onclick="dismissAnnouncement(this)" aria-label="Dismiss">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="welcome-announcement">
+                        <div class="announcement-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M16 13H8"/>
+                                <path d="M16 17H8"/>
+                                <path d="M10 9H8"/>
+                            </svg>
+                        </div>
+                        <div class="announcement-content">
+                            <strong>Monthly Report Ready</strong>
+                            <span>Your December performance report is now available</span>
+                        </div>
+                        <button class="announcement-dismiss" onclick="dismissAnnouncement(this)" aria-label="Dismiss">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="dismissWelcome()">Got it, thanks!</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

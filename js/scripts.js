@@ -132,38 +132,25 @@
             });
         });
 
-        // Modal Functions
-        function openModal(modalId) {
-            document.getElementById('modalBackdrop').classList.add('active');
-            document.getElementById(modalId).classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+        // Modal Functions - now handled by modal.js
+        // These are fallback functions if modal.js is not loaded
+        if (typeof ModalSystem === 'undefined') {
+            window.openModal = function(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            };
 
-        function closeModal(modalId) {
-            document.getElementById('modalBackdrop').classList.remove('active');
-            document.getElementById(modalId).classList.remove('active');
-            document.body.style.overflow = '';
-        }
-
-        // Close modal on backdrop click
-        document.getElementById('modalBackdrop').addEventListener('click', () => {
-            document.querySelectorAll('.modal.active').forEach(modal => {
-                modal.classList.remove('active');
-            });
-            document.getElementById('modalBackdrop').classList.remove('active');
-            document.body.style.overflow = '';
-        });
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal.active').forEach(modal => {
+            window.closeModal = function(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
                     modal.classList.remove('active');
-                });
-                document.getElementById('modalBackdrop').classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
+                    document.body.style.overflow = '';
+                }
+            };
+        }
 
         // Toast Functions
         function showToast(message) {
