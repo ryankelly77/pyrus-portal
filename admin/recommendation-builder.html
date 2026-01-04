@@ -694,26 +694,16 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row monthly-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
                                 </div>
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row onetime-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
                                 </div>
                                 <div class="price-total">
-                                    <span>$</span>
-                                    <span class="total-amount">0</span>
-                                    <span>/mo Total</span>
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                             </div>
                             <button class="btn btn-purchase">Purchase Now</button>
@@ -728,26 +718,16 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row monthly-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
                                 </div>
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row onetime-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
                                 </div>
                                 <div class="price-total">
-                                    <span>$</span>
-                                    <span class="total-amount">0</span>
-                                    <span>/mo Total</span>
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                             </div>
                             <button class="btn btn-purchase">Purchase Now</button>
@@ -762,26 +742,16 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row monthly-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
                                 </div>
-                                <div class="price-row">
-                                    <span class="price-symbol">$</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" checked>
-                                        <span class="toggle-slider-sm"></span>
-                                    </label>
+                                <div class="price-row onetime-row">
+                                    <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
                                 </div>
                                 <div class="price-total">
-                                    <span>$</span>
-                                    <span class="total-amount">0</span>
-                                    <span>/mo Total</span>
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                             </div>
                             <button class="btn btn-purchase">Purchase Now</button>
@@ -801,6 +771,48 @@
                 category.classList.toggle('expanded');
             });
         });
+
+        // Calculate and update tier pricing
+        function updateTierPricing(tier) {
+            const tierElement = document.querySelector(`.pricing-tier[data-tier="${tier}"]`);
+            const dropzone = tierElement.querySelector('.tier-dropzone');
+            const items = dropzone.querySelectorAll('.service-item');
+
+            let totalMonthly = 0;
+            let totalOnetime = 0;
+
+            items.forEach(item => {
+                const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
+                const onetime = parseInt(item.getAttribute('data-onetime')) || 0;
+                totalMonthly += monthly;
+                totalOnetime += onetime;
+            });
+
+            // Update display
+            const monthlyRow = tierElement.querySelector('.monthly-row .price-amount');
+            const onetimeRow = tierElement.querySelector('.onetime-row .price-amount');
+            const totalText = tierElement.querySelector('.total-text');
+
+            monthlyRow.textContent = '$' + totalMonthly.toLocaleString();
+            onetimeRow.textContent = '$' + totalOnetime.toLocaleString();
+
+            // Dynamic total line
+            if (totalMonthly === 0 && totalOnetime === 0) {
+                totalText.textContent = '$0/mo Total';
+            } else if (totalOnetime === 0) {
+                totalText.textContent = '$' + totalMonthly.toLocaleString() + '/mo Total';
+            } else {
+                totalText.textContent = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
+            }
+
+            // Hide onetime row if no onetime fees
+            const onetimeRowEl = tierElement.querySelector('.onetime-row');
+            if (totalOnetime === 0) {
+                onetimeRowEl.style.display = 'none';
+            } else {
+                onetimeRowEl.style.display = '';
+            }
+        }
 
         // Basic Drag and Drop
         const serviceItems = document.querySelectorAll('.service-item');
@@ -841,42 +853,26 @@
                 droppedItem.classList.add('dropped');
                 droppedItem.removeAttribute('draggable');
 
-                // Get pricing data
-                const monthly = droppedItem.getAttribute('data-monthly');
-                const onetime = droppedItem.getAttribute('data-onetime');
-                const hasBothPricing = monthly && onetime && parseInt(monthly) > 0 && parseInt(onetime) > 0;
-
-                // Add pricing selector if item has both monthly and onetime pricing
-                if (hasBothPricing) {
-                    const uniqueId = 'pricing-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                    const pricingSelector = document.createElement('div');
-                    pricingSelector.className = 'pricing-selector';
-                    pricingSelector.innerHTML = `
-                        <label class="pricing-option monthly">
-                            <input type="radio" name="${uniqueId}" value="monthly" checked>
-                            <span>$${monthly} for 12 months</span>
-                        </label>
-                        <label class="pricing-option onetime">
-                            <input type="radio" name="${uniqueId}" value="onetime">
-                            <span>$${onetime} one-time</span>
-                        </label>
-                    `;
-                    droppedItem.appendChild(pricingSelector);
-                }
-
                 // Add remove button
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-service-btn';
                 removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+                const tier = zone.getAttribute('data-tier');
                 removeBtn.onclick = () => {
                     droppedItem.remove();
                     if (zone.children.length === 0) {
                         zone.innerHTML = '<div class="dropzone-placeholder"><span>Drag drop service here</span></div>';
                     }
+                    updateTierPricing(tier);
                 };
                 droppedItem.appendChild(removeBtn);
 
                 zone.appendChild(droppedItem);
+                updateTierPricing(tier);
             });
         });
+
+        // Initialize all tier pricing displays
+        ['good', 'better', 'best'].forEach(tier => updateTierPricing(tier));
     </script>

@@ -13428,3 +13428,41 @@ input[type="date"].form-control {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Recommendation Builder Tier Pricing ===== */
+.tier-pricing {
+    padding: 16px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    margin-top: 16px;
+}
+
+.tier-pricing .price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.tier-pricing .price-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.tier-pricing .price-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.tier-pricing .price-total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.tier-pricing .total-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pyrus-green);
+}
