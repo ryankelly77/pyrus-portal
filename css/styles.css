@@ -10463,6 +10463,21 @@
             color: var(--text-secondary);
         }
 
+        .btn-icon.has-notification {
+            position: relative;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 10px;
+            height: 10px;
+            background: #EF4444;
+            border-radius: 50%;
+            border: 2px solid var(--bg-white);
+        }
+
         .user-avatar-small {
             width: 36px;
             height: 36px;
