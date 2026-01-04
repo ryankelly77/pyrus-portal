@@ -9319,6 +9319,49 @@
             }
         }
 
+        /* Role Permissions Preview */
+        .role-permissions-preview {
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .permissions-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .permissions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .permission-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .permission-tag.granted {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .permission-tag.denied {
+            background: var(--bg-page);
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
         /* Form Styles */
         .form-row {
             display: grid;
@@ -13166,4 +13209,158 @@ input[type="date"].form-control {
     .platform-selector {
         flex-direction: column;
     }
+}
+
+/* ===== Admin Role Badges ===== */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.role-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.role-badge.super-admin {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.role-badge.production-team {
+    background: #DBEAFE;
+    color: #2563EB;
+}
+
+/* Admin Users Section */
+.admin-users-section,
+.client-users-section {
+    margin-bottom: 32px;
+}
+
+.admin-users-section h3,
+.client-users-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-users-section h3 svg,
+.client-users-section h3 svg {
+    color: var(--pyrus-green);
+}
+
+/* Role Select Grid */
+.role-select-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.role-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.role-option:hover {
+    border-color: var(--pyrus-green-light);
+}
+
+.role-option.selected {
+    border-color: var(--pyrus-green);
+    background: var(--pyrus-green-wash);
+}
+
+.role-option input[type="radio"] {
+    display: none;
+}
+
+.role-option-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.role-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.role-option-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.role-option-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Role Permissions Preview */
+.role-permissions-preview {
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.permissions-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.permissions-header svg {
+    color: var(--pyrus-green);
+}
+
+.permissions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.permission-tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.permission-tag.granted {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.permission-tag.denied {
+    background: #FEE2E2;
+    color: #DC2626;
+    text-decoration: line-through;
 }
