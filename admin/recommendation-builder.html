@@ -967,67 +967,72 @@
             // Determine reward tier based on non-free items
             const rewardTierIndex = getRewardTier(baseTotalMonthly);
             const analyticsIsFree = rewardTierIndex >= 0; // Analytics is free at all tiers
-            const another99IsFree = rewardTierIndex >= 2; // Another $99 product free at tier 2+
+            const free99Count = rewardTierIndex >= 2 ? 1 : 0; // One free $99 product at tier 2+
 
-            // Track if we've already marked a $99 product as free (other than Analytics)
-            let marked99AsFree = false;
+            // Track how many free $99 slots we've used (other than Analytics)
+            let free99Used = 0;
 
             items.forEach(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 const isAnalyticsTracking = title.includes('Analytics Tracking');
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 const onetime = parseInt(item.getAttribute('data-onetime')) || 0;
+                const quantity = parseInt(item.getAttribute('data-quantity')) || 1;
                 const priceDisplay = item.querySelector('.service-item-price');
-                const originalPrice = item.getAttribute('data-original-price') || priceDisplay?.textContent;
 
                 // Store original price if not already stored
                 if (priceDisplay && !item.getAttribute('data-original-price')) {
                     item.setAttribute('data-original-price', priceDisplay.textContent);
                 }
 
-                // Update Analytics Tracking price label if free
+                // Analytics Tracking is always entirely free
                 if (isAnalyticsTracking && analyticsIsFree && priceDisplay) {
                     priceDisplay.textContent = 'Free';
                     priceDisplay.classList.add('free-item');
-                    // Don't add to total - it's free
-                    return;
+                    return; // Don't add to total
                 }
 
-                // Check if this $99 product should be free (another free $99 product reward)
-                if (another99IsFree && monthly === 99 && !marked99AsFree && !isAnalyticsTracking && priceDisplay) {
-                    priceDisplay.textContent = 'Free';
-                    priceDisplay.classList.add('free-item');
-                    marked99AsFree = true;
-                    // Don't add to total - it's free
-                    return;
+                // Check if this $99 product can use free slots
+                let freeUnits = 0;
+                let paidUnits = quantity;
+
+                if (monthly === 99 && !isAnalyticsTracking && free99Used < free99Count) {
+                    // How many free slots can this item use?
+                    const availableFreeSlots = free99Count - free99Used;
+                    freeUnits = Math.min(quantity, availableFreeSlots);
+                    paidUnits = quantity - freeUnits;
+                    free99Used += freeUnits;
                 }
 
-                // Reset price display if item shouldn't be free anymore
-                if (priceDisplay && priceDisplay.classList.contains('free-item') && !isAnalyticsTracking) {
-                    if (!another99IsFree || marked99AsFree) {
+                // Update price display based on free/paid status
+                if (priceDisplay) {
+                    if (freeUnits > 0 && paidUnits === 0) {
+                        // Entirely free
+                        priceDisplay.textContent = 'Free';
+                        priceDisplay.classList.add('free-item');
+                    } else if (freeUnits > 0 && paidUnits > 0) {
+                        // Partially free (for quantity items)
+                        priceDisplay.textContent = freeUnits + ' Free, ' + paidUnits + ' × $' + monthly + '/mo';
+                        priceDisplay.classList.add('free-item');
+                    } else {
+                        // Reset to original price
                         priceDisplay.textContent = item.getAttribute('data-original-price') || '($' + monthly + '/mo)';
                         priceDisplay.classList.remove('free-item');
                     }
                 }
 
-                // Get quantity (default to 1)
-                const quantity = parseInt(item.getAttribute('data-quantity')) || 1;
-
-                // Check if item has pricing selector (both options available)
+                // Calculate totals based on paid units only
                 const pricingSelector = item.querySelector('.pricing-selector');
                 if (pricingSelector) {
                     const selectedOption = pricingSelector.querySelector('input:checked');
                     if (selectedOption && selectedOption.value === 'onetime') {
-                        // User chose onetime payment
-                        totalOnetime += onetime * quantity;
+                        totalOnetime += onetime * paidUnits;
                     } else {
-                        // User chose monthly (default)
-                        totalMonthly += monthly * quantity;
+                        totalMonthly += monthly * paidUnits;
                     }
                 } else {
-                    // No selector - add both (monthly only or onetime only items)
-                    totalMonthly += monthly * quantity;
-                    totalOnetime += onetime * quantity;
+                    totalMonthly += monthly * paidUnits;
+                    totalOnetime += onetime * paidUnits;
                 }
             });
 
