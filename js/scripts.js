@@ -297,3 +297,16 @@
                 }
             });
         });
+
+        // Handle URL hash for recommendations tabs (e.g., #current-services)
+        function handleRecommendationsHash() {
+            const hash = window.location.hash.replace('#', '');
+            if (hash) {
+                const targetTab = document.querySelector(`.recommendations-tab[data-recommendations-tab="${hash}"]`);
+                if (targetTab) {
+                    targetTab.click();
+                }
+            }
+        }
+        handleRecommendationsHash();
+        window.addEventListener('hashchange', handleRecommendationsHash);
