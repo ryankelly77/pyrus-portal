@@ -47,7 +47,11 @@
 
 /* Modal Sizes */
 .modal-overlay .modal.modal-sm {
-    max-width: 400px;
+    max-width: 420px;
+}
+
+.modal-overlay .modal.modal-md {
+    max-width: 560px;
 }
 
 .modal-overlay .modal.modal-lg {
