@@ -880,11 +880,7 @@
 
         // Copy embed code to clipboard
         function copyEmbedCode() {
-            const code = `<script
-    src="https://widgets.leadconnectorhq.com/loader.js"
-    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-    data-widget-id="6879429b33ee4b1983428d6c">
-</script>`;
+            const code = '<scr' + 'ipt\n    src="https://widgets.leadconnectorhq.com/loader.js"\n    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"\n    data-widget-id="6879429b33ee4b1983428d6c">\n</scr' + 'ipt>';
             navigator.clipboard.writeText(code).then(() => {
                 showToast('Embed code copied to clipboard!');
             });
