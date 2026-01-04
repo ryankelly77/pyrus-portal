@@ -13470,7 +13470,7 @@ input[type="date"].form-control {
 /* Pricing Selector for items with both monthly and onetime options */
 .pricing-selector {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
     margin-top: 12px;
     padding-top: 12px;
@@ -13481,6 +13481,7 @@ input[type="date"].form-control {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
     padding: 8px 12px;
     background: var(--bg-page);
     border: 2px solid var(--border-color);
