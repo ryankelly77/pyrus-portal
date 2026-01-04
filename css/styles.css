@@ -6147,30 +6147,19 @@
         .client-selector-bar {
             display: flex;
             align-items: flex-end;
-            gap: 24px;
+            gap: 16px;
             margin-bottom: 24px;
         }
 
-        .prepared-for {
+        .add-client-btn {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
         }
 
-        .prepared-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .add-client-link {
-            font-size: 13px;
-            color: var(--accent-orange);
-            text-decoration: none;
-        }
-
-        .add-client-link:hover {
-            text-decoration: underline;
+        .add-client-btn svg {
+            flex-shrink: 0;
         }
 
         .client-dropdown-wrapper {
@@ -9274,8 +9263,8 @@
         /* Builder Main Area */
         .client-selector-bar {
             display: flex;
-            align-items: center;
-            gap: 24px;
+            align-items: flex-end;
+            gap: 16px;
             background: var(--bg-white);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
@@ -9283,29 +9272,15 @@
             margin-bottom: 24px;
         }
 
-        .prepared-for {
+        .add-client-btn {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
         }
 
-        .prepared-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .add-client-link {
-            font-size: 13px;
-            color: var(--pyrus-green);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .add-client-link:hover {
-            text-decoration: underline;
+        .add-client-btn svg {
+            flex-shrink: 0;
         }
 
         .client-dropdown-wrapper {
