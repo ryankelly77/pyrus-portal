@@ -289,39 +289,34 @@
             <!-- Filter Bar -->
             <div class="filter-bar">
                 <div class="filter-tabs">
-                    <button class="filter-tab active">
+                    <button class="filter-tab active" data-filter="all">
                         All
-                        <span class="count">11</span>
                     </button>
-                    <button class="filter-tab">
+                    <button class="filter-tab" data-filter="email">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
                         Emails
-                        <span class="count">4</span>
                     </button>
-                    <button class="filter-tab">
+                    <button class="filter-tab" data-filter="result">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                         Result Alerts
-                        <span class="count">2</span>
                     </button>
-                    <button class="filter-tab">
+                    <button class="filter-tab" data-filter="chat">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                         Chat
-                        <span class="count">2</span>
                     </button>
-                    <button class="filter-tab">
+                    <button class="filter-tab" data-filter="content">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                         </svg>
                         Content
-                        <span class="count">3</span>
                     </button>
                 </div>
                 <div class="filter-actions">
@@ -356,7 +351,7 @@
 
                 <ul class="timeline-list">
                     <!-- Result Alert - Page 1 Ranking -->
-                    <li class="timeline-item highlight-success">
+                    <li class="timeline-item highlight-success" data-type="result">
                         <div class="timeline-date">
                             <span class="date">Jan 2, 2026</span>
                             <span class="time">2:45 PM CST</span>
@@ -409,7 +404,7 @@
                     </li>
 
                     <!-- Content Approved Notification -->
-                    <li class="timeline-item highlight-success">
+                    <li class="timeline-item highlight-success" data-type="content">
                         <div class="timeline-date">
                             <span class="date">Jan 2, 2026</span>
                             <span class="time">3:30 PM CST</span>
@@ -448,7 +443,7 @@
                     </li>
 
                     <!-- Content Ready for Review -->
-                    <li class="timeline-item">
+                    <li class="timeline-item" data-type="content">
                         <div class="timeline-date">
                             <span class="date">Jan 2, 2026</span>
                             <span class="time">11:00 AM CST</span>
@@ -492,7 +487,7 @@
                     </li>
 
                     <!-- Invitation Reminder - Opened & Clicked -->
-                    <li class="timeline-item highlight-success">
+                    <li class="timeline-item highlight-success" data-type="email">
                         <div class="timeline-date">
                             <span class="date">Jan 2, 2026</span>
                             <span class="time">8:00 AM CST</span>
@@ -553,7 +548,7 @@
                     </li>
 
                     <!-- Content Revision Requested -->
-                    <li class="timeline-item">
+                    <li class="timeline-item" data-type="content">
                         <div class="timeline-date">
                             <span class="date">Dec 31, 2025</span>
                             <span class="time">2:30 PM CST</span>
@@ -594,7 +589,7 @@
                     </li>
 
                     <!-- Portal Invitation - Failed -->
-                    <li class="timeline-item highlight-failed">
+                    <li class="timeline-item highlight-failed" data-type="email">
                         <div class="timeline-date">
                             <span class="date">Dec 29, 2025</span>
                             <span class="time">2:30 PM CST</span>
@@ -1032,6 +1027,26 @@
         if (sessionStorage.getItem('clientViewMode') === 'true') {
             toggleClientView();
         }
+
+        // Communication filter functionality
+        document.querySelectorAll('.filter-tab[data-filter]').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active state
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const filter = this.dataset.filter;
+                const items = document.querySelectorAll('.timeline-item[data-type]');
+
+                items.forEach(item => {
+                    if (filter === 'all' || item.dataset.type === filter) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

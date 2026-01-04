@@ -10102,10 +10102,15 @@
         }
 
         /* Filter tabs */
-        .client-view-mode .filter-tab:hover,
-        .client-view-mode .filter-tab.active {
+        .client-view-mode .filter-tab:hover {
             color: #324438;
             border-color: #324438;
+        }
+
+        .client-view-mode .filter-tab.active {
+            background: #324438;
+            border-color: #324438;
+            color: white;
         }
 
         /* Form inputs focus */
