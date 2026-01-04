@@ -10871,3 +10871,138 @@
         justify-content: center;
     }
 }
+
+/* ========================================
+   Content Requirements Modal Styles
+   ======================================== */
+
+.requirements-content {
+    padding: 8px 0;
+}
+
+.requirements-intro {
+    margin-bottom: 24px;
+}
+
+.requirements-intro p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.requirements-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.requirements-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.requirements-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.requirements-section h3 svg {
+    color: var(--pyrus-green);
+    flex-shrink: 0;
+}
+
+.requirements-list {
+    margin: 0;
+    padding-left: 28px;
+    list-style: disc;
+}
+
+.requirements-list li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.requirements-list li:last-child {
+    margin-bottom: 0;
+}
+
+.requirements-list li strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.requirements-list.checklist {
+    list-style: none;
+    padding-left: 0;
+}
+
+.requirements-list.checklist li {
+    position: relative;
+    padding-left: 28px;
+}
+
+.requirements-list.checklist li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-white);
+}
+
+.content-types-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.content-type-item {
+    background: var(--bg-page);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.content-type-item .platform-badge {
+    margin-bottom: 8px;
+}
+
+.content-type-item p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.help-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    padding: 16px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--pyrus-green);
+}
+
+.help-text strong {
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .content-types-grid {
+        grid-template-columns: 1fr;
+    }
+}
