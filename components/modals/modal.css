@@ -39,6 +39,10 @@
     flex-direction: column;
     transform: translateY(20px) scale(0.98);
     transition: transform 0.2s ease;
+    /* Override conflicting base .modal styles */
+    position: static;
+    opacity: 1;
+    visibility: visible;
 }
 
 .modal-overlay.active .modal {
