@@ -13508,3 +13508,143 @@ input[type="date"].form-control {
     font-weight: 500;
     color: var(--text-primary);
 }
+
+/* ===== Service Item Info Button ===== */
+.service-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.service-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.info-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--pyrus-green);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.info-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.info-btn:hover {
+    background: var(--pyrus-green-dark);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(50, 68, 56, 0.3);
+}
+
+.info-btn:active {
+    transform: scale(1.05);
+}
+
+/* Pulsing animation to draw attention */
+@keyframes info-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(50, 68, 56, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(50, 68, 56, 0); }
+}
+
+.info-btn {
+    animation: info-pulse 2s ease-in-out infinite;
+}
+
+.info-btn:hover {
+    animation: none;
+}
+
+/* ===== Service Info Modal ===== */
+.service-modal-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+}
+
+.service-modal-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.service-modal-price .price-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--pyrus-green);
+}
+
+.service-modal-price .price-period {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.service-modal-pricing .price-divider {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.service-modal-description {
+    margin-bottom: 20px;
+}
+
+.service-modal-description p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.service-modal-features h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.service-modal-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.service-modal-features li {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.service-modal-features li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    background: var(--pyrus-green);
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 8px;
+    background-position: center;
+    background-repeat: no-repeat;
+}

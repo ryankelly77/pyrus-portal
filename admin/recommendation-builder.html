@@ -762,6 +762,48 @@
         </main>
     </div>
 
+    <!-- Service Info Modal -->
+    <div class="modal-overlay" id="serviceInfoModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="serviceModalTitle">Service Name</h2>
+                <button class="modal-close" onclick="closeServiceModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="service-modal-pricing" id="serviceModalPricing">
+                    <div class="service-modal-price monthly">
+                        <span class="price-value">$99</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <span class="price-divider">or</span>
+                    <div class="service-modal-price onetime">
+                        <span class="price-value">$899</span>
+                        <span class="price-period">one-time</span>
+                    </div>
+                </div>
+                <div class="service-modal-description" id="serviceModalDescription">
+                    <p>Service description goes here...</p>
+                </div>
+                <div class="service-modal-features" id="serviceModalFeatures">
+                    <h4>What's Included:</h4>
+                    <ul>
+                        <li>Feature 1</li>
+                        <li>Feature 2</li>
+                        <li>Feature 3</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeServiceModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/scripts.js"></script>
     <script>
         // Service Category Toggle
@@ -919,4 +961,78 @@
 
         // Initialize all tier pricing displays
         ['good', 'better', 'best'].forEach(tier => updateTierPricing(tier));
+
+        // Service Info Modal
+        function openServiceModal(serviceItem) {
+            const title = serviceItem.querySelector('.service-item-title').textContent;
+            const description = serviceItem.querySelector('.service-item-desc').textContent;
+            const monthly = parseInt(serviceItem.getAttribute('data-monthly')) || 0;
+            const onetime = parseInt(serviceItem.getAttribute('data-onetime')) || 0;
+            const features = serviceItem.getAttribute('data-features') || '';
+
+            document.getElementById('serviceModalTitle').textContent = title;
+            document.getElementById('serviceModalDescription').innerHTML = `<p>${description}</p>`;
+
+            // Update pricing display
+            const pricingDiv = document.getElementById('serviceModalPricing');
+            if (monthly > 0 && onetime > 0) {
+                pricingDiv.innerHTML = `
+                    <div class="service-modal-price monthly">
+                        <span class="price-value">$${monthly}</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <span class="price-divider">or</span>
+                    <div class="service-modal-price onetime">
+                        <span class="price-value">$${onetime.toLocaleString()}</span>
+                        <span class="price-period">one-time</span>
+                    </div>
+                `;
+            } else if (monthly > 0) {
+                pricingDiv.innerHTML = `
+                    <div class="service-modal-price monthly">
+                        <span class="price-value">$${monthly}</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                `;
+            } else if (onetime > 0) {
+                pricingDiv.innerHTML = `
+                    <div class="service-modal-price onetime">
+                        <span class="price-value">$${onetime.toLocaleString()}</span>
+                        <span class="price-period">one-time</span>
+                    </div>
+                `;
+            }
+
+            // Update features if available
+            const featuresDiv = document.getElementById('serviceModalFeatures');
+            if (features) {
+                const featureList = features.split('|').map(f => `<li>${f}</li>`).join('');
+                featuresDiv.innerHTML = `<h4>What's Included:</h4><ul>${featureList}</ul>`;
+                featuresDiv.style.display = '';
+            } else {
+                featuresDiv.style.display = 'none';
+            }
+
+            document.getElementById('serviceInfoModal').classList.add('active');
+        }
+
+        function closeServiceModal() {
+            document.getElementById('serviceInfoModal').classList.remove('active');
+        }
+
+        // Attach click handlers to all info buttons
+        document.querySelectorAll('.info-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const serviceItem = btn.closest('.service-item');
+                openServiceModal(serviceItem);
+            });
+        });
+
+        // Close modal on overlay click
+        document.getElementById('serviceInfoModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeServiceModal();
+            }
+        });
     </script>
