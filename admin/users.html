@@ -150,21 +150,120 @@
                     </select>
                 </div>
 
-                <!-- Users Table -->
-                <div class="users-table-container">
-                    <table class="users-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Client</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Recommendation</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr data-status="registered" data-client="TC Clinical Services" data-is-client="true">
+                <!-- Admin Users Section -->
+                <div class="admin-users-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        Admin Users
+                    </h3>
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-status="registered" data-is-admin="true">
+                                    <td class="user-name">
+                                        <div class="user-avatar" style="background: linear-gradient(135deg, var(--pyrus-green) 0%, var(--pyrus-green-light) 100%);">RK</div>
+                                        <span>Ryan Kelly</span>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge super-admin">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                            </svg>
+                                            Super Admin
+                                        </span>
+                                    </td>
+                                    <td>ryan@pyrusdigital.com</td>
+                                    <td><span class="status-badge status-registered">Active</span></td>
+                                    <td>
+                                        <span class="text-muted" style="font-size: 12px;">Owner</span>
+                                    </td>
+                                </tr>
+                                <tr data-status="registered" data-is-admin="true">
+                                    <td class="user-name">
+                                        <div class="user-avatar" style="background: #3B82F6;">SM</div>
+                                        <span>Sarah Mitchell</span>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge production-team">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                            </svg>
+                                            Production Team
+                                        </span>
+                                    </td>
+                                    <td>sarah@pyrusdigital.com</td>
+                                    <td><span class="status-badge status-registered">Active</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline" onclick="editAdminUser('sarah')">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr data-status="invited" data-is-admin="true">
+                                    <td class="user-name">
+                                        <div class="user-avatar" style="background: #6B7280;">JD</div>
+                                        <span>James Davis</span>
+                                    </td>
+                                    <td>
+                                        <span class="role-badge production-team">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                            </svg>
+                                            Production Team
+                                        </span>
+                                    </td>
+                                    <td>james@pyrusdigital.com</td>
+                                    <td><span class="status-badge status-invited">Invited</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline" onclick="resendAdminInvite('james')">Resend</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-secondary" onclick="openInviteAdminModal()" style="margin-top: 16px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Invite Admin User
+                    </button>
+                </div>
+
+                <!-- Client Users Section -->
+                <div class="client-users-section">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Client Users
+                    </h3>
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Client</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Recommendation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-status="registered" data-client="TC Clinical Services" data-is-client="true">
                                 <td class="user-name">
                                     <div class="user-avatar" style="background: linear-gradient(135deg, #B57841 0%, #C4895A 100%);">TC</div>
                                     <span>Jon De La Garza</span>
@@ -319,6 +418,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 <!-- Pagination -->

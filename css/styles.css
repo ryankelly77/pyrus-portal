@@ -9126,6 +9126,133 @@
             gap: 10px;
         }
 
+        /* Role & Access Styles */
+        .role-display {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .role-badge-large {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            background: var(--bg-page);
+        }
+
+        .role-badge-large.super-admin {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 1px solid #F59E0B;
+        }
+
+        .role-badge-large.super-admin svg {
+            color: #D97706;
+        }
+
+        .role-badge-large.production-team {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            border: 1px solid #3B82F6;
+        }
+
+        .role-badge-large.production-team svg {
+            color: #2563EB;
+        }
+
+        .role-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .role-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .role-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .role-permissions h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .permission-item.granted {
+            color: var(--success);
+        }
+
+        .permission-item.denied {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .permission-item.denied svg {
+            stroke: var(--text-muted);
+        }
+
+        /* Admin User Roles in Users Table */
+        .admin-users-section,
+        .client-users-section {
+            margin-bottom: 32px;
+        }
+
+        .admin-users-section h3,
+        .client-users-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-badge.super-admin {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+
+        .role-badge.production-team {
+            background: #DBEAFE;
+            color: #2563EB;
+        }
+
+        .role-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
         /* Form Styles */
         .form-row {
             display: grid;
