@@ -5466,7 +5466,7 @@
         }
 
         .modal-content.modal-lg {
-            width: 800px;
+            width: 900px;
         }
 
         .modal-header {
@@ -6039,7 +6039,7 @@
         }
 
         .modal-content.modal-lg {
-            width: 800px;
+            width: 900px;
         }
 
         .modal-header {
@@ -12202,159 +12202,6 @@
         .client-view-mode .current-services-total-label span {
             color: #324438;
         }
-
-/* ============================================
-   Modal Overlay Styles
-   ============================================ */
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-.modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.modal-overlay .modal {
-    background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 520px;
-    max-height: 90vh;
-    overflow: hidden;
-    transform: translateY(20px);
-    transition: transform 0.2s ease;
-}
-
-.modal-overlay.active .modal {
-    transform: translateY(0);
-}
-
-.modal-overlay .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.modal-overlay .modal-header h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.modal-overlay .modal-close {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.modal-overlay .modal-close:hover {
-    background: var(--bg-page);
-    color: var(--text-primary);
-}
-
-.modal-overlay .modal-close svg {
-    width: 18px;
-    height: 18px;
-}
-
-.modal-overlay .modal-body {
-    padding: 24px;
-    max-height: calc(90vh - 140px);
-    overflow-y: auto;
-}
-
-.modal-overlay .modal-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--border-light);
-    background: var(--bg-page);
-}
-
-/* Modal Form Styles */
-.modal-form .form-group {
-    margin-bottom: 20px;
-}
-
-.modal-form .form-group:last-child {
-    margin-bottom: 0;
-}
-
-.modal-form .form-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 6px;
-}
-
-.modal-form .form-label .required {
-    color: #DC2626;
-}
-
-.modal-form .form-input,
-.modal-form .form-select {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 14px;
-    font-family: inherit;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-white);
-    color: var(--text-primary);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.modal-form .form-input:focus,
-.modal-form .form-select:focus {
-    outline: none;
-    border-color: var(--pyrus-green);
-    box-shadow: 0 0 0 3px rgba(50, 68, 56, 0.1);
-}
-
-.modal-form .form-input::placeholder {
-    color: var(--text-muted);
-}
-
-.modal-form .form-hint {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-
-.modal-form .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
 
 /* ============================================
    Original Plan Tab Styles
