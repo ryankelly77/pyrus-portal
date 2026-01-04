@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Pyrus Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #324438 0%, #4A5C50 100%);
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            color: white;
+        }
+
+        .login-logo svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .login-logo span {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .login-header {
+            padding: 32px 32px 24px;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 8px;
+        }
+
+        .login-header p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .login-body {
+            padding: 0 32px 32px;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .login-form .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-white);
+            color: var(--text-primary);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .login-form .form-input:focus {
+            outline: none;
+            border-color: #324438;
+            box-shadow: 0 0 0 3px rgba(50, 68, 56, 0.1);
+        }
+
+        .login-form .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .forgot-password {
+            display: block;
+            text-align: right;
+            font-size: 13px;
+            color: #324438;
+            text-decoration: none;
+            margin-top: -12px;
+            margin-bottom: 24px;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            color: white;
+            background: #324438;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .login-btn:hover {
+            background: #283830;
+        }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-light);
+        }
+
+        .login-divider span {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Demo Login Section */
+        .demo-logins {
+            padding: 24px 32px;
+            background: var(--bg-page);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .demo-logins h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 12px;
+        }
+
+        .demo-login-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+
+        .demo-login-btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .demo-login-btn:hover {
+            border-color: #324438;
+            background: var(--pyrus-green-wash);
+        }
+
+        .demo-login-btn .demo-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .demo-login-btn .demo-info {
+            flex: 1;
+        }
+
+        .demo-login-btn .demo-name {
+            font-weight: 500;
+        }
+
+        .demo-login-btn .demo-status {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .demo-login-btn .demo-status .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        .demo-login-btn .demo-status .status-dot.active {
+            background: var(--success-text);
+        }
+
+        .demo-login-btn .demo-status .status-dot.onboarding {
+            background: var(--accent-blue);
+        }
+
+        .demo-login-btn .demo-status .status-dot.prospect {
+            background: var(--accent-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-container">
+            <div class="login-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Portal</span>
+            </div>
+
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>Welcome back</h1>
+                    <p>Sign in to access your marketing dashboard</p>
+                </div>
+
+                <div class="login-body">
+                    <form class="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" id="loginEmail" placeholder="you@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                        </div>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                        <button type="submit" class="login-btn">Sign In</button>
+                    </form>
+                </div>
+
+                <div class="demo-logins">
+                    <h3>Demo Accounts</h3>
+                    <button class="demo-login-btn" onclick="demoLogin('active', 'Jon')">
+                        <div class="demo-avatar" style="background: linear-gradient(135deg, #B57841 0%, #C4895A 100%);">JD</div>
+                        <div class="demo-info">
+                            <div class="demo-name">Jon De La Garza</div>
+                            <div class="demo-status">
+                                <span class="status-dot active"></span>
+                                Active Client - TC Clinical Services
+                            </div>
+                        </div>
+                    </button>
+                    <button class="demo-login-btn" onclick="demoLogin('onboarding', 'Marcus')">
+                        <div class="demo-avatar" style="background: #16A34A;">MG</div>
+                        <div class="demo-info">
+                            <div class="demo-name">Marcus Green</div>
+                            <div class="demo-status">
+                                <span class="status-dot onboarding"></span>
+                                Onboarding - Green Thumb Landscaping
+                            </div>
+                        </div>
+                    </button>
+                    <button class="demo-login-btn" onclick="demoLogin('prospect', 'Sarah')">
+                        <div class="demo-avatar" style="background: #EA580C;">SB</div>
+                        <div class="demo-info">
+                            <div class="demo-name">Sarah Blake</div>
+                            <div class="demo-status">
+                                <span class="status-dot prospect"></span>
+                                Prospect - Peak Performance Gym
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            // For prototype, default to active status
+            demoLogin('active', 'User');
+        }
+
+        function demoLogin(status, firstName) {
+            // Store client info in sessionStorage
+            sessionStorage.setItem('clientStatus', status);
+            sessionStorage.setItem('clientFirstName', firstName);
+            sessionStorage.setItem('clientLoggedIn', 'true');
+
+            // Route based on status
+            switch(status) {
+                case 'active':
+                    // Active clients go to Smart Recommendations
+                    window.location.href = 'recommendations.html?tab=smart';
+                    break;
+                case 'onboarding':
+                    // Onboarding clients go to Getting Started / Onboarding Checklist
+                    window.location.href = 'getting-started.html';
+                    break;
+                case 'prospect':
+                    // Prospects go to Original Plan
+                    window.location.href = 'recommendations.html?tab=original';
+                    break;
+                default:
+                    window.location.href = 'getting-started.html';
+            }
+        }
+    </script>
+</body>
+</html>

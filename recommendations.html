@@ -219,30 +219,88 @@
             <a href="client-settings.html" class="tab-btn client-only" style="display: none;">Settings</a>
         </div>
 
+        <!-- Welcome Banner (Client View Only) -->
+        <div class="welcome-banner client-only" id="welcomeBanner" style="display: none;">
+            <button class="welcome-banner-close" onclick="dismissWelcomeBanner()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="welcome-banner-content">
+                <h2 class="welcome-banner-title">Welcome back, <span id="clientFirstName">Jon</span>!</h2>
+                <p class="welcome-banner-text">Here's what's new with your marketing this week.</p>
+            </div>
+            <div class="welcome-announcements">
+                <div class="welcome-announcement" data-announcement="1">
+                    <div class="announcement-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="announcement-content">
+                        <strong>Your keyword "precision wound care San Antonio" is now ranking on Page 1!</strong>
+                        <span>Moved from position #24 to #7</span>
+                    </div>
+                    <button class="announcement-dismiss" onclick="dismissAnnouncement(1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="welcome-announcement" data-announcement="2">
+                    <div class="announcement-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </div>
+                    <div class="announcement-content">
+                        <strong>New recommendations available!</strong>
+                        <span>Based on your Q4 results, we've updated your growth plan</span>
+                    </div>
+                    <button class="announcement-dismiss" onclick="dismissAnnouncement(2)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Recommendations Content -->
         <div class="recommendations-content">
             <!-- Main Recommendations Tabs -->
             <div class="recommendations-tabs">
-                <button class="recommendations-tab active" data-recommendations-tab="growth-projection">
+                <button class="recommendations-tab active" data-recommendations-tab="smart-recommendations">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                        <polyline points="17 6 23 6 23 12"></polyline>
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
-                    Your Growth Projection
+                    Smart Recommendations
                 </button>
-                <button class="recommendations-tab" data-recommendations-tab="current-services">
+                <button class="recommendations-tab" data-recommendations-tab="original-plan">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
                         <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
+                    Original Plan
+                </button>
+                <button class="recommendations-tab" data-recommendations-tab="current-services">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
                     Your Current Services
                 </button>
             </div>
 
-            <!-- Growth Projection Tab Content -->
-            <div class="recommendations-tab-content active" id="growth-projection-tab">
+            <!-- Smart Recommendations Tab Content -->
+            <div class="recommendations-tab-content active" id="smart-recommendations-tab">
                 <!-- Growth Stage & Refresh Cycle Header -->
                 <div class="stage-refresh-header">
                 <!-- Growth Stage Card -->
@@ -778,6 +836,182 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Original Plan Tab Content -->
+            <div class="recommendations-tab-content" id="original-plan-tab">
+                <div class="original-plan-header">
+                    <div class="plan-intro-card">
+                        <div class="plan-intro-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="plan-intro-content">
+                            <h2>Your Marketing Proposal</h2>
+                            <p>This is the original marketing plan we've prepared for your business. Review the services below and let us know when you're ready to get started!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="original-plan-services">
+                    <h3 class="plan-section-title">Recommended Services</h3>
+
+                    <div class="plan-service-card">
+                        <div class="plan-service-header">
+                            <div class="plan-service-icon" style="background: var(--pyrus-green-wash); color: var(--pyrus-green);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <div class="plan-service-info">
+                                <h4>Search Engine Optimization (SEO)</h4>
+                                <p>Improve your visibility in Google search results and drive organic traffic to your website.</p>
+                            </div>
+                            <div class="plan-service-price">
+                                <span class="price-amount">$599</span>
+                                <span class="price-period">/month</span>
+                            </div>
+                        </div>
+                        <div class="plan-service-features">
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Keyword research & strategy</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>On-page optimization</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Monthly performance reporting</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plan-service-card">
+                        <div class="plan-service-header">
+                            <div class="plan-service-icon" style="background: var(--accent-blue-bg); color: var(--accent-blue);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
+                            <div class="plan-service-info">
+                                <h4>Google Ads Management</h4>
+                                <p>Reach customers actively searching for your services with targeted pay-per-click advertising.</p>
+                            </div>
+                            <div class="plan-service-price">
+                                <span class="price-amount">$499</span>
+                                <span class="price-period">/month</span>
+                            </div>
+                        </div>
+                        <div class="plan-service-features">
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Campaign setup & management</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Ad copy creation & testing</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Conversion tracking & optimization</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plan-service-card">
+                        <div class="plan-service-header">
+                            <div class="plan-service-icon" style="background: var(--accent-orange-pale); color: var(--accent-orange);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="plan-service-info">
+                                <h4>Google Business Profile Management</h4>
+                                <p>Optimize your local presence to attract nearby customers searching for your services.</p>
+                            </div>
+                            <div class="plan-service-price">
+                                <span class="price-amount">$199</span>
+                                <span class="price-period">/month</span>
+                            </div>
+                        </div>
+                        <div class="plan-service-features">
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Profile optimization</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Weekly posts & updates</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>Review management</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="plan-summary-card">
+                    <div class="plan-summary-header">
+                        <h3>Investment Summary</h3>
+                    </div>
+                    <div class="plan-summary-content">
+                        <div class="summary-line-item">
+                            <span>Search Engine Optimization</span>
+                            <span>$599/mo</span>
+                        </div>
+                        <div class="summary-line-item">
+                            <span>Google Ads Management</span>
+                            <span>$499/mo</span>
+                        </div>
+                        <div class="summary-line-item">
+                            <span>Google Business Profile</span>
+                            <span>$199/mo</span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Total Monthly Investment</span>
+                            <span>$1,297/mo</span>
+                        </div>
+                    </div>
+                    <div class="plan-summary-cta">
+                        <p>Ready to grow your business?</p>
+                        <button class="btn btn-primary btn-lg">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Get Started Today
+                        </button>
+                        <span class="cta-note">or <a href="communication.html">contact us</a> with questions</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Approved Changes Content -->
@@ -1544,6 +1778,8 @@
             sessionStorage.setItem('clientViewMode', 'true');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
+            // Show welcome banner in client view
+            showWelcomeBanner();
         }
 
         function exitClientView() {
@@ -1552,12 +1788,101 @@
             sessionStorage.removeItem('clientViewMode');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
+            // Hide welcome banner
+            document.getElementById('welcomeBanner').style.display = 'none';
+        }
+
+        // Welcome Banner Functions
+        function showWelcomeBanner() {
+            const banner = document.getElementById('welcomeBanner');
+            if (banner && !sessionStorage.getItem('welcomeBannerDismissed')) {
+                banner.style.display = 'block';
+                // Update client name if available
+                const firstName = sessionStorage.getItem('clientFirstName');
+                if (firstName) {
+                    document.getElementById('clientFirstName').textContent = firstName;
+                }
+            }
+        }
+
+        function dismissWelcomeBanner() {
+            document.getElementById('welcomeBanner').style.display = 'none';
+            sessionStorage.setItem('welcomeBannerDismissed', 'true');
+        }
+
+        function dismissAnnouncement(id) {
+            const announcement = document.querySelector(`[data-announcement="${id}"]`);
+            if (announcement) {
+                announcement.style.display = 'none';
+                // Store dismissed announcements
+                const dismissed = JSON.parse(sessionStorage.getItem('dismissedAnnouncements') || '[]');
+                dismissed.push(id);
+                sessionStorage.setItem('dismissedAnnouncements', JSON.stringify(dismissed));
+            }
+            // Check if all announcements are dismissed
+            const remaining = document.querySelectorAll('.welcome-announcement:not([style*="display: none"])');
+            if (remaining.length === 0) {
+                document.querySelector('.welcome-announcements').style.display = 'none';
+            }
+        }
+
+        // Recommendations Tab Switching
+        function switchRecommendationsTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.recommendations-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-recommendations-tab') === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // Update tab content
+            document.querySelectorAll('.recommendations-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const targetTab = document.getElementById(tabName + '-tab');
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+        }
+
+        // Handle URL parameters for tab selection
+        function handleUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+
+            if (tab === 'smart') {
+                switchRecommendationsTab('smart-recommendations');
+            } else if (tab === 'original') {
+                switchRecommendationsTab('original-plan');
+            }
         }
 
         // Restore client view mode on page load
-        if (sessionStorage.getItem('clientViewMode') === 'true') {
+        if (sessionStorage.getItem('clientViewMode') === 'true' || sessionStorage.getItem('clientLoggedIn') === 'true') {
             toggleClientView();
         }
+
+        // Handle URL params on load
+        handleUrlParams();
+
+        // Restore dismissed announcements
+        const dismissedAnnouncements = JSON.parse(sessionStorage.getItem('dismissedAnnouncements') || '[]');
+        dismissedAnnouncements.forEach(id => {
+            const announcement = document.querySelector(`[data-announcement="${id}"]`);
+            if (announcement) {
+                announcement.style.display = 'none';
+            }
+        });
+
+        // Add click handlers for recommendations tabs
+        document.querySelectorAll('.recommendations-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-recommendations-tab');
+                switchRecommendationsTab(tabName);
+            });
+        });
     </script>
 </body>
 </html>
