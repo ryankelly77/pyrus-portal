@@ -12034,108 +12034,81 @@
             height: 16px;
         }
 
-        .welcome-banner h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0 0 8px;
+        .welcome-banner-content {
+            margin-bottom: 20px;
+            padding-right: 40px;
         }
 
-        .welcome-banner p {
+        .welcome-banner-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 6px;
+        }
+
+        .welcome-banner-text {
             font-size: 14px;
             opacity: 0.85;
             margin: 0;
-            max-width: 600px;
         }
 
-        /* Announcements */
-        .announcements-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .announcements-title {
+        /* Welcome Announcements */
+        .welcome-announcements {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            opacity: 0.7;
-            margin-bottom: 12px;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .announcements-title svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .announcement-item {
+        .welcome-announcement {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 14px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-            margin-bottom: 8px;
+            border-radius: var(--radius-md);
+            padding: 14px 40px 14px 16px;
             position: relative;
         }
 
-        .announcement-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .announcement-icon {
-            width: 32px;
-            height: 32px;
+        .welcome-announcement .announcement-icon {
+            width: 36px;
+            height: 36px;
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        .announcement-icon.new-feature {
-            background: rgba(59, 130, 246, 0.3);
+        .welcome-announcement .announcement-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
-        .announcement-icon.result {
-            background: rgba(34, 197, 94, 0.3);
-        }
-
-        .announcement-icon.tip {
-            background: rgba(234, 179, 8, 0.3);
-        }
-
-        .announcement-icon svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .announcement-content {
+        .welcome-announcement .announcement-content {
             flex: 1;
             min-width: 0;
+            padding-top: 2px;
         }
 
-        .announcement-content strong {
+        .welcome-announcement .announcement-content strong {
             display: block;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            line-height: 1.3;
         }
 
-        .announcement-content span {
-            font-size: 12px;
-            opacity: 0.8;
+        .welcome-announcement .announcement-content span {
+            font-size: 13px;
+            opacity: 0.75;
         }
 
-        .announcement-dismiss {
+        .welcome-announcement .announcement-dismiss {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 20px;
-            height: 20px;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -12147,18 +12120,87 @@
             transition: all 0.15s ease;
         }
 
-        .announcement-dismiss:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .welcome-announcement .announcement-dismiss:hover {
+            background: rgba(255, 255, 255, 0.15);
             color: white;
         }
 
-        .announcement-dismiss svg {
-            width: 12px;
-            height: 12px;
+        .welcome-announcement .announcement-dismiss svg {
+            width: 14px;
+            height: 14px;
         }
 
         .welcome-banner.hidden {
             display: none;
+        }
+
+        @media (max-width: 640px) {
+            .welcome-banner {
+                padding: 20px;
+            }
+
+            .welcome-banner-content {
+                margin-bottom: 16px;
+            }
+
+            .welcome-banner-title {
+                font-size: 18px;
+            }
+
+            .welcome-announcement {
+                padding: 12px 36px 12px 12px;
+                gap: 12px;
+            }
+
+            .welcome-announcement .announcement-icon {
+                width: 32px;
+                height: 32px;
+            }
+
+            .welcome-announcement .announcement-content strong {
+                font-size: 13px;
+            }
+
+            .welcome-announcement .announcement-content span {
+                font-size: 12px;
+            }
+        }
+
+        /* ======================= */
+        /* CLIENT VIEW LINK COLORS */
+        /* ======================= */
+        .client-view-mode a:not(.btn):not(.admin-nav-item):not(.client-nav-item):not(.tab-btn):not(.recommendations-tab) {
+            color: #324438;
+        }
+
+        .client-view-mode a:not(.btn):not(.admin-nav-item):not(.client-nav-item):not(.tab-btn):not(.recommendations-tab):hover {
+            color: #243228;
+        }
+
+        /* Client view sub-navigation tabs */
+        .client-view-mode .recommendations-tabs .recommendations-tab {
+            color: var(--text-secondary);
+            border-color: transparent;
+        }
+
+        .client-view-mode .recommendations-tabs .recommendations-tab:hover {
+            color: #324438;
+            background: rgba(50, 68, 56, 0.05);
+        }
+
+        .client-view-mode .recommendations-tabs .recommendations-tab.active {
+            color: #324438;
+            border-color: #324438;
+            background: rgba(50, 68, 56, 0.08);
+        }
+
+        .client-view-mode .recommendations-tabs .recommendations-tab.active svg {
+            color: #324438;
+        }
+
+        /* Client view text links and spans that look like links */
+        .client-view-mode .current-services-total-label span {
+            color: #324438;
         }
 
 /* ============================================
