@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content - Pyrus Digital Client Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="components/modals/modal.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="admin-users.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="admin-notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="admin-settings.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="client-login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Client Sidebar (visible in client view mode) -->
+        <aside class="client-sidebar">
+            <div class="client-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Portal</span>
+            </div>
+            <nav class="client-nav">
+                <a href="getting-started.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <span>Getting Started</span>
+                </a>
+                <a href="results.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <span>Results</span>
+                </a>
+                <a href="activity.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Activity</span>
+                </a>
+                <a href="content.html" class="client-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Content</span>
+                </a>
+                <a href="communication.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Communication</span>
+                </a>
+                <a href="recommendations.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="client-settings.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="client-login.html" class="client-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Header Bar -->
+            <div class="admin-top-header">
+                <div class="admin-top-header-left">
+                    <nav class="breadcrumb">
+                        <a href="index.html">Clients</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        <span>TC Clinical Services</span>
+                    </nav>
+                </div>
+                <div class="admin-top-header-right">
+                    <button class="btn btn-secondary admin-only" onclick="toggleClientView()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        View as Client
+                    </button>
+                    <a href="admin-notifications.html" class="btn-icon has-notification">
+                        <span class="notification-badge"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </a>
+                    <a href="admin-settings.html" class="user-menu-link">
+                        <div class="user-avatar-small">
+                            <span>RK</span>
+                        </div>
+                        <span class="user-name">Ryan Kelly</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Client View Mode Banner (hidden by default) -->
+            <div class="view-mode-banner" id="clientViewBanner" style="display: none;">
+                <div class="banner-text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Viewing as client: TC Clinical Services
+                </div>
+                <button class="btn-exit-preview" onclick="exitClientView()">Exit Preview</button>
+            </div>
+
+            <div class="admin-content">
+                <!-- Client Header Card -->
+                <div class="client-header-card">
+                    <div class="client-header">
+                        <div class="client-info">
+                            <div class="client-avatar">TC</div>
+                            <div class="client-details">
+                                <h1>
+                                    TC Clinical Services
+                                    <span class="status-badge active">Active</span>
+                                </h1>
+                                <p class="client-meta">dlg.mdservices@gmail.com • Client since Sep 2025 • <a href="recommendations.html#current-services" class="services-link">4 services</a></p>
+                            </div>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-secondary admin-only" onclick="openModal('resultAlertModal')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                                Send Result Alert
+                            </button>
+                            <button class="btn btn-primary admin-only" onclick="openModal('editClientModal')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                                Edit Client
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-nav">
+                    <a href="getting-started.html" class="tab-btn">Getting Started</a>
+                    <a href="results.html" class="tab-btn">Results</a>
+                    <a href="activity.html" class="tab-btn">Activity</a>
+                    <a href="content.html" class="tab-btn active">Content</a>
+                    <a href="communication.html" class="tab-btn">Communication</a>
+                    <a href="recommendations.html" class="tab-btn">Recommendations</a>
+                    <a href="client-settings.html" class="tab-btn">Settings</a>
+                </div>
+
+                <!-- Content Portal Header -->
+                <div class="content-portal-header">
+                    <div class="content-portal-title">
+                        <h2>Content Approval Portal</h2>
+                        <p>Review and approve your content before it goes live</p>
+                    </div>
+                </div>
+
+                <!-- Content Stats -->
+                <div class="content-stats">
+                    <div class="content-stat-card urgent">
+                        <div class="stat-label">Urgent Reviews</div>
+                        <div class="stat-value">2</div>
+                        <div class="stat-desc">Less than 24 hours</div>
+                    </div>
+                    <div class="content-stat-card">
+                        <div class="stat-label">Pending Approval</div>
+                        <div class="stat-value">3</div>
+                        <div class="stat-desc">Awaiting your review</div>
+                    </div>
+                    <div class="content-stat-card">
+                        <div class="stat-label">Approved</div>
+                        <div class="stat-value">2</div>
+                        <div class="stat-desc">Ready for publishing</div>
+                    </div>
+                    <div class="content-stat-card">
+                        <div class="stat-label">Published</div>
+                        <div class="stat-value">6</div>
+                        <div class="stat-desc">Live content</div>
+                    </div>
+                </div>
+
+                <!-- View Content Requirements Button -->
+                <div class="content-actions-bar">
+                    <button class="btn btn-secondary" onclick="openModal('contentRequirementsModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        View Content Requirements
+                    </button>
+                </div>
+
+                <!-- Content Sections -->
+                <div class="content-section">
+                    <div class="content-section-header">
+                        <h3 class="urgent-title">Urgent Reviews</h3>
+                        <div class="content-filters">
+                            <button class="btn btn-outline btn-sm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                Search
+                            </button>
+                            <button class="btn btn-outline btn-sm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Sort by Date
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Urgent Content Items -->
+                    <div class="content-list">
+                        <div class="content-item urgent">
+                            <div class="content-item-header">
+                                <span class="platform-badge website">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Website Content
+                                </span>
+                                <div class="time-remaining urgent">
+                                    <span class="time-label">Time remaining</span>
+                                    <span class="time-value">23 hours</span>
+                                </div>
+                            </div>
+                            <h4 class="content-title">Black Friday Sale Announcement</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Blog Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    Added Nov 15
+                                </span>
+                            </div>
+                            <p class="content-preview">Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
+                            <div class="content-actions">
+                                <button class="btn btn-primary btn-sm" onclick="openModal('reviewEditModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    Review & Edit
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="openModal('quickApproveModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Quick Approve
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="content-item urgent">
+                            <div class="content-item-header">
+                                <span class="platform-badge gbp">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    Google Business Profile
+                                </span>
+                                <div class="time-remaining urgent">
+                                    <span class="time-label">Time remaining</span>
+                                    <span class="time-value">18 hours</span>
+                                </div>
+                            </div>
+                            <h4 class="content-title">Limited Time Offer Post</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Google Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    Added Nov 18
+                                </span>
+                            </div>
+                            <p class="content-preview">This week only! Get a free SEO audit with any web design package. Limited slots available...</p>
+                            <div class="content-actions">
+                                <button class="btn btn-primary btn-sm" onclick="openModal('reviewEditModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    Review & Edit
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="openModal('quickApproveModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Quick Approve
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Approval Section -->
+                <div class="content-section">
+                    <div class="content-section-header">
+                        <h3>Pending Approval</h3>
+                    </div>
+                    <div class="content-list">
+                        <div class="content-item">
+                            <div class="content-item-header">
+                                <span class="platform-badge website">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Website Content
+                                </span>
+                                <div class="time-remaining">
+                                    <span class="time-label">Time remaining</span>
+                                    <span class="time-value">4 days</span>
+                                </div>
+                            </div>
+                            <h4 class="content-title">2025 Marketing Trends You Need to Know</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Blog Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    Added Nov 20
+                                </span>
+                            </div>
+                            <p class="content-preview">Stay ahead of the curve with these 10 marketing trends that will dominate 2025...</p>
+                            <div class="content-actions">
+                                <button class="btn btn-primary btn-sm" onclick="openModal('reviewEditModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    Review & Edit
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="openModal('quickApproveModal')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Quick Approve
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved Section -->
+                <div class="content-section">
+                    <div class="content-section-header">
+                        <h3>Approved - Awaiting Publishing</h3>
+                    </div>
+                    <div class="content-list">
+                        <div class="content-item approved">
+                            <div class="content-item-header">
+                                <span class="platform-badge website">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Website Content
+                                </span>
+                                <div class="status-approved">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Awaiting Publishing
+                                </div>
+                            </div>
+                            <h4 class="content-title">Complete Guide to Digital Marketing in 2024</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Blog Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Approved Nov 19
+                                </span>
+                            </div>
+                            <p class="content-preview">Get ready to take your business to the next level with our comprehensive guide to digital marketing...</p>
+                            <div class="publishing-info">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Scheduled for publishing on Nov 21
+                            </div>
+                            <div class="content-actions">
+                                <button class="btn btn-outline btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    View Approved Version
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    </svg>
+                                    Rush Publishing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Published Section -->
+                <div class="content-section">
+                    <div class="content-section-header">
+                        <h3>Published Content</h3>
+                    </div>
+                    <div class="content-list">
+                        <div class="content-item published">
+                            <div class="content-item-header">
+                                <span class="platform-badge website">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Website Content
+                                </span>
+                                <div class="status-published">
+                                    <span class="published-label">Published</span>
+                                    <span class="published-date">10 days ago</span>
+                                </div>
+                            </div>
+                            <h4 class="content-title">How to Improve Your Local SEO Rankings</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Blog Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Published Nov 10
+                                </span>
+                            </div>
+                            <p class="content-preview">Learn the essential strategies for boosting your local search visibility and attracting more customers...</p>
+                            <div class="content-actions">
+                                <button class="btn btn-primary btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    View on Website
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    Request Update
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="content-item published">
+                            <div class="content-item-header">
+                                <span class="platform-badge gbp">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    Google Business Profile
+                                </span>
+                                <div class="status-published">
+                                    <span class="published-label">Published</span>
+                                    <span class="published-date">9 days ago</span>
+                                </div>
+                            </div>
+                            <h4 class="content-title">Veterans Day Special Offer</h4>
+                            <div class="content-meta">
+                                <span class="content-type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Google Post
+                                </span>
+                                <span class="content-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Published Nov 11
+                                </span>
+                            </div>
+                            <p class="content-preview">This Veterans Day, we're proud to offer 20% off all services for veterans and active military...</p>
+                            <div class="content-actions">
+                                <button class="btn btn-primary btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    View on GBP
+                                </button>
+                                <button class="btn btn-outline btn-sm">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Create Similar Post
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Quick Approve Modal -->
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal" id="quickApproveModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: #E6F9F0; color: #10B981;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Quick Approve Content?</h2>
+                    <p class="modal-subtitle">You're about to approve this content without making any changes.</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('quickApproveModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="quick-approve-content">
+                    <h4>Black Friday Sale Announcement</h4>
+                    <p>Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
+                </div>
+                <div class="quick-approve-notice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Once approved, your implementation team will publish this content within 1-2 business days.
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="quickApproveConfirm">
+                    <span>I've reviewed this content and want to publish it as-is</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('quickApproveModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="closeModal('quickApproveModal'); showToast('Content approved successfully!')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Confirm & Publish
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="toast" id="successToast">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <div class="toast-message">Action completed successfully!</div>
+        <button class="toast-close" onclick="hideToast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script src="components/modals/modal.js"></script>
+    <script>
+        // View as Client Toggle
+        function toggleClientView() {
+            document.body.classList.add('client-view-mode');
+            document.getElementById('clientViewBanner').style.display = 'flex';
+            sessionStorage.setItem('clientViewMode', 'true');
+
+            // Show client-only buttons, hide admin-only buttons
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
+        }
+
+        function exitClientView() {
+            document.body.classList.remove('client-view-mode');
+            document.getElementById('clientViewBanner').style.display = 'none';
+            sessionStorage.removeItem('clientViewMode');
+
+            // Show admin-only buttons, hide client-only buttons
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
+        }
+
+        // Restore client view mode on page load
+        if (sessionStorage.getItem('clientViewMode') === 'true') {
+            toggleClientView();
+        }
+    </script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>
