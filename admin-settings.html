@@ -67,6 +67,15 @@
                     </svg>
                     <span>Settings</span>
                 </a>
+                <div class="nav-spacer"></div>
+                <a href="client-login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
             </nav>
         </aside>
 
@@ -321,6 +330,31 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Chat Widget Embed Code -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h2>Chat Widget Embed Code</h2>
+                            <p>Add the chat widget to your website by copying this code</p>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="embed-code-container">
+                                <pre class="embed-code"><code>&lt;script
+    src="https://widgets.leadconnectorhq.com/loader.js"
+    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+    data-widget-id="6879429b33ee4b1983428d6c"&gt;
+&lt;/script&gt;</code></pre>
+                                <button class="btn btn-secondary btn-sm copy-code-btn" onclick="copyEmbedCode()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copy Code
+                                </button>
+                            </div>
+                            <p class="form-hint" style="margin-top: 12px;">Paste this code just before the closing <code>&lt;/body&gt;</code> tag on your website.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -435,6 +469,18 @@
                     element.querySelector('svg').innerHTML = '<circle cx="12" cy="12" r="10"></circle>';
                 }
             }
+        }
+
+        // Copy embed code to clipboard
+        function copyEmbedCode() {
+            const code = `<script
+    src="https://widgets.leadconnectorhq.com/loader.js"
+    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+    data-widget-id="6879429b33ee4b1983428d6c">
+</script>`;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Embed code copied to clipboard!');
+            });
         }
     </script>
 </body>
