@@ -195,6 +195,54 @@
             showToast('Client information updated!');
         }
 
+        // Add Client Functions
+        function addUserRow() {
+            const usersList = document.getElementById('newClientUsers');
+            if (!usersList) return;
+
+            const newRow = document.createElement('div');
+            newRow.className = 'user-row';
+            newRow.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" placeholder="Full name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-input" placeholder="(555) 123-4567">
+                </div>
+                <button type="button" class="btn-icon-sm remove-user-btn" onclick="removeUserRow(this)" title="Remove user">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+            usersList.appendChild(newRow);
+        }
+
+        function removeUserRow(button) {
+            const row = button.closest('.user-row');
+            const usersList = document.getElementById('newClientUsers');
+            if (usersList && usersList.children.length > 1) {
+                row.remove();
+            }
+        }
+
+        function saveNewClient() {
+            const clientName = document.getElementById('newClientName')?.value;
+            if (!clientName) {
+                alert('Please enter a client name');
+                return;
+            }
+            closeModal('addClientModal');
+            showToast('Client created successfully!');
+        }
+
         // Approve Increase Functions
         function approveIncrease() {
             closeModal('approveIncreaseModal');

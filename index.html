@@ -97,7 +97,7 @@
                     <div class="page-header-content">
                         <p>Manage your client accounts and view their marketing performance</p>
                     </div>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" onclick="openModal('addClientModal')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -909,6 +909,99 @@
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Client Modal -->
+    <div class="modal" id="addClientModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: var(--pyrus-green-pale); color: var(--pyrus-green);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Add New Client</h2>
+                    <p class="modal-subtitle">Create a new client account and add team members</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('addClientModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h3 class="form-section-title">Client Information</h3>
+                    <div class="form-group">
+                        <label class="form-label">Client Name <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="newClientName" placeholder="e.g., Acme Corporation">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Basecamp Client ID</label>
+                            <input type="text" class="form-input" id="basecampClientId" placeholder="e.g., 12345678">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Agency Dashboard Share Key</label>
+                            <input type="text" class="form-input" id="agencyDashboardKey" placeholder="e.g., abc123xyz">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gravity Form Entry ID</label>
+                        <input type="text" class="form-input" id="gravityFormEntryId" placeholder="e.g., 9876">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h3 class="form-section-title">Users</h3>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addUserRow()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add User
+                        </button>
+                    </div>
+                    <div class="users-list" id="newClientUsers">
+                        <div class="user-row">
+                            <div class="form-group">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-input" placeholder="Full name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" placeholder="email@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-input" placeholder="(555) 123-4567">
+                            </div>
+                            <button type="button" class="btn-icon-sm remove-user-btn" onclick="removeUserRow(this)" title="Remove user">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addClientModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewClient()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Create Client
                 </button>
             </div>
         </div>
