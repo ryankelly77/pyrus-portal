@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Management - Pyrus Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../components/modals/modal.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="content.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Content</span>
+                </a>
+                <a href="users.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="settings.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="../client/login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Header Bar -->
+            <div class="admin-top-header">
+                <div class="admin-top-header-left">
+                    <h1>Content Management</h1>
+                </div>
+                <div class="admin-top-header-right">
+                    <a href="content-new.html" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Create Content
+                    </a>
+                    <a href="notifications.html" class="btn-icon has-notification">
+                        <span class="notification-badge"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </a>
+                    <a href="settings.html" class="user-menu-link">
+                        <div class="user-avatar-small">
+                            <span>RK</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="admin-content">
+                <!-- Stat Cards -->
+                <div class="stats-grid stats-grid-4">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #DBEAFE; color: #2563EB;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">8</span>
+                            <span class="stat-label">Drafts in Progress</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">12</span>
+                            <span class="stat-label">Awaiting Review</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #FEE2E2; color: #DC2626;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">3</span>
+                            <span class="stat-label">Need Revisions</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #DCFCE7; color: #16A34A;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">47</span>
+                            <span class="stat-label">Published This Month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="content-filters">
+                    <div class="filter-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter" class="form-control" onchange="filterContent()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="awaiting">Awaiting Review</option>
+                            <option value="revision">Needs Revision</option>
+                            <option value="approved">Approved</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="clientFilter">Client</label>
+                        <select id="clientFilter" class="form-control" onchange="filterContent()">
+                            <option value="">All Clients</option>
+                            <option value="dlg">DLG Medical Services</option>
+                            <option value="summit">Summit Dental</option>
+                            <option value="coastal">Coastal Realty Group</option>
+                            <option value="precision">Precision Auto Care</option>
+                            <option value="green">Green Valley Landscaping</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="typeFilter">Type</label>
+                        <select id="typeFilter" class="form-control" onchange="filterContent()">
+                            <option value="">All Types</option>
+                            <option value="blog">Blog Post</option>
+                            <option value="gbp">GBP Post</option>
+                            <option value="service">Service Page</option>
+                            <option value="social">Social Post</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear Filters</button>
+                    </div>
+                </div>
+
+                <!-- Content Table -->
+                <div class="content-table-wrapper">
+                    <table class="content-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="content-row" data-status="revision" data-client="dlg">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <span class="urgent-indicator" title="Urgent - 24hr deadline">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                            </svg>
+                                        </span>
+                                        <a href="content-revise.html">Black Friday Sale Announcement</a>
+                                    </div>
+                                </td>
+                                <td>DLG Medical Services</td>
+                                <td><span class="platform-badge gbp">GBP Post</span></td>
+                                <td><span class="status-badge status-revision">Needs Revision</span></td>
+                                <td>Nov 20, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="content-revise.html" class="btn btn-sm btn-secondary">Revise</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="awaiting" data-client="summit">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-new.html">Complete Guide to Teeth Whitening</a>
+                                    </div>
+                                </td>
+                                <td>Summit Dental</td>
+                                <td><span class="platform-badge website">Blog Post</span></td>
+                                <td><span class="status-badge status-awaiting">Awaiting Review</span></td>
+                                <td>Nov 19, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-secondary" onclick="viewContent(this)">View</button>
+                                        <button class="btn btn-sm btn-outline" onclick="editContent(this)">Edit</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="awaiting" data-client="dlg">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <span class="urgent-indicator" title="Urgent - 24hr deadline">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                            </svg>
+                                        </span>
+                                        <a href="content-new.html">Holiday Hours Update</a>
+                                    </div>
+                                </td>
+                                <td>DLG Medical Services</td>
+                                <td><span class="platform-badge gbp">GBP Post</span></td>
+                                <td><span class="status-badge status-awaiting">Awaiting Review</span></td>
+                                <td>Nov 19, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-secondary" onclick="viewContent(this)">View</button>
+                                        <button class="btn btn-sm btn-outline" onclick="editContent(this)">Edit</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="draft" data-client="coastal">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-new.html">5 Tips for First-Time Home Buyers</a>
+                                    </div>
+                                </td>
+                                <td>Coastal Realty Group</td>
+                                <td><span class="platform-badge website">Blog Post</span></td>
+                                <td><span class="status-badge status-draft">Draft</span></td>
+                                <td>Nov 18, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="content-new.html" class="btn btn-sm btn-primary">Continue</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="approved" data-client="precision">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-new.html">Winter Car Care Checklist</a>
+                                    </div>
+                                </td>
+                                <td>Precision Auto Care</td>
+                                <td><span class="platform-badge website">Blog Post</span></td>
+                                <td><span class="status-badge status-approved">Approved</span></td>
+                                <td>Nov 17, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-secondary" onclick="viewContent(this)">View</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="published" data-client="green">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-new.html">Fall Lawn Care Tips</a>
+                                    </div>
+                                </td>
+                                <td>Green Valley Landscaping</td>
+                                <td><span class="platform-badge website">Blog Post</span></td>
+                                <td><span class="status-badge status-published">Published</span></td>
+                                <td>Nov 15, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-secondary" onclick="viewContent(this)">View</button>
+                                        <a href="#" class="btn btn-sm btn-outline" target="_blank">View Live</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="revision" data-client="summit">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-revise.html">Invisalign vs Traditional Braces</a>
+                                    </div>
+                                </td>
+                                <td>Summit Dental</td>
+                                <td><span class="platform-badge website">Service Page</span></td>
+                                <td><span class="status-badge status-revision">Needs Revision</span></td>
+                                <td>Nov 14, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="content-revise.html" class="btn btn-sm btn-secondary">Revise</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="content-row" data-status="awaiting" data-client="coastal">
+                                <td>
+                                    <div class="content-title-cell">
+                                        <a href="content-new.html">New Listing: Oceanfront Condo</a>
+                                    </div>
+                                </td>
+                                <td>Coastal Realty Group</td>
+                                <td><span class="platform-badge social">Social Post</span></td>
+                                <td><span class="status-badge status-awaiting">Awaiting Review</span></td>
+                                <td>Nov 14, 2024</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-secondary" onclick="viewContent(this)">View</button>
+                                        <button class="btn btn-sm btn-outline" onclick="editContent(this)">Edit</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="table-pagination">
+                    <span class="pagination-info">Showing 1-8 of 23 items</span>
+                    <div class="pagination-buttons">
+                        <button class="btn btn-sm btn-secondary" disabled>Previous</button>
+                        <button class="btn btn-sm btn-secondary">Next</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/scripts.js"></script>
+    <script src="../components/modals/modal.js"></script>
+    <script>
+        function filterContent() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const clientFilter = document.getElementById('clientFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            const rows = document.querySelectorAll('.content-row');
+            rows.forEach(row => {
+                const status = row.dataset.status;
+                const client = row.dataset.client;
+                const typeCell = row.querySelector('.platform-badge');
+                const type = typeCell ? typeCell.textContent.toLowerCase() : '';
+
+                let show = true;
+
+                if (statusFilter && status !== statusFilter) show = false;
+                if (clientFilter && client !== clientFilter) show = false;
+                if (typeFilter && !type.includes(typeFilter)) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('clientFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            filterContent();
+        }
+
+        function viewContent(btn) {
+            // In a real app, this would open a preview modal
+            alert('Content preview would open here');
+        }
+
+        function editContent(btn) {
+            window.location.href = 'content-new.html';
+        }
+    </script>
+</body>
+</html>
