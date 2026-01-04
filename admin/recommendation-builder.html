@@ -944,12 +944,12 @@
             let totalMonthly = 0;
             let totalOnetime = 0;
 
-            // First pass: calculate total without free items to determine reward tier
+            // First pass: calculate total without Analytics to determine reward tier
             let baseTotalMonthly = 0;
             items.forEach(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 const isAnalyticsTracking = title.includes('Analytics Tracking');
-                if (isAnalyticsTracking) return; // Skip analytics for base calculation
+                if (isAnalyticsTracking) return; // Skip analytics for base calculation (always free)
 
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 const pricingSelector = item.querySelector('.pricing-selector');
@@ -963,9 +963,13 @@
                 }
             });
 
-            // Determine if Analytics Tracking should be free based on rewards
+            // Determine reward tier based on non-free items
             const rewardTierIndex = getRewardTier(baseTotalMonthly);
             const analyticsIsFree = rewardTierIndex >= 0; // Analytics is free at all tiers
+            const another99IsFree = rewardTierIndex >= 2; // Another $99 product free at tier 2+
+
+            // Track if we've already marked a $99 product as free (other than Analytics)
+            let marked99AsFree = false;
 
             items.forEach(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
@@ -973,6 +977,12 @@
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 const onetime = parseInt(item.getAttribute('data-onetime')) || 0;
                 const priceDisplay = item.querySelector('.service-item-price');
+                const originalPrice = item.getAttribute('data-original-price') || priceDisplay?.textContent;
+
+                // Store original price if not already stored
+                if (priceDisplay && !item.getAttribute('data-original-price')) {
+                    item.setAttribute('data-original-price', priceDisplay.textContent);
+                }
 
                 // Update Analytics Tracking price label if free
                 if (isAnalyticsTracking && analyticsIsFree && priceDisplay) {
@@ -980,6 +990,23 @@
                     priceDisplay.classList.add('free-item');
                     // Don't add to total - it's free
                     return;
+                }
+
+                // Check if this $99 product should be free (another free $99 product reward)
+                if (another99IsFree && monthly === 99 && !marked99AsFree && !isAnalyticsTracking && priceDisplay) {
+                    priceDisplay.textContent = 'Free';
+                    priceDisplay.classList.add('free-item');
+                    marked99AsFree = true;
+                    // Don't add to total - it's free
+                    return;
+                }
+
+                // Reset price display if item shouldn't be free anymore
+                if (priceDisplay && priceDisplay.classList.contains('free-item') && !isAnalyticsTracking) {
+                    if (!another99IsFree || marked99AsFree) {
+                        priceDisplay.textContent = item.getAttribute('data-original-price') || '($' + monthly + '/mo)';
+                        priceDisplay.classList.remove('free-item');
+                    }
                 }
 
                 // Check if item has pricing selector (both options available)
