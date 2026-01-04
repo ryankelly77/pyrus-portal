@@ -253,6 +253,67 @@
 
         <!-- Recommendations Content -->
         <div class="recommendations-content">
+            <!-- Growth Stage Hero Section -->
+            <div class="growth-stage-hero">
+                <div class="growth-stage-main">
+                    <div class="stage-icon-large">🌿</div>
+                    <div class="stage-content">
+                        <div class="stage-label">Your Growth Stage</div>
+                        <div class="stage-name-large">
+                            Sprouting
+                            <span class="month-badge">Month 4</span>
+                        </div>
+                        <div class="stage-description-large">
+                            Building momentum with early results appearing. Your marketing foundation is taking root and you're on track for the Blooming stage!
+                        </div>
+                    </div>
+                    <div class="stage-stats">
+                        <div class="stage-stat">
+                            <span class="stage-stat-value">47</span>
+                            <span class="stage-stat-label">Keywords Ranking</span>
+                        </div>
+                        <div class="stage-stat">
+                            <span class="stage-stat-value">28</span>
+                            <span class="stage-stat-label">Leads This Month</span>
+                        </div>
+                        <div class="stage-stat">
+                            <span class="stage-stat-value">+85%</span>
+                            <span class="stage-stat-label">Traffic Growth</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="growth-progress-section">
+                    <div class="progress-track-large">
+                        <div class="progress-stage completed">
+                            <div class="progress-dot"></div>
+                            <span>Seedling</span>
+                        </div>
+                        <div class="progress-line completed"></div>
+                        <div class="progress-stage current">
+                            <div class="progress-dot"></div>
+                            <span>Sprouting</span>
+                        </div>
+                        <div class="progress-line"></div>
+                        <div class="progress-stage">
+                            <div class="progress-dot"></div>
+                            <span>Blooming</span>
+                        </div>
+                        <div class="progress-line"></div>
+                        <div class="progress-stage">
+                            <div class="progress-dot"></div>
+                            <span>Harvesting</span>
+                        </div>
+                    </div>
+                    <div class="refresh-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Next recommendations refresh: <strong>February 18, 2026</strong> (47 days)
+                    </div>
+                </div>
+            </div>
+
             <!-- Main Recommendations Tabs -->
             <div class="recommendations-tabs">
                 <button class="recommendations-tab active" data-recommendations-tab="smart-recommendations">
@@ -260,6 +321,7 @@
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                     Smart Recommendations
+                    <span class="tab-count">4</span>
                 </button>
                 <button class="recommendations-tab" data-recommendations-tab="original-plan">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -281,99 +343,6 @@
 
             <!-- Smart Recommendations Tab Content -->
             <div class="recommendations-tab-content active" id="smart-recommendations-tab">
-                <!-- Growth Stage & Refresh Cycle Header -->
-                <div class="stage-refresh-header">
-                <!-- Growth Stage Card -->
-                <div class="growth-stage-card">
-                    <div class="stage-icon">🌿</div>
-                    <div class="stage-info">
-                        <div class="stage-label">Growth Stage</div>
-                        <div class="stage-name">
-                            Sprouting
-                            <span class="month-badge">Month 4</span>
-                        </div>
-                        <div class="stage-description">
-                            Building momentum with early results appearing. You're on track for Blooming stage!
-                        </div>
-                        <div class="stage-progress">
-                            <div class="progress-track">
-                                <div class="progress-segment completed" style="width: 25%;"></div>
-                                <div class="progress-segment current" style="width: 25%;"></div>
-                                <div class="progress-segment upcoming" style="width: 25%;"></div>
-                                <div class="progress-segment upcoming" style="width: 25%;"></div>
-                            </div>
-                        </div>
-                        <div class="progress-labels">
-                            <span>Seedling</span>
-                            <span class="active">Sprouting</span>
-                            <span>Blooming</span>
-                            <span>Harvesting</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Refresh Cycle Card -->
-                <div class="refresh-card">
-                    <div class="refresh-header">
-                        <div class="refresh-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="refresh-title">Recommendations Refresh</div>
-                            <div class="refresh-subtitle">Personalized every 90 days</div>
-                        </div>
-                    </div>
-                    <div class="refresh-countdown">
-                        <div class="countdown-unit">
-                            <span class="countdown-value">47</span>
-                            <span class="countdown-label">Days</span>
-                        </div>
-                        <div class="countdown-unit">
-                            <span class="countdown-value">14</span>
-                            <span class="countdown-label">Hours</span>
-                        </div>
-                        <div class="countdown-unit">
-                            <span class="countdown-value">32</span>
-                            <span class="countdown-label">Mins</span>
-                        </div>
-                    </div>
-                    <div class="refresh-date">
-                        Next refresh: <strong>February 18, 2026</strong>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sub-tabs -->
-            <div class="rec-subtabs">
-                <button class="rec-subtab active" data-rec-tab="smart-recommendations">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    Smart Recommendations
-                    <span class="count">4</span>
-                </button>
-                <button class="rec-subtab" data-rec-tab="original-plan">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    Original Plan
-                </button>
-                <button class="rec-subtab" data-rec-tab="approved-changes">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <polyline points="9 11 12 14 22 4"></polyline>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                    </svg>
-                    Approved Changes
-                    <span class="count">1</span>
-                </button>
-            </div>
-
-            <!-- Smart Recommendations Content -->
-            <div class="rec-content active" id="smart-recommendations">
                 <!-- Recommendation Cards Grid -->
                 <div class="rec-cards-grid">
                     <!-- Featured Recommendation: Scale Ads -->
