@@ -9253,6 +9253,72 @@
             height: 14px;
         }
 
+        /* Role Selection Grid (Invite Modal) */
+        .role-select-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .role-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 12px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .role-option:hover {
+            border-color: var(--border-color);
+            background: var(--bg-page);
+        }
+
+        .role-option.selected {
+            border-color: var(--pyrus-green);
+            background: var(--pyrus-green-wash);
+        }
+
+        .role-option input[type="radio"] {
+            display: none;
+        }
+
+        .role-option-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .role-option-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .role-option-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .role-option-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 600px) {
+            .role-select-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Form Styles */
         .form-row {
             display: grid;

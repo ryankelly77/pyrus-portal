@@ -470,6 +470,48 @@
             <div class="modal-body">
                 <form class="modal-form" id="inviteUserForm">
                     <div class="form-group">
+                        <label class="form-label">Role <span class="required">*</span></label>
+                        <div class="role-select-grid">
+                            <label class="role-option selected" data-role="client-user">
+                                <input type="radio" name="inviteRoleType" value="client-user" checked onchange="handleRoleChange(this.value)">
+                                <div class="role-option-icon" style="background: var(--pyrus-green-wash); color: var(--pyrus-green);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <div class="role-option-content">
+                                    <span class="role-option-title">Client User</span>
+                                    <span class="role-option-desc">Portal access for a client</span>
+                                </div>
+                            </label>
+                            <label class="role-option" data-role="super-admin">
+                                <input type="radio" name="inviteRoleType" value="super-admin" onchange="handleRoleChange(this.value)">
+                                <div class="role-option-icon" style="background: #FEF3C7; color: #D97706;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                </div>
+                                <div class="role-option-content">
+                                    <span class="role-option-title">Super Admin</span>
+                                    <span class="role-option-desc">Full access to all features</span>
+                                </div>
+                            </label>
+                            <label class="role-option" data-role="production-team">
+                                <input type="radio" name="inviteRoleType" value="production-team" onchange="handleRoleChange(this.value)">
+                                <div class="role-option-icon" style="background: #DBEAFE; color: #2563EB;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                    </svg>
+                                </div>
+                                <div class="role-option-content">
+                                    <span class="role-option-title">Production Team</span>
+                                    <span class="role-option-desc">Content & client management</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="clientSelectGroup">
                         <label class="form-label">Assign to Client <span class="required">*</span></label>
                         <select class="form-select" id="inviteClient" required>
                             <option value="">Select a client...</option>
@@ -496,17 +538,9 @@
                         <input type="email" class="form-input" id="inviteEmail" placeholder="john@company.com" required>
                         <div class="form-hint">An invitation email will be sent to this address</div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="phoneGroup">
                         <label class="form-label">Phone Number</label>
                         <input type="tel" class="form-input" id="invitePhone" placeholder="(555) 123-4567">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Role <span class="required">*</span></label>
-                        <select class="form-select" id="inviteRole" required>
-                            <option value="client-user">Client User</option>
-                            <option value="client-admin">Client Admin</option>
-                        </select>
-                        <div class="form-hint">Client Admins can manage other users for their organization</div>
                     </div>
                 </form>
             </div>
@@ -529,6 +563,37 @@
         // Override openInviteModal to use new system
         function openInviteModal() {
             openModal('inviteUserModal');
+            // Reset to client-user role
+            handleRoleChange('client-user');
+            document.querySelector('input[value="client-user"]').checked = true;
+        }
+
+        // Handle role selection change
+        function handleRoleChange(role) {
+            const clientGroup = document.getElementById('clientSelectGroup');
+            const clientSelect = document.getElementById('inviteClient');
+            const phoneGroup = document.getElementById('phoneGroup');
+
+            // Update selected state on role options
+            document.querySelectorAll('.role-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.role === role) {
+                    opt.classList.add('selected');
+                }
+            });
+
+            // Show/hide client selection based on role
+            if (role === 'client-user') {
+                clientGroup.style.display = 'block';
+                clientSelect.required = true;
+                phoneGroup.style.display = 'block';
+            } else {
+                // Admin roles don't need client assignment
+                clientGroup.style.display = 'none';
+                clientSelect.required = false;
+                clientSelect.value = '';
+                phoneGroup.style.display = 'block';
+            }
         }
 
         function sendInvite() {
