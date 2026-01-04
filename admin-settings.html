@@ -331,30 +331,6 @@
                         </div>
                     </div>
 
-                    <!-- Chat Widget Embed Code -->
-                    <div class="settings-card">
-                        <div class="settings-card-header">
-                            <h2>Chat Widget Embed Code</h2>
-                            <p>Add the chat widget to your website by copying this code</p>
-                        </div>
-                        <div class="settings-card-body">
-                            <div class="embed-code-container">
-                                <pre class="embed-code"><code>&lt;script
-    src="https://widgets.leadconnectorhq.com/loader.js"
-    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-    data-widget-id="6879429b33ee4b1983428d6c"&gt;
-&lt;/script&gt;</code></pre>
-                                <button class="btn btn-secondary btn-sm copy-code-btn" onclick="copyEmbedCode()">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                    </svg>
-                                    Copy Code
-                                </button>
-                            </div>
-                            <p class="form-hint" style="margin-top: 12px;">Paste this code just before the closing <code>&lt;/body&gt;</code> tag on your website.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -471,13 +447,6 @@
             }
         }
 
-        // Copy embed code to clipboard
-        function copyEmbedCode() {
-            const code = '<scr' + 'ipt\n    src="https://widgets.leadconnectorhq.com/loader.js"\n    data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"\n    data-widget-id="6879429b33ee4b1983428d6c">\n</scr' + 'ipt>';
-            navigator.clipboard.writeText(code).then(() => {
-                showToast('Embed code copied to clipboard!');
-            });
-        }
     </script>
 </body>
 </html>

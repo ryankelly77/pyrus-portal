@@ -5900,37 +5900,6 @@
             margin-top: 8px;
         }
 
-        /* Chat Embed Code Styles */
-        .embed-code-container {
-            position: relative;
-            background: var(--bg-page);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 16px;
-        }
-
-        .embed-code {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .embed-code code {
-            font-family: inherit;
-        }
-
-        .copy-code-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-        }
-
         .admin-main {
             flex: 1;
             margin-left: 260px;
