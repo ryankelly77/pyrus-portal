@@ -9472,7 +9472,7 @@
             display: flex;
         }
 
-        .modal {
+        .modal-overlay .modal {
             background: var(--bg-white);
             border-radius: var(--radius-lg);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
@@ -9482,9 +9482,14 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            /* Override base .modal styles */
+            position: static;
+            opacity: 1;
+            visibility: visible;
+            transform: none;
         }
 
-        .modal-header {
+        .modal-overlay .modal-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
