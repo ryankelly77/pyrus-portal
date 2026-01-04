@@ -1035,9 +1035,22 @@
             monthlyRow.textContent = '$' + totalMonthly.toLocaleString();
             onetimeRow.textContent = '$' + totalOnetime.toLocaleString();
 
-            // Dynamic total line
+            // Check for discount
+            const discountRowEl = tierElement.querySelector('.discount-row');
+            const discountText = tierElement.querySelector('.discount-text');
+            const currentTier = REWARD_TIERS[getRewardTier(totalMonthly)];
+            const hasDiscount = currentTier.discount > 0 && totalMonthly > 0;
+
+            // Dynamic total line - show discounted amount if applicable
             if (totalMonthly === 0 && totalOnetime === 0) {
                 totalText.textContent = '$0/mo Total';
+            } else if (hasDiscount) {
+                const discountedTotal = totalMonthly * (1 - currentTier.discount / 100);
+                if (totalOnetime === 0) {
+                    totalText.textContent = '$' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo Total';
+                } else {
+                    totalText.textContent = '$' + totalOnetime.toLocaleString() + ' today then $' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                }
             } else if (totalOnetime === 0) {
                 totalText.textContent = '$' + totalMonthly.toLocaleString() + '/mo Total';
             } else {
@@ -1052,14 +1065,9 @@
                 onetimeRowEl.style.display = '';
             }
 
-            // Show discount row if applicable
-            const discountRowEl = tierElement.querySelector('.discount-row');
-            const discountText = tierElement.querySelector('.discount-text');
-            const currentTier = REWARD_TIERS[getRewardTier(totalMonthly)];
-
-            if (currentTier.discount > 0 && totalMonthly > 0) {
-                const discountedTotal = totalMonthly * (1 - currentTier.discount / 100);
-                discountText.textContent = '$' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo with discount. Use code ' + currentTier.coupon + ' at checkout';
+            // Show coupon code on separate line if discount applies
+            if (hasDiscount) {
+                discountText.textContent = 'Use code ' + currentTier.coupon + ' at checkout';
                 discountRowEl.style.display = '';
             } else {
                 discountRowEl.style.display = 'none';
