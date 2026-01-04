@@ -100,7 +100,7 @@
                     <div class="page-header-content">
                         <p>Manage portal users and their access</p>
                     </div>
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" onclick="openInviteModal()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -326,8 +326,114 @@
         </main>
     </div>
 
+    <!-- Invite User Modal -->
+    <div class="modal-overlay" id="inviteUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Invite User</h2>
+                <button class="modal-close" onclick="closeInviteModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="modal-form" id="inviteUserForm">
+                    <div class="form-group">
+                        <label class="form-label">Assign to Client <span class="required">*</span></label>
+                        <select class="form-select" id="inviteClient" required>
+                            <option value="">Select a client...</option>
+                            <option value="TC Clinical Services">TC Clinical Services</option>
+                            <option value="Raptor Vending">Raptor Vending</option>
+                            <option value="Raptor Services">Raptor Services</option>
+                            <option value="Espronceda Law">Espronceda Law</option>
+                            <option value="Summit Dental">Summit Dental</option>
+                            <option value="Coastal Properties">Coastal Properties</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="inviteFirstName" placeholder="John" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="inviteLastName" placeholder="Smith" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address <span class="required">*</span></label>
+                        <input type="email" class="form-input" id="inviteEmail" placeholder="john@company.com" required>
+                        <div class="form-hint">An invitation email will be sent to this address</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="invitePhone" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role <span class="required">*</span></label>
+                        <select class="form-select" id="inviteRole" required>
+                            <option value="client-user">Client User</option>
+                            <option value="client-admin">Client Admin</option>
+                        </select>
+                        <div class="form-hint">Client Admins can manage other users for their organization</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeInviteModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendInvite()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Send Invitation
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/scripts.js"></script>
     <script>
+        // Modal Functions
+        function openInviteModal() {
+            document.getElementById('inviteUserModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeInviteModal() {
+            document.getElementById('inviteUserModal').classList.remove('active');
+            document.body.style.overflow = '';
+            // Reset form
+            document.getElementById('inviteUserForm').reset();
+        }
+
+        function sendInvite() {
+            const form = document.getElementById('inviteUserForm');
+            if (form.checkValidity()) {
+                // In a real app, this would send the invitation
+                alert('Invitation sent successfully!');
+                closeInviteModal();
+            } else {
+                form.reportValidity();
+            }
+        }
+
+        // Close modal when clicking overlay
+        document.getElementById('inviteUserModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInviteModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeInviteModal();
+            }
+        });
+
         // User Filters
         const filterTabs = document.querySelectorAll('.users-filters .filter-tab');
         const clientFilter = document.getElementById('clientFilter');
