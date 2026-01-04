@@ -11462,36 +11462,58 @@
         }
 
         /* Root Services - Gold/Yellow */
-        .service-category-root .service-item {
+        .service-item[data-category="root"] {
             background: #FFF2D9;
             border-color: #D4A72C;
         }
 
-        .service-category-root .service-item:hover {
+        .service-item[data-category="root"]:hover {
             border-color: #B8922A;
             box-shadow: 0 2px 8px rgba(212, 167, 44, 0.25);
         }
 
         /* Growth Services - Green */
-        .service-category-growth .service-item {
+        .service-item[data-category="growth"] {
             background: #E6F2D9;
             border-color: #7A9C3A;
         }
 
-        .service-category-growth .service-item:hover {
+        .service-item[data-category="growth"]:hover {
             border-color: #5F7A2D;
             box-shadow: 0 2px 8px rgba(122, 156, 58, 0.25);
         }
 
         /* Cultivation Services - Orange */
-        .service-category-cultivation .service-item {
+        .service-item[data-category="cultivation"] {
             background: #FFE8D4;
             border-color: #E07830;
         }
 
-        .service-category-cultivation .service-item:hover {
+        .service-item[data-category="cultivation"]:hover {
             border-color: #C46828;
             box-shadow: 0 2px 8px rgba(224, 120, 48, 0.25);
+        }
+
+        /* Bundled Packages - Purple */
+        .service-item[data-category="bundle"] {
+            background: #F3E8FF;
+            border-color: #9333EA;
+        }
+
+        .service-item[data-category="bundle"]:hover {
+            border-color: #7E22CE;
+            box-shadow: 0 2px 8px rgba(147, 51, 234, 0.25);
+        }
+
+        /* Fertilizer Add-Ons - Blue */
+        .service-item[data-category="fertilizer"] {
+            background: #DBEAFE;
+            border-color: #3B82F6;
+        }
+
+        .service-item[data-category="fertilizer"]:hover {
+            border-color: #2563EB;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
         }
 
         .service-item-header {
