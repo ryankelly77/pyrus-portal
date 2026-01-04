@@ -664,14 +664,14 @@
                                 Scheduled for publishing on Nov 21
                             </div>
                             <div class="content-actions">
-                                <button class="btn btn-outline btn-sm">
+                                <button class="btn btn-outline btn-sm" onclick="openModal('viewApprovedModal')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                         <polyline points="14 2 14 8 20 8"></polyline>
                                     </svg>
                                     View Approved Version
                                 </button>
-                                <button class="btn btn-outline btn-sm">
+                                <button class="btn btn-outline btn-sm" onclick="openModal('rushPublishingModal')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                                     </svg>
@@ -721,15 +721,15 @@
                             </div>
                             <p class="content-preview">Learn the essential strategies for boosting your local search visibility and attracting more customers...</p>
                             <div class="content-actions">
-                                <button class="btn btn-primary btn-sm">
+                                <a href="https://example.com/blog/local-seo-rankings" target="_blank" class="btn btn-primary btn-sm">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="2" y1="12" x2="22" y2="12"></line>
                                         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                                     </svg>
                                     View on Website
-                                </button>
-                                <button class="btn btn-outline btn-sm">
+                                </a>
+                                <button class="btn btn-outline btn-sm" onclick="openModal('requestUpdateModal')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <path d="M12 20h9"></path>
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -770,14 +770,14 @@
                             </div>
                             <p class="content-preview">This Veterans Day, we're proud to offer 20% off all services for veterans and active military...</p>
                             <div class="content-actions">
-                                <button class="btn btn-primary btn-sm">
+                                <a href="https://business.google.com/posts" target="_blank" class="btn btn-primary btn-sm">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                         <circle cx="12" cy="10" r="3"></circle>
                                     </svg>
                                     View on GBP
-                                </button>
-                                <button class="btn btn-outline btn-sm">
+                                </a>
+                                <button class="btn btn-outline btn-sm" onclick="openModal('createSimilarModal')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -826,10 +826,12 @@
                     </svg>
                     Once approved, your implementation team will publish this content within 1-2 business days.
                 </div>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="quickApproveConfirm">
-                    <span>I've reviewed this content and want to publish it as-is</span>
-                </label>
+                <div class="checkbox-confirm-area">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="quickApproveConfirm">
+                        <span>I've reviewed this content and want to publish it as-is</span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('quickApproveModal')">Cancel</button>
@@ -1009,6 +1011,238 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="closeModal('contentRequirementsModal')">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Approved Version Modal -->
+    <div class="modal-overlay" id="viewApprovedModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Approved Content
+                </h2>
+                <button class="modal-close" onclick="closeModal('viewApprovedModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="approved-content-preview">
+                    <div class="content-meta-bar">
+                        <span class="platform-badge website">Website Content</span>
+                        <span class="content-type-badge">Blog Post</span>
+                        <span class="approved-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Approved Nov 19
+                        </span>
+                    </div>
+                    <h3>Complete Guide to Digital Marketing in 2024</h3>
+                    <div class="content-body-preview">
+                        <p>Get ready to take your business to the next level with our comprehensive guide to digital marketing. In this guide, we'll cover everything you need to know about:</p>
+                        <ul>
+                            <li>Search Engine Optimization (SEO) best practices</li>
+                            <li>Social media marketing strategies</li>
+                            <li>Email marketing campaigns that convert</li>
+                            <li>Pay-per-click advertising tips</li>
+                            <li>Content marketing fundamentals</li>
+                        </ul>
+                        <p>Whether you're just starting out or looking to refine your existing strategy, this guide will provide actionable insights to help grow your business online...</p>
+                    </div>
+                    <div class="publishing-schedule">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Scheduled for publishing on <strong>November 21, 2024</strong></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewApprovedModal')">Close</button>
+                <button class="btn btn-outline" onclick="closeModal('viewApprovedModal'); openModal('rushPublishingModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Rush Publishing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rush Publishing Modal -->
+    <div class="modal-overlay" id="rushPublishingModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: #FEF3C7; color: #D97706;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Rush Publishing</h2>
+                    <p class="modal-subtitle">Request expedited publishing for this content</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('rushPublishingModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="rush-content-info">
+                    <h4>Complete Guide to Digital Marketing in 2024</h4>
+                    <p class="current-schedule">Currently scheduled: <strong>November 21, 2024</strong></p>
+                </div>
+                <div class="rush-notice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Rush publishing will move this content to the front of the queue and publish within 24 hours.
+                </div>
+                <div class="form-group">
+                    <label for="rushReason">Reason for rush (optional)</label>
+                    <textarea id="rushReason" class="form-control" rows="3" placeholder="e.g., Time-sensitive promotion, event deadline..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rushPublishingModal')">Cancel</button>
+                <button class="btn btn-warning" onclick="closeModal('rushPublishingModal'); showToast('Rush publishing requested!')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Request Rush
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Update Modal -->
+    <div class="modal-overlay" id="requestUpdateModal">
+        <div class="modal modal-md">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: #DBEAFE; color: #2563EB;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Request Content Update</h2>
+                    <p class="modal-subtitle">Tell us what changes you'd like to make</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('requestUpdateModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="update-content-info">
+                    <h4>How to Improve Your Local SEO Rankings</h4>
+                    <span class="published-on">Published Nov 10, 2024</span>
+                </div>
+                <div class="form-group">
+                    <label for="updateType">Type of update</label>
+                    <select id="updateType" class="form-control">
+                        <option value="">Select update type...</option>
+                        <option value="info">Update information/facts</option>
+                        <option value="pricing">Change pricing or offers</option>
+                        <option value="contact">Update contact details</option>
+                        <option value="add">Add new content</option>
+                        <option value="remove">Remove content</option>
+                        <option value="other">Other changes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="updateDetails">Describe the changes needed <span class="required">*</span></label>
+                    <textarea id="updateDetails" class="form-control" rows="4" placeholder="Please be as specific as possible about what needs to be updated..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="urgentUpdate">
+                        <span>This is urgent (needs to be updated within 24 hours)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('requestUpdateModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="closeModal('requestUpdateModal'); showToast('Update request submitted!')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Submit Request
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Similar Post Modal -->
+    <div class="modal-overlay" id="createSimilarModal">
+        <div class="modal modal-md">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: #DCFCE7; color: #16A34A;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Create Similar Post</h2>
+                    <p class="modal-subtitle">Request a new post based on this one</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('createSimilarModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="similar-post-source">
+                    <span class="source-label">Based on:</span>
+                    <div class="source-content">
+                        <span class="platform-badge gbp">Google Business Profile</span>
+                        <h4>Veterans Day Special Offer</h4>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newPostTopic">What's this new post about? <span class="required">*</span></label>
+                    <input type="text" id="newPostTopic" class="form-control" placeholder="e.g., Christmas Special, New Year Promotion...">
+                </div>
+                <div class="form-group">
+                    <label for="newPostDetails">Additional details</label>
+                    <textarea id="newPostDetails" class="form-control" rows="3" placeholder="Any specific offers, dates, or details to include..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="newPostDate">When should this be published?</label>
+                    <input type="date" id="newPostDate" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('createSimilarModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="closeModal('createSimilarModal'); showToast('Post request submitted!')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Create Post
+                </button>
             </div>
         </div>
     </div>
