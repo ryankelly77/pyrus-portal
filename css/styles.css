@@ -8984,6 +8984,383 @@
             color: var(--accent-orange);
         }
 
+        /* Client Settings Page */
+        .settings-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 16px;
+        }
+
+        .settings-tab {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .settings-tab:hover {
+            background: var(--pyrus-green-pale);
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green);
+        }
+
+        .settings-tab.active {
+            background: var(--pyrus-green);
+            border-color: var(--pyrus-green);
+            color: white;
+        }
+
+        .settings-tab-content {
+            display: none;
+        }
+
+        .settings-tab-content.active {
+            display: block;
+        }
+
+        /* Subscription Overview */
+        .subscription-overview {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            background: var(--pyrus-green-pale);
+            border-radius: var(--radius-md);
+        }
+
+        .subscription-plan {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: var(--pyrus-green);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .plan-price {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .price-amount {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .subscription-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: right;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Services List in Settings */
+        .services-list-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .service-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+        }
+
+        .service-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .service-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .service-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .services-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-top: 12px;
+            border-top: 2px solid var(--border-light);
+        }
+
+        .services-total span {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .total-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary) !important;
+        }
+
+        /* Payment Card Display */
+        .payment-card-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .card-brand svg {
+            color: var(--text-muted);
+        }
+
+        .card-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-number {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-expiry {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .card-badge {
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: var(--radius-sm);
+        }
+
+        .card-badge.default {
+            background: var(--pyrus-green-pale);
+            color: var(--pyrus-green);
+        }
+
+        /* Invoices Table */
+        .invoices-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoices-table th,
+        .invoices-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .invoices-table th {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .invoices-table td {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .invoice-id {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .invoice-status {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+        }
+
+        .invoice-status.paid {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .invoice-status.pending {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        .btn-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--pyrus-green);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-text:hover {
+            color: var(--pyrus-green-dark);
+            background: var(--pyrus-green-pale);
+            border-radius: var(--radius-sm);
+        }
+
+        .btn-text.danger {
+            color: var(--error-text);
+        }
+
+        .btn-text.danger:hover {
+            background: var(--error-bg);
+        }
+
+        /* Session Rows */
+        .session-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-page);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            margin-bottom: 12px;
+        }
+
+        .session-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .session-info svg {
+            color: var(--text-muted);
+        }
+
+        .session-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .session-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .session-badge {
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+        }
+
+        .session-badge.current {
+            background: var(--pyrus-green-pale);
+            color: var(--pyrus-green);
+        }
+
+        .danger-outline {
+            color: var(--error-text) !important;
+            border-color: var(--error-border) !important;
+        }
+
+        .danger-outline:hover {
+            background: var(--error-bg) !important;
+        }
+
+        .footer-note {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .footer-note a {
+            color: var(--pyrus-green);
+            text-decoration: none;
+        }
+
+        .footer-note a:hover {
+            text-decoration: underline;
+        }
+
         /* Notifications / Activity Feed */
         .notifications-filters {
             display: flex;
