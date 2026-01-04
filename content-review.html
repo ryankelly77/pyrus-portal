@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Content - Pyrus Digital Client Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="components/modals/modal.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="admin-recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="admin-users.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="admin-revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="admin-notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="admin-settings.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="client-login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Client Sidebar (visible in client view mode) -->
+        <aside class="client-sidebar">
+            <div class="client-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Pyrus Portal</span>
+            </div>
+            <nav class="client-nav">
+                <a href="getting-started.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <span>Getting Started</span>
+                </a>
+                <a href="results.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <span>Results</span>
+                </a>
+                <a href="activity.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Activity</span>
+                </a>
+                <a href="content.html" class="client-nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Content<span class="nav-new-badge">NEW!</span></span>
+                </a>
+                <a href="communication.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Communication</span>
+                </a>
+                <a href="recommendations.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="client-settings.html" class="client-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="client-login.html" class="client-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Header Bar -->
+            <div class="admin-top-header">
+                <div class="admin-top-header-left">
+                    <nav class="breadcrumb">
+                        <a href="index.html">Clients</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        <span>TC Clinical Services</span>
+                    </nav>
+                </div>
+                <div class="admin-top-header-right">
+                    <button class="btn btn-secondary admin-only" onclick="toggleClientView()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        View as Client
+                    </button>
+                    <a href="admin-notifications.html" class="btn-icon has-notification">
+                        <span class="notification-badge"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </a>
+                    <a href="admin-settings.html" class="user-menu-link">
+                        <div class="user-avatar-small">
+                            <span>RK</span>
+                        </div>
+                        <span class="user-name">Ryan Kelly</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Client View Mode Banner (hidden by default) -->
+            <div class="view-mode-banner" id="clientViewBanner" style="display: none;">
+                <div class="banner-text">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Viewing as client: TC Clinical Services
+                </div>
+                <button class="btn-exit-preview" onclick="exitClientView()">Exit Preview</button>
+            </div>
+
+            <div class="admin-content">
+                <!-- Back Link -->
+                <a href="content.html" class="back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Back to Content
+                </a>
+
+                <!-- Content Review Card -->
+                <div class="content-review-card">
+                    <!-- Content Header -->
+                    <div class="content-review-header">
+                        <div class="content-review-badges">
+                            <span class="platform-badge website">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                Website Content
+                            </span>
+                            <span class="content-type-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Blog Post
+                            </span>
+                        </div>
+                        <div class="countdown-timer urgent">
+                            <div class="countdown-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="countdown-details">
+                                <span class="countdown-label">Time Remaining</span>
+                                <span class="countdown-value">23 hours</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Title -->
+                    <h1 class="content-review-title">Black Friday Sale Announcement</h1>
+
+                    <!-- Content Meta -->
+                    <div class="content-review-meta">
+                        <span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Submitted Nov 15, 2025
+                        </span>
+                        <span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            By Pyrus Digital Team
+                        </span>
+                        <span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            </svg>
+                            First Draft
+                        </span>
+                    </div>
+
+                    <!-- Content Body -->
+                    <div class="content-review-body">
+                        <h2>Get Ready for Our Biggest Sale of the Year!</h2>
+
+                        <p>This Black Friday, TC Clinical Services is offering unprecedented savings on our most popular healthcare packages. Whether you're looking for comprehensive wellness checks, specialized treatments, or preventive care services, now is the perfect time to invest in your health.</p>
+
+                        <h3>What's Included:</h3>
+                        <ul>
+                            <li><strong>30% off</strong> all comprehensive wellness packages</li>
+                            <li><strong>Free consultation</strong> with any service booking over $200</li>
+                            <li><strong>Extended payment plans</strong> available for qualifying patients</li>
+                            <li><strong>Priority scheduling</strong> for all Black Friday bookings</li>
+                        </ul>
+
+                        <h3>Limited Time Offer</h3>
+                        <p>This exclusive offer runs from <strong>November 24th through November 30th</strong>. Don't miss out on these incredible savings – spots are filling up fast!</p>
+
+                        <p>Our team of experienced healthcare professionals is ready to help you achieve your health goals. With state-of-the-art facilities and personalized care plans, we're committed to providing the highest quality service to our community.</p>
+
+                        <h3>How to Book</h3>
+                        <p>Call our office at <strong>(555) 123-4567</strong> or visit our website to schedule your appointment today. Mention code <strong>BLACKFRIDAY2025</strong> to ensure you receive your discount.</p>
+
+                        <p>We look forward to seeing you soon!</p>
+
+                        <p><em>– The TC Clinical Services Team</em></p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="content-review-actions">
+                        <button class="btn btn-success btn-lg" onclick="openModal('quickApproveModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Quick Approve
+                        </button>
+                        <button class="btn btn-primary btn-lg" onclick="openModal('reviewEditModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Review & Edit
+                        </button>
+                        <button class="btn btn-danger btn-lg" onclick="openModal('rejectModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Quick Approve Confirmation Modal -->
+    <div class="modal-overlay" id="quickApproveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #22C55E;">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Approve Content
+                </h2>
+                <button class="modal-close" onclick="closeModal('quickApproveModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="approve-confirmation">
+                    <div class="approve-content-summary">
+                        <h4>Black Friday Sale Announcement</h4>
+                        <div class="summary-meta">
+                            <span class="platform-badge website" style="font-size: 11px;">Website Content</span>
+                            <span class="content-type-badge" style="font-size: 11px;">Blog Post</span>
+                        </div>
+                    </div>
+                    <p class="approve-message">By approving this content, it will be scheduled for publishing. Are you sure you want to proceed?</p>
+                    <div class="approve-note">
+                        <label for="approveNote">Add a note (optional)</label>
+                        <textarea id="approveNote" placeholder="e.g., Looks great! Ready to publish."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('quickApproveModal')">Cancel</button>
+                <button class="btn btn-success" onclick="approveContent()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Confirm & Approve
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review & Edit Modal (placeholder) -->
+    <div class="modal-overlay" id="reviewEditModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #2563EB;">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Review & Edit Content
+                </h2>
+                <button class="modal-close" onclick="closeModal('reviewEditModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Full editing functionality coming soon...</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('reviewEditModal')">Cancel</button>
+                <button class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal-overlay" id="rejectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color: #DC2626;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Reject Content
+                </h2>
+                <button class="modal-close" onclick="closeModal('rejectModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="reject-form">
+                    <p class="reject-warning">Please provide a reason for rejection so the content team can make the necessary changes.</p>
+                    <div class="form-group">
+                        <label for="rejectReason">Reason for Rejection <span class="required">*</span></label>
+                        <textarea id="rejectReason" placeholder="Explain what needs to be changed..." required></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rejectModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="rejectContent()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Reject Content
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="toast" id="successToast">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <div class="toast-message">Action completed successfully!</div>
+        <button class="toast-close" onclick="hideToast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <script src="js/scripts.js"></script>
+    <script src="components/modals/modal.js"></script>
+    <script>
+        // View as Client Toggle
+        function toggleClientView() {
+            document.body.classList.add('client-view-mode');
+            document.getElementById('clientViewBanner').style.display = 'flex';
+            sessionStorage.setItem('clientViewMode', 'true');
+
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
+        }
+
+        function exitClientView() {
+            document.body.classList.remove('client-view-mode');
+            document.getElementById('clientViewBanner').style.display = 'none';
+            sessionStorage.removeItem('clientViewMode');
+
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
+        }
+
+        // Restore client view mode on page load
+        if (sessionStorage.getItem('clientViewMode') === 'true') {
+            toggleClientView();
+        }
+
+        // Approve content
+        function approveContent() {
+            closeModal('quickApproveModal');
+            showToast('Content approved successfully! It will be published shortly.');
+            setTimeout(() => {
+                window.location.href = 'content.html';
+            }, 2000);
+        }
+
+        // Reject content
+        function rejectContent() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                alert('Please provide a reason for rejection.');
+                return;
+            }
+            closeModal('rejectModal');
+            showToast('Content rejected. The team has been notified.');
+            setTimeout(() => {
+                window.location.href = 'content.html';
+            }, 2000);
+        }
+    </script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
+    </script>
+</body>
+</html>

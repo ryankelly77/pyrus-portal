@@ -10542,3 +10542,332 @@
         flex-wrap: wrap;
     }
 }
+
+/* ========================================
+   Content Review Page Styles
+   ======================================== */
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: var(--pyrus-green);
+}
+
+.content-review-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+}
+
+.content-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.content-review-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.content-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #F3E8FF;
+    color: #7C3AED;
+}
+
+.countdown-timer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+}
+
+.countdown-timer.urgent {
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.countdown-timer .countdown-icon {
+    color: var(--text-muted);
+}
+
+.countdown-timer.urgent .countdown-icon {
+    color: #DC2626;
+}
+
+.countdown-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.countdown-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.countdown-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.countdown-timer.urgent .countdown-value {
+    color: #DC2626;
+}
+
+.content-review-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+    line-height: 1.3;
+}
+
+.content-review-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.content-review-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.content-review-meta svg {
+    color: var(--text-muted);
+}
+
+.content-review-body {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+}
+
+.content-review-body h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--text-primary);
+}
+
+.content-review-body h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 24px 0 12px 0;
+    color: var(--text-primary);
+}
+
+.content-review-body p {
+    margin: 0 0 16px 0;
+}
+
+.content-review-body ul {
+    margin: 0 0 16px 0;
+    padding-left: 24px;
+}
+
+.content-review-body li {
+    margin-bottom: 8px;
+}
+
+.content-review-body strong {
+    font-weight: 600;
+}
+
+.content-review-body em {
+    font-style: italic;
+}
+
+.content-review-actions {
+    display: flex;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
+}
+
+.btn-lg {
+    padding: 14px 28px;
+    font-size: 15px;
+}
+
+.btn-success {
+    background: #22C55E;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #16A34A;
+}
+
+.btn-danger {
+    background: #DC2626;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #B91C1C;
+}
+
+/* Approve Modal Styles */
+.approve-confirmation {
+    padding: 8px 0;
+}
+
+.approve-content-summary {
+    background: var(--bg-page);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.approve-content-summary h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.approve-content-summary .summary-meta {
+    display: flex;
+    gap: 8px;
+}
+
+.approve-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 16px 0;
+}
+
+.approve-note label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.approve-note textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.approve-note textarea:focus {
+    outline: none;
+    border-color: var(--pyrus-green);
+}
+
+/* Reject Modal Styles */
+.reject-form {
+    padding: 8px 0;
+}
+
+.reject-warning {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 16px 0;
+}
+
+.reject-form .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.reject-form .form-group label .required {
+    color: #DC2626;
+}
+
+.reject-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.reject-form textarea:focus {
+    outline: none;
+    border-color: var(--pyrus-green);
+}
+
+/* Responsive Content Review */
+@media (max-width: 768px) {
+    .content-review-card {
+        padding: 20px;
+    }
+
+    .content-review-header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .countdown-timer {
+        width: 100%;
+    }
+
+    .content-review-title {
+        font-size: 22px;
+    }
+
+    .content-review-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .content-review-actions {
+        flex-direction: column;
+    }
+
+    .content-review-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
