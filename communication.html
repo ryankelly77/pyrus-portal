@@ -163,6 +163,7 @@
             <a href="activity.html" class="tab-btn">Activity</a>
             <a href="communication.html" class="tab-btn active">Communication</a>
             <a href="recommendations.html" class="tab-btn">Recommendations</a>
+            <a href="client-settings.html" class="tab-btn client-only" style="display: none;">Settings</a>
         </div>
 
         <!-- Communication Content -->
@@ -793,6 +794,7 @@
         function toggleClientView() {
             document.body.classList.add('client-view-mode');
             document.getElementById('clientViewBanner').style.display = 'flex';
+            sessionStorage.setItem('clientViewMode', 'true');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
         }
@@ -800,8 +802,14 @@
         function exitClientView() {
             document.body.classList.remove('client-view-mode');
             document.getElementById('clientViewBanner').style.display = 'none';
+            sessionStorage.removeItem('clientViewMode');
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
+        }
+
+        // Restore client view mode on page load
+        if (sessionStorage.getItem('clientViewMode') === 'true') {
+            toggleClientView();
         }
     </script>
 </body>
