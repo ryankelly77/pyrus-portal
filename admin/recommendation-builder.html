@@ -288,7 +288,7 @@
                                 <p class="service-item-desc">Track how AI platforms find and recommend you—with monthly reports and competitive intelligence.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="199" data-onetime="0" data-category="growth">
+                            <div class="service-item" draggable="true" data-monthly="199" data-onetime="0" data-category="growth" data-has-quantity="true">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Google Business Profile Optimization</span>
                                     <button class="info-btn">
@@ -333,7 +333,7 @@
                                 <p class="service-item-desc">Advanced SEO with content, link building & authority signals.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="growth">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="growth" data-has-quantity="true">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Content Writing</span>
                                     <button class="info-btn">
@@ -952,14 +952,15 @@
                 if (isAnalyticsTracking) return; // Skip analytics for base calculation (always free)
 
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
+                const quantity = parseInt(item.getAttribute('data-quantity')) || 1;
                 const pricingSelector = item.querySelector('.pricing-selector');
                 if (pricingSelector) {
                     const selectedOption = pricingSelector.querySelector('input:checked');
                     if (!selectedOption || selectedOption.value !== 'onetime') {
-                        baseTotalMonthly += monthly;
+                        baseTotalMonthly += monthly * quantity;
                     }
                 } else {
-                    baseTotalMonthly += monthly;
+                    baseTotalMonthly += monthly * quantity;
                 }
             });
 
@@ -1009,21 +1010,24 @@
                     }
                 }
 
+                // Get quantity (default to 1)
+                const quantity = parseInt(item.getAttribute('data-quantity')) || 1;
+
                 // Check if item has pricing selector (both options available)
                 const pricingSelector = item.querySelector('.pricing-selector');
                 if (pricingSelector) {
                     const selectedOption = pricingSelector.querySelector('input:checked');
                     if (selectedOption && selectedOption.value === 'onetime') {
                         // User chose onetime payment
-                        totalOnetime += onetime;
+                        totalOnetime += onetime * quantity;
                     } else {
                         // User chose monthly (default)
-                        totalMonthly += monthly;
+                        totalMonthly += monthly * quantity;
                     }
                 } else {
                     // No selector - add both (monthly only or onetime only items)
-                    totalMonthly += monthly;
-                    totalOnetime += onetime;
+                    totalMonthly += monthly * quantity;
+                    totalOnetime += onetime * quantity;
                 }
             });
 
@@ -1143,6 +1147,42 @@
                     // Update pricing when selection changes
                     pricingSelector.querySelectorAll('input').forEach(radio => {
                         radio.addEventListener('change', () => updateTierPricing(tier));
+                    });
+                }
+
+                // Add quantity selector if item supports it
+                const hasQuantity = droppedItem.getAttribute('data-has-quantity') === 'true';
+                if (hasQuantity) {
+                    droppedItem.setAttribute('data-quantity', '1');
+                    const quantitySelector = document.createElement('div');
+                    quantitySelector.className = 'quantity-selector';
+                    quantitySelector.innerHTML = `
+                        <button type="button" class="qty-btn qty-minus">−</button>
+                        <span class="qty-value">1</span>
+                        <button type="button" class="qty-btn qty-plus">+</button>
+                    `;
+                    droppedItem.appendChild(quantitySelector);
+
+                    const qtyValue = quantitySelector.querySelector('.qty-value');
+                    const minusBtn = quantitySelector.querySelector('.qty-minus');
+                    const plusBtn = quantitySelector.querySelector('.qty-plus');
+
+                    minusBtn.addEventListener('click', () => {
+                        let qty = parseInt(droppedItem.getAttribute('data-quantity')) || 1;
+                        if (qty > 1) {
+                            qty--;
+                            droppedItem.setAttribute('data-quantity', qty);
+                            qtyValue.textContent = qty;
+                            updateTierPricing(tier);
+                        }
+                    });
+
+                    plusBtn.addEventListener('click', () => {
+                        let qty = parseInt(droppedItem.getAttribute('data-quantity')) || 1;
+                        qty++;
+                        droppedItem.setAttribute('data-quantity', qty);
+                        qtyValue.textContent = qty;
+                        updateTierPricing(tier);
                     });
                 }
 

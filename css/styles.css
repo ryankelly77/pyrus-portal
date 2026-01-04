@@ -13522,6 +13522,48 @@ input[type="date"].form-control {
     color: var(--text-primary);
 }
 
+/* Quantity Selector */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: var(--pyrus-green-pale);
+    border: 1px solid var(--pyrus-green-light);
+    border-radius: var(--radius-sm);
+}
+
+.qty-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.qty-btn:hover {
+    background: var(--pyrus-green);
+    border-color: var(--pyrus-green);
+    color: white;
+}
+
+.qty-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 40px;
+    text-align: center;
+}
+
 /* ===== Service Item Info Button ===== */
 .service-item-header {
     display: flex;
