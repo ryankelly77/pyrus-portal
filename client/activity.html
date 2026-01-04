@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Communication - Pyrus Digital Client Portal</title>
+    <title>Activity - Pyrus Digital Client Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
     <div class="admin-layout">
@@ -22,7 +22,15 @@
                 <span>Pyrus Admin</span>
             </div>
             <nav class="admin-nav">
-                <a href="index.html" class="admin-nav-item active">
+                <a href="../admin/recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="../admin/index.html" class="admin-nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
@@ -31,28 +39,28 @@
                     </svg>
                     <span>Clients</span>
                 </a>
-                <a href="admin-users.html" class="admin-nav-item">
+                <a href="../admin/users.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>Users</span>
                 </a>
-                <a href="admin-revenue.html" class="admin-nav-item">
+                <a href="../admin/revenue.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                     <span>Revenue / MRR</span>
                 </a>
-                <a href="admin-notifications.html" class="admin-nav-item">
+                <a href="../admin/notifications.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
                 </a>
-                <a href="admin-settings.html" class="admin-nav-item">
+                <a href="../admin/settings.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -60,7 +68,7 @@
                     <span>Settings</span>
                 </a>
                 <div class="nav-spacer"></div>
-                <a href="client-login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                <a href="login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
@@ -96,7 +104,7 @@
                     </svg>
                     <span>Results</span>
                 </a>
-                <a href="activity.html" class="client-nav-item">
+                <a href="activity.html" class="client-nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
@@ -112,7 +120,7 @@
                     </svg>
                     <span>Content<span class="nav-new-badge">NEW!</span></span>
                 </a>
-                <a href="communication.html" class="client-nav-item active">
+                <a href="communication.html" class="client-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -124,7 +132,7 @@
                     </svg>
                     <span>Recommendations</span>
                 </a>
-                <a href="client-settings.html" class="client-nav-item">
+                <a href="settings.html" class="client-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -132,7 +140,7 @@
                     <span>Settings</span>
                 </a>
                 <div class="nav-spacer"></div>
-                <a href="client-login.html" class="client-nav-item nav-logout" onclick="sessionStorage.clear();">
+                <a href="login.html" class="client-nav-item nav-logout" onclick="sessionStorage.clear();">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
@@ -143,13 +151,13 @@
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main class="admin-main">
-            <!-- Admin Top Header -->
+            <!-- Top Header Bar -->
             <div class="admin-top-header">
                 <div class="admin-top-header-left">
                     <nav class="breadcrumb">
-                        <a href="index.html">Clients</a>
+                        <a href="../admin/index.html">Clients</a>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
@@ -157,28 +165,30 @@
                     </nav>
                 </div>
                 <div class="admin-top-header-right">
-                    <button class="btn btn-secondary admin-only" onclick="toggleClientView()">
+                    <button class="btn btn-secondary" onclick="toggleClientView()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                         View as Client
                     </button>
-                    <a href="admin-notifications.html" class="btn-icon has-notification">
+                    <a href="../admin/notifications.html" class="btn-icon has-notification">
                         <span class="notification-badge"></span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
                     </a>
-                    <a href="admin-settings.html" class="user-menu-link">
-                        <div class="user-avatar-small"><span>RK</span></div>
+                    <a href="../admin/settings.html" class="user-menu-link">
+                        <div class="user-avatar-small">
+                            <span>RK</span>
+                        </div>
                         <span class="user-name">Ryan Kelly</span>
                     </a>
                 </div>
             </div>
 
-            <!-- View Mode Banner -->
+            <!-- Client View Mode Banner (hidden by default) -->
             <div class="view-mode-banner" id="clientViewBanner" style="display: none;">
                 <div class="banner-text">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -190,320 +200,341 @@
                 <button class="btn-exit-preview" onclick="exitClientView()">Exit Preview</button>
             </div>
 
-            <!-- Admin Content -->
             <div class="admin-content">
-                <!-- Client Header Card -->
-                <div class="client-header-card">
-                    <div class="client-header">
-                        <div class="client-info">
-                            <div class="client-avatar">TC</div>
-                            <div class="client-details">
-                                <h1>
-                                    TC Clinical Services
-                                    <span class="status-badge active">Active</span>
-                                </h1>
-                                <p class="client-meta">dlg.mdservices@gmail.com • Client since Sep 2025 • Harvest Bundle</p>
-                            </div>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-secondary admin-only" onclick="openModal('resultAlertModal')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                </svg>
-                                Send Result Alert
-                            </button>
-                            <button class="btn btn-secondary admin-only" onclick="openModal('resendInviteModal')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                                Resend Invitation
-                            </button>
-                            <button class="btn btn-primary admin-only" onclick="openModal('editClientModal')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 20h9"></path>
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                </svg>
-                                Edit Client
-                            </button>
-                            <a href="client-settings.html" class="btn btn-secondary client-only" style="display: none;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                </svg>
-                                Settings
-                            </a>
-                        </div>
+        <!-- Client Header Card -->
+        <div class="client-header-card">
+            <div class="client-header">
+                <div class="client-info">
+                    <div class="client-avatar">TC</div>
+                    <div class="client-details">
+                        <h1>
+                            TC Clinical Services
+                            <span class="status-badge active">Active</span>
+                        </h1>
+                        <p class="client-meta">dlg.mdservices@gmail.com • Client since Sep 2025 • 4 services</p>
                     </div>
                 </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary admin-only" onclick="openModal('resultAlertModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Send Result Alert
+                    </button>
+                    <button class="btn btn-secondary admin-only" onclick="openModal('resendInviteModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Resend Invitation
+                    </button>
+                    <button class="btn btn-primary admin-only" onclick="openModal('editClientModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Edit Client
+                    </button>
+                    <a href="settings.html" class="btn btn-secondary client-only" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        Settings
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
             <a href="getting-started.html" class="tab-btn">Getting Started</a>
             <a href="results.html" class="tab-btn">Results</a>
-            <a href="activity.html" class="tab-btn">Activity</a>
-            <a href="communication.html" class="tab-btn active">Communication</a>
+            <a href="activity.html" class="tab-btn active">Activity</a>
+            <a href="communication.html" class="tab-btn">Communication</a>
             <a href="recommendations.html" class="tab-btn">Recommendations</a>
-            <a href="client-settings.html" class="tab-btn client-only" style="display: none;">Settings</a>
+            <a href="settings.html" class="tab-btn client-only" style="display: none;">Settings</a>
         </div>
 
-        <!-- Communication Content -->
-        <div class="communication-content">
-            <!-- Stats Overview -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Total Communications</div>
-                    <div class="stat-value">8</div>
-                    <div class="stat-detail">Last 30 days</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Emails Sent</div>
-                    <div class="stat-value">4</div>
-                    <div class="stat-detail">3 delivered, 1 failed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Result Alerts</div>
-                    <div class="stat-value purple">2</div>
-                    <div class="stat-detail">Both viewed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Chat Messages</div>
-                    <div class="stat-value blue">2</div>
-                    <div class="stat-detail">From HighLevel</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Email Open Rate</div>
-                    <div class="stat-value success">67%</div>
-                    <div class="stat-detail">2 of 3 delivered</div>
-                </div>
+        <!-- Activity Content -->
+        <div class="activity-content">
+            <div class="activity-filters">
+                <button class="filter-chip active" data-filter="all">All Activity</button>
+                <button class="filter-chip" data-filter="task">Tasks</button>
+                <button class="filter-chip" data-filter="update">Updates</button>
+                <button class="filter-chip" data-filter="alert">Result Alerts</button>
+                <button class="filter-chip" data-filter="report">Reports</button>
             </div>
 
-            <!-- Filter Bar -->
-            <div class="filter-bar">
-                <div class="filter-tabs">
-                    <button class="filter-tab active">
-                        All
-                        <span class="count">8</span>
-                    </button>
-                    <button class="filter-tab">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        Emails
-                        <span class="count">4</span>
-                    </button>
-                    <button class="filter-tab">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                        </svg>
-                        Result Alerts
-                        <span class="count">2</span>
-                    </button>
-                    <button class="filter-tab">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        Chat
-                        <span class="count">2</span>
-                    </button>
-                </div>
-                <div class="filter-actions">
-                    <button class="filter-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Date Range
-                    </button>
-                    <button class="filter-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export
-                    </button>
-                </div>
-            </div>
-
-            <!-- Communication Timeline -->
-            <div class="timeline-card">
-                <div class="timeline-header">
-                    <div class="timeline-title">
-                        <h3>Communication Timeline</h3>
-                        <p>All client communications in chronological order</p>
-                    </div>
-                </div>
-
-                <ul class="timeline-list">
-                    <!-- Result Alert - Page 1 Ranking -->
-                    <li class="timeline-item highlight-success">
-                        <div class="timeline-date">
-                            <span class="date">Jan 2, 2026</span>
-                            <span class="time">2:45 PM CST</span>
+            <div class="activity-card">
+                <ul class="activity-list">
+                    <li class="activity-item" data-type="alert">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
                         </div>
-                        <div class="timeline-content">
-                            <div class="comm-icon result-alert">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                </svg>
-                            </div>
-                            <div class="comm-details">
-                                <div class="comm-header">
-                                    <div class="comm-title">
-                                        <h4>
-                                            Result Alert Sent
-                                            <span class="type-label result">Result Alert</span>
-                                        </h4>
-                                        <span class="subject">Your keyword is now ranking on Page 1!</span>
-                                    </div>
-                                    <div class="comm-status">
-                                        <span class="status-pill delivered">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            Delivered
-                                        </span>
-                                        <span class="status-pill opened">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                            Viewed
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="result-highlight">
-                                    <div class="result-icon">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                                            <polyline points="17 6 23 6 23 12"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div class="result-text">
-                                        <strong>"precision wound care San Antonio" — Now Position #7</strong>
-                                        <span>Moved from position #24 to #7 (up 17 spots!) - First page visibility achieved</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Keyword reached Page 1!</div>
+                            <div class="activity-desc">"precision wound care San Antonio" moved to position #7</div>
                         </div>
+                        <div class="activity-time">Today, 2:45 PM</div>
                     </li>
-
-                    <!-- Invitation Reminder - Opened & Clicked -->
-                    <li class="timeline-item highlight-success">
-                        <div class="timeline-date">
-                            <span class="date">Jan 2, 2026</span>
-                            <span class="time">8:00 AM CST</span>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
                         </div>
-                        <div class="timeline-content">
-                            <div class="comm-icon email-reminder">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                </svg>
-                            </div>
-                            <div class="comm-details">
-                                <div class="comm-header">
-                                    <div class="comm-title">
-                                        <h4>
-                                            Invitation Reminder
-                                            <span class="type-label reminder">Reminder</span>
-                                        </h4>
-                                        <span class="subject">Your Pyrus Digital portal is waiting for you</span>
-                                    </div>
-                                    <div class="comm-status">
-                                        <span class="status-pill delivered">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            Delivered
-                                        </span>
-                                        <span class="status-pill opened">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                            Opened
-                                        </span>
-                                        <span class="status-pill clicked">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                                <polyline points="10 17 15 12 10 7"></polyline>
-                                                <line x1="15" y1="12" x2="3" y2="12"></line>
-                                            </svg>
-                                            Clicked
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="click-inline">
-                                    <div class="click-icon">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                            <polyline points="10 17 15 12 10 7"></polyline>
-                                            <line x1="15" y1="12" x2="3" y2="12"></line>
-                                        </svg>
-                                    </div>
-                                    <span class="click-text">Clicked <strong>"Create Account"</strong> button</span>
-                                    <span class="click-time">9:24 AM CST</span>
-                                </div>
-                            </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Monthly blog post published</div>
+                            <div class="activity-desc">"5 Signs Your Wound Care Needs a Specialist" is now live</div>
                         </div>
+                        <div class="activity-time">Today, 10:30 AM</div>
                     </li>
-
-                    <!-- Portal Invitation - Failed -->
-                    <li class="timeline-item highlight-failed">
-                        <div class="timeline-date">
-                            <span class="date">Dec 29, 2025</span>
-                            <span class="time">2:30 PM CST</span>
+                    <li class="activity-item" data-type="alert">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
                         </div>
-                        <div class="timeline-content">
-                            <div class="comm-icon email-failed">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                            </div>
-                            <div class="comm-details">
-                                <div class="comm-header">
-                                    <div class="comm-title">
-                                        <h4>
-                                            Portal Invitation
-                                            <span class="type-label invitation">Invitation</span>
-                                        </h4>
-                                        <span class="subject">Welcome to Your Pyrus Digital Portal</span>
-                                    </div>
-                                    <div class="comm-status">
-                                        <span class="status-pill failed">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <line x1="15" y1="9" x2="9" y2="15"></line>
-                                                <line x1="9" y1="9" x2="15" y2="15"></line>
-                                            </svg>
-                                            Failed
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="failure-note">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                    </svg>
-                                    <span>Delivery failed: Mailbox full / temporary error</span>
-                                    <a href="#">Resent Dec 31</a>
-                                </div>
-                            </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Traffic milestone: 2,500 visitors!</div>
+                            <div class="activity-desc">Monthly website traffic exceeded 2,500 unique visitors</div>
                         </div>
+                        <div class="activity-time">Yesterday, 4:30 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Ads campaign optimized</div>
+                            <div class="activity-desc">Adjusted bid strategy based on conversion data</div>
+                        </div>
+                        <div class="activity-time">Yesterday, 3:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Business Profile updated</div>
+                            <div class="activity-desc">Added new photos and updated business hours</div>
+                        </div>
+                        <div class="activity-time">Yesterday, 11:15 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">December report generated</div>
+                            <div class="activity-desc">Monthly performance report is ready for review</div>
+                        </div>
+                        <div class="activity-time">Dec 31, 8:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Website launched!</div>
+                            <div class="activity-desc">tc-clinicalservices.com is now live and indexed by Google</div>
+                        </div>
+                        <div class="activity-time">Dec 30, 4:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Landing page A/B test started</div>
+                            <div class="activity-desc">Testing new headline and CTA button variations</div>
+                        </div>
+                        <div class="activity-time">Dec 29, 9:30 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="alert">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">New keyword ranking: Top 10!</div>
+                            <div class="activity-desc">"wound care specialist near me" now ranking #9</div>
+                        </div>
+                        <div class="activity-time">Dec 28, 4:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">On-page SEO completed</div>
+                            <div class="activity-desc">12 pages optimized with meta tags, headers, and schema markup</div>
+                        </div>
+                        <div class="activity-time">Dec 28, 2:15 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="alert">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Lead generation: 10 leads this week!</div>
+                            <div class="activity-desc">Google Ads campaign reached first major milestone</div>
+                        </div>
+                        <div class="activity-time">Dec 27, 5:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Conversion tracking installed</div>
+                            <div class="activity-desc">Google Analytics 4 and Tag Manager configured</div>
+                        </div>
+                        <div class="activity-time">Dec 26, 3:45 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="alert">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">First conversion recorded!</div>
+                            <div class="activity-desc">Contact form submission from Google Ads click</div>
+                        </div>
+                        <div class="activity-time">Dec 22, 10:15 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Keyword research completed</div>
+                            <div class="activity-desc">47 target keywords identified for wound care niche</div>
+                        </div>
+                        <div class="activity-time">Dec 20, 11:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Competitor analysis delivered</div>
+                            <div class="activity-desc">Detailed report on top 5 competitors in your market</div>
+                        </div>
+                        <div class="activity-time">Dec 18, 2:00 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Google Ads campaign launched</div>
+                            <div class="activity-desc">Initial campaign with 15 ad groups now running</div>
+                        </div>
+                        <div class="activity-time">Dec 15, 10:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="update">
+                        <div class="activity-icon update">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Website design approved</div>
+                            <div class="activity-desc">Final mockups approved, moving to development</div>
+                        </div>
+                        <div class="activity-time">Dec 12, 4:30 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Onboarding completed!</div>
+                            <div class="activity-desc">All setup tasks finished, project officially kicked off</div>
+                        </div>
+                        <div class="activity-time">Dec 10, 9:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="report">
+                        <div class="activity-icon report">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Marketing strategy presented</div>
+                            <div class="activity-desc">90-day growth plan reviewed and approved</div>
+                        </div>
+                        <div class="activity-time">Dec 8, 11:00 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="task">
+                        <div class="activity-icon task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Branding assets received</div>
+                            <div class="activity-desc">Logo, colors, and brand guidelines added to project</div>
+                        </div>
+                        <div class="activity-time">Dec 5, 2:00 PM</div>
                     </li>
                 </ul>
             </div>
-            </div>
         </div>
-    </main>
-</div>
+            </div>
+        </main>
+    </div>
 
     <!-- Modal Backdrop -->
     <div class="modal-backdrop" id="modalBackdrop"></div>
@@ -865,17 +896,39 @@
         </button>
     </div>
 
-    <script src="js/scripts.js"></script>
-    <script
-        src="https://widgets.leadconnectorhq.com/loader.js"
-        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-        data-widget-id="6879429b33ee4b1983428d6c">
-    </script>
+    <script src="../js/scripts.js"></script>
     <script>
+        // Activity Filter Functionality
+        const filterChips = document.querySelectorAll('.activity-filters .filter-chip');
+        const activityItems = document.querySelectorAll('.activity-item');
+
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const filterType = chip.getAttribute('data-filter');
+
+                // Update active chip
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+
+                // Filter activities
+                activityItems.forEach(item => {
+                    const itemType = item.getAttribute('data-type');
+                    if (filterType === 'all' || itemType === filterType) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // View as Client Toggle
         function toggleClientView() {
             document.body.classList.add('client-view-mode');
             document.getElementById('clientViewBanner').style.display = 'flex';
             sessionStorage.setItem('clientViewMode', 'true');
+
+            // Show client-only buttons, hide admin-only buttons
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = '');
         }
@@ -884,6 +937,8 @@
             document.body.classList.remove('client-view-mode');
             document.getElementById('clientViewBanner').style.display = 'none';
             sessionStorage.removeItem('clientViewMode');
+
+            // Show admin-only buttons, hide client-only buttons
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
             document.querySelectorAll('.client-only').forEach(el => el.style.display = 'none');
         }
@@ -892,6 +947,11 @@
         if (sessionStorage.getItem('clientViewMode') === 'true') {
             toggleClientView();
         }
+    </script>
+    <script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879429b33ee4b1983428d6c">
     </script>
 </body>
 </html>

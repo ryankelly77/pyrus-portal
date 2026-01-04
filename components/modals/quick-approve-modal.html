@@ -1,0 +1,52 @@
+<div class="modal-overlay" id="quickApproveModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon" style="background: #E6F9F0; color: #10B981;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Quick Approve Content?</h2>
+                    <p class="modal-subtitle">You're about to approve this content without making any changes.</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('quickApproveModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="quick-approve-content">
+                <h4>Black Friday Sale Announcement</h4>
+                <p>Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
+            </div>
+            <div class="quick-approve-notice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                Once approved, your implementation team will publish this content within 1-2 business days.
+            </div>
+            <div class="checkbox-confirm-area">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="quickApproveConfirm">
+                    <span>I've reviewed this content and want to publish it as-is</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('quickApproveModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="closeModal('quickApproveModal'); showToast('Content approved successfully!')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Confirm & Publish
+            </button>
+        </div>
+    </div>
+</div>

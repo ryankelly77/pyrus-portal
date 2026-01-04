@@ -6,6 +6,44 @@ const ModalSystem = {
     // Track active modals
     activeModals: [],
 
+    // Track loaded modals
+    loadedModals: new Set(),
+
+    // Load a modal from external HTML file
+    load: async function(modalPath, basePath = '') {
+        // Construct full path
+        const fullPath = basePath + 'components/modals/' + modalPath;
+
+        // Skip if already loaded
+        if (this.loadedModals.has(modalPath)) {
+            return Promise.resolve();
+        }
+
+        try {
+            const response = await fetch(fullPath);
+            if (!response.ok) {
+                console.warn(`Failed to load modal: ${fullPath}`);
+                return;
+            }
+            const html = await response.text();
+
+            // Create a container and append to body
+            const container = document.createElement('div');
+            container.innerHTML = html;
+            document.body.appendChild(container.firstElementChild);
+
+            this.loadedModals.add(modalPath);
+        } catch (error) {
+            console.warn(`Error loading modal ${fullPath}:`, error);
+        }
+    },
+
+    // Load multiple modals
+    loadAll: async function(modalPaths, basePath = '') {
+        const promises = modalPaths.map(path => this.load(path, basePath));
+        await Promise.all(promises);
+    },
+
     // Initialize the modal system
     init: function() {
         // Close modal on escape key

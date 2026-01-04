@@ -1,0 +1,62 @@
+<div class="modal-overlay" id="requestUpdateModal">
+    <div class="modal modal-md">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon" style="background: #DBEAFE; color: #2563EB;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="modal-title">Request Content Update</h2>
+                    <p class="modal-subtitle">Tell us what changes you'd like to make</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('requestUpdateModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="update-content-info">
+                <h4>How to Improve Your Local SEO Rankings</h4>
+                <span class="published-on">Published Nov 10, 2024</span>
+            </div>
+            <div class="form-group">
+                <label for="updateType">Type of update</label>
+                <select id="updateType" class="form-control">
+                    <option value="">Select update type...</option>
+                    <option value="info">Update information/facts</option>
+                    <option value="pricing">Change pricing or offers</option>
+                    <option value="contact">Update contact details</option>
+                    <option value="add">Add new content</option>
+                    <option value="remove">Remove content</option>
+                    <option value="other">Other changes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="updateDetails">Describe the changes needed <span class="required">*</span></label>
+                <textarea id="updateDetails" class="form-control" rows="4" placeholder="Please be as specific as possible about what needs to be updated..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="urgentUpdate">
+                    <span>This is urgent (needs to be updated within 24 hours)</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('requestUpdateModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="closeModal('requestUpdateModal'); showToast('Update request submitted!')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Submit Request
+            </button>
+        </div>
+    </div>
+</div>

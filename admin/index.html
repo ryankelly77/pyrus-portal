@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="components/modals/modal.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../components/modals/modal.css">
 </head>
 <body>
     <div class="admin-layout">
@@ -23,7 +23,7 @@
                 <span>Pyrus Admin</span>
             </div>
             <nav class="admin-nav">
-                <a href="admin-recommendations.html" class="admin-nav-item">
+                <a href="recommendations.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                         <polyline points="2 17 12 22 22 17"></polyline>
@@ -40,28 +40,28 @@
                     </svg>
                     <span>Clients</span>
                 </a>
-                <a href="admin-users.html" class="admin-nav-item">
+                <a href="users.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>Users</span>
                 </a>
-                <a href="admin-revenue.html" class="admin-nav-item">
+                <a href="revenue.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                     <span>Revenue / MRR</span>
                 </a>
-                <a href="admin-notifications.html" class="admin-nav-item">
+                <a href="notifications.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
                 </a>
-                <a href="admin-settings.html" class="admin-nav-item">
+                <a href="settings.html" class="admin-nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -69,7 +69,7 @@
                     <span>Settings</span>
                 </a>
                 <div class="nav-spacer"></div>
-                <a href="client-login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                <a href="../client/login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
@@ -88,14 +88,14 @@
                     <h1>Clients</h1>
                 </div>
                 <div class="admin-top-header-right">
-                    <a href="admin-notifications.html" class="btn-icon has-notification">
+                    <a href="notifications.html" class="btn-icon has-notification">
                         <span class="notification-badge"></span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
                     </a>
-                    <a href="admin-settings.html" class="user-menu-link">
+                    <a href="settings.html" class="user-menu-link">
                         <div class="user-avatar-small">
                             <span>RK</span>
                         </div>
@@ -168,7 +168,7 @@
         <div class="clients-grid" id="clientsGrid">
             <!-- TC Clinical Services -->
             <div class="client-card" data-status="active" data-growth="32" data-name="TC Clinical Services">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar">TC</div>
                         <span class="status-badge active">Active</span>
@@ -201,7 +201,7 @@
 
             <!-- Raptor Vending -->
             <div class="client-card" data-status="active" data-growth="28" data-name="Raptor Vending">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #2563EB;">RV</div>
                         <span class="status-badge active">Active</span>
@@ -234,7 +234,7 @@
 
             <!-- Raptor Services -->
             <div class="client-card" data-status="active" data-growth="41" data-name="Raptor Services">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #7C3AED;">RS</div>
                         <span class="status-badge active">Active</span>
@@ -267,7 +267,7 @@
 
             <!-- Gohfr -->
             <div class="client-card" data-status="onboarding" data-growth="0" data-name="Gohfr">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #0B7277;">GO</div>
                         <span class="status-badge onboarding">Onboarding</span>
@@ -300,7 +300,7 @@
 
             <!-- Espronceda Law -->
             <div class="client-card" data-status="active" data-growth="15" data-name="Espronceda Law">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #DC2626;">EL</div>
                         <span class="status-badge active">Active</span>
@@ -333,7 +333,7 @@
 
             <!-- American Fence & Deck -->
             <div class="client-card" data-status="paused" data-growth="0" data-name="American Fence & Deck">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #6B7280;">AF</div>
                         <span class="status-badge paused">Paused</span>
@@ -373,7 +373,7 @@
 
             <!-- Peak Performance Gym -->
             <div class="client-card" data-status="active" data-growth="24" data-name="Peak Performance Gym">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #EA580C;">PP</div>
                         <span class="status-badge active">Active</span>
@@ -406,7 +406,7 @@
 
             <!-- Sunrise Dental -->
             <div class="client-card" data-status="active" data-growth="19" data-name="Sunrise Dental">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #0891B2;">SD</div>
                         <span class="status-badge active">Active</span>
@@ -439,7 +439,7 @@
 
             <!-- Metro Plumbing -->
             <div class="client-card" data-status="active" data-growth="36" data-name="Metro Plumbing">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #4F46E5;">MP</div>
                         <span class="status-badge active">Active</span>
@@ -472,7 +472,7 @@
 
             <!-- Green Thumb Landscaping -->
             <div class="client-card" data-status="onboarding" data-growth="0" data-name="Green Thumb Landscaping">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #16A34A;">GT</div>
                         <span class="status-badge onboarding">Onboarding</span>
@@ -505,7 +505,7 @@
 
             <!-- Horizon Real Estate -->
             <div class="client-card" data-status="active" data-growth="37" data-name="Horizon Real Estate">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #9333EA;">HR</div>
                         <span class="status-badge active">Active</span>
@@ -538,7 +538,7 @@
 
             <!-- Coastal Insurance -->
             <div class="client-card" data-status="paused" data-growth="0" data-name="Coastal Insurance">
-                <a href="getting-started.html" class="client-card-link">
+                <a href="../client/getting-started.html" class="client-card-link">
                     <div class="client-card-header">
                         <div class="client-card-avatar" style="background: #6B7280;">CI</div>
                         <span class="status-badge paused">Paused</span>
@@ -1049,8 +1049,8 @@
         </button>
     </div>
 
-    <script src="js/scripts.js"></script>
-    <script src="components/modals/modal.js"></script>
+    <script src="../js/scripts.js"></script>
+    <script src="../components/modals/modal.js"></script>
     <script>
         // View Toggle Functionality
         const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
