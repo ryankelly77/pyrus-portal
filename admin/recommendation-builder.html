@@ -706,6 +706,13 @@
                                     <span class="total-text">$0/mo Total</span>
                                 </div>
                             </div>
+                            <div class="growth-rewards" data-tier="good">
+                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-unlocked"></div>
+                                <div class="rewards-coupon"></div>
+                                <div class="rewards-locked"></div>
+                                <div class="rewards-savings"></div>
+                            </div>
                             <button class="btn btn-purchase">Purchase Now</button>
                         </div>
 
@@ -730,6 +737,13 @@
                                     <span class="total-text">$0/mo Total</span>
                                 </div>
                             </div>
+                            <div class="growth-rewards" data-tier="better">
+                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-unlocked"></div>
+                                <div class="rewards-coupon"></div>
+                                <div class="rewards-locked"></div>
+                                <div class="rewards-savings"></div>
+                            </div>
                             <button class="btn btn-purchase">Purchase Now</button>
                         </div>
 
@@ -753,6 +767,13 @@
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
                                 </div>
+                            </div>
+                            <div class="growth-rewards" data-tier="best">
+                                <div class="rewards-header">🎁 Your Growth Rewards</div>
+                                <div class="rewards-unlocked"></div>
+                                <div class="rewards-coupon"></div>
+                                <div class="rewards-locked"></div>
+                                <div class="rewards-savings"></div>
                             </div>
                             <button class="btn btn-purchase">Purchase Now</button>
                         </div>
@@ -814,6 +835,97 @@
             });
         });
 
+        // Growth Rewards Tier Configuration
+        const REWARD_TIERS = [
+            { threshold: 0, freeProducts: ['Free Analytics Tracking ($99 Value)'], discount: 0, coupon: null },
+            { threshold: 1000, freeProducts: ['Free Analytics Tracking ($99 Value)'], discount: 5, coupon: 'HARVEST5X' },
+            { threshold: 1500, freeProducts: ['Free Analytics Tracking ($99 Value)', 'Another Free $99 Product'], discount: 5, coupon: 'HARVEST5X' },
+            { threshold: 2000, freeProducts: ['Free Analytics Tracking ($99 Value)', 'Another Free $99 Product'], discount: 10, coupon: 'CULTIVATE10' }
+        ];
+
+        // Get current reward tier based on monthly total
+        function getRewardTier(monthlyTotal) {
+            let currentTier = 0;
+            for (let i = REWARD_TIERS.length - 1; i >= 0; i--) {
+                if (monthlyTotal >= REWARD_TIERS[i].threshold) {
+                    currentTier = i;
+                    break;
+                }
+            }
+            return currentTier;
+        }
+
+        // Calculate and update Growth Rewards display
+        function updateGrowthRewards(tier, monthlyTotal) {
+            const rewardsSection = document.querySelector(`.growth-rewards[data-tier="${tier}"]`);
+            const unlockedDiv = rewardsSection.querySelector('.rewards-unlocked');
+            const couponDiv = rewardsSection.querySelector('.rewards-coupon');
+            const lockedDiv = rewardsSection.querySelector('.rewards-locked');
+            const savingsDiv = rewardsSection.querySelector('.rewards-savings');
+
+            const currentTierIndex = getRewardTier(monthlyTotal);
+            const currentTier = REWARD_TIERS[currentTierIndex];
+
+            // Build unlocked rewards
+            let unlockedHtml = '';
+            currentTier.freeProducts.forEach(product => {
+                unlockedHtml += `<div class="reward-item unlocked"><span class="reward-icon">✓</span><span class="reward-label">UNLOCKED:</span> ${product}</div>`;
+            });
+            if (currentTier.discount > 0) {
+                unlockedHtml += `<div class="reward-item unlocked"><span class="reward-icon">✓</span><span class="reward-label">UNLOCKED:</span> ${currentTier.discount}% off your plan</div>`;
+            }
+            unlockedDiv.innerHTML = unlockedHtml;
+
+            // Build coupon code display
+            if (currentTier.coupon) {
+                couponDiv.innerHTML = `<div class="coupon-box"><span class="coupon-label">Use Code at Checkout</span><span class="coupon-code">${currentTier.coupon}</span></div>`;
+                couponDiv.style.display = '';
+            } else {
+                couponDiv.innerHTML = '';
+                couponDiv.style.display = 'none';
+            }
+
+            // Build locked rewards (next tiers)
+            let lockedHtml = '';
+            if (currentTierIndex >= REWARD_TIERS.length - 1) {
+                // Max tier reached
+                lockedHtml = '<div class="max-rewards">⭐ Maximum Rewards Unlocked! ⭐</div>';
+            } else {
+                // Show upcoming tiers in order of amount needed
+                const upcomingTiers = [];
+                for (let i = currentTierIndex + 1; i < REWARD_TIERS.length; i++) {
+                    const amountNeeded = REWARD_TIERS[i].threshold - monthlyTotal;
+                    let rewardText = '';
+
+                    if (i === 1) {
+                        rewardText = '5% off your total cart!';
+                    } else if (i === 2) {
+                        rewardText = 'another Free $99 Product!';
+                    } else if (i === 3) {
+                        rewardText = '10% off your total cart + another free $99 Product';
+                    }
+
+                    upcomingTiers.push({ amount: amountNeeded, text: rewardText });
+                }
+
+                upcomingTiers.forEach(item => {
+                    lockedHtml += `<div class="reward-item locked"><span class="lock-icon">🔒</span> Add <strong>$${item.amount.toLocaleString()}</strong> to unlock ${item.text}</div>`;
+                });
+            }
+            lockedDiv.innerHTML = lockedHtml;
+
+            // Calculate and show savings
+            let savingsAmount = 99; // Base free analytics
+            if (currentTierIndex >= 2) savingsAmount += 99; // Another free $99 product
+            if (currentTier.discount > 0) {
+                const discountSavings = Math.round(monthlyTotal * (currentTier.discount / 100) * 100) / 100;
+                savingsAmount += discountSavings;
+                savingsDiv.innerHTML = `<div class="savings-callout">💡 Current savings: $${savingsAmount.toLocaleString()}</div>`;
+            } else {
+                savingsDiv.innerHTML = `<div class="savings-callout">💡 Current savings: $${savingsAmount}</div>`;
+            }
+        }
+
         // Calculate and update tier pricing
         function updateTierPricing(tier) {
             const tierElement = document.querySelector(`.pricing-tier[data-tier="${tier}"]`);
@@ -869,6 +981,9 @@
             } else {
                 onetimeRowEl.style.display = '';
             }
+
+            // Update Growth Rewards
+            updateGrowthRewards(tier, totalMonthly);
         }
 
         // Basic Drag and Drop
@@ -925,11 +1040,11 @@
                     pricingSelector.innerHTML = `
                         <label class="pricing-option">
                             <input type="radio" name="${uniqueId}" value="monthly" checked>
-                            <span>$${monthly}/mo for 12 months</span>
+                            <span>$${monthly}/mo</span>
                         </label>
                         <label class="pricing-option">
                             <input type="radio" name="${uniqueId}" value="onetime">
-                            <span>$${onetime.toLocaleString()} one-time</span>
+                            <span>$${onetime.toLocaleString()}</span>
                         </label>
                     `;
                     droppedItem.appendChild(pricingSelector);
