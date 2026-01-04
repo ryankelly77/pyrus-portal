@@ -13737,6 +13737,17 @@ input[type="date"].form-control {
     color: var(--success-text);
 }
 
+.reward-item.unlocked.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.claim-hint {
+    font-size: 12px;
+    font-style: italic;
+    opacity: 0.8;
+}
+
 .reward-item.unlocked::before {
     content: '✓';
     display: flex;

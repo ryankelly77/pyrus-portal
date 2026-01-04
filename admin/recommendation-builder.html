@@ -865,7 +865,7 @@
         }
 
         // Calculate and update Growth Rewards display
-        function updateGrowthRewards(tier, monthlyTotal) {
+        function updateGrowthRewards(tier, monthlyTotal, has99ProductInCart = false) {
             const rewardsSection = document.querySelector(`.growth-rewards[data-tier="${tier}"]`);
             const unlockedDiv = rewardsSection.querySelector('.rewards-unlocked');
             const couponDiv = rewardsSection.querySelector('.rewards-coupon');
@@ -874,15 +874,31 @@
 
             const currentTierIndex = getRewardTier(monthlyTotal);
             const currentTier = REWARD_TIERS[currentTierIndex];
+            const hasFree99Reward = currentTierIndex >= 2;
 
-            // Build unlocked rewards
+            // Build unlocked rewards in consistent order:
+            // 1. Free Analytics Tracking
+            // 2. Discount (if any)
+            // 3. Another Free $99 Product (if unlocked)
             let unlockedHtml = '';
-            currentTier.freeProducts.forEach(product => {
-                unlockedHtml += `<div class="reward-item unlocked">${product}</div>`;
-            });
+
+            // Always show Analytics Tracking first
+            unlockedHtml += `<div class="reward-item unlocked">Free Analytics Tracking ($99 Value)</div>`;
+
+            // Show discount second (if any)
             if (currentTier.discount > 0) {
                 unlockedHtml += `<div class="reward-item unlocked">${currentTier.discount}% off your plan</div>`;
             }
+
+            // Show another free $99 product third (if unlocked at tier 2+)
+            if (hasFree99Reward) {
+                if (has99ProductInCart) {
+                    unlockedHtml += `<div class="reward-item unlocked">Another Free $99 Product</div>`;
+                } else {
+                    unlockedHtml += `<div class="reward-item unlocked pending">Another Free $99 Product <span class="claim-hint">— Add a $99 product to claim!</span></div>`;
+                }
+            }
+
             unlockedDiv.innerHTML = unlockedHtml;
 
             // Build coupon code display
@@ -900,32 +916,28 @@
                 // Max tier reached
                 lockedHtml = '<div class="max-rewards">⭐ Maximum Rewards Unlocked! ⭐</div>';
             } else {
-                // Show upcoming tiers in order of amount needed
-                const upcomingTiers = [];
-                for (let i = currentTierIndex + 1; i < REWARD_TIERS.length; i++) {
-                    const amountNeeded = REWARD_TIERS[i].threshold - monthlyTotal;
-                    let rewardText = '';
-
-                    if (i === 1) {
-                        rewardText = '5% off your total cart!';
-                    } else if (i === 2) {
-                        rewardText = 'another Free $99 Product!';
-                    } else if (i === 3) {
-                        rewardText = '10% off your total cart + another free $99 Product';
-                    }
-
-                    upcomingTiers.push({ amount: amountNeeded, text: rewardText });
+                // Show upcoming rewards in order
+                if (currentTierIndex < 1) {
+                    // Not yet at $1000 - show 5% discount unlock
+                    const amountNeeded = 1000 - monthlyTotal;
+                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 5% off your total cart!</div>`;
                 }
-
-                upcomingTiers.forEach(item => {
-                    lockedHtml += `<div class="reward-item locked">Add <strong>$${item.amount.toLocaleString()}</strong> to unlock ${item.text}</div>`;
-                });
+                if (currentTierIndex < 2) {
+                    // Not yet at $1500 - show free $99 product unlock
+                    const amountNeeded = 1500 - monthlyTotal;
+                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock another Free $99 Product!</div>`;
+                }
+                if (currentTierIndex < 3) {
+                    // Not yet at $2000 - show 10% discount unlock
+                    const amountNeeded = 2000 - monthlyTotal;
+                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 10% off your total cart!</div>`;
+                }
             }
             lockedDiv.innerHTML = lockedHtml;
 
             // Calculate and show savings
             let savingsAmount = 99; // Base free analytics
-            if (currentTierIndex >= 2) savingsAmount += 99; // Another free $99 product
+            if (hasFree99Reward && has99ProductInCart) savingsAmount += 99; // Another free $99 product (only if claimed)
             if (currentTier.discount > 0) {
                 const discountSavings = Math.round(monthlyTotal * (currentTier.discount / 100) * 100) / 100;
                 savingsAmount += discountSavings;
@@ -1082,8 +1094,15 @@
                 discountRowEl.style.display = 'none';
             }
 
+            // Check if there's a $99 product in cart (other than Analytics) for rewards tracking
+            const has99ProductInCart = Array.from(items).some(item => {
+                const title = item.querySelector('.service-item-title')?.textContent || '';
+                const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
+                return monthly === 99 && !title.includes('Analytics Tracking');
+            });
+
             // Update Growth Rewards
-            updateGrowthRewards(tier, totalMonthly);
+            updateGrowthRewards(tier, totalMonthly, has99ProductInCart);
         }
 
         // Basic Drag and Drop
