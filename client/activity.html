@@ -264,11 +264,26 @@
                 <button class="filter-chip" data-filter="task">Tasks</button>
                 <button class="filter-chip" data-filter="update">Updates</button>
                 <button class="filter-chip" data-filter="alert">Result Alerts</button>
+                <button class="filter-chip" data-filter="content">Content</button>
                 <button class="filter-chip" data-filter="report">Reports</button>
             </div>
 
             <div class="activity-card">
                 <ul class="activity-list">
+                    <li class="activity-item" data-type="content">
+                        <div class="activity-icon content" style="background: var(--success-bg); color: var(--success);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <polyline points="9 15 11 17 15 13"></polyline>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Content approved and published</div>
+                            <div class="activity-desc">"January Services Update" blog post is now live on your website</div>
+                        </div>
+                        <div class="activity-time">Today, 3:30 PM</div>
+                    </li>
                     <li class="activity-item" data-type="alert">
                         <div class="activity-icon alert">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -280,6 +295,21 @@
                             <div class="activity-desc">"precision wound care San Antonio" moved to position #7</div>
                         </div>
                         <div class="activity-time">Today, 2:45 PM</div>
+                    </li>
+                    <li class="activity-item" data-type="content">
+                        <div class="activity-icon content" style="background: var(--info-bg); color: var(--info);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">New content ready for review</div>
+                            <div class="activity-desc">"Q1 2026 Marketing Goals" blog post submitted for your approval</div>
+                        </div>
+                        <div class="activity-time">Today, 11:00 AM</div>
                     </li>
                     <li class="activity-item" data-type="task">
                         <div class="activity-icon task">
@@ -331,6 +361,21 @@
                             <div class="activity-desc">Added new photos and updated business hours</div>
                         </div>
                         <div class="activity-time">Yesterday, 11:15 AM</div>
+                    </li>
+                    <li class="activity-item" data-type="content">
+                        <div class="activity-icon content" style="background: var(--warning-bg); color: var(--warning);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <line x1="12" y1="9" x2="12.01" y2="9"></line>
+                            </svg>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Content revision requested</div>
+                            <div class="activity-desc">"Holiday Promotion Post" needs updates - feedback provided</div>
+                        </div>
+                        <div class="activity-time">Dec 31, 2:30 PM</div>
                     </li>
                     <li class="activity-item" data-type="report">
                         <div class="activity-icon report">
