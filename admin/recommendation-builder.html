@@ -694,6 +694,10 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
+                                </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
@@ -739,6 +743,10 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
+                                </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
@@ -784,6 +792,10 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
+                                </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">/month</span>
@@ -1122,8 +1134,11 @@
                 discountRowEl.style.display = 'none';
             }
 
-            // Calculate and show savings breakdown in pricing summary
+            // Calculate savings and full price
             const priceSavingsEl = tierElement.querySelector('.price-savings');
+            const priceFullEl = tierElement.querySelector('.price-full');
+            const priceFullAmount = tierElement.querySelector('.price-full-amount');
+
             const hasAnalyticsInCart = Array.from(items).some(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 return title.includes('Analytics Tracking');
@@ -1131,38 +1146,49 @@
             const isFree99SlotUsed = free99Used > 0;
             const hasFree99Reward = rewardTierIndex >= 2;
 
-            let savingsParts = [];
-            let totalSavings = 0;
+            // Calculate total savings and free items value
+            let freeItemsValue = 0;
+            let savingsDetails = [];
 
             // Free Analytics Tracking ($99) - only if in cart
             if (hasAnalyticsInCart) {
-                savingsParts.push('$99');
-                totalSavings += 99;
+                freeItemsValue += 99;
+                savingsDetails.push('Free Analytics Tracking ($99)');
             }
 
             // Another free $99 product (only if claimed)
             if (hasFree99Reward && isFree99SlotUsed) {
-                savingsParts.push('$99');
-                totalSavings += 99;
+                freeItemsValue += 99;
+                savingsDetails.push('Free $99 Product');
             }
 
             // Discount savings - calculated on paid items only
+            let discountSavings = 0;
             if (currentTier.discount > 0 && totalMonthly > 0) {
-                const discountSavings = Math.round(totalMonthly * (currentTier.discount / 100) * 100) / 100;
-                savingsParts.push(`$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}(${currentTier.discount}%)`);
-                totalSavings += discountSavings;
+                discountSavings = Math.round(totalMonthly * (currentTier.discount / 100) * 100) / 100;
+                savingsDetails.push(`${currentTier.discount}% off (-$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`);
             }
 
-            // Show savings if any
-            if (totalSavings > 0) {
+            const totalSavings = freeItemsValue + discountSavings;
+            const fullPrice = totalMonthly + freeItemsValue;
+
+            // Show full price crossed out if there are savings
+            if (totalSavings > 0 && totalMonthly > 0) {
+                priceFullAmount.textContent = '$' + fullPrice.toLocaleString();
+                priceFullEl.style.display = '';
+
+                // Build savings breakdown
                 const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                if (savingsParts.length > 1) {
-                    priceSavingsEl.innerHTML = `<span class="savings-label">You save:</span> <span class="savings-breakdown">${savingsParts.join(' + ')} = <strong>$${totalFormatted}</strong></span>`;
-                } else {
-                    priceSavingsEl.innerHTML = `<span class="savings-label">You save:</span> <strong>$${totalFormatted}</strong>`;
-                }
+                let savingsHtml = `<div class="savings-total">You save <strong>$${totalFormatted}</strong></div>`;
+                savingsHtml += '<div class="savings-details">';
+                savingsDetails.forEach(detail => {
+                    savingsHtml += `<div class="savings-detail-item">${detail}</div>`;
+                });
+                savingsHtml += '</div>';
+                priceSavingsEl.innerHTML = savingsHtml;
                 priceSavingsEl.style.display = '';
             } else {
+                priceFullEl.style.display = 'none';
                 priceSavingsEl.style.display = 'none';
             }
 
