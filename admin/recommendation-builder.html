@@ -1154,15 +1154,8 @@
                 return title.includes('Analytics Tracking');
             });
 
-            // Check if a dedicated $99 product is in cart (not a quantity item that auto-claims)
-            // Quantity items auto-get the free slot but user might want a different $99 product
-            const hasDedicated99ProductInCart = Array.from(items).some(item => {
-                const title = item.querySelector('.service-item-title')?.textContent || '';
-                const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
-                const hasQuantity = item.getAttribute('data-has-quantity') === 'true';
-                // Only count non-quantity $99 products as "explicitly claiming" the free slot
-                return monthly === 99 && !title.includes('Analytics Tracking') && !hasQuantity;
-            });
+            // Check if the free $99 slot is being used (free99Used is calculated above during item processing)
+            const isFree99SlotUsed = free99Used > 0;
 
             // Build claim hints - use BASE total for tier calculation
             const claimHintsEl = tierElement.querySelector('.claim-hints');
@@ -1172,13 +1165,13 @@
             if (!hasAnalyticsInCart) {
                 claimHintsHtml += '<div class="claim-hint-item">Add Analytics Tracking for Free!</div>';
             }
-            if (hasFree99Reward && !hasDedicated99ProductInCart) {
+            if (hasFree99Reward && !isFree99SlotUsed) {
                 claimHintsHtml += '<div class="claim-hint-item">Add a $99 product to claim your free reward!</div>';
             }
             claimHintsEl.innerHTML = claimHintsHtml;
 
             // Update Growth Rewards - use BASE total for tier calculation
-            updateGrowthRewards(tier, baseTotalMonthly, hasDedicated99ProductInCart);
+            updateGrowthRewards(tier, baseTotalMonthly, isFree99SlotUsed);
         }
 
         // Basic Drag and Drop
