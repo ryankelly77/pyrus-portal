@@ -14223,6 +14223,42 @@ input[type="date"].form-control {
     flex-shrink: 0;
 }
 
+/* Requirement Overlay for Cart Items */
+.requirement-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: var(--radius-md);
+    z-index: 10;
+    padding: 12px;
+    text-align: center;
+}
+
+.requirement-overlay-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--warning-text);
+}
+
+.requirement-overlay-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--warning-text);
+    line-height: 1.4;
+}
+
+.requirement-overlay-text strong {
+    color: var(--pyrus-green-dark);
+}
+
 /* Purchase Now Button */
 .btn-purchase {
     display: block;

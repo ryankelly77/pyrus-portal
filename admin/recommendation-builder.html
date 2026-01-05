@@ -157,7 +157,7 @@
                                 <p class="service-item-desc">A fast, affordable website solution powered by AI technology to get your business online quickly.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="300" data-onetime="3000" data-category="root">
+                            <div class="service-item" draggable="true" data-monthly="300" data-onetime="3000" data-category="root" data-requires="WordPress Care Plan">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Sprout Site</span>
                                     <button class="info-btn">
@@ -172,7 +172,7 @@
                                 <p class="service-item-desc">A professional starter WordPress website to establish your digital presence.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="450" data-onetime="4500" data-category="root">
+                            <div class="service-item" draggable="true" data-monthly="450" data-onetime="4500" data-category="root" data-requires="WordPress Care Plan">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Bloom Site</span>
                                     <button class="info-btn">
@@ -187,7 +187,7 @@
                                 <p class="service-item-desc">A complete business website with enhanced features and expanded content areas.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="600" data-onetime="6000" data-category="root">
+                            <div class="service-item" draggable="true" data-monthly="600" data-onetime="6000" data-category="root" data-requires="WordPress Care Plan">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Harvest Site</span>
                                     <button class="info-btn">
@@ -464,7 +464,7 @@
                                 <p class="service-item-desc">Mobile-friendly system to track and convert leads.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation" data-requires="CRM & Lead Tracking">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Appointment Setting</span>
                                     <button class="info-btn">
@@ -479,7 +479,7 @@
                                 <p class="service-item-desc">Booking calendar with calendar integrations.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation" data-requires="Appointment Setting">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Email & SMS Reminders</span>
                                     <button class="info-btn">
@@ -509,7 +509,7 @@
                                 <p class="service-item-desc">Lead capture from website directly to your phone.</p>
                             </div>
 
-                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation">
+                            <div class="service-item" draggable="true" data-monthly="99" data-onetime="0" data-category="cultivation" data-requires="Web Chat">
                                 <div class="service-item-header">
                                     <span class="service-item-title">Conversational AI Chat</span>
                                     <button class="info-btn">
@@ -1172,6 +1172,63 @@
 
             // Update Growth Rewards - use BASE total for tier calculation
             updateGrowthRewards(tier, baseTotalMonthly, isFree99SlotUsed);
+
+            // Check and update requirement overlays
+            updateRequirementOverlays(tier);
+        }
+
+        // Check product dependencies and show/hide requirement overlays
+        function updateRequirementOverlays(tier) {
+            const tierElement = document.querySelector(`.pricing-tier[data-tier="${tier}"]`);
+            const dropzone = tierElement.querySelector('.tier-dropzone');
+            const items = dropzone.querySelectorAll('.service-item');
+
+            // First, gather all product names in the cart
+            const productsInCart = new Set();
+            items.forEach(item => {
+                const title = item.querySelector('.service-item-title')?.textContent?.trim() || '';
+                if (title) productsInCart.add(title);
+            });
+
+            // Warning icon SVG
+            const warningIcon = `<svg class="requirement-overlay-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>`;
+
+            // Check each item for unmet requirements
+            items.forEach(item => {
+                const requires = item.getAttribute('data-requires');
+                const existingOverlay = item.querySelector('.requirement-overlay');
+
+                if (requires) {
+                    const requirementMet = productsInCart.has(requires);
+
+                    if (!requirementMet) {
+                        // Show overlay if not already present
+                        if (!existingOverlay) {
+                            const overlay = document.createElement('div');
+                            overlay.className = 'requirement-overlay';
+                            overlay.innerHTML = `
+                                ${warningIcon}
+                                <span class="requirement-overlay-text">Requires <strong>${requires}</strong></span>
+                            `;
+                            item.appendChild(overlay);
+                        }
+                    } else {
+                        // Remove overlay if requirement is met
+                        if (existingOverlay) {
+                            existingOverlay.remove();
+                        }
+                    }
+                } else {
+                    // No requirement - ensure no overlay
+                    if (existingOverlay) {
+                        existingOverlay.remove();
+                    }
+                }
+            });
         }
 
         // Basic Drag and Drop
