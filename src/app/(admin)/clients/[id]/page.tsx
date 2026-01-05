@@ -20,13 +20,13 @@ export default function ClientDetailPage() {
           </nav>
         </div>
         <div className="admin-top-header-right">
-          <button className="btn btn-secondary">
+          <Link href="/getting-started?viewingAs=tc-clinical" className="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
             View as Client
-          </button>
+          </Link>
           <Link href="/notifications" className="btn-icon has-notification">
             <span className="notification-badge"></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

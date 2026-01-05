@@ -6167,6 +6167,183 @@
             max-width: 1200px;
         }
 
+        /* Client Layout (for standalone client portal) */
+        .client-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .client-layout .client-sidebar {
+            display: flex;
+        }
+
+        .client-main {
+            flex: 1;
+            margin-left: 260px;
+        }
+
+        .client-content {
+            padding: 24px 32px;
+        }
+
+        .client-top-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .client-top-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .client-top-header-left h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .client-top-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ============================================ */
+        /* CLIENT LAYOUT - GREEN COLOR THEME           */
+        /* ============================================ */
+
+        /* Links */
+        .client-layout a:not(.btn):not(.client-nav-item):not(.tab-btn) {
+            color: #324438;
+        }
+
+        .client-layout a:not(.btn):not(.client-nav-item):not(.tab-btn):hover {
+            color: #243228;
+        }
+
+        /* Primary buttons */
+        .client-layout .btn-primary {
+            background: #324438;
+            border-color: #324438;
+        }
+
+        .client-layout .btn-primary:hover {
+            background: #283830;
+            border-color: #283830;
+        }
+
+        /* Secondary buttons hover */
+        .client-layout .btn-secondary:hover {
+            border-color: #324438;
+            color: #324438;
+        }
+
+        /* Tab navigation */
+        .client-layout .tab-btn {
+            background: transparent;
+        }
+
+        .client-layout .tab-btn:hover {
+            color: #324438;
+            background: rgba(50, 68, 56, 0.05);
+        }
+
+        .client-layout .tab-btn.active {
+            color: white;
+            background: #324438;
+            border-color: #324438;
+        }
+
+        /* Getting Started subtabs */
+        .client-layout .getting-started-subtab:hover {
+            color: #324438;
+            background: rgba(50, 68, 56, 0.05);
+        }
+
+        .client-layout .getting-started-subtab.active {
+            color: #324438;
+            background: rgba(50, 68, 56, 0.08);
+            border-color: #324438;
+        }
+
+        /* Form inputs focus */
+        .client-layout .form-input:focus,
+        .client-layout .form-select:focus,
+        .client-layout textarea:focus {
+            border-color: #324438;
+            box-shadow: 0 0 0 3px rgba(50, 68, 56, 0.1);
+        }
+
+        /* Progress bars */
+        .client-layout .progress-bar-fill {
+            background: linear-gradient(90deg, #324438 0%, #4A5C50 100%);
+        }
+
+        /* Checklist items */
+        .client-layout .checklist-checkbox.completed {
+            background: #324438;
+            border-color: #324438;
+        }
+
+        /* Client avatar */
+        .client-layout .client-avatar {
+            background: #324438;
+        }
+
+        /* Video placeholder background */
+        .client-layout .video-placeholder {
+            background: #324438;
+        }
+
+        /* Video play button */
+        .client-layout .video-play-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: #324438;
+        }
+
+        .client-layout .video-play-btn:hover {
+            background: white;
+        }
+
+        .client-layout .video-play-btn svg {
+            color: #324438;
+        }
+
+        /* Sidebar card icons */
+        .client-layout .sidebar-card h4 svg {
+            color: #324438;
+        }
+
+        /* Summary section icons */
+        .client-layout .summary-section-title svg {
+            color: #324438;
+        }
+
+        /* Services link */
+        .client-layout .services-link {
+            color: #324438;
+        }
+
+        .client-layout .services-link:hover {
+            color: #243228;
+        }
+
+        /* User avatar in header */
+        .client-layout .user-avatar-small {
+            background: #324438;
+        }
+
+        /* Notification badge */
+        .client-layout .notification-badge {
+            background: #324438;
+        }
+
         /* Recommendations Builder */
         .rec-builder-header {
             display: flex;

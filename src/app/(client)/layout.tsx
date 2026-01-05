@@ -1,6 +1,7 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ClientSidebar } from '@/components/layout'
+import { ClientSidebar, PreviewBanner } from '@/components/layout'
 import type { Profile } from '@/types/database'
 
 export default async function ClientLayout({
@@ -18,23 +19,25 @@ export default async function ClientLayout({
   // Get user profile to check role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, full_name')
     .eq('id', user.id)
-    .single<Pick<Profile, 'role'>>()
+    .single<Pick<Profile, 'role' | 'full_name'>>()
 
-  // If admin or super_admin trying to access client routes, redirect to admin
-  // (unless they're in preview mode - handled by client-side state)
-  if (profile?.role !== 'client') {
-    // For now, allow admins to view client pages (for preview functionality)
-    // The client pages will show admin controls when in preview mode
-  }
+  // Admins can view as client with ?viewingAs param
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
+
+  // For now, use a static client name - will be dynamic when database is connected
+  const clientName = 'TC Clinical Services'
 
   return (
-    <div className="min-h-screen bg-client-background">
+    <div className="client-layout">
       <ClientSidebar />
-      <div className="ml-64">
+      <main className="client-main">
+        <Suspense fallback={null}>
+          <PreviewBanner clientName={clientName} />
+        </Suspense>
         {children}
-      </div>
+      </main>
     </div>
   )
 }
