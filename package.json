@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:admin": "tsx scripts/seed-admin.ts"
   },
   "repository": {
     "type": "git",
@@ -46,5 +47,9 @@
     "typescript": "^5.9.3",
     "zod": "^4.3.5",
     "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "tsx": "^4.21.0"
   }
 }
