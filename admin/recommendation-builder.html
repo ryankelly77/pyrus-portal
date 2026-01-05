@@ -138,7 +138,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="service-item-price">($99/mo) - ($899 onetime)</div>
+                                <div class="service-item-price">($99/mo for 12 months) or ($899 one-time)</div>
                                 <p class="service-item-desc">Establish a professional brand identity that helps customers remember, trust, and choose your business.</p>
                             </div>
 
@@ -168,7 +168,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="service-item-price">($300/mo) - ($3,000 onetime)</div>
+                                <div class="service-item-price">($300/mo for 12 months) or ($3,000 one-time)</div>
                                 <p class="service-item-desc">A professional starter WordPress website to establish your digital presence.</p>
                             </div>
 
@@ -183,7 +183,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="service-item-price">($450/mo) - ($4,500 onetime)</div>
+                                <div class="service-item-price">($450/mo for 12 months) or ($4,500 one-time)</div>
                                 <p class="service-item-desc">A complete business website with enhanced features and expanded content areas.</p>
                             </div>
 
@@ -198,7 +198,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="service-item-price">($600/mo) - ($6,000 onetime)</div>
+                                <div class="service-item-price">($600/mo for 12 months) or ($6,000 one-time)</div>
                                 <p class="service-item-desc">A comprehensive digital platform with advanced functionality and custom features.</p>
                             </div>
 
@@ -269,7 +269,7 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="service-item-price">($300/mo) - ($3,000 onetime)</div>
+                                <div class="service-item-price">($300/mo for 12 months) or ($3,000 one-time)</div>
                                 <p class="service-item-desc">Help AI assistants find and recommend your business.</p>
                             </div>
 
@@ -712,7 +712,7 @@
                                 </div>
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
-                                    <span class="price-label">onetime</span>
+                                    <span class="price-label">one-time</span>
                                 </div>
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
@@ -769,7 +769,7 @@
                                 </div>
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
-                                    <span class="price-label">onetime</span>
+                                    <span class="price-label">one-time</span>
                                 </div>
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
@@ -826,7 +826,7 @@
                                 </div>
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
-                                    <span class="price-label">onetime</span>
+                                    <span class="price-label">one-time</span>
                                 </div>
                                 <div class="price-total">
                                     <span class="total-text">$0/mo Total</span>
@@ -1142,13 +1142,9 @@
                 totalText.textContent = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
             }
 
-            // Hide onetime row if no onetime fees
+            // Always hide onetime row - now shown in 3-line pricing
             const onetimeRowEl = tierElement.querySelector('.onetime-row');
-            if (totalOnetime === 0) {
-                onetimeRowEl.style.display = 'none';
-            } else {
-                onetimeRowEl.style.display = '';
-            }
+            onetimeRowEl.style.display = 'none';
 
             // Show coupon code on separate line if discount applies
             if (hasDiscount) {
@@ -1392,11 +1388,11 @@
                     pricingSelector.innerHTML = `
                         <label class="pricing-option">
                             <input type="radio" name="${uniqueId}" value="monthly" checked>
-                            <span>$${monthly}/mo</span>
+                            <span>$${monthly}/mo for 12 months</span>
                         </label>
                         <label class="pricing-option">
                             <input type="radio" name="${uniqueId}" value="onetime">
-                            <span>$${onetime.toLocaleString()} onetime</span>
+                            <span>$${onetime.toLocaleString()} one-time</span>
                         </label>
                     `;
                     droppedItem.appendChild(pricingSelector);
