@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyrus Admin - Products</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Admin Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <img src="../images/pyrus-logo-icon.png" alt="Pyrus" width="28" height="28" style="filter: brightness(0) invert(1);">
+                <span>Pyrus Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="recommendations.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>Recommendations</span>
+                </a>
+                <a href="index.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="content.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Content</span>
+                </a>
+                <a href="users.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="revenue.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span>Revenue / MRR</span>
+                </a>
+                <a href="notifications.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="products.html" class="admin-nav-item active" data-requires-role="super-admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    <span>Products</span>
+                </a>
+                <a href="rewards.html" class="admin-nav-item" data-requires-role="super-admin">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                        <rect x="2" y="7" width="20" height="5"></rect>
+                        <line x1="12" y1="22" x2="12" y2="7"></line>
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                    </svg>
+                    <span>Rewards</span>
+                </a>
+                <a href="settings.html" class="admin-nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <div class="nav-spacer"></div>
+                <a href="../client/login.html" class="admin-nav-item nav-logout" onclick="sessionStorage.clear();">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Header Bar -->
+            <div class="admin-top-header">
+                <div class="admin-top-header-left">
+                    <h1>Product Management</h1>
+                </div>
+                <div class="admin-top-header-right">
+                    <a href="notifications.html" class="btn-icon has-notification">
+                        <span class="notification-badge"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </a>
+                    <a href="settings.html" class="user-menu-link">
+                        <div class="user-avatar-small">
+                            <span>RK</span>
+                        </div>
+                        <span class="user-name">Ryan Kelly</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-header-content">
+                        <p>Manage products, pricing, and bundles for recommendations</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="openModal('bundleModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Create Bundle
+                        </button>
+                        <button class="btn btn-primary" onclick="openModal('productModal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Product
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid stats-grid-4">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #EEF2FF; color: #4F46E5;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">33</span>
+                            <span class="stat-label">Total Products</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #D1FAE5; color: #059669;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">28</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">5</span>
+                            <span class="stat-label">Draft</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #FCE7F3; color: #DB2777;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">4</span>
+                            <span class="stat-label">Bundles</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Tabs -->
+                <div class="content-tabs" style="margin-bottom: 24px;">
+                    <button class="content-tab active" data-view="products">Products</button>
+                    <button class="content-tab" data-view="bundles">Bundles</button>
+                </div>
+
+                <!-- Products View -->
+                <div id="productsView" class="view-content">
+                    <!-- Filters -->
+                    <div class="filters-bar">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" data-category="all">All</button>
+                            <button class="filter-tab" data-category="root">Root</button>
+                            <button class="filter-tab" data-category="growth">Growth</button>
+                            <button class="filter-tab" data-category="cultivation">Cultivation</button>
+                        </div>
+                        <div class="filter-group">
+                            <div class="search-input-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="M21 21l-4.35-4.35"></path>
+                                </svg>
+                                <input type="text" class="search-input" placeholder="Search products..." id="productSearch">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Monthly</th>
+                                    <th>One-time</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Root Products -->
+                                <tr data-category="root" data-status="active">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">Pro Dashboard</div>
+                                            <div class="product-desc">Comprehensive analytics dashboard</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge root">Root</span></td>
+                                    <td>$99/mo</td>
+                                    <td>$1,188</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('pro-dashboard')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('pro-dashboard')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-category="root" data-status="active">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">Analytics Tracking</div>
+                                            <div class="product-desc">GA4 & conversion tracking setup</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge root">Root</span></td>
+                                    <td>-</td>
+                                    <td>$99</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('analytics-tracking')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('analytics-tracking')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Growth Products -->
+                                <tr data-category="growth" data-status="active">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">SEO Content Package</div>
+                                            <div class="product-desc">Monthly SEO-optimized content</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge growth">Growth</span></td>
+                                    <td>$299/mo</td>
+                                    <td>$3,588</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('seo-content')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('seo-content')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-category="growth" data-status="active">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">Google Ads Management</div>
+                                            <div class="product-desc">Full-service PPC campaign management</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge growth">Growth</span></td>
+                                    <td>$499/mo</td>
+                                    <td>$5,988</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('google-ads')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('google-ads')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Cultivation Products -->
+                                <tr data-category="cultivation" data-status="active">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">Social Media Management</div>
+                                            <div class="product-desc">Complete social media strategy & posting</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge cultivation">Cultivation</span></td>
+                                    <td>$399/mo</td>
+                                    <td>$4,788</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('social-media')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('social-media')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr data-category="cultivation" data-status="draft">
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-name">Email Marketing Automation</div>
+                                            <div class="product-desc">Automated email sequences & campaigns</div>
+                                        </div>
+                                    </td>
+                                    <td><span class="category-badge cultivation">Cultivation</span></td>
+                                    <td>$249/mo</td>
+                                    <td>$2,988</td>
+                                    <td><span class="status-badge draft">Draft</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon-sm" title="Edit" onclick="editProduct('email-automation')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon-sm" title="Duplicate" onclick="duplicateProduct('email-automation')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bundles View -->
+                <div id="bundlesView" class="view-content" style="display: none;">
+                    <div class="bundles-grid">
+                        <!-- Bundle Card 1 -->
+                        <div class="bundle-card">
+                            <div class="bundle-header">
+                                <h3>Starter Package</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$199/mo</span>
+                                <span class="bundle-savings">Save $98/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <div class="bundle-product-count">4 Products Included:</div>
+                                <ul class="bundle-product-list">
+                                    <li>Pro Dashboard</li>
+                                    <li>Analytics Tracking</li>
+                                    <li>SEO Starter</li>
+                                    <li>Monthly Report</li>
+                                </ul>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editBundle('starter')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateBundle('starter')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Bundle Card 2 -->
+                        <div class="bundle-card">
+                            <div class="bundle-header">
+                                <h3>Growth Package</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$599/mo</span>
+                                <span class="bundle-savings">Save $297/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <div class="bundle-product-count">8 Products Included:</div>
+                                <ul class="bundle-product-list">
+                                    <li>Pro Dashboard</li>
+                                    <li>Analytics Tracking</li>
+                                    <li>SEO Content Package</li>
+                                    <li>Google Ads Management</li>
+                                    <li>+ 4 more</li>
+                                </ul>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editBundle('growth')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateBundle('growth')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Bundle Card 3 -->
+                        <div class="bundle-card">
+                            <div class="bundle-header">
+                                <h3>Enterprise Package</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$1,299/mo</span>
+                                <span class="bundle-savings">Save $599/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <div class="bundle-product-count">15 Products Included:</div>
+                                <ul class="bundle-product-list">
+                                    <li>All Growth Package items</li>
+                                    <li>Social Media Management</li>
+                                    <li>Email Marketing</li>
+                                    <li>Reputation Management</li>
+                                    <li>+ 7 more</li>
+                                </ul>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editBundle('enterprise')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateBundle('enterprise')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Bundle Card 4 - Draft -->
+                        <div class="bundle-card bundle-draft">
+                            <div class="bundle-header">
+                                <h3>Custom Package</h3>
+                                <span class="status-badge draft">Draft</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$899/mo</span>
+                                <span class="bundle-savings">Save $401/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <div class="bundle-product-count">10 Products Included:</div>
+                                <ul class="bundle-product-list">
+                                    <li>Customized selection</li>
+                                    <li>Based on client needs</li>
+                                </ul>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editBundle('custom')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateBundle('custom')">Duplicate</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Product</h2>
+                <button class="modal-close" onclick="closeModal('productModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <div class="form-grid-2">
+                        <!-- Left Column -->
+                        <div class="form-column">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Basic Information</h3>
+                                <div class="form-group">
+                                    <label for="productName">Product Name <span class="required">*</span></label>
+                                    <input type="text" id="productName" class="form-control" placeholder="e.g., SEO Content Package" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="shortDesc">Short Description</label>
+                                    <input type="text" id="shortDesc" class="form-control" placeholder="Brief description for cards">
+                                </div>
+                                <div class="form-group">
+                                    <label for="longDesc">Long Description</label>
+                                    <textarea id="longDesc" class="form-control" rows="3" placeholder="Detailed description for modal"></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="category">Category <span class="required">*</span></label>
+                                        <select id="category" class="form-control" required>
+                                            <option value="">Select category...</option>
+                                            <option value="root">Root</option>
+                                            <option value="growth">Growth</option>
+                                            <option value="cultivation">Cultivation</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="status">Status</label>
+                                        <select id="status" class="form-control">
+                                            <option value="active">Active</option>
+                                            <option value="draft">Draft</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">Pricing</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="monthlyPrice">Monthly Price</label>
+                                        <div class="input-with-addon">
+                                            <span class="input-addon">$</span>
+                                            <input type="number" id="monthlyPrice" class="form-control" placeholder="0.00">
+                                            <span class="input-addon-right">/mo</span>
+                                        </div>
+                                        <span class="form-hint">For 12 months term</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="onetimePrice">One-time Price</label>
+                                        <div class="input-with-addon">
+                                            <span class="input-addon">$</span>
+                                            <input type="number" id="onetimePrice" class="form-control" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="supportsQuantity">
+                                        <span>Supports quantity selector</span>
+                                    </label>
+                                    <span class="form-hint">Allow clients to select multiple quantities</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="form-column">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Stripe Configuration</h3>
+                                <div class="form-group">
+                                    <label for="stripeProductId">Stripe Product ID</label>
+                                    <input type="text" id="stripeProductId" class="form-control" placeholder="prod_xxxxxxxxxxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label for="stripeMonthlyPriceId">Stripe Monthly Price ID</label>
+                                    <input type="text" id="stripeMonthlyPriceId" class="form-control" placeholder="price_xxxxxxxxxxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label for="stripeOnetimePriceId">Stripe One-time Price ID</label>
+                                    <input type="text" id="stripeOnetimePriceId" class="form-control" placeholder="price_xxxxxxxxxxxxx">
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">Dependencies</h3>
+                                <div class="form-group">
+                                    <label for="dependencies">Required Products</label>
+                                    <select id="dependencies" class="form-control" multiple size="5">
+                                        <option value="pro-dashboard">Pro Dashboard</option>
+                                        <option value="analytics-tracking">Analytics Tracking</option>
+                                        <option value="seo-content">SEO Content Package</option>
+                                        <option value="google-ads">Google Ads Management</option>
+                                        <option value="social-media">Social Media Management</option>
+                                    </select>
+                                    <span class="form-hint">Hold Ctrl/Cmd to select multiple products</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProduct()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Product
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bundle Modal -->
+    <div class="modal-overlay" id="bundleModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Bundle</h2>
+                <button class="modal-close" onclick="closeModal('bundleModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="bundleForm">
+                    <div class="bundle-builder">
+                        <!-- Left: Bundle Details -->
+                        <div class="bundle-details">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Bundle Information</h3>
+                                <div class="form-group">
+                                    <label for="bundleName">Bundle Name <span class="required">*</span></label>
+                                    <input type="text" id="bundleName" class="form-control" placeholder="e.g., Growth Package" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bundleDesc">Description</label>
+                                    <textarea id="bundleDesc" class="form-control" rows="2" placeholder="Brief bundle description"></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="bundleMonthlyPrice">Monthly Price</label>
+                                        <div class="input-with-addon">
+                                            <span class="input-addon">$</span>
+                                            <input type="number" id="bundleMonthlyPrice" class="form-control" placeholder="0.00">
+                                            <span class="input-addon-right">/mo</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bundleOnetimePrice">One-time Price</label>
+                                        <div class="input-with-addon">
+                                            <span class="input-addon">$</span>
+                                            <input type="number" id="bundleOnetimePrice" class="form-control" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bundleStatus">Status</label>
+                                    <select id="bundleStatus" class="form-control">
+                                        <option value="active">Active</option>
+                                        <option value="draft">Draft</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">Stripe Configuration</h3>
+                                <div class="form-group">
+                                    <label for="bundleStripeProductId">Stripe Product ID</label>
+                                    <input type="text" id="bundleStripeProductId" class="form-control" placeholder="prod_xxxxxxxxxxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bundleStripePriceId">Stripe Price ID</label>
+                                    <input type="text" id="bundleStripePriceId" class="form-control" placeholder="price_xxxxxxxxxxxxx">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Product Selector -->
+                        <div class="bundle-product-selector">
+                            <div class="form-section">
+                                <h3 class="form-section-title">Included Products</h3>
+                                <p class="form-hint" style="margin-bottom: 16px;">Drag products to add them to this bundle</p>
+
+                                <div class="product-selector-container">
+                                    <div class="available-products">
+                                        <h4>Available Products</h4>
+                                        <div class="product-list" id="availableProducts">
+                                            <div class="draggable-product" draggable="true" data-product="pro-dashboard">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                                </svg>
+                                                <span>Pro Dashboard</span>
+                                                <span class="product-price">$99/mo</span>
+                                            </div>
+                                            <div class="draggable-product" draggable="true" data-product="analytics-tracking">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                                </svg>
+                                                <span>Analytics Tracking</span>
+                                                <span class="product-price">$99</span>
+                                            </div>
+                                            <div class="draggable-product" draggable="true" data-product="seo-content">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                                </svg>
+                                                <span>SEO Content Package</span>
+                                                <span class="product-price">$299/mo</span>
+                                            </div>
+                                            <div class="draggable-product" draggable="true" data-product="google-ads">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                                </svg>
+                                                <span>Google Ads Management</span>
+                                                <span class="product-price">$499/mo</span>
+                                            </div>
+                                            <div class="draggable-product" draggable="true" data-product="social-media">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                                </svg>
+                                                <span>Social Media Management</span>
+                                                <span class="product-price">$399/mo</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="included-products">
+                                        <h4>In This Bundle</h4>
+                                        <div class="product-list drop-zone" id="includedProducts">
+                                            <div class="drop-placeholder">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                </svg>
+                                                <span>Drop products here</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bundle-summary">
+                                    <div class="summary-row">
+                                        <span>Products Total:</span>
+                                        <span id="productsTotal">$0/mo</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Bundle Price:</span>
+                                        <span id="bundlePriceDisplay">$0/mo</span>
+                                    </div>
+                                    <div class="summary-row savings">
+                                        <span>Customer Savings:</span>
+                                        <span id="savingsAmount">$0/mo</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('bundleModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBundle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Bundle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="successToast">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <div class="toast-message">Action completed successfully!</div>
+        <button class="toast-close" onclick="hideToast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <script src="../js/scripts.js"></script>
+    <script>
+        // View Tabs
+        const viewTabs = document.querySelectorAll('.content-tab');
+        viewTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                viewTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const view = tab.getAttribute('data-view');
+                document.getElementById('productsView').style.display = view === 'products' ? 'block' : 'none';
+                document.getElementById('bundlesView').style.display = view === 'bundles' ? 'block' : 'none';
+            });
+        });
+
+        // Category Filter Tabs
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const category = tab.getAttribute('data-category');
+                filterProducts(category);
+            });
+        });
+
+        function filterProducts(category) {
+            const rows = document.querySelectorAll('#productsTableBody tr');
+            rows.forEach(row => {
+                if (category === 'all' || row.getAttribute('data-category') === category) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Product Search
+        document.getElementById('productSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#productsTableBody tr');
+            rows.forEach(row => {
+                const productName = row.querySelector('.product-name').textContent.toLowerCase();
+                const productDesc = row.querySelector('.product-desc').textContent.toLowerCase();
+                if (productName.includes(searchTerm) || productDesc.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Product Functions
+        function editProduct(productId) {
+            document.querySelector('#productModal .modal-title').textContent = 'Edit Product';
+            openModal('productModal');
+        }
+
+        function duplicateProduct(productId) {
+            showToast('Product duplicated successfully!');
+        }
+
+        function saveProduct() {
+            closeModal('productModal');
+            showToast('Product saved successfully!');
+        }
+
+        // Bundle Functions
+        function editBundle(bundleId) {
+            document.querySelector('#bundleModal .modal-title').textContent = 'Edit Bundle';
+            openModal('bundleModal');
+        }
+
+        function duplicateBundle(bundleId) {
+            showToast('Bundle duplicated successfully!');
+        }
+
+        function saveBundle() {
+            closeModal('bundleModal');
+            showToast('Bundle saved successfully!');
+        }
+
+        // Toast Functions
+        function showToast(message) {
+            const toast = document.getElementById('successToast');
+            toast.querySelector('.toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function hideToast() {
+            document.getElementById('successToast').classList.remove('show');
+        }
+
+        // Drag and Drop for Bundle Builder
+        const draggableProducts = document.querySelectorAll('.draggable-product');
+        const dropZone = document.getElementById('includedProducts');
+
+        draggableProducts.forEach(product => {
+            product.addEventListener('dragstart', handleDragStart);
+            product.addEventListener('dragend', handleDragEnd);
+        });
+
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', handleDrop);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.product);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            dropZone.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+
+            const productId = e.dataTransfer.getData('text/plain');
+            const sourceProduct = document.querySelector(`.draggable-product[data-product="${productId}"]`);
+
+            if (sourceProduct && !dropZone.querySelector(`[data-product="${productId}"]`)) {
+                // Hide placeholder if first item
+                const placeholder = dropZone.querySelector('.drop-placeholder');
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+
+                // Clone and add to drop zone
+                const clone = sourceProduct.cloneNode(true);
+
+                // Add remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-product';
+                removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                removeBtn.onclick = function() {
+                    clone.remove();
+                    updateBundleSummary();
+                    // Show placeholder if empty
+                    if (dropZone.querySelectorAll('.draggable-product').length === 0) {
+                        placeholder.style.display = 'flex';
+                    }
+                };
+                clone.appendChild(removeBtn);
+
+                dropZone.appendChild(clone);
+                updateBundleSummary();
+            }
+        }
+
+        function updateBundleSummary() {
+            const includedProducts = dropZone.querySelectorAll('.draggable-product');
+            let total = 0;
+
+            includedProducts.forEach(product => {
+                const priceText = product.querySelector('.product-price').textContent;
+                const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
+                total += price;
+            });
+
+            document.getElementById('productsTotal').textContent = `$${total}/mo`;
+
+            const bundlePrice = parseInt(document.getElementById('bundleMonthlyPrice').value) || 0;
+            document.getElementById('bundlePriceDisplay').textContent = `$${bundlePrice}/mo`;
+
+            const savings = total - bundlePrice;
+            document.getElementById('savingsAmount').textContent = `$${savings > 0 ? savings : 0}/mo`;
+        }
+
+        // Update summary when bundle price changes
+        document.getElementById('bundleMonthlyPrice').addEventListener('input', updateBundleSummary);
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    </script>
+
+    <style>
+        /* Products Page Specific Styles */
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .category-badge.root { background: #DBEAFE; color: #1E40AF; }
+        .category-badge.growth { background: #D1FAE5; color: #065F46; }
+        .category-badge.cultivation { background: #FCE7F3; color: #9D174D; }
+
+        .product-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .product-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .product-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-icon-sm {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: white;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-icon-sm:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Bundles Grid */
+        .bundles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .bundle-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .bundle-card.bundle-draft {
+            opacity: 0.7;
+        }
+        .bundle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .bundle-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .bundle-pricing {
+            margin-bottom: 16px;
+        }
+        .bundle-price {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .bundle-savings {
+            display: block;
+            font-size: 13px;
+            color: #059669;
+            margin-top: 4px;
+        }
+        .bundle-products {
+            margin-bottom: 20px;
+        }
+        .bundle-product-count {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .bundle-product-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .bundle-product-list li {
+            margin-bottom: 4px;
+        }
+        .bundle-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Modal Form Styles */
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+        .form-section {
+            margin-bottom: 24px;
+        }
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .input-with-addon {
+            display: flex;
+            align-items: stretch;
+        }
+        .input-addon {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .input-addon-right {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .input-with-addon .form-control {
+            border-radius: 0;
+            flex: 1;
+        }
+        .input-with-addon .form-control:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+        .input-with-addon .form-control:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Bundle Builder */
+        .bundle-builder {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 32px;
+        }
+        .product-selector-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .available-products h4,
+        .included-products h4 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin: 0 0 8px 0;
+        }
+        .product-list {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 200px;
+        }
+        .draggable-product {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .draggable-product:hover {
+            border-color: var(--primary);
+        }
+        .draggable-product.dragging {
+            opacity: 0.5;
+        }
+        .draggable-product span {
+            flex: 1;
+            font-size: 13px;
+        }
+        .product-price {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .drop-zone.drag-over {
+            background: #EEF2FF;
+            border-color: var(--primary);
+        }
+        .drop-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 150px;
+            color: var(--text-muted);
+            font-size: 13px;
+            gap: 8px;
+        }
+        .remove-product {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .remove-product:hover {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .bundle-summary {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+        .summary-row.savings {
+            color: #059669;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid-2,
+            .bundle-builder {
+                grid-template-columns: 1fr;
+            }
+            .product-selector-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>
