@@ -9952,6 +9952,7 @@
 
         .modal-overlay .modal {
             background: var(--bg-white);
+            color: var(--text-primary);
             border-radius: var(--radius-lg);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
             width: 100%;
