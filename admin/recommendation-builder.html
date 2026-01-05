@@ -1208,9 +1208,9 @@
 
             // Line 1: Full Price (crossed out only if there are savings)
             if (totalOnetime > 0) {
-                priceFullLineValue.textContent = '$' + totalOnetime.toLocaleString() + ' + $' + fullPrice.toLocaleString() + '/mo';
+                priceFullLineValue.textContent = '$' + totalOnetime.toLocaleString() + ' today, then $' + fullPrice.toLocaleString() + '/month';
             } else {
-                priceFullLineValue.textContent = '$' + fullPrice.toLocaleString() + '/mo';
+                priceFullLineValue.textContent = '$' + fullPrice.toLocaleString() + '/month';
             }
             priceFullLineEl.style.display = '';
             // Only strikethrough if there are savings
@@ -1222,9 +1222,9 @@
 
             // Line 2: After Free Items
             if (totalOnetime > 0) {
-                priceAfterFreeValue.textContent = '$' + totalOnetime.toLocaleString() + ' + $' + totalMonthly.toLocaleString() + '/mo';
+                priceAfterFreeValue.textContent = '$' + totalOnetime.toLocaleString() + ' today, then $' + totalMonthly.toLocaleString() + '/month';
             } else {
-                priceAfterFreeValue.textContent = '$' + totalMonthly.toLocaleString() + '/mo';
+                priceAfterFreeValue.textContent = '$' + totalMonthly.toLocaleString() + '/month';
             }
             priceAfterFreeEl.style.display = '';
 
@@ -1233,16 +1233,16 @@
             if (totalOnetime > 0) {
                 // Has one-time fees
                 if (discountSavings > 0) {
-                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today, then $' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/month';
                 } else {
-                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
+                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today, then $' + totalMonthly.toLocaleString() + '/month';
                 }
             } else {
                 // Monthly only
                 if (discountSavings > 0) {
-                    yourPriceText = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                    yourPriceText = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/month';
                 } else {
-                    yourPriceText = '$' + totalMonthly.toLocaleString() + '/mo';
+                    yourPriceText = '$' + totalMonthly.toLocaleString() + '/month';
                 }
             }
             priceYourPriceValue.textContent = yourPriceText;
