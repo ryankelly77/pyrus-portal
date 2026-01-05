@@ -13477,6 +13477,26 @@ input[type="date"].form-control {
     color: #8B4513;
 }
 
+/* Claim Hints */
+.claim-hints {
+    margin-top: 12px;
+}
+
+.claim-hint-item {
+    padding: 10px 14px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-sm);
+    color: #92400e;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.claim-hint-item:last-child {
+    margin-bottom: 0;
+}
+
 /* Pricing Selector for items with both monthly and onetime options */
 .pricing-selector {
     display: flex;

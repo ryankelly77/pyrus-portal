@@ -708,6 +708,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="good">
                                 <div class="rewards-header">Your Growth Rewards</div>
@@ -742,6 +743,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="better">
                                 <div class="rewards-header">Your Growth Rewards</div>
@@ -776,6 +778,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="best">
                                 <div class="rewards-header">Your Growth Rewards</div>
@@ -890,13 +893,9 @@
                 unlockedHtml += `<div class="reward-item unlocked">${currentTier.discount}% off your plan</div>`;
             }
 
-            // Show another free $99 product third (if unlocked at tier 2+)
-            if (hasFree99Reward) {
-                if (has99ProductInCart) {
-                    unlockedHtml += `<div class="reward-item unlocked">Another Free $99 Product</div>`;
-                } else {
-                    unlockedHtml += `<div class="reward-item unlocked pending">Another Free $99 Product <span class="claim-hint">— Add a $99 product to claim!</span></div>`;
-                }
+            // Show another free $99 product third (if unlocked at tier 2+ and claimed)
+            if (hasFree99Reward && has99ProductInCart) {
+                unlockedHtml += `<div class="reward-item unlocked">Another Free $99 Product</div>`;
             }
 
             unlockedDiv.innerHTML = unlockedHtml;
@@ -1062,15 +1061,15 @@
             const currentTier = REWARD_TIERS[getRewardTier(totalMonthly)];
             const hasDiscount = currentTier.discount > 0 && totalMonthly > 0;
 
-            // Dynamic total line - show discounted amount if applicable
+            // Dynamic total line - show discounted amount with percentage if applicable
             if (totalMonthly === 0 && totalOnetime === 0) {
                 totalText.textContent = '$0/mo Total';
             } else if (hasDiscount) {
                 const discountedTotal = totalMonthly * (1 - currentTier.discount / 100);
                 if (totalOnetime === 0) {
-                    totalText.textContent = '$' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo Total';
+                    totalText.textContent = '$' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo Total (' + currentTier.discount + '% off)';
                 } else {
-                    totalText.textContent = '$' + totalOnetime.toLocaleString() + ' today then $' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                    totalText.textContent = '$' + totalOnetime.toLocaleString() + ' today then $' + discountedTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo (' + currentTier.discount + '% off)';
                 }
             } else if (totalOnetime === 0) {
                 totalText.textContent = '$' + totalMonthly.toLocaleString() + '/mo Total';
@@ -1094,12 +1093,30 @@
                 discountRowEl.style.display = 'none';
             }
 
-            // Check if there's a $99 product in cart (other than Analytics) for rewards tracking
+            // Check what's in the cart for claim hints
+            const hasAnalyticsInCart = Array.from(items).some(item => {
+                const title = item.querySelector('.service-item-title')?.textContent || '';
+                return title.includes('Analytics Tracking');
+            });
             const has99ProductInCart = Array.from(items).some(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
                 return monthly === 99 && !title.includes('Analytics Tracking');
             });
+
+            // Build claim hints
+            const claimHintsEl = tierElement.querySelector('.claim-hints');
+            const currentTierIndex = getRewardTier(totalMonthly);
+            const hasFree99Reward = currentTierIndex >= 2;
+            let claimHintsHtml = '';
+
+            if (!hasAnalyticsInCart) {
+                claimHintsHtml += '<div class="claim-hint-item">Add Analytics Tracking for Free!</div>';
+            }
+            if (hasFree99Reward && !has99ProductInCart) {
+                claimHintsHtml += '<div class="claim-hint-item">Add a $99 product to claim your free reward!</div>';
+            }
+            claimHintsEl.innerHTML = claimHintsHtml;
 
             // Update Growth Rewards
             updateGrowthRewards(tier, totalMonthly, has99ProductInCart);
