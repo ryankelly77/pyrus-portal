@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/* Custom theme using CSS variables */
+@theme {
+  /* Admin theme (brown) */
+  --color-admin-primary: #885430;
+  --color-admin-secondary: #A67B5B;
+  --color-admin-background: #F5F0E8;
+  --color-admin-sidebar: #2C1810;
+  --color-admin-sidebar-hover: #3D261A;
+
+  /* Client theme (green) */
+  --color-client-primary: #324438;
+  --color-client-secondary: #4A6B52;
+  --color-client-background: #F0F5F2;
+  --color-client-sidebar: #1C2820;
+  --color-client-sidebar-hover: #2A3D32;
+
+  /* Category colors */
+  --color-category-root-light: #FFF2D9;
+  --color-category-root: #D4A72C;
+  --color-category-root-dark: #B8922A;
+  --color-category-growth-light: #E6F2D9;
+  --color-category-growth: #7A9C3A;
+  --color-category-growth-dark: #6B8A32;
+  --color-category-cultivation-light: #FFE8D4;
+  --color-category-cultivation: #E07830;
+  --color-category-cultivation-dark: #C86A2A;
+
+  /* Status colors */
+  --color-status-active: #22C55E;
+  --color-status-paused: #EAB308;
+  --color-status-churned: #EF4444;
+  --color-status-prospect: #3B82F6;
+
+  /* Growth stages */
+  --color-stage-seed: #8B5CF6;
+  --color-stage-sprout: #22C55E;
+  --color-stage-bloom: #F59E0B;
+  --color-stage-harvest: #EF4444;
+
+  /* Font */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Base styles */
+body {
+  @apply antialiased;
+}
+
+/* Component styles */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+}
+
+.btn-primary {
+  @apply bg-admin-primary text-white hover:bg-admin-primary/90;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-900 hover:bg-gray-200;
+}
+
+.card {
+  @apply rounded-lg border bg-white shadow-sm;
+}
+
+.input {
+  @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.label {
+  @apply text-sm font-medium text-gray-700;
+}
+
+/* Category badge styles */
+.badge-root {
+  @apply bg-category-root-light text-category-root-dark;
+}
+
+.badge-growth {
+  @apply bg-category-growth-light text-category-growth-dark;
+}
+
+.badge-cultivation {
+  @apply bg-category-cultivation-light text-category-cultivation-dark;
+}
+
+/* Status badge styles */
+.badge-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.badge-paused {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-churned {
+  @apply bg-red-100 text-red-800;
+}
+
+.badge-prospect {
+  @apply bg-blue-100 text-blue-800;
+}
