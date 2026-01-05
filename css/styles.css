@@ -13489,6 +13489,30 @@ input[type="date"].form-control {
     color: #8B4513;
 }
 
+/* Price Savings Summary */
+.price-savings {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: #166534;
+}
+
+.price-savings .savings-label {
+    font-weight: 500;
+}
+
+.price-savings .savings-breakdown {
+    font-weight: 400;
+}
+
+.price-savings strong {
+    font-weight: 700;
+    color: #15803d;
+}
+
 /* Claim Hints */
 .claim-hints {
     margin-top: 12px;
@@ -14184,7 +14208,7 @@ input[type="date"].form-control {
 }
 
 .rewards-savings {
-    margin-top: 12px;
+    display: none; /* Savings now shown in pricing summary */
 }
 
 .savings-callout {

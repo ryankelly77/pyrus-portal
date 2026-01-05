@@ -708,6 +708,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="price-savings" style="display: none;"></div>
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="good">
@@ -752,6 +753,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="price-savings" style="display: none;"></div>
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="better">
@@ -796,6 +798,7 @@
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
                                 </div>
+                                <div class="price-savings" style="display: none;"></div>
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="best">
@@ -896,13 +899,11 @@
 
         // Calculate and update Growth Rewards display
         // monthlyTotal = base total for tier calculation (excludes always-free Analytics)
-        // paidMonthlyTotal = actual paid amount (excludes all free items) for discount calculation
-        function updateGrowthRewards(tier, monthlyTotal, paidMonthlyTotal, has99ProductInCart = false) {
+        function updateGrowthRewards(tier, monthlyTotal, has99ProductInCart = false) {
             const rewardsSection = document.querySelector(`.growth-rewards[data-tier="${tier}"]`);
             const unlockedDiv = rewardsSection.querySelector('.rewards-unlocked');
             const couponDiv = rewardsSection.querySelector('.rewards-coupon');
             const lockedDiv = rewardsSection.querySelector('.rewards-locked');
-            const savingsDiv = rewardsSection.querySelector('.rewards-savings');
 
             const currentTierIndex = getRewardTier(monthlyTotal);
             const currentTier = REWARD_TIERS[currentTierIndex];
@@ -970,37 +971,6 @@
                 }
             }
             lockedDiv.innerHTML = lockedHtml;
-
-            // Calculate and show savings with detailed breakdown
-            let savingsParts = [];
-            let totalSavings = 0;
-
-            // Free Analytics Tracking ($99)
-            savingsParts.push('$99');
-            totalSavings += 99;
-
-            // Another free $99 product (only if claimed)
-            if (hasFree99Reward && has99ProductInCart) {
-                savingsParts.push('$99');
-                totalSavings += 99;
-            }
-
-            // Discount savings - calculated on paid items only (not free items)
-            if (currentTier.discount > 0 && paidMonthlyTotal > 0) {
-                const discountSavings = Math.round(paidMonthlyTotal * (currentTier.discount / 100) * 100) / 100;
-                savingsParts.push(`$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}(${currentTier.discount}%)`);
-                totalSavings += discountSavings;
-            }
-
-            // Format total
-            const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-            // Build savings display
-            if (savingsParts.length > 1) {
-                savingsDiv.innerHTML = `<div class="savings-callout">You save: ${savingsParts.join(' + ')} = <strong>$${totalFormatted}</strong></div>`;
-            } else {
-                savingsDiv.innerHTML = `<div class="savings-callout">You save: <strong>$${totalFormatted}</strong></div>`;
-            }
         }
 
         // Calculate and update tier pricing
@@ -1152,18 +1122,52 @@
                 discountRowEl.style.display = 'none';
             }
 
-            // Check what's in the cart for claim hints
+            // Calculate and show savings breakdown in pricing summary
+            const priceSavingsEl = tierElement.querySelector('.price-savings');
             const hasAnalyticsInCart = Array.from(items).some(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 return title.includes('Analytics Tracking');
             });
-
-            // Check if the free $99 slot is being used (free99Used is calculated above during item processing)
             const isFree99SlotUsed = free99Used > 0;
-
-            // Build claim hints - use BASE total for tier calculation
-            const claimHintsEl = tierElement.querySelector('.claim-hints');
             const hasFree99Reward = rewardTierIndex >= 2;
+
+            let savingsParts = [];
+            let totalSavings = 0;
+
+            // Free Analytics Tracking ($99) - only if in cart
+            if (hasAnalyticsInCart) {
+                savingsParts.push('$99');
+                totalSavings += 99;
+            }
+
+            // Another free $99 product (only if claimed)
+            if (hasFree99Reward && isFree99SlotUsed) {
+                savingsParts.push('$99');
+                totalSavings += 99;
+            }
+
+            // Discount savings - calculated on paid items only
+            if (currentTier.discount > 0 && totalMonthly > 0) {
+                const discountSavings = Math.round(totalMonthly * (currentTier.discount / 100) * 100) / 100;
+                savingsParts.push(`$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}(${currentTier.discount}%)`);
+                totalSavings += discountSavings;
+            }
+
+            // Show savings if any
+            if (totalSavings > 0) {
+                const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (savingsParts.length > 1) {
+                    priceSavingsEl.innerHTML = `<span class="savings-label">You save:</span> <span class="savings-breakdown">${savingsParts.join(' + ')} = <strong>$${totalFormatted}</strong></span>`;
+                } else {
+                    priceSavingsEl.innerHTML = `<span class="savings-label">You save:</span> <strong>$${totalFormatted}</strong>`;
+                }
+                priceSavingsEl.style.display = '';
+            } else {
+                priceSavingsEl.style.display = 'none';
+            }
+
+            // Build claim hints
+            const claimHintsEl = tierElement.querySelector('.claim-hints');
             let claimHintsHtml = '';
 
             if (!hasAnalyticsInCart) {
@@ -1174,8 +1178,8 @@
             }
             claimHintsEl.innerHTML = claimHintsHtml;
 
-            // Update Growth Rewards - pass both base total (for tier) and paid total (for discount calc)
-            updateGrowthRewards(tier, baseTotalMonthly, totalMonthly, isFree99SlotUsed);
+            // Update Growth Rewards
+            updateGrowthRewards(tier, baseTotalMonthly, isFree99SlotUsed);
 
             // Check and update requirement overlays
             updateRequirementOverlays(tier);
