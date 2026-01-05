@@ -1202,6 +1202,9 @@
             const yourPrice = totalMonthly - discountSavings;
 
             // Show 3-line pricing breakdown if there are savings
+            const monthlyRowEl = tierElement.querySelector('.monthly-row');
+            const totalRowEl = tierElement.querySelector('.price-total');
+
             if (totalSavings > 0 && totalMonthly > 0) {
                 // Line 1: Full Price (crossed out)
                 priceFullLineValue.textContent = '$' + fullPrice.toLocaleString() + '/mo';
@@ -1223,6 +1226,11 @@
                     priceYourPriceEl.style.display = 'none';
                 }
 
+                // Hide the old monthly and total rows when 3-line pricing is shown
+                monthlyRowEl.style.display = 'none';
+                totalRowEl.style.display = 'none';
+                discountRowEl.style.display = 'none';
+
                 // Build savings breakdown
                 const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 let savingsHtml = `<div class="savings-total">You save <strong>$${totalFormatted}</strong></div>`;
@@ -1238,6 +1246,9 @@
                 priceAfterFreeEl.style.display = 'none';
                 priceYourPriceEl.style.display = 'none';
                 priceSavingsEl.style.display = 'none';
+                // Show the old rows when no 3-line pricing
+                monthlyRowEl.style.display = '';
+                totalRowEl.style.display = '';
             }
 
             // Build claim hints
