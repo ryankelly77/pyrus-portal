@@ -14287,6 +14287,13 @@ input[type="date"].form-control {
     font-weight: 600;
 }
 
+.service-item-price .original-price {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-right: 6px;
+}
+
 .no-rewards-message {
     text-align: center;
     padding: 16px;

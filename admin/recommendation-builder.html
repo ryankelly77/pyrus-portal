@@ -1053,7 +1053,8 @@
 
                 // Analytics Tracking is always entirely free
                 if (isAnalyticsTracking && analyticsIsFree && priceDisplay) {
-                    priceDisplay.textContent = 'Free';
+                    const originalPrice = item.getAttribute('data-original-price') || '($' + monthly + '/mo)';
+                    priceDisplay.innerHTML = '<span class="original-price">' + originalPrice + '</span> Free';
                     priceDisplay.classList.add('free-item');
                     return; // Don't add to total
                 }
@@ -1072,17 +1073,18 @@
 
                 // Update price display based on free/paid status
                 if (priceDisplay) {
+                    const originalPrice = item.getAttribute('data-original-price') || '($' + monthly + '/mo)';
                     if (freeUnits > 0 && paidUnits === 0) {
-                        // Entirely free
-                        priceDisplay.textContent = 'Free';
+                        // Entirely free - show original price crossed out
+                        priceDisplay.innerHTML = '<span class="original-price">' + originalPrice + '</span> Free';
                         priceDisplay.classList.add('free-item');
                     } else if (freeUnits > 0 && paidUnits > 0) {
                         // Partially free (for quantity items)
-                        priceDisplay.textContent = freeUnits + ' Free, ' + paidUnits + ' × $' + monthly + '/mo';
+                        priceDisplay.innerHTML = freeUnits + ' Free, ' + paidUnits + ' × $' + monthly + '/mo';
                         priceDisplay.classList.add('free-item');
                     } else {
                         // Reset to original price
-                        priceDisplay.textContent = item.getAttribute('data-original-price') || '($' + monthly + '/mo)';
+                        priceDisplay.innerHTML = originalPrice;
                         priceDisplay.classList.remove('free-item');
                     }
                 }
