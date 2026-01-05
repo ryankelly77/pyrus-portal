@@ -1218,13 +1218,25 @@
                     priceAfterFreeEl.style.display = 'none';
                 }
 
-                // Line 3: Your Price (only if there's a discount)
-                if (discountSavings > 0) {
-                    priceYourPriceValue.textContent = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
-                    priceYourPriceEl.style.display = '';
+                // Line 3: Your Price (always show when there are savings)
+                let yourPriceText = '';
+                if (totalOnetime > 0) {
+                    // Has one-time fees
+                    if (discountSavings > 0) {
+                        yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                    } else {
+                        yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
+                    }
                 } else {
-                    priceYourPriceEl.style.display = 'none';
+                    // Monthly only
+                    if (discountSavings > 0) {
+                        yourPriceText = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
+                    } else {
+                        yourPriceText = '$' + totalMonthly.toLocaleString() + '/mo';
+                    }
                 }
+                priceYourPriceValue.textContent = yourPriceText;
+                priceYourPriceEl.style.display = '';
 
                 // Hide the old monthly and total rows when 3-line pricing is shown
                 monthlyRowEl.style.display = 'none';

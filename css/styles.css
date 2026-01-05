@@ -13519,25 +13519,24 @@ input[type="date"].form-control {
     font-weight: 400;
 }
 
-/* Your Price emphasis */
+/* Your Price emphasis - no box, just larger text */
 .price-your-price {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    margin: 8px -14px 0 -14px;
-    padding: 12px 14px;
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    margin-top: 8px;
+    padding-top: 8px;
     border-bottom: none;
+    border-top: 1px solid var(--border-light);
 }
 
 .price-your-price .price-line-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #166534;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .price-your-price .price-line-value.highlight {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
-    color: #15803d;
+    color: var(--text-primary);
 }
 
 /* Price Savings Summary */
@@ -14080,8 +14079,8 @@ input[type="date"].form-control {
 .growth-rewards {
     margin-top: 20px;
     padding: 16px;
-    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-    border: 1px solid var(--pyrus-green-pale);
+    background: #fafafa;
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
 }
 
