@@ -1110,10 +1110,10 @@
             monthlyRow.textContent = '$' + totalMonthly.toLocaleString();
             onetimeRow.textContent = '$' + totalOnetime.toLocaleString();
 
-            // Check for discount
+            // Check for discount - use BASE total for tier calculation (before free rewards applied)
             const discountRowEl = tierElement.querySelector('.discount-row');
             const discountText = tierElement.querySelector('.discount-text');
-            const currentTier = REWARD_TIERS[getRewardTier(totalMonthly)];
+            const currentTier = REWARD_TIERS[rewardTierIndex];
             const hasDiscount = currentTier.discount > 0 && totalMonthly > 0;
 
             // Dynamic total line - show discounted amount with percentage if applicable
@@ -1153,28 +1153,32 @@
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 return title.includes('Analytics Tracking');
             });
-            const has99ProductInCart = Array.from(items).some(item => {
+
+            // Check if a dedicated $99 product is in cart (not a quantity item that auto-claims)
+            // Quantity items auto-get the free slot but user might want a different $99 product
+            const hasDedicated99ProductInCart = Array.from(items).some(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
                 const monthly = parseInt(item.getAttribute('data-monthly')) || 0;
-                return monthly === 99 && !title.includes('Analytics Tracking');
+                const hasQuantity = item.getAttribute('data-has-quantity') === 'true';
+                // Only count non-quantity $99 products as "explicitly claiming" the free slot
+                return monthly === 99 && !title.includes('Analytics Tracking') && !hasQuantity;
             });
 
-            // Build claim hints
+            // Build claim hints - use BASE total for tier calculation
             const claimHintsEl = tierElement.querySelector('.claim-hints');
-            const currentTierIndex = getRewardTier(totalMonthly);
-            const hasFree99Reward = currentTierIndex >= 2;
+            const hasFree99Reward = rewardTierIndex >= 2;
             let claimHintsHtml = '';
 
             if (!hasAnalyticsInCart) {
                 claimHintsHtml += '<div class="claim-hint-item">Add Analytics Tracking for Free!</div>';
             }
-            if (hasFree99Reward && !has99ProductInCart) {
+            if (hasFree99Reward && !hasDedicated99ProductInCart) {
                 claimHintsHtml += '<div class="claim-hint-item">Add a $99 product to claim your free reward!</div>';
             }
             claimHintsEl.innerHTML = claimHintsHtml;
 
-            // Update Growth Rewards
-            updateGrowthRewards(tier, totalMonthly, has99ProductInCart);
+            // Update Growth Rewards - use BASE total for tier calculation
+            updateGrowthRewards(tier, baseTotalMonthly, hasDedicated99ProductInCart);
         }
 
         // Basic Drag and Drop
