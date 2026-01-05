@@ -895,7 +895,9 @@
         }
 
         // Calculate and update Growth Rewards display
-        function updateGrowthRewards(tier, monthlyTotal, has99ProductInCart = false) {
+        // monthlyTotal = base total for tier calculation (excludes always-free Analytics)
+        // paidMonthlyTotal = actual paid amount (excludes all free items) for discount calculation
+        function updateGrowthRewards(tier, monthlyTotal, paidMonthlyTotal, has99ProductInCart = false) {
             const rewardsSection = document.querySelector(`.growth-rewards[data-tier="${tier}"]`);
             const unlockedDiv = rewardsSection.querySelector('.rewards-unlocked');
             const couponDiv = rewardsSection.querySelector('.rewards-coupon');
@@ -983,9 +985,9 @@
                 totalSavings += 99;
             }
 
-            // Discount savings
-            if (currentTier.discount > 0) {
-                const discountSavings = Math.round(monthlyTotal * (currentTier.discount / 100) * 100) / 100;
+            // Discount savings - calculated on paid items only (not free items)
+            if (currentTier.discount > 0 && paidMonthlyTotal > 0) {
+                const discountSavings = Math.round(paidMonthlyTotal * (currentTier.discount / 100) * 100) / 100;
                 savingsParts.push(`$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}(${currentTier.discount}%)`);
                 totalSavings += discountSavings;
             }
@@ -1172,8 +1174,8 @@
             }
             claimHintsEl.innerHTML = claimHintsHtml;
 
-            // Update Growth Rewards - use BASE total for tier calculation
-            updateGrowthRewards(tier, baseTotalMonthly, isFree99SlotUsed);
+            // Update Growth Rewards - pass both base total (for tier) and paid total (for discount calc)
+            updateGrowthRewards(tier, baseTotalMonthly, totalMonthly, isFree99SlotUsed);
 
             // Check and update requirement overlays
             updateRequirementOverlays(tier);
