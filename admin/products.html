@@ -205,6 +205,7 @@
                 <div class="content-tabs" style="margin-bottom: 24px;">
                     <button class="content-tab active" data-view="products">Products</button>
                     <button class="content-tab" data-view="bundles">Bundles</button>
+                    <button class="content-tab" data-view="addons">Add-Ons</button>
                 </div>
 
                 <!-- Products View -->
@@ -546,6 +547,155 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Add-Ons View -->
+                <div id="addonsView" class="view-content" style="display: none;">
+                    <div class="bundles-grid">
+                        <!-- Add-On Card 1 -->
+                        <div class="bundle-card addon-card">
+                            <div class="bundle-header">
+                                <h3>Monthly Report</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$99/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Comprehensive monthly performance report with insights and recommendations.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('monthly-report')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('monthly-report')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Add-On Card 2 -->
+                        <div class="bundle-card addon-card">
+                            <div class="bundle-header">
+                                <h3>GBP Posting</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$99/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Regular Google Business Profile posts to keep your listing active and engaging.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('gbp-posting')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('gbp-posting')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Add-On Card 3 -->
+                        <div class="bundle-card addon-card">
+                            <div class="bundle-header">
+                                <h3>Review Management</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$99/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Monitor and respond to customer reviews across platforms.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('review-mgmt')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('review-mgmt')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Add-On Card 4 -->
+                        <div class="bundle-card addon-card">
+                            <div class="bundle-header">
+                                <h3>WordPress Care Plan</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$49/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Secure, updated hosting and maintenance for WordPress sites.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('wp-care')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('wp-care')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Add-On Card 5 -->
+                        <div class="bundle-card addon-card">
+                            <div class="bundle-header">
+                                <h3>AI Visibility Monitoring</h3>
+                                <span class="status-badge active">Active</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$149/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Track your AI citation performance and visibility in AI assistants.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('ai-monitoring')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('ai-monitoring')">Duplicate</button>
+                            </div>
+                        </div>
+
+                        <!-- Add-On Card 6 - Draft -->
+                        <div class="bundle-card addon-card bundle-draft">
+                            <div class="bundle-header">
+                                <h3>Call Tracking</h3>
+                                <span class="status-badge draft">Draft</span>
+                            </div>
+                            <div class="bundle-pricing">
+                                <span class="bundle-price">$79/mo</span>
+                            </div>
+                            <div class="bundle-products">
+                                <p class="addon-desc">Track and record inbound calls with detailed analytics.</p>
+                            </div>
+                            <div class="bundle-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="editAddon('call-tracking')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="duplicateAddon('call-tracking')">Duplicate</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -882,6 +1032,7 @@
                 const view = tab.getAttribute('data-view');
                 document.getElementById('productsView').style.display = view === 'products' ? 'block' : 'none';
                 document.getElementById('bundlesView').style.display = view === 'bundles' ? 'block' : 'none';
+                document.getElementById('addonsView').style.display = view === 'addons' ? 'block' : 'none';
             });
         });
 
@@ -962,6 +1113,16 @@
         function saveBundle() {
             closeModal('bundleModal');
             showToast('Bundle saved successfully!');
+        }
+
+        // Add-On Functions
+        function editAddon(addonId) {
+            document.querySelector('#bundleModal .modal-title').textContent = 'Edit Add-On';
+            openModal('bundleModal');
+        }
+
+        function duplicateAddon(addonId) {
+            showToast('Add-on duplicated successfully!');
         }
 
         // Toast Functions
@@ -1315,6 +1476,12 @@
             font-weight: 500;
             color: var(--text-secondary);
             margin-bottom: 8px;
+        }
+        .addon-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.5;
         }
         .bundle-product-list {
             margin: 0;
