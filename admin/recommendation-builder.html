@@ -1201,49 +1201,59 @@
             const fullPrice = totalMonthly + freeItemsValue;
             const yourPrice = totalMonthly - discountSavings;
 
-            // Show 3-line pricing breakdown if there are savings
+            // Always show 3-line pricing breakdown
             const monthlyRowEl = tierElement.querySelector('.monthly-row');
             const totalRowEl = tierElement.querySelector('.price-total');
 
-            if (totalSavings > 0 && totalMonthly > 0) {
-                // Line 1: Full Price (crossed out)
+            // Always hide old rows - we use the 3-line display now
+            monthlyRowEl.style.display = 'none';
+            totalRowEl.style.display = 'none';
+            discountRowEl.style.display = 'none';
+
+            // Line 1: Full Price (crossed out only if there are savings)
+            if (totalOnetime > 0) {
+                priceFullLineValue.textContent = '$' + totalOnetime.toLocaleString() + ' + $' + fullPrice.toLocaleString() + '/mo';
+            } else {
                 priceFullLineValue.textContent = '$' + fullPrice.toLocaleString() + '/mo';
-                priceFullLineEl.style.display = '';
+            }
+            priceFullLineEl.style.display = '';
+            // Only strikethrough if there are savings
+            if (totalSavings > 0) {
+                priceFullLineValue.classList.add('strikethrough');
+            } else {
+                priceFullLineValue.classList.remove('strikethrough');
+            }
 
-                // Line 2: After Free Items (only if there are free items)
-                if (freeItemsValue > 0) {
-                    priceAfterFreeValue.textContent = '$' + totalMonthly.toLocaleString() + '/mo';
-                    priceAfterFreeEl.style.display = '';
+            // Line 2: After Free Items
+            if (totalOnetime > 0) {
+                priceAfterFreeValue.textContent = '$' + totalOnetime.toLocaleString() + ' + $' + totalMonthly.toLocaleString() + '/mo';
+            } else {
+                priceAfterFreeValue.textContent = '$' + totalMonthly.toLocaleString() + '/mo';
+            }
+            priceAfterFreeEl.style.display = '';
+
+            // Line 3: Your Price
+            let yourPriceText = '';
+            if (totalOnetime > 0) {
+                // Has one-time fees
+                if (discountSavings > 0) {
+                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
                 } else {
-                    priceAfterFreeEl.style.display = 'none';
+                    yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
                 }
-
-                // Line 3: Your Price (always show when there are savings)
-                let yourPriceText = '';
-                if (totalOnetime > 0) {
-                    // Has one-time fees
-                    if (discountSavings > 0) {
-                        yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
-                    } else {
-                        yourPriceText = '$' + totalOnetime.toLocaleString() + ' today then $' + totalMonthly.toLocaleString() + '/mo';
-                    }
+            } else {
+                // Monthly only
+                if (discountSavings > 0) {
+                    yourPriceText = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
                 } else {
-                    // Monthly only
-                    if (discountSavings > 0) {
-                        yourPriceText = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
-                    } else {
-                        yourPriceText = '$' + totalMonthly.toLocaleString() + '/mo';
-                    }
+                    yourPriceText = '$' + totalMonthly.toLocaleString() + '/mo';
                 }
-                priceYourPriceValue.textContent = yourPriceText;
-                priceYourPriceEl.style.display = '';
+            }
+            priceYourPriceValue.textContent = yourPriceText;
+            priceYourPriceEl.style.display = '';
 
-                // Hide the old monthly and total rows when 3-line pricing is shown
-                monthlyRowEl.style.display = 'none';
-                totalRowEl.style.display = 'none';
-                discountRowEl.style.display = 'none';
-
-                // Build savings breakdown
+            // Savings breakdown - only show if there are actual savings
+            if (totalSavings > 0) {
                 const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 let savingsHtml = `<div class="savings-total">You save <strong>$${totalFormatted}</strong></div>`;
                 savingsHtml += '<div class="savings-details">';
@@ -1254,13 +1264,7 @@
                 priceSavingsEl.innerHTML = savingsHtml;
                 priceSavingsEl.style.display = '';
             } else {
-                priceFullLineEl.style.display = 'none';
-                priceAfterFreeEl.style.display = 'none';
-                priceYourPriceEl.style.display = 'none';
                 priceSavingsEl.style.display = 'none';
-                // Show the old rows when no 3-line pricing
-                monthlyRowEl.style.display = '';
-                totalRowEl.style.display = '';
             }
 
             // Build claim hints
