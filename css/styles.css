@@ -6356,8 +6356,8 @@
         }
 
         .info-btn {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             padding: 0;
             background: none;
             border: none;
@@ -6369,8 +6369,8 @@
         }
 
         .info-btn svg {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             color: var(--text-muted);
         }
 
@@ -13729,9 +13729,11 @@ input[type="date"].form-control {
     border-bottom: 1px solid var(--pyrus-green-pale);
 }
 
-.rewards-header::before {
-    content: '🎁';
-    font-size: 18px;
+.rewards-header svg {
+    width: 20px;
+    height: 20px;
+    color: var(--pyrus-green);
+    flex-shrink: 0;
 }
 
 .rewards-unlocked {
@@ -13794,9 +13796,10 @@ input[type="date"].form-control {
     color: var(--text-muted);
 }
 
-.reward-item.locked::before {
-    content: '🔒';
-    font-size: 14px;
+.reward-item.locked svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
     flex-shrink: 0;
 }
 
@@ -13925,22 +13928,25 @@ input[type="date"].form-control {
     font-weight: 700;
 }
 
-.max-rewards-badge {
-    display: inline-flex;
+.max-rewards {
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--pyrus-green-dark);
     color: white;
-    border-radius: 20px;
-    font-size: 12px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
     font-weight: 600;
-    margin-top: 12px;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    text-align: center;
 }
 
-.max-rewards-badge::before {
-    content: '⭐';
+.max-rewards svg {
+    width: 18px;
+    height: 18px;
+    color: #fbbf24;
+    flex-shrink: 0;
 }
 
 /* Purchase Now Button */

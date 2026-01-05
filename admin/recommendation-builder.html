@@ -711,7 +711,16 @@
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="good">
-                                <div class="rewards-header">Your Growth Rewards</div>
+                                <div class="rewards-header">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                                        <rect x="2" y="7" width="20" height="5"></rect>
+                                        <line x1="12" y1="22" x2="12" y2="7"></line>
+                                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                                    </svg>
+                                    Your Growth Rewards
+                                </div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -746,7 +755,16 @@
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="better">
-                                <div class="rewards-header">Your Growth Rewards</div>
+                                <div class="rewards-header">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                                        <rect x="2" y="7" width="20" height="5"></rect>
+                                        <line x1="12" y1="22" x2="12" y2="7"></line>
+                                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                                    </svg>
+                                    Your Growth Rewards
+                                </div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -781,7 +799,16 @@
                                 <div class="claim-hints"></div>
                             </div>
                             <div class="growth-rewards" data-tier="best">
-                                <div class="rewards-header">Your Growth Rewards</div>
+                                <div class="rewards-header">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                                        <rect x="2" y="7" width="20" height="5"></rect>
+                                        <line x1="12" y1="22" x2="12" y2="7"></line>
+                                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                                    </svg>
+                                    Your Growth Rewards
+                                </div>
                                 <div class="rewards-unlocked"></div>
                                 <div class="rewards-coupon"></div>
                                 <div class="rewards-locked"></div>
@@ -913,40 +940,64 @@
                 couponDiv.style.display = 'none';
             }
 
+            // SVG icons
+            const lockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+            const starIcon = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+
             // Build locked rewards (next tiers)
             let lockedHtml = '';
             if (currentTierIndex >= REWARD_TIERS.length - 1) {
                 // Max tier reached
-                lockedHtml = '<div class="max-rewards">⭐ Maximum Rewards Unlocked! ⭐</div>';
+                lockedHtml = `<div class="max-rewards">${starIcon} Maximum Rewards Unlocked! ${starIcon}</div>`;
             } else {
                 // Show upcoming rewards in order
                 if (currentTierIndex < 1) {
                     // Not yet at $1000 - show 5% discount unlock
                     const amountNeeded = 1000 - monthlyTotal;
-                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 5% off your total cart!</div>`;
+                    lockedHtml += `<div class="reward-item locked">${lockIcon} Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 5% off your total cart!</div>`;
                 }
                 if (currentTierIndex < 2) {
                     // Not yet at $1500 - show free $99 product unlock
                     const amountNeeded = 1500 - monthlyTotal;
-                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock another Free $99 Product!</div>`;
+                    lockedHtml += `<div class="reward-item locked">${lockIcon} Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock another Free $99 Product!</div>`;
                 }
                 if (currentTierIndex < 3) {
                     // Not yet at $2000 - show 10% discount unlock
                     const amountNeeded = 2000 - monthlyTotal;
-                    lockedHtml += `<div class="reward-item locked">Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 10% off your total cart!</div>`;
+                    lockedHtml += `<div class="reward-item locked">${lockIcon} Add <strong>$${amountNeeded.toLocaleString()}</strong> to unlock 10% off your total cart!</div>`;
                 }
             }
             lockedDiv.innerHTML = lockedHtml;
 
-            // Calculate and show savings
-            let savingsAmount = 99; // Base free analytics
-            if (hasFree99Reward && has99ProductInCart) savingsAmount += 99; // Another free $99 product (only if claimed)
+            // Calculate and show savings with detailed breakdown
+            let savingsParts = [];
+            let totalSavings = 0;
+
+            // Free Analytics Tracking ($99)
+            savingsParts.push('$99');
+            totalSavings += 99;
+
+            // Another free $99 product (only if claimed)
+            if (hasFree99Reward && has99ProductInCart) {
+                savingsParts.push('$99');
+                totalSavings += 99;
+            }
+
+            // Discount savings
             if (currentTier.discount > 0) {
                 const discountSavings = Math.round(monthlyTotal * (currentTier.discount / 100) * 100) / 100;
-                savingsAmount += discountSavings;
-                savingsDiv.innerHTML = `<div class="savings-callout">You save: $${savingsAmount.toLocaleString()}</div>`;
+                savingsParts.push(`$${discountSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}(${currentTier.discount}%)`);
+                totalSavings += discountSavings;
+            }
+
+            // Format total
+            const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Build savings display
+            if (savingsParts.length > 1) {
+                savingsDiv.innerHTML = `<div class="savings-callout">You save: ${savingsParts.join(' + ')} = <strong>$${totalFormatted}</strong></div>`;
             } else {
-                savingsDiv.innerHTML = `<div class="savings-callout">You save: $${savingsAmount}</div>`;
+                savingsDiv.innerHTML = `<div class="savings-callout">You save: <strong>$${totalFormatted}</strong></div>`;
             }
         }
 
