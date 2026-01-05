@@ -1197,44 +1197,28 @@
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>`;
 
-            // Close icon SVG
-            const closeIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>`;
-
             // Check each item for unmet requirements
             items.forEach(item => {
                 const requires = item.getAttribute('data-requires');
                 const existingOverlay = item.querySelector('.requirement-overlay');
-                const isDismissed = item.getAttribute('data-requirement-dismissed') === 'true';
 
                 if (requires) {
                     const requirementMet = productsInCart.has(requires);
 
                     if (requirementMet) {
-                        // Requirement met - remove overlay and clear dismissed state
+                        // Requirement met - remove overlay
                         if (existingOverlay) {
                             existingOverlay.remove();
                         }
-                        item.removeAttribute('data-requirement-dismissed');
-                    } else if (!isDismissed && !existingOverlay) {
-                        // Show overlay if not dismissed and not already present
+                    } else if (!existingOverlay) {
+                        // Show overlay if not already present
                         const overlay = document.createElement('div');
                         overlay.className = 'requirement-overlay';
                         overlay.innerHTML = `
                             ${warningIcon}
                             <span class="requirement-overlay-text">Requires <strong>${requires}</strong></span>
-                            <button class="requirement-overlay-dismiss" title="Dismiss">${closeIcon}</button>
                         `;
                         item.appendChild(overlay);
-
-                        // Add dismiss handler
-                        overlay.querySelector('.requirement-overlay-dismiss').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            item.setAttribute('data-requirement-dismissed', 'true');
-                            overlay.remove();
-                        });
                     }
                 } else {
                     // No requirement - ensure no overlay
