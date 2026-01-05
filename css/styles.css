@@ -2,11 +2,13 @@
             /* Admin brown color scheme */
             --pyrus-brown: #885430;
             --pyrus-brown-light: #A66B3F;
+            --pyrus-brown-dark: #5C3D2E;
             --pyrus-brown-pale: #F5EBE0;
             --pyrus-brown-wash: #FCF7EF;
             /* Legacy variable names for compatibility */
             --pyrus-green: #885430;
             --pyrus-green-light: #A66B3F;
+            --pyrus-green-dark: #5C3D2E;
             --pyrus-green-pale: #F5EBE0;
             --pyrus-green-wash: #FCF7EF;
             /* Client green color scheme */
