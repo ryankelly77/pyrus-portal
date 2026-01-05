@@ -13489,55 +13489,40 @@ input[type="date"].form-control {
     color: #8B4513;
 }
 
-/* Price Lines (3-line breakdown) */
-.price-line {
+/* Full Price (crossed out) */
+.price-full {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border-light);
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 2px;
+    opacity: 0.6;
 }
 
-.price-line:last-of-type {
-    border-bottom: none;
-}
-
-.price-line-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.price-line-value {
+.price-full-amount {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.price-line-value.strikethrough {
-    text-decoration: line-through;
-    color: var(--text-muted);
     font-weight: 400;
+    color: var(--text-muted);
+    text-decoration: line-through;
 }
 
-/* Your Price emphasis */
-.price-your-price {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    margin: 8px -14px 0 -14px;
-    padding: 12px 14px !important;
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
-    border-bottom: none !important;
+.price-full-label {
+    font-size: 11px;
+    color: var(--text-muted);
 }
 
-.price-your-price .price-line-label {
-    font-size: 14px;
+/* Your Price - make it stand out */
+.price-full + .price-row.monthly-row {
+    margin-top: 4px;
+}
+
+.price-full + .price-row.monthly-row .price-amount {
+    font-size: 28px;
+    color: var(--pyrus-green-dark);
+}
+
+.price-full + .price-row.monthly-row .price-label {
     font-weight: 600;
-    color: #166534;
-}
-
-.price-your-price .price-line-value.highlight {
-    font-size: 20px;
-    font-weight: 700;
-    color: #15803d;
+    color: var(--pyrus-green);
 }
 
 /* Price Savings Summary */

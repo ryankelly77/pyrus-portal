@@ -694,17 +694,9 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-line price-full" style="display: none;">
-                                    <span class="price-line-label">Full Price</span>
-                                    <span class="price-line-value strikethrough"></span>
-                                </div>
-                                <div class="price-line price-after-free" style="display: none;">
-                                    <span class="price-line-label">After Free Items</span>
-                                    <span class="price-line-value"></span>
-                                </div>
-                                <div class="price-line price-your-price" style="display: none;">
-                                    <span class="price-line-label">Your Price</span>
-                                    <span class="price-line-value highlight"></span>
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
                                 </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
@@ -713,6 +705,9 @@
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
@@ -748,17 +743,9 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-line price-full" style="display: none;">
-                                    <span class="price-line-label">Full Price</span>
-                                    <span class="price-line-value strikethrough"></span>
-                                </div>
-                                <div class="price-line price-after-free" style="display: none;">
-                                    <span class="price-line-label">After Free Items</span>
-                                    <span class="price-line-value"></span>
-                                </div>
-                                <div class="price-line price-your-price" style="display: none;">
-                                    <span class="price-line-label">Your Price</span>
-                                    <span class="price-line-value highlight"></span>
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
                                 </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
@@ -767,6 +754,9 @@
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
@@ -802,17 +792,9 @@
                                 </div>
                             </div>
                             <div class="tier-pricing">
-                                <div class="price-line price-full" style="display: none;">
-                                    <span class="price-line-label">Full Price</span>
-                                    <span class="price-line-value strikethrough"></span>
-                                </div>
-                                <div class="price-line price-after-free" style="display: none;">
-                                    <span class="price-line-label">After Free Items</span>
-                                    <span class="price-line-value"></span>
-                                </div>
-                                <div class="price-line price-your-price" style="display: none;">
-                                    <span class="price-line-label">Your Price</span>
-                                    <span class="price-line-value highlight"></span>
+                                <div class="price-full" style="display: none;">
+                                    <span class="price-full-amount"></span>
+                                    <span class="price-full-label">/month full price</span>
                                 </div>
                                 <div class="price-row monthly-row">
                                     <span class="price-amount">$0</span>
@@ -821,6 +803,9 @@
                                 <div class="price-row onetime-row">
                                     <span class="price-amount">$0</span>
                                     <span class="price-label">onetime</span>
+                                </div>
+                                <div class="price-total">
+                                    <span class="total-text">$0/mo Total</span>
                                 </div>
                                 <div class="price-row discount-row" style="display: none;">
                                     <span class="discount-text"></span>
@@ -1149,15 +1134,10 @@
                 discountRowEl.style.display = 'none';
             }
 
-            // Calculate savings and show 3-line price breakdown
+            // Calculate savings and full price
             const priceSavingsEl = tierElement.querySelector('.price-savings');
             const priceFullEl = tierElement.querySelector('.price-full');
-            const priceFullValue = priceFullEl.querySelector('.price-line-value');
-            const priceAfterFreeEl = tierElement.querySelector('.price-after-free');
-            const priceAfterFreeValue = priceAfterFreeEl.querySelector('.price-line-value');
-            const priceYourPriceEl = tierElement.querySelector('.price-your-price');
-            const priceYourPriceValue = priceYourPriceEl.querySelector('.price-line-value');
-            const monthlyRowEl = tierElement.querySelector('.monthly-row');
+            const priceFullAmount = tierElement.querySelector('.price-full-amount');
 
             const hasAnalyticsInCart = Array.from(items).some(item => {
                 const title = item.querySelector('.service-item-title')?.textContent || '';
@@ -1191,32 +1171,11 @@
 
             const totalSavings = freeItemsValue + discountSavings;
             const fullPrice = totalMonthly + freeItemsValue;
-            const yourPrice = totalMonthly - discountSavings;
 
-            // Show 3-line breakdown if there are savings
+            // Show full price crossed out if there are savings
             if (totalSavings > 0 && totalMonthly > 0) {
-                // Line 1: Full Price (crossed out)
-                priceFullValue.textContent = '$' + fullPrice.toLocaleString() + '/mo';
+                priceFullAmount.textContent = '$' + fullPrice.toLocaleString();
                 priceFullEl.style.display = '';
-
-                // Line 2: After Free Items (only show if there are free items)
-                if (freeItemsValue > 0) {
-                    priceAfterFreeValue.textContent = '$' + totalMonthly.toLocaleString() + '/mo';
-                    priceAfterFreeEl.style.display = '';
-                } else {
-                    priceAfterFreeEl.style.display = 'none';
-                }
-
-                // Line 3: Your Price (only show if there's a discount)
-                if (discountSavings > 0) {
-                    priceYourPriceValue.textContent = '$' + yourPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/mo';
-                    priceYourPriceEl.style.display = '';
-                } else {
-                    priceYourPriceEl.style.display = 'none';
-                }
-
-                // Hide the simple monthly row when showing breakdown
-                monthlyRowEl.style.display = 'none';
 
                 // Build savings breakdown
                 const totalFormatted = totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1230,9 +1189,6 @@
                 priceSavingsEl.style.display = '';
             } else {
                 priceFullEl.style.display = 'none';
-                priceAfterFreeEl.style.display = 'none';
-                priceYourPriceEl.style.display = 'none';
-                monthlyRowEl.style.display = '';
                 priceSavingsEl.style.display = 'none';
             }
 
