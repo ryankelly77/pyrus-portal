@@ -6,8 +6,8 @@
   --color-admin-primary: #885430;
   --color-admin-secondary: #A67B5B;
   --color-admin-background: #F5F0E8;
-  --color-admin-sidebar: #2C1810;
-  --color-admin-sidebar-hover: #3D261A;
+  --color-admin-sidebar: #885430;
+  --color-admin-sidebar-hover: #9A6540;
 
   /* Client theme (green) */
   --color-client-primary: #324438;
@@ -40,7 +40,7 @@
   --color-stage-harvest: #EF4444;
 
   /* Font */
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
 }
 
 /* Base styles */

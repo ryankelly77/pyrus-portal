@@ -30,11 +30,11 @@ export default async function AdminLayout({
   const isSuperAdmin = profile?.role === 'super_admin'
 
   return (
-    <div className="min-h-screen bg-admin-background">
+    <div className="admin-layout">
       <AdminSidebar isSuperAdmin={isSuperAdmin} />
-      <div className="ml-64">
+      <main className="admin-main">
         {children}
-      </div>
+      </main>
     </div>
   )
 }
