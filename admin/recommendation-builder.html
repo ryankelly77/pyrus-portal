@@ -893,9 +893,13 @@
                 unlockedHtml += `<div class="reward-item unlocked">${currentTier.discount}% off your plan</div>`;
             }
 
-            // Show another free $99 product third (if unlocked at tier 2+ and claimed)
-            if (hasFree99Reward && has99ProductInCart) {
-                unlockedHtml += `<div class="reward-item unlocked">Another Free $99 Product</div>`;
+            // Show another free $99 product third (if unlocked at tier 2+)
+            if (hasFree99Reward) {
+                if (has99ProductInCart) {
+                    unlockedHtml += `<div class="reward-item unlocked">Another Free $99 Product</div>`;
+                } else {
+                    unlockedHtml += `<div class="reward-item unlocked pending">Another Free $99 Product <span class="claim-hint">(not claimed)</span></div>`;
+                }
             }
 
             unlockedDiv.innerHTML = unlockedHtml;

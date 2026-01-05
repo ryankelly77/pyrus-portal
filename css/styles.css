@@ -13736,6 +13736,12 @@ input[type="date"].form-control {
 
 .rewards-unlocked {
     margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.rewards-unlocked:empty {
+    display: none;
 }
 
 .reward-item {
@@ -13806,6 +13812,11 @@ input[type="date"].form-control {
 
 .rewards-coupon {
     margin-bottom: 12px;
+    position: relative;
+}
+
+.rewards-coupon:empty {
+    display: none;
 }
 
 .coupon-box {
