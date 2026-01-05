@@ -14223,40 +14223,66 @@ input[type="date"].form-control {
     flex-shrink: 0;
 }
 
-/* Requirement Overlay for Cart Items */
+/* Requirement Banner for Cart Items */
 .requirement-overlay {
     position: absolute;
-    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--warning-bg);
+    border-top: 1px solid var(--warning-border);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border-radius: var(--radius-md);
+    gap: 6px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
     z-index: 10;
-    padding: 12px;
-    text-align: center;
+    padding: 6px 10px;
 }
 
 .requirement-overlay-icon {
-    width: 24px;
-    height: 24px;
+    width: 14px;
+    height: 14px;
     color: var(--warning-text);
+    flex-shrink: 0;
 }
 
 .requirement-overlay-text {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 500;
     color: var(--warning-text);
-    line-height: 1.4;
+    line-height: 1.3;
+    flex: 1;
 }
 
 .requirement-overlay-text strong {
-    color: var(--pyrus-green-dark);
+    font-weight: 600;
+}
+
+.requirement-overlay-dismiss {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--warning-text);
+    opacity: 0.6;
+    flex-shrink: 0;
+    border-radius: 50%;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.requirement-overlay-dismiss:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.requirement-overlay-dismiss svg {
+    width: 12px;
+    height: 12px;
 }
 
 /* Purchase Now Button */
