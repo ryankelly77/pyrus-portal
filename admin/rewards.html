@@ -131,193 +131,97 @@
                 <!-- Page Header -->
                 <div class="page-header">
                     <div class="page-header-content">
-                        <p>Configure Growth Rewards tiers, discounts, and free products for recommendations</p>
+                        <p>Configure Growth Rewards thresholds and free products</p>
                     </div>
                     <div class="header-actions">
-                        <button class="btn btn-primary" onclick="openModal('tierModal')">
+                        <button class="btn btn-primary" onclick="openModal('thresholdModal')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Add Tier
+                            Add Threshold
                         </button>
                     </div>
                 </div>
 
                 <!-- Rewards Configuration Layout -->
                 <div class="rewards-layout">
-                    <!-- Left Column: Tiers -->
+                    <!-- Left Column: Threshold Levels -->
                     <div class="rewards-main">
                         <div class="section-card">
                             <div class="section-header">
-                                <h2>Growth Reward Tiers</h2>
-                                <p>Define spending thresholds and rewards for each tier</p>
+                                <h2>Spending Thresholds</h2>
+                                <p>Rewards unlock when monthly spend reaches these levels</p>
                             </div>
-                            <div class="tiers-grid">
-                                <!-- Tier 1: Seedling -->
-                                <div class="tier-card" data-tier="seedling">
-                                    <div class="tier-header">
-                                        <div class="tier-icon seedling">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                                <path d="M12 22c4-4 8-7.582 8-12a8 8 0 1 0-16 0c0 4.418 4 8 8 12z"></path>
-                                                <path d="M12 12v6"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="tier-info">
-                                            <h3>Seedling</h3>
-                                            <span class="tier-threshold">$0 - $499/mo</span>
-                                        </div>
-                                        <button class="btn-icon-sm" onclick="editTier('seedling')" title="Edit Tier">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="tier-details">
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Discount:</span>
-                                            <span class="detail-value">0%</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Free Product Slots:</span>
-                                            <span class="detail-value">0</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Coupon Code:</span>
-                                            <span class="detail-value muted">None</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Tier 2: Sprout -->
-                                <div class="tier-card" data-tier="sprout">
-                                    <div class="tier-header">
-                                        <div class="tier-icon sprout">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                                <path d="M7 20h10"></path>
-                                                <path d="M12 20v-8"></path>
-                                                <path d="M12 12c-3.5 0-6-2.5-6-6 6 0 6 6 6 6z"></path>
-                                                <path d="M12 12c3.5 0 6-2.5 6-6-6 0-6 6-6 6z"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="tier-info">
-                                            <h3>Sprout</h3>
-                                            <span class="tier-threshold">$500 - $999/mo</span>
-                                        </div>
-                                        <button class="btn-icon-sm" onclick="editTier('sprout')" title="Edit Tier">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="tier-details">
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Discount:</span>
-                                            <span class="detail-value highlight">5%</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Free Product Slots:</span>
-                                            <span class="detail-value">1</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Coupon Code:</span>
-                                            <span class="detail-value code">SPROUT5</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Tier 3: Bloom -->
-                                <div class="tier-card" data-tier="bloom">
-                                    <div class="tier-header">
-                                        <div class="tier-icon bloom">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                                <path d="M12 2v4"></path>
-                                                <path d="M12 18v4"></path>
-                                                <path d="m4.93 4.93 2.83 2.83"></path>
-                                                <path d="m16.24 16.24 2.83 2.83"></path>
-                                                <path d="M2 12h4"></path>
-                                                <path d="M18 12h4"></path>
-                                                <path d="m4.93 19.07 2.83-2.83"></path>
-                                                <path d="m16.24 7.76 2.83-2.83"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="tier-info">
-                                            <h3>Bloom</h3>
-                                            <span class="tier-threshold">$1,000 - $1,499/mo</span>
-                                        </div>
-                                        <button class="btn-icon-sm" onclick="editTier('bloom')" title="Edit Tier">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="tier-details">
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Discount:</span>
-                                            <span class="detail-value highlight">10%</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Free Product Slots:</span>
-                                            <span class="detail-value">2</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Coupon Code:</span>
-                                            <span class="detail-value code">BLOOM10</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Tier 4: Harvest -->
-                                <div class="tier-card featured" data-tier="harvest">
-                                    <div class="tier-badge">Best Value</div>
-                                    <div class="tier-header">
-                                        <div class="tier-icon harvest">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                                                <path d="M6 3v12"></path>
-                                                <path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
-                                                <path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
-                                                <path d="M15 6a9 9 0 0 0-9 9"></path>
-                                                <path d="M18 15v6"></path>
-                                                <path d="M21 18h-6"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="tier-info">
-                                            <h3>Harvest</h3>
-                                            <span class="tier-threshold">$1,500+/mo</span>
-                                        </div>
-                                        <button class="btn-icon-sm" onclick="editTier('harvest')" title="Edit Tier">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div class="tier-details">
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Discount:</span>
-                                            <span class="detail-value highlight">15%</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Free Product Slots:</span>
-                                            <span class="detail-value">3</span>
-                                        </div>
-                                        <div class="tier-detail-row">
-                                            <span class="detail-label">Coupon Code:</span>
-                                            <span class="detail-value code">HARVEST15</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="thresholds-table">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Monthly Spend</th>
+                                            <th>Reward</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <span class="threshold-amount">$1,000</span>
+                                                <span class="threshold-label">/month</span>
+                                            </td>
+                                            <td>
+                                                <span class="reward-badge discount">5% discount</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn-icon-sm" onclick="editThreshold(1000)" title="Edit">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <span class="threshold-amount">$1,500</span>
+                                                <span class="threshold-label">/month</span>
+                                            </td>
+                                            <td>
+                                                <span class="reward-badge freebie">Free $99 product</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn-icon-sm" onclick="editThreshold(1500)" title="Edit">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <span class="threshold-amount">$2,000</span>
+                                                <span class="threshold-label">/month</span>
+                                            </td>
+                                            <td>
+                                                <span class="reward-badge discount">10% discount</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn-icon-sm" onclick="editThreshold(2000)" title="Edit">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Free Products Config -->
+                    <!-- Right Column: Always Free Products -->
                     <div class="rewards-sidebar">
-                        <!-- Always Free Products -->
                         <div class="section-card">
                             <div class="section-header">
                                 <h2>Always Free Products</h2>
@@ -345,116 +249,18 @@
                                 Add Product
                             </button>
                         </div>
-
-                        <!-- Free Slot Eligible Products -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h2>Free Slot Eligible</h2>
-                                <p>Products that can fill free reward slots</p>
-                            </div>
-                            <div class="free-products-list">
-                                <div class="free-product-item">
-                                    <div class="product-info">
-                                        <span class="product-name">Analytics Tracking</span>
-                                        <span class="product-value">$99</span>
-                                    </div>
-                                    <button class="btn-icon-sm" onclick="removeFreeEligible('analytics')" title="Remove">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="free-product-item">
-                                    <div class="product-info">
-                                        <span class="product-name">Monthly Report</span>
-                                        <span class="product-value">$99</span>
-                                    </div>
-                                    <button class="btn-icon-sm" onclick="removeFreeEligible('monthly-report')" title="Remove">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="free-product-item">
-                                    <div class="product-info">
-                                        <span class="product-name">GBP Posting</span>
-                                        <span class="product-value">$99</span>
-                                    </div>
-                                    <button class="btn-icon-sm" onclick="removeFreeEligible('gbp-posting')" title="Remove">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="free-product-item">
-                                    <div class="product-info">
-                                        <span class="product-name">Review Management</span>
-                                        <span class="product-value">$99</span>
-                                    </div>
-                                    <button class="btn-icon-sm" onclick="removeFreeEligible('review-mgmt')" title="Remove">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <button class="btn btn-secondary btn-sm btn-block" onclick="openModal('freeEligibleModal')" style="margin-top: 12px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Add Product
-                            </button>
-                        </div>
-
-                        <!-- Preview Card -->
-                        <div class="section-card preview-card">
-                            <div class="section-header">
-                                <h2>Reward Preview</h2>
-                                <p>How rewards appear to clients</p>
-                            </div>
-                            <div class="preview-content">
-                                <div class="preview-reward-box">
-                                    <div class="preview-tier-name">Bloom Tier</div>
-                                    <div class="preview-benefits">
-                                        <div class="preview-benefit">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            <span>10% off monthly total</span>
-                                        </div>
-                                        <div class="preview-benefit">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            <span>2 free $99 products</span>
-                                        </div>
-                                        <div class="preview-benefit">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                            <span>Analytics Tracking included</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Tier Modal -->
-    <div class="modal-overlay" id="tierModal">
-        <div class="modal modal-md">
+    <!-- Threshold Modal -->
+    <div class="modal-overlay" id="thresholdModal">
+        <div class="modal modal-sm">
             <div class="modal-header">
-                <h2 class="modal-title">Add Reward Tier</h2>
-                <button class="modal-close" onclick="closeModal('tierModal')">
+                <h2 class="modal-title">Add Threshold</h2>
+                <button class="modal-close" onclick="closeModal('thresholdModal')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -462,64 +268,34 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="tierForm">
+                <form id="thresholdForm">
                     <div class="form-group">
-                        <label for="tierName">Tier Name <span class="required">*</span></label>
-                        <input type="text" id="tierName" class="form-control" placeholder="e.g., Bloom" required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="minThreshold">Minimum Monthly Spend</label>
-                            <div class="input-with-addon">
-                                <span class="input-addon">$</span>
-                                <input type="number" id="minThreshold" class="form-control" placeholder="0">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="maxThreshold">Maximum Monthly Spend</label>
-                            <div class="input-with-addon">
-                                <span class="input-addon">$</span>
-                                <input type="number" id="maxThreshold" class="form-control" placeholder="Unlimited">
-                            </div>
-                            <span class="form-hint">Leave empty for no maximum</span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="discountPercent">Discount Percentage</label>
-                            <div class="input-with-addon">
-                                <input type="number" id="discountPercent" class="form-control" placeholder="0" min="0" max="100">
-                                <span class="input-addon-right">%</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="freeSlots">Free Product Slots</label>
-                            <input type="number" id="freeSlots" class="form-control" placeholder="0" min="0">
+                        <label for="thresholdAmount">Monthly Spend Threshold <span class="required">*</span></label>
+                        <div class="input-with-addon">
+                            <span class="input-addon">$</span>
+                            <input type="number" id="thresholdAmount" class="form-control" placeholder="1000" required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="couponCode">Stripe Coupon Code</label>
-                        <input type="text" id="couponCode" class="form-control" placeholder="e.g., BLOOM10">
-                        <span class="form-hint">Coupon code used at checkout for this tier's discount</span>
+                        <label for="rewardType">Reward Type <span class="required">*</span></label>
+                        <select id="rewardType" class="form-control" required>
+                            <option value="">Select reward...</option>
+                            <option value="discount">Percentage Discount</option>
+                            <option value="freebie">Free $99 Product</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="isFeatured">
-                            <span>Mark as "Best Value"</span>
-                        </label>
+                    <div class="form-group" id="discountGroup" style="display: none;">
+                        <label for="discountAmount">Discount Percentage</label>
+                        <div class="input-with-addon">
+                            <input type="number" id="discountAmount" class="form-control" placeholder="5" min="1" max="100">
+                            <span class="input-addon-right">%</span>
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('tierModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="saveTier()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Save Tier
-                </button>
+                <button class="btn btn-secondary" onclick="closeModal('thresholdModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveThreshold()">Save Threshold</button>
             </div>
         </div>
     </div>
@@ -555,39 +331,6 @@
         </div>
     </div>
 
-    <!-- Free Eligible Modal -->
-    <div class="modal-overlay" id="freeEligibleModal">
-        <div class="modal modal-sm">
-            <div class="modal-header">
-                <h2 class="modal-title">Add Free Slot Eligible Product</h2>
-                <button class="modal-close" onclick="closeModal('freeEligibleModal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="freeEligibleProduct">Select Product</label>
-                    <select id="freeEligibleProduct" class="form-control">
-                        <option value="">Choose a product...</option>
-                        <option value="analytics">Analytics Tracking ($99)</option>
-                        <option value="monthly-report">Monthly Report ($99)</option>
-                        <option value="gbp-posting">GBP Posting ($99)</option>
-                        <option value="review-mgmt">Review Management ($99)</option>
-                        <option value="citation-audit">Citation Audit ($99)</option>
-                        <option value="competitor-analysis">Competitor Analysis ($99)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('freeEligibleModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addFreeEligible()">Add Product</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Toast Notification -->
     <div class="toast" id="successToast">
         <div class="toast-icon">
@@ -617,15 +360,18 @@
             document.body.style.overflow = '';
         }
 
-        // Tier Functions
-        function editTier(tierId) {
-            document.querySelector('#tierModal .modal-title').textContent = 'Edit Reward Tier';
-            openModal('tierModal');
+        // Threshold Functions
+        function editThreshold(amount) {
+            document.querySelector('#thresholdModal .modal-title').textContent = 'Edit Threshold';
+            document.getElementById('thresholdAmount').value = amount;
+            openModal('thresholdModal');
         }
 
-        function saveTier() {
-            closeModal('tierModal');
-            showToast('Tier saved successfully!');
+        function saveThreshold() {
+            closeModal('thresholdModal');
+            document.getElementById('thresholdForm').reset();
+            document.getElementById('discountGroup').style.display = 'none';
+            showToast('Threshold saved successfully!');
         }
 
         // Free Product Functions
@@ -638,14 +384,11 @@
             showToast('Product removed from always free list');
         }
 
-        function addFreeEligible() {
-            closeModal('freeEligibleModal');
-            showToast('Product added to free eligible list!');
-        }
-
-        function removeFreeEligible(productId) {
-            showToast('Product removed from free eligible list');
-        }
+        // Reward Type Toggle
+        document.getElementById('rewardType').addEventListener('change', function() {
+            const discountGroup = document.getElementById('discountGroup');
+            discountGroup.style.display = this.value === 'discount' ? 'block' : 'none';
+        });
 
         // Toast Functions
         function showToast(message) {
@@ -702,98 +445,40 @@
             color: var(--text-muted);
         }
 
-        /* Tiers Grid */
-        .tiers-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+        /* Thresholds Table */
+        .thresholds-table {
+            overflow-x: auto;
         }
-
-        .tier-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            position: relative;
+        .thresholds-table .data-table {
+            margin: 0;
         }
-        .tier-card.featured {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%);
-        }
-        .tier-badge {
-            position: absolute;
-            top: -10px;
-            right: 16px;
-            background: var(--primary);
-            color: white;
-            font-size: 11px;
+        .threshold-amount {
+            font-size: 18px;
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 12px;
+            color: #111827;
         }
-
-        .tier-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .tier-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .tier-icon.seedling { background: #E0E7FF; color: #4F46E5; }
-        .tier-icon.sprout { background: #D1FAE5; color: #059669; }
-        .tier-icon.bloom { background: #FEF3C7; color: #D97706; }
-        .tier-icon.harvest { background: #FCE7F3; color: #DB2777; }
-
-        .tier-info {
-            flex: 1;
-        }
-        .tier-info h3 {
-            margin: 0 0 4px 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        .tier-threshold {
+        .threshold-label {
             font-size: 13px;
-            color: var(--text-muted);
+            color: #6B7280;
+            margin-left: 2px;
         }
 
-        .tier-details {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .tier-detail-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-        }
-        .detail-label {
-            color: var(--text-secondary);
-        }
-        .detail-value {
+        /* Reward Badges */
+        .reward-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
             font-weight: 500;
         }
-        .detail-value.highlight {
+        .reward-badge.discount {
+            background: #D1FAE5;
             color: #059669;
         }
-        .detail-value.code {
-            font-family: 'JetBrains Mono', monospace;
+        .reward-badge.freebie {
             background: #E0E7FF;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .detail-value.muted {
-            color: var(--text-muted);
-            font-weight: 400;
+            color: #4F46E5;
         }
 
         /* Free Products List */
@@ -823,46 +508,6 @@
         .free-product-item .product-value {
             font-size: 12px;
             color: var(--text-muted);
-        }
-
-        /* Preview Card */
-        .preview-card {
-            background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
-            color: white;
-        }
-        .preview-card .section-header h2 {
-            color: white;
-        }
-        .preview-card .section-header p {
-            color: rgba(255,255,255,0.6);
-        }
-
-        .preview-reward-box {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 16px;
-        }
-        .preview-tier-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #A5F3FC;
-        }
-        .preview-benefits {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .preview-benefit {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.9);
-        }
-        .preview-benefit svg {
-            color: #34D399;
         }
 
         /* Button styles */
