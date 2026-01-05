@@ -1134,12 +1134,40 @@
             transition: all 0.2s;
         }
         .filter-tab:hover {
-            border-color: #4F46E5;
-            color: #4F46E5;
+            border-color: #9CA3AF;
+            color: #374151;
         }
         .filter-tab.active {
-            background: #4F46E5;
-            border-color: #4F46E5;
+            background: #374151;
+            border-color: #374151;
+            color: white;
+        }
+        /* Category-specific filter tab colors */
+        .filter-tab[data-category="root"]:hover {
+            border-color: #D4A72C;
+            color: #B8922A;
+        }
+        .filter-tab[data-category="root"].active {
+            background: #D4A72C;
+            border-color: #D4A72C;
+            color: white;
+        }
+        .filter-tab[data-category="growth"]:hover {
+            border-color: #7A9C3A;
+            color: #5F7A2D;
+        }
+        .filter-tab[data-category="growth"].active {
+            background: #7A9C3A;
+            border-color: #7A9C3A;
+            color: white;
+        }
+        .filter-tab[data-category="cultivation"]:hover {
+            border-color: #E07830;
+            color: #C46828;
+        }
+        .filter-tab[data-category="cultivation"].active {
+            background: #E07830;
+            border-color: #E07830;
             color: white;
         }
 
@@ -1199,9 +1227,10 @@
             font-size: 12px;
             font-weight: 500;
         }
-        .category-badge.root { background: #DBEAFE; color: #1E40AF; }
-        .category-badge.growth { background: #D1FAE5; color: #065F46; }
-        .category-badge.cultivation { background: #FCE7F3; color: #9D174D; }
+        /* Match Recommendation Builder category colors */
+        .category-badge.root { background: #FFF2D9; color: #B8922A; }
+        .category-badge.growth { background: #E6F2D9; color: #5F7A2D; }
+        .category-badge.cultivation { background: #FFE8D4; color: #C46828; }
 
         .product-cell {
             display: flex;
