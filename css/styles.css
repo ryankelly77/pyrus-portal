@@ -13494,19 +13494,35 @@ input[type="date"].form-control {
     display: flex;
     align-items: baseline;
     gap: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    opacity: 0.6;
 }
 
 .price-full-amount {
-    font-size: 18px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 400;
     color: var(--text-muted);
     text-decoration: line-through;
 }
 
 .price-full-label {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
+}
+
+/* Your Price - make it stand out */
+.price-full + .price-row.monthly-row {
+    margin-top: 4px;
+}
+
+.price-full + .price-row.monthly-row .price-amount {
+    font-size: 28px;
+    color: var(--pyrus-green-dark);
+}
+
+.price-full + .price-row.monthly-row .price-label {
+    font-weight: 600;
+    color: var(--pyrus-green);
 }
 
 /* Price Savings Summary */
