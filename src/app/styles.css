@@ -20728,8 +20728,8 @@ input[type="date"].form-control {
 }
 
 .offering-icon.writing {
-    background: var(--primary-light);
-    color: var(--primary);
+    background: rgba(139, 92, 246, 0.1);
+    color: #8B5CF6;
 }
 
 .offering-icon.creative {
