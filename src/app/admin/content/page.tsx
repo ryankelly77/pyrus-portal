@@ -599,7 +599,7 @@ export default function AdminContentPage() {
       {/* Create Content Modal */}
       {showCreateModal && (
         <div className="modal-overlay active" onClick={() => setShowCreateModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create New Content</h2>
               <button className="modal-close" onClick={() => setShowCreateModal(false)}>
@@ -611,36 +611,148 @@ export default function AdminContentPage() {
             </div>
             <div className="modal-body">
               <form className="modal-form">
-                <div className="form-group">
-                  <label className="form-label">
-                    Content Type <span className="required">*</span>
-                  </label>
-                  <select className="form-select">
-                    <option value="">Select type...</option>
-                    <option value="blog">Blog Post</option>
-                    <option value="gbp">GBP Post</option>
-                    <option value="service">Service Page</option>
-                    <option value="social">Social Post</option>
-                  </select>
+                {/* Content Details Section */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Content Details</h3>
+                  <div className="form-group">
+                    <label className="form-label">
+                      Title <span className="required">*</span>
+                    </label>
+                    <input type="text" className="form-input" placeholder="Enter content title..." />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">
+                      Content <span className="required">*</span>
+                    </label>
+                    <div className="editor-toolbar">
+                      <button type="button" className="toolbar-btn" title="Bold"><strong>B</strong></button>
+                      <button type="button" className="toolbar-btn" title="Italic"><em>I</em></button>
+                      <button type="button" className="toolbar-btn" title="Heading 2">H2</button>
+                      <button type="button" className="toolbar-btn" title="Heading 3">H3</button>
+                      <button type="button" className="toolbar-btn" title="Bullet List">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <line x1="8" y1="6" x2="21" y2="6"></line>
+                          <line x1="8" y1="12" x2="21" y2="12"></line>
+                          <line x1="8" y1="18" x2="21" y2="18"></line>
+                          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                      </button>
+                      <button type="button" className="toolbar-btn" title="Link">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                      </button>
+                      <button type="button" className="toolbar-btn" title="Image">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                    <textarea
+                      className="form-textarea"
+                      rows={10}
+                      placeholder="Write your content here..."
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">
-                    Client <span className="required">*</span>
-                  </label>
-                  <select className="form-select">
-                    <option value="">Select client...</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
+
+                {/* Publishing Settings Section */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Publishing Settings</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Client <span className="required">*</span>
+                      </label>
+                      <select className="form-select">
+                        <option value="">Select client...</option>
+                        {clients.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Platform <span className="required">*</span>
+                      </label>
+                      <select className="form-select">
+                        <option value="">Select platform...</option>
+                        <option value="website">Website</option>
+                        <option value="gbp">Google Business Profile</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Content Type <span className="required">*</span>
+                      </label>
+                      <select className="form-select">
+                        <option value="">Select type...</option>
+                        <option value="blog">Blog Post</option>
+                        <option value="service">Service Page</option>
+                        <option value="landing">Landing Page</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Review Timeline <span className="required">*</span>
+                      </label>
+                      <select className="form-select">
+                        <option value="standard">Standard (5 business days)</option>
+                        <option value="urgent">Urgent (24 hours)</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">
-                    Title <span className="required">*</span>
-                  </label>
-                  <input type="text" className="form-input" placeholder="Enter content title..." />
+
+                {/* Notifications Section */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Notifications</h3>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" defaultChecked />
+                      <span className="checkbox-text">Create Basecamp Task</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" defaultChecked />
+                      <span className="checkbox-text">Send Email Notification</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Pre-flight Checklist */}
+                <div className="form-section">
+                  <h3 className="form-section-title">Pre-flight Checklist</h3>
+                  <div className="checklist-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" />
+                      <span className="checkbox-text">Content is complete and ready for review</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" />
+                      <span className="checkbox-text">All information is accurate and up-to-date</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" />
+                      <span className="checkbox-text">Links and CTAs have been verified</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" />
+                      <span className="checkbox-text">Content aligns with brand voice guidelines</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" />
+                      <span className="checkbox-text">SEO best practices have been applied</span>
+                    </label>
+                  </div>
                 </div>
               </form>
             </div>
@@ -648,8 +760,11 @@ export default function AdminContentPage() {
               <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
                 Cancel
               </button>
-              <button className="btn btn-primary">
-                Create Draft
+              <button className="btn btn-outline" onClick={() => setShowCreateModal(false)}>
+                Save Draft
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowCreateModal(false)}>
+                Submit for Review
               </button>
             </div>
           </div>
