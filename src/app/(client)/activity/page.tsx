@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 type ActivityType = 'all' | 'task' | 'update' | 'alert' | 'content'
 
@@ -14,7 +16,7 @@ interface ActivityItem {
   iconStyle?: { background: string; color: string }
 }
 
-const activities: ActivityItem[] = [
+const tcClinicalActivities: ActivityItem[] = [
   {
     id: 1,
     type: 'content',
@@ -160,6 +162,66 @@ const activities: ActivityItem[] = [
   }
 ]
 
+const raptorVendingActivities: ActivityItem[] = [
+  {
+    id: 1,
+    type: 'task',
+    title: 'Portal account created',
+    description: 'Welcome to Pyrus Digital! Your client portal is now active',
+    time: 'Today, 10:00 AM',
+    iconStyle: { background: 'var(--success-bg)', color: 'var(--success)' }
+  },
+  {
+    id: 2,
+    type: 'update',
+    title: 'Google Ads campaign launched',
+    description: 'Initial campaign targeting "vending machine services" keywords',
+    time: 'Yesterday, 2:00 PM'
+  },
+  {
+    id: 3,
+    type: 'task',
+    title: 'Google Business Profile claimed',
+    description: 'Your business is now verified on Google Maps',
+    time: 'Dec 28, 11:00 AM'
+  },
+  {
+    id: 4,
+    type: 'update',
+    title: 'Keyword research completed',
+    description: '12 target keywords identified for vending services niche',
+    time: 'Dec 20, 3:30 PM'
+  },
+  {
+    id: 5,
+    type: 'alert',
+    title: 'First lead received!',
+    description: 'Contact form submission from Google Ads',
+    time: 'Dec 18, 9:15 AM'
+  },
+  {
+    id: 6,
+    type: 'task',
+    title: 'Conversion tracking installed',
+    description: 'Google Analytics 4 configured for lead tracking',
+    time: 'Dec 15, 4:00 PM'
+  },
+  {
+    id: 7,
+    type: 'task',
+    title: 'Onboarding completed!',
+    description: 'All initial setup tasks finished',
+    time: 'Nov 25, 10:00 AM'
+  },
+  {
+    id: 8,
+    type: 'task',
+    title: 'Branding assets received',
+    description: 'Logo and brand colors added to your project',
+    time: 'Nov 20, 2:00 PM'
+  }
+]
+
 function getActivityIcon(type: string, iconStyle?: { background: string; color: string }) {
   switch (type) {
     case 'content':
@@ -228,7 +290,14 @@ function getActivityIcon(type: string, iconStyle?: { background: string; color: 
 }
 
 export default function ActivityPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
+
+  // Use client-specific activities
+  const activities = client.id === 'raptor-vending' ? raptorVendingActivities : tcClinicalActivities
 
   const filteredActivities = activities.filter(
     activity => activeFilter === 'all' || activity.type === activeFilter
@@ -251,9 +320,9 @@ export default function ActivityPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>

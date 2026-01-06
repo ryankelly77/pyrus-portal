@@ -2,11 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+
+  // Parse first and last name from primaryContact
+  const nameParts = client.primaryContact.split(' ')
+  const firstName = nameParts[0] || ''
+  const lastName = nameParts.slice(1).join(' ') || ''
 
   return (
     <>
@@ -25,9 +36,9 @@ export default function SettingsPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>
@@ -73,16 +84,16 @@ export default function SettingsPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">First Name</label>
-                    <input type="text" className="form-input" defaultValue="Jon" />
+                    <input type="text" className="form-input" defaultValue={firstName} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Last Name</label>
-                    <input type="text" className="form-input" defaultValue="De La Garza" />
+                    <input type="text" className="form-input" defaultValue={lastName} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Email Address</label>
-                  <input type="email" className="form-input" defaultValue="dlg.mdservices@gmail.com" />
+                  <input type="email" className="form-input" defaultValue={client.email} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
@@ -90,7 +101,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-input" defaultValue="TC Clinical Services" disabled />
+                  <input type="text" className="form-input" defaultValue={client.name} disabled />
                   <p className="form-hint">Contact support to change your company name</p>
                 </div>
               </div>
@@ -151,9 +162,9 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="subscription-overview">
                   <div className="subscription-plan">
-                    <span className="plan-badge">Growth Plan</span>
+                    <span className="plan-badge">{client.id === 'raptor-vending' ? 'Starter Plan' : 'Growth Plan'}</span>
                     <div className="plan-price">
-                      <span className="price-amount">$1,597</span>
+                      <span className="price-amount">{client.id === 'raptor-vending' ? '$698' : '$1,597'}</span>
                       <span className="price-period">/month</span>
                     </div>
                   </div>
@@ -168,7 +179,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="meta-item">
                       <span className="meta-label">Client Since</span>
-                      <span className="meta-value">September 2025</span>
+                      <span className="meta-value">{client.clientSince}</span>
                     </div>
                   </div>
                 </div>
@@ -315,11 +326,11 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="form-group">
                   <label className="form-label">Billing Email</label>
-                  <input type="email" className="form-input" defaultValue="billing@tc-clinicalservices.com" />
+                  <input type="email" className="form-input" defaultValue={`billing@${client.id === 'raptor-vending' ? 'raptorvending.com' : 'tc-clinicalservices.com'}`} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-input" defaultValue="TC Clinical Services LLC" />
+                  <input type="text" className="form-input" defaultValue={client.name + ' LLC'} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Billing Address</label>

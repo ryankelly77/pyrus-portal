@@ -2,11 +2,20 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 type TabType = 'smart-recommendations' | 'original-plan' | 'current-services'
 
 export default function RecommendationsPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeTab, setActiveTab] = useState<TabType>('smart-recommendations')
+
+  // Client-specific data
+  const isRaptorVending = client.id === 'raptor-vending'
 
   return (
     <>
@@ -25,9 +34,9 @@ export default function RecommendationsPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>

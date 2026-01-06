@@ -2,9 +2,37 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 export default function ResultsPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeSubtab, setActiveSubtab] = useState('overview')
+
+  // Client-specific data
+  const isRaptorVending = client.id === 'raptor-vending'
+  const kpiData = isRaptorVending ? {
+    visitors: '847',
+    visitorsChange: '+18%',
+    keywords: '12',
+    keywordsChange: '+5',
+    leads: '8',
+    leadsChange: '+3',
+    calls: '11',
+    callsChange: '+4'
+  } : {
+    visitors: '2,847',
+    visitorsChange: '+32%',
+    keywords: '47',
+    keywordsChange: '+17',
+    leads: '28',
+    leadsChange: '+8',
+    calls: '34',
+    callsChange: '+12'
+  }
 
   return (
     <>
@@ -23,9 +51,9 @@ export default function ResultsPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>
@@ -88,10 +116,10 @@ export default function ResultsPage() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="18 15 12 9 6 15"></polyline>
                   </svg>
-                  +32%
+                  {kpiData.visitorsChange}
                 </div>
               </div>
-              <div className="kpi-value">2,847</div>
+              <div className="kpi-value">{kpiData.visitors}</div>
               <div className="kpi-label">Website Visitors</div>
             </div>
             <div className="kpi-card">
@@ -106,10 +134,10 @@ export default function ResultsPage() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="18 15 12 9 6 15"></polyline>
                   </svg>
-                  +17
+                  {kpiData.keywordsChange}
                 </div>
               </div>
-              <div className="kpi-value">47</div>
+              <div className="kpi-value">{kpiData.keywords}</div>
               <div className="kpi-label">Keywords Ranking</div>
             </div>
             <div className="kpi-card">
@@ -126,10 +154,10 @@ export default function ResultsPage() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="18 15 12 9 6 15"></polyline>
                   </svg>
-                  +8
+                  {kpiData.leadsChange}
                 </div>
               </div>
-              <div className="kpi-value">28</div>
+              <div className="kpi-value">{kpiData.leads}</div>
               <div className="kpi-label">New Leads</div>
             </div>
             <div className="kpi-card">
@@ -143,10 +171,10 @@ export default function ResultsPage() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="18 15 12 9 6 15"></polyline>
                   </svg>
-                  +12
+                  {kpiData.callsChange}
                 </div>
               </div>
-              <div className="kpi-value">34</div>
+              <div className="kpi-value">{kpiData.calls}</div>
               <div className="kpi-label">Phone Calls</div>
             </div>
           </div>

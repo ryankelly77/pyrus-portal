@@ -1,17 +1,16 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
-interface PreviewBannerProps {
-  clientName: string
-}
-
-export function PreviewBanner({ clientName }: PreviewBannerProps) {
+export function PreviewBanner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
 
   if (!viewingAs) return null
+
+  const client = getClientByViewingAs(viewingAs)
 
   const handleExitPreview = () => {
     router.push('/dashboard')
@@ -24,7 +23,7 @@ export function PreviewBanner({ clientName }: PreviewBannerProps) {
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
           <circle cx="12" cy="12" r="3"></circle>
         </svg>
-        Viewing as client: {clientName}
+        Viewing as client: {client.name}
       </div>
       <button className="btn-exit-preview" onClick={handleExitPreview}>
         Exit Preview

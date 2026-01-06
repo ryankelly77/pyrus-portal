@@ -26,9 +26,6 @@ export default async function ClientLayout({
   // Admins can view as client with ?viewingAs param
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
 
-  // For now, use a static client name - will be dynamic when database is connected
-  const clientName = 'TC Clinical Services'
-
   return (
     <div className="client-layout">
       <Suspense fallback={null}>
@@ -36,7 +33,7 @@ export default async function ClientLayout({
       </Suspense>
       <main className="client-main">
         <Suspense fallback={null}>
-          <PreviewBanner clientName={clientName} />
+          <PreviewBanner />
         </Suspense>
         {children}
       </main>

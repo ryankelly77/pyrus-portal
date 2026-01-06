@@ -2,8 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 export default function GettingStartedPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeSubtab, setActiveSubtab] = useState('checklist')
 
   return (
@@ -23,9 +29,9 @@ export default function GettingStartedPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>
@@ -68,10 +74,10 @@ export default function GettingStartedPage() {
                 <div className="progress-bar-container">
                   <div className="progress-bar-label">
                     <span>Progress</span>
-                    <span>5 of 6 completed</span>
+                    <span>{client.hasWebsite ? '5 of 6' : '1 of 4'} completed</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: '83%' }}></div>
+                    <div className="progress-bar-fill" style={{ width: client.hasWebsite ? '83%' : '25%' }}></div>
                   </div>
                 </div>
               </div>
@@ -84,53 +90,77 @@ export default function GettingStartedPage() {
                   </div>
                   <div className="checklist-item-content">
                     <div className="checklist-item-title">Create your portal account</div>
-                    <div className="checklist-item-desc">Completed Jan 2, 2026</div>
+                    <div className="checklist-item-desc">Completed {client.clientSince}</div>
                   </div>
                 </div>
-                <div className="checklist-item completed">
-                  <div className="checklist-checkbox completed">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                {client.hasWebsite ? (
+                  <div className="checklist-item completed">
+                    <div className="checklist-checkbox completed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <div className="checklist-item-content">
+                      <div className="checklist-item-title">Website launched</div>
+                      <div className="checklist-item-desc">{client.websiteData?.domain} is live • {client.websiteData?.launchDate}</div>
+                    </div>
                   </div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">Website launched</div>
-                    <div className="checklist-item-desc">tc-clinicalservices.com is live • Completed Dec 30, 2025</div>
+                ) : (
+                  <div className="checklist-item">
+                    <div className="checklist-checkbox"></div>
+                    <div className="checklist-item-content">
+                      <div className="checklist-item-title">Get a professional website</div>
+                      <div className="checklist-item-desc">Establish your online presence with a custom website</div>
+                    </div>
+                    <div className="checklist-item-action">
+                      <Link href={viewingAs ? `/website?viewingAs=${viewingAs}` : '/website'} className="btn btn-secondary">Learn More</Link>
+                    </div>
                   </div>
-                </div>
-                <div className="checklist-item completed">
-                  <div className="checklist-checkbox completed">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                )}
+                <div className={`checklist-item ${client.hasWebsite ? 'completed' : ''}`}>
+                  <div className={`checklist-checkbox ${client.hasWebsite ? 'completed' : ''}`}>
+                    {client.hasWebsite && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
                   </div>
                   <div className="checklist-item-content">
                     <div className="checklist-item-title">Google Business Profile claimed</div>
-                    <div className="checklist-item-desc">Your business is verified on Google</div>
+                    <div className="checklist-item-desc">{client.hasWebsite ? 'Your business is verified on Google' : 'Verify your business on Google'}</div>
                   </div>
+                  {!client.hasWebsite && (
+                    <div className="checklist-item-action">
+                      <button className="btn btn-secondary">Claim Profile</button>
+                    </div>
+                  )}
                 </div>
-                <div className="checklist-item completed">
-                  <div className="checklist-checkbox completed">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">SEO campaign activated</div>
-                    <div className="checklist-item-desc">47 keywords now being tracked</div>
-                  </div>
-                </div>
-                <div className="checklist-item completed">
-                  <div className="checklist-checkbox completed">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">Google Ads campaign launched</div>
-                    <div className="checklist-item-desc">Generating 28 leads per month</div>
-                  </div>
-                </div>
+                {client.hasWebsite && (
+                  <>
+                    <div className="checklist-item completed">
+                      <div className="checklist-checkbox completed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div className="checklist-item-content">
+                        <div className="checklist-item-title">SEO campaign activated</div>
+                        <div className="checklist-item-desc">47 keywords now being tracked</div>
+                      </div>
+                    </div>
+                    <div className="checklist-item completed">
+                      <div className="checklist-checkbox completed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div className="checklist-item-content">
+                        <div className="checklist-item-title">Google Ads campaign launched</div>
+                        <div className="checklist-item-desc">Generating 28 leads per month</div>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="checklist-item">
                   <div className="checklist-checkbox"></div>
                   <div className="checklist-item-content">
@@ -183,19 +213,19 @@ export default function GettingStartedPage() {
               <div className="summary-grid">
                 <div className="summary-field">
                   <label>Name</label>
-                  <span>Jon De La Garza</span>
+                  <span>{client.primaryContact}</span>
                 </div>
                 <div className="summary-field">
                   <label>Company</label>
-                  <span>TC Clinical Services</span>
+                  <span>{client.name}</span>
                 </div>
                 <div className="summary-field">
                   <label>Email</label>
-                  <span>dlg.mdservices@gmail.com</span>
+                  <span>{client.email}</span>
                 </div>
                 <div className="summary-field">
                   <label>Phone</label>
-                  <span>(210) 394-5245</span>
+                  <span className="empty">Not provided</span>
                 </div>
                 <div className="summary-field">
                   <label>Mobile Phone</label>
@@ -203,7 +233,11 @@ export default function GettingStartedPage() {
                 </div>
                 <div className="summary-field">
                   <label>Website</label>
-                  <a href="https://tc-clinicalservices.com" target="_blank" rel="noopener noreferrer">https://tc-clinicalservices.com</a>
+                  {client.websiteData?.domain ? (
+                    <a href={`https://${client.websiteData.domain}`} target="_blank" rel="noopener noreferrer">https://{client.websiteData.domain}</a>
+                  ) : (
+                    <span className="empty">Not provided</span>
+                  )}
                 </div>
               </div>
             </div>

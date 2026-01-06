@@ -2,10 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getClientByViewingAs } from '@/lib/client-data'
 
 type FilterType = 'all' | 'email' | 'result' | 'chat' | 'content'
 
 export default function CommunicationPage() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const client = getClientByViewingAs(viewingAs)
+
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
 
   const timelineItems = [
@@ -20,6 +26,9 @@ export default function CommunicationPage() {
   const filteredItems = timelineItems.filter(
     item => activeFilter === 'all' || item.type === activeFilter
   )
+
+  // Client-specific stats
+  const isRaptorVending = client.id === 'raptor-vending'
 
   return (
     <>
@@ -38,9 +47,9 @@ export default function CommunicationPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>JD</span>
+              <span>{client.initials}</span>
             </div>
-            <span className="user-name">Jon De La Garza</span>
+            <span className="user-name">{client.primaryContact}</span>
           </Link>
         </div>
       </div>
@@ -52,33 +61,33 @@ export default function CommunicationPage() {
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Total Communications</div>
-              <div className="stat-value">11</div>
+              <div className="stat-value">{isRaptorVending ? '4' : '11'}</div>
               <div className="stat-detail">Last 30 days</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Emails Sent</div>
-              <div className="stat-value">4</div>
-              <div className="stat-detail">3 delivered, 1 failed</div>
+              <div className="stat-value">{isRaptorVending ? '2' : '4'}</div>
+              <div className="stat-detail">{isRaptorVending ? '2 delivered' : '3 delivered, 1 failed'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Result Alerts</div>
-              <div className="stat-value purple">2</div>
-              <div className="stat-detail">Both viewed</div>
+              <div className="stat-value purple">{isRaptorVending ? '1' : '2'}</div>
+              <div className="stat-detail">{isRaptorVending ? 'Viewed' : 'Both viewed'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Chat Messages</div>
-              <div className="stat-value blue">2</div>
-              <div className="stat-detail">From HighLevel</div>
+              <div className="stat-value blue">{isRaptorVending ? '0' : '2'}</div>
+              <div className="stat-detail">{isRaptorVending ? 'No messages yet' : 'From HighLevel'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Email Open Rate</div>
-              <div className="stat-value success">67%</div>
-              <div className="stat-detail">2 of 3 delivered</div>
+              <div className="stat-value success">{isRaptorVending ? '100%' : '67%'}</div>
+              <div className="stat-detail">{isRaptorVending ? '2 of 2 delivered' : '2 of 3 delivered'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Content Reviews</div>
-              <div className="stat-value" style={{ color: 'var(--primary)' }}>3</div>
-              <div className="stat-detail">1 pending approval</div>
+              <div className="stat-value" style={{ color: 'var(--primary)' }}>{isRaptorVending ? '0' : '3'}</div>
+              <div className="stat-detail">{isRaptorVending ? 'No content service' : '1 pending approval'}</div>
             </div>
           </div>
 
