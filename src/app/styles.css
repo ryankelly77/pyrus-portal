@@ -18153,3 +18153,23 @@ input[type="date"].form-control {
     font-size: 14px;
     color: #1A1F16;
 }
+
+/* Table Legend */
+.table-legend {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    margin-top: 8px;
+    border-top: 1px solid #E8EDE7;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-text {
+    font-size: 13px;
+    color: #6B7280;
+}

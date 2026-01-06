@@ -453,6 +453,18 @@ export default function AdminContentPage() {
             </div>
           </div>
         )}
+
+        {/* Legend */}
+        <div className="table-legend">
+          <div className="legend-item">
+            <span className="urgent-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </span>
+            <span className="legend-text">Urgent - 24 hour deadline</span>
+          </div>
+        </div>
       </div>
 
       {/* Content Preview Modal */}
