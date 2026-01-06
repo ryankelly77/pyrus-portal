@@ -283,7 +283,13 @@ export default function RecommendationsPage() {
                       {rec.initials}
                     </div>
                     <div className="client-info-stack">
-                      <span className="client-name">{rec.client}</span>
+                      <Link
+                        href={`/admin/clients/${rec.clientId}`}
+                        className="client-name client-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {rec.client}
+                      </Link>
                       <span className="client-user-count">
                         {rec.users.length} user{rec.users.length !== 1 ? 's' : ''} invited
                       </span>

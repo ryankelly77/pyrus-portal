@@ -18821,3 +18821,78 @@ input[type="date"].form-control {
     background: #D1FAE5;
     color: #065F46;
 }
+
+/* Client Link in Recommendations */
+.client-link {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.15s ease;
+}
+
+.client-link:hover {
+    color: #885430;
+    text-decoration: underline;
+}
+
+/* View as Client Button */
+.view-as-client-btn {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.view-as-client-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.view-as-client-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tab Navigation */
+.tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 6px;
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    text-decoration: none;
+}
+
+.tab-btn:hover {
+    background: var(--pyrus-green-wash);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--pyrus-green);
+    color: white;
+}
