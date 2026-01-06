@@ -328,18 +328,15 @@ export default function ContentPage() {
                 <h3>Have questions about our content services?</h3>
                 <p>Let&apos;s discuss which content solutions will drive the best results for your business.</p>
               </div>
-              <div className="cta-or-section">
-                <span className="or-divider">or</span>
-                <button className="btn btn-primary btn-lg" onClick={() => setShowBookingModal(true)}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Schedule a Consultation
-                </button>
-              </div>
+              <button className="btn btn-primary btn-lg" onClick={() => setShowBookingModal(true)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Schedule a Consultation
+              </button>
             </div>
           </div>
         </div>
