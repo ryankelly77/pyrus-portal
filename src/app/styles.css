@@ -18182,6 +18182,20 @@ input[type="date"].form-control {
     margin: 0 0 24px 0;
 }
 
+/* Page Header with Back Link */
+.page-header-with-back {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.page-title-inline {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1F16;
+    margin: 0;
+}
+
 /* Create Content Page Layout */
 .create-content-layout {
     display: grid;

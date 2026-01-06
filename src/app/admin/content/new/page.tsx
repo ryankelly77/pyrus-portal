@@ -27,21 +27,23 @@ export default function CreateContentPage() {
   return (
     <>
       <AdminHeader
-        title="Create New Content"
+        title=""
         user={{ name: 'Ryan Kelly', initials: 'RK' }}
         hasNotifications={true}
         breadcrumb={
-          <Link href="/admin/content" className="back-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            Back to Content
-          </Link>
+          <div className="page-header-with-back">
+            <Link href="/admin/content" className="back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Back to Content
+            </Link>
+            <h1 className="page-title-inline">Create New Content</h1>
+          </div>
         }
       />
 
       <div className="admin-content">
-        <h1 className="page-title">Create New Content</h1>
         <div className="create-content-layout">
           {/* Main Content Area */}
           <div className="content-editor-section">
