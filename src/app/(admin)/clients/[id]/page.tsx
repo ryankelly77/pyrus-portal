@@ -87,6 +87,7 @@ export default function ClientDetailPage() {
           <Link href="#" className="tab-btn active">Getting Started</Link>
           <Link href="#" className="tab-btn">Results</Link>
           <Link href="#" className="tab-btn">Activity</Link>
+          <Link href="#" className="tab-btn">Website</Link>
           <Link href="#" className="tab-btn">Content</Link>
           <Link href="#" className="tab-btn">Communication</Link>
           <Link href="#" className="tab-btn">Recommendations</Link>

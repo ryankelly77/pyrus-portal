@@ -115,59 +115,70 @@ export default function SuperAdminDashboard() {
       />
 
       <div className="admin-content">
-        {/* Top Row: Action + Metrics */}
-        <div className="sa-dash-metrics-row">
-          <a href="/admin/recommendation-builder/new" className="sa-dash-action-card">
-            <div className="sa-dash-action-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20">
+        {/* Stats Grid */}
+        <div className="stats-grid stats-grid-5" style={{ marginBottom: '24px' }}>
+          <a href="/admin/recommendation-builder/new" className="stat-card stat-card-action">
+            <div className="stat-icon" style={{ background: '#885430', color: '#FFFFFF' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="24" height="24">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </div>
-            <span className="sa-dash-action-text">New<br />Recommendation</span>
+            <div className="stat-content">
+              <span className="stat-value" style={{ fontSize: '16px' }}>New</span>
+              <span className="stat-label">Recommendation</span>
+            </div>
           </a>
-          <Link href="/admin/clients" className="sa-dash-metric-card clickable">
-            <div className="sa-dash-metric-icon" style={{ background: '#D1FAE5', color: '#059669' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+          <Link href="/admin/clients" className="stat-card clickable">
+            <div className="stat-icon" style={{ background: '#D1FAE5', color: '#059669' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
-            <span className="sa-dash-metric-value">{stats.activeClients}</span>
-            <span className="sa-dash-metric-label">Active Clients</span>
+            <div className="stat-content">
+              <span className="stat-value">{stats.activeClients}</span>
+              <span className="stat-label">Active Clients</span>
+            </div>
           </Link>
-          <Link href="/admin/content?status=pending" className="sa-dash-metric-card clickable">
-            <div className="sa-dash-metric-icon" style={{ background: '#DBEAFE', color: '#2563EB' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+          <Link href="/admin/content?status=pending" className="stat-card clickable">
+            <div className="stat-icon" style={{ background: '#DBEAFE', color: '#2563EB' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
               </svg>
             </div>
-            <span className="sa-dash-metric-value">{stats.pendingContent}</span>
-            <span className="sa-dash-metric-label">Pending Content</span>
+            <div className="stat-content">
+              <span className="stat-value">{stats.pendingContent}</span>
+              <span className="stat-label">Pending Content</span>
+            </div>
           </Link>
-          <Link href="/admin/recommendations?status=open" className="sa-dash-metric-card clickable">
-            <div className="sa-dash-metric-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+          <Link href="/admin/recommendations?status=open" className="stat-card clickable">
+            <div className="stat-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
               </svg>
             </div>
-            <span className="sa-dash-metric-value">{stats.pendingRecommendations}</span>
-            <span className="sa-dash-metric-label">Open Recommendations</span>
+            <div className="stat-content">
+              <span className="stat-value">{stats.pendingRecommendations}</span>
+              <span className="stat-label">Open Recommendations</span>
+            </div>
           </Link>
-          <div className="sa-dash-metric-card">
-            <div className="sa-dash-metric-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                 <polyline points="17 6 23 6 23 12"></polyline>
               </svg>
             </div>
-            <span className="sa-dash-metric-value">+12%</span>
-            <span className="sa-dash-metric-label">Avg. Growth</span>
+            <div className="stat-content">
+              <span className="stat-value">+12%</span>
+              <span className="stat-label">Avg. Growth</span>
+            </div>
           </div>
         </div>
 
