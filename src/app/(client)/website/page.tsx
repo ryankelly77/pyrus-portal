@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getClientByViewingAs } from '@/lib/client-data'
 
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
@@ -42,10 +42,18 @@ export default function WebsitePage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const client = getClientByViewingAs(viewingAs)
+  const router = useRouter()
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
   const [showBookingModal, setShowBookingModal] = useState(false)
+
+  const handleAddToCart = (itemId: string) => {
+    const params = new URLSearchParams()
+    params.set('item', itemId)
+    if (viewingAs) params.set('viewingAs', viewingAs)
+    router.push(`/checkout?${params.toString()}`)
+  }
 
   const handleSubmitRequest = (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,7 +175,7 @@ export default function WebsitePage() {
                     <li>Mobile responsive</li>
                   </ul>
                 </div>
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={() => handleAddToCart('seed-site')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -193,7 +201,7 @@ export default function WebsitePage() {
                     <li>Contact forms</li>
                   </ul>
                 </div>
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={() => handleAddToCart('sprout-site')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -221,7 +229,7 @@ export default function WebsitePage() {
                     <li>Custom functionality</li>
                   </ul>
                 </div>
-                <button className="btn btn-primary">
+                <button className="btn btn-primary" onClick={() => handleAddToCart('bloom-site')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -248,7 +256,7 @@ export default function WebsitePage() {
                     <li>Priority support</li>
                   </ul>
                 </div>
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={() => handleAddToCart('harvest-site')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -275,7 +283,7 @@ export default function WebsitePage() {
                   </div>
                   <div className="care-plan-action">
                     <div className="care-plan-price">$49<span>/mo</span></div>
-                    <button className="btn btn-sm btn-secondary">
+                    <button className="btn btn-sm btn-secondary" onClick={() => handleAddToCart('wordpress-care')}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -297,7 +305,7 @@ export default function WebsitePage() {
                   </div>
                   <div className="care-plan-action">
                     <div className="care-plan-price">$149<span>/mo</span></div>
-                    <button className="btn btn-sm btn-secondary">
+                    <button className="btn btn-sm btn-secondary" onClick={() => handleAddToCart('website-care')}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>

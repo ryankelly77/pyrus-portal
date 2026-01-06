@@ -2,15 +2,23 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getClientByViewingAs } from '@/lib/client-data'
 
 export default function ContentPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const client = getClientByViewingAs(viewingAs)
+  const router = useRouter()
 
   const [showBookingModal, setShowBookingModal] = useState(false)
+
+  const handleAddToCart = (itemId: string) => {
+    const params = new URLSearchParams()
+    params.set('item', itemId)
+    if (viewingAs) params.set('viewingAs', viewingAs)
+    router.push(`/checkout?${params.toString()}`)
+  }
 
   // If client doesn't have content service, show upsell
   if (!client.hasContent) {
@@ -185,7 +193,7 @@ export default function ContentPage() {
                       One round of revisions
                     </li>
                   </ul>
-                  <button className="btn btn-secondary">
+                  <button className="btn btn-secondary" onClick={() => handleAddToCart('content-writing')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -248,7 +256,7 @@ export default function ContentPage() {
                       10 curated premium stock videos
                     </li>
                   </ul>
-                  <button className="btn btn-primary">
+                  <button className="btn btn-primary" onClick={() => handleAddToCart('ai-creative-assets')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -311,7 +319,7 @@ export default function ContentPage() {
                       Brand Color Guidelines
                     </li>
                   </ul>
-                  <button className="btn btn-secondary">
+                  <button className="btn btn-secondary" onClick={() => handleAddToCart('business-branding')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
