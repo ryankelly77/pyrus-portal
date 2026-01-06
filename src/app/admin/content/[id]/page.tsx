@@ -6,11 +6,11 @@ import { useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
 const clients = [
-  { id: 'dlg', name: 'DLG Medical Services' },
-  { id: 'summit', name: 'Summit Dental' },
-  { id: 'coastal', name: 'Coastal Realty Group' },
-  { id: 'precision', name: 'Precision Auto Care' },
-  { id: 'green', name: 'Green Valley Landscaping' },
+  { id: 'dlg', name: 'DLG Medical Services', hasAiMonitoring: true },
+  { id: 'summit', name: 'Summit Dental', hasAiMonitoring: true },
+  { id: 'coastal', name: 'Coastal Realty Group', hasAiMonitoring: false },
+  { id: 'precision', name: 'Precision Auto Care', hasAiMonitoring: true },
+  { id: 'green', name: 'Green Valley Landscaping', hasAiMonitoring: false },
 ]
 
 // Mock content data
@@ -247,7 +247,7 @@ export default function ContentViewPage() {
                 </div>
 
                 <div className="form-group">
-                  <div className="seo-checkboxes">
+                  <div className="seo-checkboxes-row">
                     <label className="seo-checkbox">
                       <input
                         type="checkbox"
@@ -259,15 +259,20 @@ export default function ContentViewPage() {
                         <span>Content follows SEO best practices</span>
                       </span>
                     </label>
-                    <label className="seo-checkbox">
+                    <label className={`seo-checkbox ${!clients.find(c => c.id === content.clientId)?.hasAiMonitoring ? 'disabled' : ''}`}>
                       <input
                         type="checkbox"
                         checked={aiOptimized}
                         onChange={(e) => setAiOptimized(e.target.checked)}
+                        disabled={!clients.find(c => c.id === content.clientId)?.hasAiMonitoring}
                       />
                       <span className="seo-checkbox-content">
                         <strong>Optimized for AI</strong>
-                        <span>Content optimized for AI search results</span>
+                        {clients.find(c => c.id === content.clientId)?.hasAiMonitoring ? (
+                          <span>Content optimized for AI search results</span>
+                        ) : (
+                          <span className="disabled-hint">Client not enrolled in AI Monitoring program</span>
+                        )}
                       </span>
                     </label>
                   </div>

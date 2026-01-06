@@ -18209,6 +18209,12 @@ input[type="date"].form-control {
     gap: 12px;
 }
 
+.seo-checkboxes-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
 .seo-checkbox {
     display: flex;
     align-items: flex-start;
@@ -18253,6 +18259,25 @@ input[type="date"].form-control {
 .seo-checkbox-content span {
     font-size: 12px;
     color: #6B7280;
+}
+
+.seo-checkbox.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #F9FAFB;
+}
+
+.seo-checkbox.disabled:hover {
+    border-color: #E8EDE7;
+}
+
+.seo-checkbox.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.seo-checkbox .disabled-hint {
+    color: #9CA3AF;
+    font-style: italic;
 }
 
 /* Button variants */
