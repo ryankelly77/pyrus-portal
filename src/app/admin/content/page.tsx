@@ -136,10 +136,6 @@ export default function AdminContentPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [clientFilter, setClientFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [previewItem, setPreviewItem] = useState<ContentItem | null>(null)
-  const [editItem, setEditItem] = useState<ContentItem | null>(null)
-  const [reviseItem, setReviseItem] = useState<ContentItem | null>(null)
-  const [continueItem, setContinueItem] = useState<ContentItem | null>(null)
 
   const filteredContent = useMemo(() => {
     return contentItems.filter((item) => {
@@ -190,14 +186,6 @@ export default function AdminContentPage() {
       case 'social':
         return 'social'
     }
-  }
-
-  const handleView = (item: ContentItem) => {
-    setPreviewItem(item)
-  }
-
-  const closePreview = () => {
-    setPreviewItem(null)
   }
 
   return (
@@ -356,12 +344,12 @@ export default function AdminContentPage() {
                           </svg>
                         </span>
                       )}
-                      <button
+                      <Link
+                        href={`/admin/content/${item.id}`}
                         className="content-title-link"
-                        onClick={() => handleView(item)}
                       >
                         {item.title}
-                      </button>
+                      </Link>
                     </div>
                   </td>
                   <td>{item.client}</td>
@@ -379,41 +367,32 @@ export default function AdminContentPage() {
                   <td>
                     <div className="action-buttons">
                       {item.status === 'revision' && (
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => setReviseItem(item)}
-                        >
+                        <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-secondary">
                           Revise
-                        </button>
+                        </Link>
                       )}
                       {item.status === 'draft' && (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => setContinueItem(item)}
-                        >
+                        <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-primary">
                           Continue
-                        </button>
+                        </Link>
                       )}
                       {(item.status === 'awaiting' || item.status === 'approved') && (
                         <>
-                          <button className="btn btn-sm btn-secondary" onClick={() => handleView(item)}>
+                          <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-secondary">
                             View
-                          </button>
+                          </Link>
                           {item.status === 'awaiting' && (
-                            <button
-                              className="btn btn-sm btn-outline"
-                              onClick={() => setEditItem(item)}
-                            >
+                            <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-outline">
                               Edit
-                            </button>
+                            </Link>
                           )}
                         </>
                       )}
                       {item.status === 'published' && (
                         <>
-                          <button className="btn btn-sm btn-secondary" onClick={() => handleView(item)}>
+                          <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-secondary">
                             View
-                          </button>
+                          </Link>
                           {item.liveUrl && (
                             <a
                               href={item.liveUrl}
@@ -466,296 +445,6 @@ export default function AdminContentPage() {
           </div>
         </div>
       </div>
-
-      {/* Content Preview Modal */}
-      {previewItem && (
-        <div className="modal-overlay active" onClick={closePreview}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Content Preview</h2>
-              <button className="modal-close" onClick={closePreview}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="preview-meta">
-                <span className={`platform-badge ${getPlatformClass(previewItem.type)}`}>
-                  {previewItem.typeLabel}
-                </span>
-                <span className={`status-badge ${getStatusClass(previewItem.status)}`}>
-                  {previewItem.statusLabel}
-                </span>
-              </div>
-              <h3 className="preview-title">{previewItem.title}</h3>
-              <p className="preview-client">
-                <strong>Client:</strong> {previewItem.client}
-              </p>
-              <p className="preview-date">
-                <strong>Submitted:</strong> {previewItem.submitted}
-              </p>
-              <div className="preview-content">
-                <strong>Content Preview:</strong>
-                <p>{previewItem.excerpt}</p>
-              </div>
-            </div>
-            <div className="modal-footer">
-              {previewItem.status === 'awaiting' && (
-                <>
-                  <button className="btn btn-secondary" onClick={closePreview}>
-                    Close
-                  </button>
-                  <button className="btn btn-success">Approve</button>
-                  <button className="btn btn-warning">Request Revision</button>
-                </>
-              )}
-              {previewItem.status === 'approved' && (
-                <>
-                  <button className="btn btn-secondary" onClick={closePreview}>
-                    Close
-                  </button>
-                  <button className="btn btn-primary">Publish</button>
-                </>
-              )}
-              {previewItem.status === 'published' && (
-                <>
-                  <button className="btn btn-secondary" onClick={closePreview}>
-                    Close
-                  </button>
-                  {previewItem.liveUrl && (
-                    <a
-                      href={previewItem.liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-primary"
-                    >
-                      View Live
-                    </a>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Content Modal */}
-      {editItem && (
-        <div className="modal-overlay active" onClick={() => setEditItem(null)}>
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Edit Content</h2>
-              <button className="modal-close" onClick={() => setEditItem(null)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <form className="modal-form">
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    defaultValue={editItem.title}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Client</label>
-                  <select className="form-select" defaultValue={editItem.clientId}>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content Type</label>
-                  <select className="form-select" defaultValue={editItem.type}>
-                    <option value="blog">Blog Post</option>
-                    <option value="gbp">GBP Post</option>
-                    <option value="service">Service Page</option>
-                    <option value="social">Social Post</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content</label>
-                  <textarea
-                    className="form-textarea"
-                    rows={6}
-                    defaultValue={editItem.excerpt}
-                    placeholder="Enter content..."
-                  />
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setEditItem(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={() => setEditItem(null)}>
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Revise Content Modal */}
-      {reviseItem && (
-        <div className="modal-overlay active" onClick={() => setReviseItem(null)}>
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Revise Content</h2>
-              <button className="modal-close" onClick={() => setReviseItem(null)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="revision-feedback">
-                <div className="feedback-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                  </svg>
-                  <strong>Client Feedback</strong>
-                </div>
-                <p className="feedback-text">Please adjust the tone to be more professional and add more details about pricing options.</p>
-              </div>
-              <form className="modal-form">
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    defaultValue={reviseItem.title}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Client</label>
-                  <select className="form-select" defaultValue={reviseItem.clientId}>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content Type</label>
-                  <select className="form-select" defaultValue={reviseItem.type}>
-                    <option value="blog">Blog Post</option>
-                    <option value="gbp">GBP Post</option>
-                    <option value="service">Service Page</option>
-                    <option value="social">Social Post</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content</label>
-                  <textarea
-                    className="form-textarea"
-                    rows={8}
-                    defaultValue={reviseItem.excerpt}
-                    placeholder="Enter content..."
-                  />
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setReviseItem(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-outline" onClick={() => setReviseItem(null)}>
-                Save Draft
-              </button>
-              <button className="btn btn-primary" onClick={() => setReviseItem(null)}>
-                Submit for Review
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Continue Editing Modal */}
-      {continueItem && (
-        <div className="modal-overlay active" onClick={() => setContinueItem(null)}>
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Continue Editing</h2>
-              <button className="modal-close" onClick={() => setContinueItem(null)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="draft-info">
-                <span className="status-badge status-draft">Draft</span>
-                <span className="draft-date">Last saved: {continueItem.submitted}</span>
-              </div>
-              <form className="modal-form">
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    defaultValue={continueItem.title}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Client</label>
-                  <select className="form-select" defaultValue={continueItem.clientId}>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content Type</label>
-                  <select className="form-select" defaultValue={continueItem.type}>
-                    <option value="blog">Blog Post</option>
-                    <option value="gbp">GBP Post</option>
-                    <option value="service">Service Page</option>
-                    <option value="social">Social Post</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Content</label>
-                  <textarea
-                    className="form-textarea"
-                    rows={8}
-                    defaultValue={continueItem.excerpt}
-                    placeholder="Enter content..."
-                  />
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setContinueItem(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-outline" onClick={() => setContinueItem(null)}>
-                Save Draft
-              </button>
-              <button className="btn btn-primary" onClick={() => setContinueItem(null)}>
-                Submit for Review
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
