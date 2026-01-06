@@ -18,6 +18,8 @@ interface ContentItem {
   statusLabel: string
   submitted: string
   urgent?: boolean
+  excerpt?: string
+  liveUrl?: string
 }
 
 const contentItems: ContentItem[] = [
@@ -32,6 +34,7 @@ const contentItems: ContentItem[] = [
     statusLabel: 'Needs Revision',
     submitted: 'Nov 20, 2024',
     urgent: true,
+    excerpt: 'Get ready for our biggest sale of the year! This Black Friday, enjoy exclusive discounts on all our medical services...',
   },
   {
     id: '2',
@@ -43,6 +46,7 @@ const contentItems: ContentItem[] = [
     status: 'awaiting',
     statusLabel: 'Awaiting Review',
     submitted: 'Nov 19, 2024',
+    excerpt: 'A bright, white smile can boost your confidence and make a great first impression. In this comprehensive guide, we explore the various teeth whitening options available...',
   },
   {
     id: '3',
@@ -55,6 +59,7 @@ const contentItems: ContentItem[] = [
     statusLabel: 'Awaiting Review',
     submitted: 'Nov 19, 2024',
     urgent: true,
+    excerpt: 'Please note our updated hours for the holiday season. We will be closed on Thanksgiving Day and Christmas Day...',
   },
   {
     id: '4',
@@ -66,6 +71,7 @@ const contentItems: ContentItem[] = [
     status: 'draft',
     statusLabel: 'Draft',
     submitted: 'Nov 18, 2024',
+    excerpt: 'Buying your first home is an exciting milestone. Here are five essential tips to help you navigate the process...',
   },
   {
     id: '5',
@@ -77,6 +83,7 @@ const contentItems: ContentItem[] = [
     status: 'approved',
     statusLabel: 'Approved',
     submitted: 'Nov 17, 2024',
+    excerpt: 'As winter approaches, it\'s important to prepare your vehicle for cold weather conditions. Follow this checklist to ensure your car is ready...',
   },
   {
     id: '6',
@@ -88,6 +95,8 @@ const contentItems: ContentItem[] = [
     status: 'published',
     statusLabel: 'Published',
     submitted: 'Nov 15, 2024',
+    excerpt: 'Fall is the perfect time to prepare your lawn for the coming winter. Learn the essential steps to keep your yard healthy...',
+    liveUrl: 'https://greenvalleylandscaping.com/blog/fall-lawn-care-tips',
   },
   {
     id: '7',
@@ -99,6 +108,7 @@ const contentItems: ContentItem[] = [
     status: 'revision',
     statusLabel: 'Needs Revision',
     submitted: 'Nov 14, 2024',
+    excerpt: 'Choosing between Invisalign and traditional braces? Both options can help you achieve a straighter smile, but they differ in several key ways...',
   },
   {
     id: '8',
@@ -110,6 +120,7 @@ const contentItems: ContentItem[] = [
     status: 'awaiting',
     statusLabel: 'Awaiting Review',
     submitted: 'Nov 14, 2024',
+    excerpt: 'Just listed! Stunning oceanfront condo with panoramic views. 3 bed, 2 bath, modern finishes throughout...',
   },
 ]
 
@@ -125,6 +136,7 @@ export default function AdminContentPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [clientFilter, setClientFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [previewItem, setPreviewItem] = useState<ContentItem | null>(null)
 
   const filteredContent = useMemo(() => {
     return contentItems.filter((item) => {
@@ -177,12 +189,29 @@ export default function AdminContentPage() {
     }
   }
 
+  const handleView = (item: ContentItem) => {
+    setPreviewItem(item)
+  }
+
+  const closePreview = () => {
+    setPreviewItem(null)
+  }
+
   return (
     <>
       <AdminHeader
         title="Content Management"
         user={{ name: 'Ryan Kelly', initials: 'RK' }}
         hasNotifications={true}
+        actions={
+          <Link href="/admin/content/new" className="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Create Content
+          </Link>
+        }
       />
 
       <div className="admin-content">
@@ -326,7 +355,11 @@ export default function AdminContentPage() {
                           </svg>
                         </span>
                       )}
-                      <Link href={`/admin/content/${item.id}`}>{item.title}</Link>
+                      {item.status === 'revision' ? (
+                        <Link href={`/admin/content/${item.id}/revise`}>{item.title}</Link>
+                      ) : (
+                        <Link href={`/admin/content/${item.id}/edit`}>{item.title}</Link>
+                      )}
                     </div>
                   </td>
                   <td>{item.client}</td>
@@ -355,16 +388,31 @@ export default function AdminContentPage() {
                       )}
                       {(item.status === 'awaiting' || item.status === 'approved') && (
                         <>
-                          <button className="btn btn-sm btn-secondary">View</button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => handleView(item)}>
+                            View
+                          </button>
                           {item.status === 'awaiting' && (
-                            <button className="btn btn-sm btn-outline">Edit</button>
+                            <Link href={`/admin/content/${item.id}/edit`} className="btn btn-sm btn-outline">
+                              Edit
+                            </Link>
                           )}
                         </>
                       )}
                       {item.status === 'published' && (
                         <>
-                          <button className="btn btn-sm btn-secondary">View</button>
-                          <button className="btn btn-sm btn-outline">View Live</button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => handleView(item)}>
+                            View
+                          </button>
+                          {item.liveUrl && (
+                            <a
+                              href={item.liveUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-outline"
+                            >
+                              View Live
+                            </a>
+                          )}
                         </>
                       )}
                     </div>
@@ -395,6 +443,80 @@ export default function AdminContentPage() {
           </div>
         )}
       </div>
+
+      {/* Content Preview Modal */}
+      {previewItem && (
+        <div className="modal-overlay active" onClick={closePreview}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Content Preview</h2>
+              <button className="modal-close" onClick={closePreview}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="preview-meta">
+                <span className={`platform-badge ${getPlatformClass(previewItem.type)}`}>
+                  {previewItem.typeLabel}
+                </span>
+                <span className={`status-badge ${getStatusClass(previewItem.status)}`}>
+                  {previewItem.statusLabel}
+                </span>
+              </div>
+              <h3 className="preview-title">{previewItem.title}</h3>
+              <p className="preview-client">
+                <strong>Client:</strong> {previewItem.client}
+              </p>
+              <p className="preview-date">
+                <strong>Submitted:</strong> {previewItem.submitted}
+              </p>
+              <div className="preview-content">
+                <strong>Content Preview:</strong>
+                <p>{previewItem.excerpt}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              {previewItem.status === 'awaiting' && (
+                <>
+                  <button className="btn btn-secondary" onClick={closePreview}>
+                    Close
+                  </button>
+                  <button className="btn btn-success">Approve</button>
+                  <button className="btn btn-warning">Request Revision</button>
+                </>
+              )}
+              {previewItem.status === 'approved' && (
+                <>
+                  <button className="btn btn-secondary" onClick={closePreview}>
+                    Close
+                  </button>
+                  <button className="btn btn-primary">Publish</button>
+                </>
+              )}
+              {previewItem.status === 'published' && (
+                <>
+                  <button className="btn btn-secondary" onClick={closePreview}>
+                    Close
+                  </button>
+                  {previewItem.liveUrl && (
+                    <a
+                      href={previewItem.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary"
+                    >
+                      View Live
+                    </a>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

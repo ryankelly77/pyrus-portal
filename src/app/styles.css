@@ -10419,6 +10419,67 @@
             }
         }
 
+        /* Content Preview Modal */
+        .preview-meta {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .preview-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+        }
+
+        .preview-client,
+        .preview-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0 0 8px 0;
+        }
+
+        .preview-content {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .preview-content strong {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .preview-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .btn-success {
+            background: var(--success-text, #16A34A);
+            color: white;
+            border: none;
+        }
+
+        .btn-success:hover {
+            background: #15803D;
+        }
+
+        .btn-warning {
+            background: #D97706;
+            color: white;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background: #B45309;
+        }
+
         /* ======================= */
         /* WELCOME BANNER STYLES */
         /* ======================= */
