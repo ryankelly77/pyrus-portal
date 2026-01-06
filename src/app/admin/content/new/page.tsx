@@ -41,6 +41,7 @@ export default function CreateContentPage() {
       />
 
       <div className="admin-content">
+        <h1 className="page-title">Create New Content</h1>
         <div className="create-content-layout">
           {/* Main Content Area */}
           <div className="content-editor-section">

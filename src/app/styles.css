@@ -18174,6 +18174,14 @@ input[type="date"].form-control {
     color: #6B7280;
 }
 
+/* Page Title */
+.page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1A1F16;
+    margin: 0 0 24px 0;
+}
+
 /* Create Content Page Layout */
 .create-content-layout {
     display: grid;
