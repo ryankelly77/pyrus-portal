@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+
+type RecommendationStatus = 'open' | 'approved'
 
 interface User {
   id: string
@@ -20,7 +23,8 @@ interface Recommendation {
   clientId: string
   initials: string
   avatarColor: string
-  status: 'active' | 'prospect' | 'paused'
+  clientStatus: 'active' | 'prospect' | 'paused'
+  recommendationStatus: RecommendationStatus
   sentDate: { date: string; time: string }
   users: User[]
 }
@@ -32,7 +36,8 @@ const recommendations: Recommendation[] = [
     clientId: 'tc-clinical',
     initials: 'TC',
     avatarColor: 'linear-gradient(135deg, #B57841 0%, #C4895A 100%)',
-    status: 'active',
+    clientStatus: 'active',
+    recommendationStatus: 'approved',
     sentDate: { date: 'Dec 28, 2025', time: '2:34 PM' },
     users: [
       {
@@ -61,7 +66,8 @@ const recommendations: Recommendation[] = [
     clientId: 'raptor-vending',
     initials: 'RV',
     avatarColor: '#2563EB',
-    status: 'prospect',
+    clientStatus: 'prospect',
+    recommendationStatus: 'open',
     sentDate: { date: 'Dec 20, 2025', time: '11:05 AM' },
     users: [
       {
@@ -90,7 +96,8 @@ const recommendations: Recommendation[] = [
     clientId: 'raptor-services',
     initials: 'RS',
     avatarColor: '#7C3AED',
-    status: 'prospect',
+    clientStatus: 'prospect',
+    recommendationStatus: 'open',
     sentDate: { date: 'Dec 15, 2025', time: '9:45 AM' },
     users: [
       {
@@ -110,7 +117,8 @@ const recommendations: Recommendation[] = [
     clientId: 'gohfr',
     initials: 'GO',
     avatarColor: '#0B7277',
-    status: 'active',
+    clientStatus: 'active',
+    recommendationStatus: 'approved',
     sentDate: { date: 'Dec 10, 2025', time: '4:20 PM' },
     users: [
       {
@@ -130,7 +138,8 @@ const recommendations: Recommendation[] = [
     clientId: 'espronceda-law',
     initials: 'EL',
     avatarColor: '#DC2626',
-    status: 'active',
+    clientStatus: 'active',
+    recommendationStatus: 'open',
     sentDate: { date: 'Dec 5, 2025', time: '1:15 PM' },
     users: [
       {
@@ -150,7 +159,8 @@ const recommendations: Recommendation[] = [
     clientId: 'american-fence',
     initials: 'AF',
     avatarColor: '#6B7280',
-    status: 'paused',
+    clientStatus: 'paused',
+    recommendationStatus: 'approved',
     sentDate: { date: 'Nov 28, 2025', time: '10:00 AM' },
     users: [
       {
@@ -175,14 +185,30 @@ const recommendations: Recommendation[] = [
   },
 ]
 
-const statusBadgeClass: Record<Recommendation['status'], string> = {
+const clientStatusBadgeClass: Record<Recommendation['clientStatus'], string> = {
   active: 'active',
   prospect: 'prospect',
   paused: 'paused',
 }
 
 export default function RecommendationsPage() {
+  const searchParams = useSearchParams()
+  const initialStatus = searchParams.get('status') as 'all' | RecommendationStatus | null
+
   const [expandedIds, setExpandedIds] = useState<string[]>(['1'])
+  const [statusFilter, setStatusFilter] = useState<'all' | RecommendationStatus>(initialStatus || 'all')
+
+  // Update filter when URL changes
+  useEffect(() => {
+    const urlStatus = searchParams.get('status') as 'all' | RecommendationStatus | null
+    if (urlStatus === 'open' || urlStatus === 'approved') {
+      setStatusFilter(urlStatus)
+    }
+  }, [searchParams])
+
+  const filteredRecommendations = statusFilter === 'all'
+    ? recommendations
+    : recommendations.filter(rec => rec.recommendationStatus === statusFilter)
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) =>
@@ -217,8 +243,32 @@ export default function RecommendationsPage() {
           </Link>
         </div>
 
+        {/* Status Filter */}
+        <div className="clients-toolbar">
+          <div className="filter-buttons">
+            <button
+              className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'open' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('open')}
+            >
+              Open
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'approved' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('approved')}
+            >
+              Approved
+            </button>
+          </div>
+        </div>
+
         <div className="expandable-list">
-          {recommendations.map((rec) => {
+          {filteredRecommendations.map((rec) => {
             const isExpanded = expandedIds.includes(rec.id)
             return (
               <div key={rec.id} className={`expandable-card ${isExpanded ? 'expanded' : ''}`}>
@@ -240,8 +290,8 @@ export default function RecommendationsPage() {
                     </div>
                   </div>
                   <div className="header-status">
-                    <span className={`status-badge ${statusBadgeClass[rec.status]}`}>
-                      {rec.status.charAt(0).toUpperCase() + rec.status.slice(1)}
+                    <span className={`status-badge ${rec.recommendationStatus}`}>
+                      {rec.recommendationStatus.charAt(0).toUpperCase() + rec.recommendationStatus.slice(1)}
                     </span>
                   </div>
                   <div className="header-meta">

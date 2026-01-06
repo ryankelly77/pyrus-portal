@@ -126,7 +126,7 @@ export default function SuperAdminDashboard() {
             </div>
             <span className="sa-dash-action-text">New<br />Recommendation</span>
           </a>
-          <div className="sa-dash-metric-card">
+          <Link href="/admin/clients" className="sa-dash-metric-card clickable">
             <div className="sa-dash-metric-icon" style={{ background: '#D1FAE5', color: '#059669' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -137,8 +137,8 @@ export default function SuperAdminDashboard() {
             </div>
             <span className="sa-dash-metric-value">{stats.activeClients}</span>
             <span className="sa-dash-metric-label">Active Clients</span>
-          </div>
-          <div className="sa-dash-metric-card">
+          </Link>
+          <Link href="/admin/content?status=pending" className="sa-dash-metric-card clickable">
             <div className="sa-dash-metric-icon" style={{ background: '#DBEAFE', color: '#2563EB' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -147,8 +147,8 @@ export default function SuperAdminDashboard() {
             </div>
             <span className="sa-dash-metric-value">{stats.pendingContent}</span>
             <span className="sa-dash-metric-label">Pending Content</span>
-          </div>
-          <div className="sa-dash-metric-card">
+          </Link>
+          <Link href="/admin/recommendations?status=open" className="sa-dash-metric-card clickable">
             <div className="sa-dash-metric-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -158,7 +158,7 @@ export default function SuperAdminDashboard() {
             </div>
             <span className="sa-dash-metric-value">{stats.pendingRecommendations}</span>
             <span className="sa-dash-metric-label">Open Recommendations</span>
-          </div>
+          </Link>
           <div className="sa-dash-metric-card">
             <div className="sa-dash-metric-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">

@@ -18797,3 +18797,27 @@ input[type="date"].form-control {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 16px;
 }
+
+/* Clickable Metric Cards */
+.sa-dash-metric-card.clickable {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sa-dash-metric-card.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Recommendation Status Badges */
+.status-badge.open {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-badge.approved {
+    background: #D1FAE5;
+    color: #065F46;
+}
