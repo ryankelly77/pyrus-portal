@@ -18409,14 +18409,18 @@ input[type="date"].form-control {
 
 .social-platform-checkbox {
     position: relative;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 48px;
     height: 48px;
+    padding: 0;
+    margin: 0;
     border: 2px solid #E8EDE7;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s ease;
+    line-height: 1;
 }
 
 .social-platform-checkbox:hover {
@@ -18440,6 +18444,8 @@ input[type="date"].form-control {
     height: 24px;
     display: block;
     flex-shrink: 0;
+    margin: 0;
+    padding: 0;
 }
 
 .social-platform-checkbox .social-icon.facebook {
