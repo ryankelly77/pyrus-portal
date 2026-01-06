@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
 type ContentStatus = 'draft' | 'awaiting' | 'revision' | 'approved' | 'published'
@@ -137,6 +136,8 @@ export default function AdminContentPage() {
   const [clientFilter, setClientFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [previewItem, setPreviewItem] = useState<ContentItem | null>(null)
+  const [editItem, setEditItem] = useState<ContentItem | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const filteredContent = useMemo(() => {
     return contentItems.filter((item) => {
@@ -204,13 +205,13 @@ export default function AdminContentPage() {
         user={{ name: 'Ryan Kelly', initials: 'RK' }}
         hasNotifications={true}
         actions={
-          <Link href="/admin/content/new" className="btn btn-primary">
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             Create Content
-          </Link>
+          </button>
         }
       />
 
@@ -355,11 +356,12 @@ export default function AdminContentPage() {
                           </svg>
                         </span>
                       )}
-                      {item.status === 'revision' ? (
-                        <Link href={`/admin/content/${item.id}/revise`}>{item.title}</Link>
-                      ) : (
-                        <Link href={`/admin/content/${item.id}/edit`}>{item.title}</Link>
-                      )}
+                      <button
+                        className="content-title-link"
+                        onClick={() => handleView(item)}
+                      >
+                        {item.title}
+                      </button>
                     </div>
                   </td>
                   <td>{item.client}</td>
@@ -377,14 +379,20 @@ export default function AdminContentPage() {
                   <td>
                     <div className="action-buttons">
                       {item.status === 'revision' && (
-                        <Link href={`/admin/content/${item.id}/revise`} className="btn btn-sm btn-secondary">
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => alert(`Revise content: ${item.title}`)}
+                        >
                           Revise
-                        </Link>
+                        </button>
                       )}
                       {item.status === 'draft' && (
-                        <Link href={`/admin/content/${item.id}/edit`} className="btn btn-sm btn-primary">
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => alert(`Continue editing: ${item.title}`)}
+                        >
                           Continue
-                        </Link>
+                        </button>
                       )}
                       {(item.status === 'awaiting' || item.status === 'approved') && (
                         <>
@@ -392,9 +400,12 @@ export default function AdminContentPage() {
                             View
                           </button>
                           {item.status === 'awaiting' && (
-                            <Link href={`/admin/content/${item.id}/edit`} className="btn btn-sm btn-outline">
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => setEditItem(item)}
+                            >
                               Edit
-                            </Link>
+                            </button>
                           )}
                         </>
                       )}
@@ -513,6 +524,131 @@ export default function AdminContentPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Content Modal */}
+      {editItem && (
+        <div className="modal-overlay active" onClick={() => setEditItem(null)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Content</h2>
+              <button className="modal-close" onClick={() => setEditItem(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Title</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    defaultValue={editItem.title}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Client</label>
+                  <select className="form-select" defaultValue={editItem.clientId}>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content Type</label>
+                  <select className="form-select" defaultValue={editItem.type}>
+                    <option value="blog">Blog Post</option>
+                    <option value="gbp">GBP Post</option>
+                    <option value="service">Service Page</option>
+                    <option value="social">Social Post</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={6}
+                    defaultValue={editItem.excerpt}
+                    placeholder="Enter content..."
+                  />
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setEditItem(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => setEditItem(null)}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Content Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay active" onClick={() => setShowCreateModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Content</h2>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">
+                    Content Type <span className="required">*</span>
+                  </label>
+                  <select className="form-select">
+                    <option value="">Select type...</option>
+                    <option value="blog">Blog Post</option>
+                    <option value="gbp">GBP Post</option>
+                    <option value="service">Service Page</option>
+                    <option value="social">Social Post</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Client <span className="required">*</span>
+                  </label>
+                  <select className="form-select">
+                    <option value="">Select client...</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Title <span className="required">*</span>
+                  </label>
+                  <input type="text" className="form-input" placeholder="Enter content title..." />
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary">
+                Create Draft
+              </button>
             </div>
           </div>
         </div>
