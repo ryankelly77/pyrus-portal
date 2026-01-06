@@ -18004,3 +18004,48 @@ input[type="date"].form-control {
 .modal-form .form-input::placeholder {
     color: #8A928A;
 }
+
+/* Revision Feedback */
+.revision-feedback {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.revision-feedback .feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #B45309;
+}
+
+.revision-feedback .feedback-header svg {
+    flex-shrink: 0;
+}
+
+.revision-feedback .feedback-text {
+    margin: 0;
+    font-size: 14px;
+    color: #92400E;
+    line-height: 1.5;
+}
+
+/* Draft Info */
+.draft-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+
+.draft-info .draft-date {
+    font-size: 13px;
+    color: #6B7280;
+}

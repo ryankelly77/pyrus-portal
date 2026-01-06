@@ -137,6 +137,8 @@ export default function AdminContentPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [previewItem, setPreviewItem] = useState<ContentItem | null>(null)
   const [editItem, setEditItem] = useState<ContentItem | null>(null)
+  const [reviseItem, setReviseItem] = useState<ContentItem | null>(null)
+  const [continueItem, setContinueItem] = useState<ContentItem | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   const filteredContent = useMemo(() => {
@@ -381,7 +383,7 @@ export default function AdminContentPage() {
                       {item.status === 'revision' && (
                         <button
                           className="btn btn-sm btn-secondary"
-                          onClick={() => alert(`Revise content: ${item.title}`)}
+                          onClick={() => setReviseItem(item)}
                         >
                           Revise
                         </button>
@@ -389,7 +391,7 @@ export default function AdminContentPage() {
                       {item.status === 'draft' && (
                         <button
                           className="btn btn-sm btn-primary"
-                          onClick={() => alert(`Continue editing: ${item.title}`)}
+                          onClick={() => setContinueItem(item)}
                         >
                           Continue
                         </button>
@@ -648,6 +650,157 @@ export default function AdminContentPage() {
               </button>
               <button className="btn btn-primary">
                 Create Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revise Content Modal */}
+      {reviseItem && (
+        <div className="modal-overlay active" onClick={() => setReviseItem(null)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Revise Content</h2>
+              <button className="modal-close" onClick={() => setReviseItem(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="revision-feedback">
+                <div className="feedback-header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <strong>Client Feedback</strong>
+                </div>
+                <p className="feedback-text">Please adjust the tone to be more professional and add more details about pricing options.</p>
+              </div>
+              <form className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Title</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    defaultValue={reviseItem.title}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Client</label>
+                  <select className="form-select" defaultValue={reviseItem.clientId}>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content Type</label>
+                  <select className="form-select" defaultValue={reviseItem.type}>
+                    <option value="blog">Blog Post</option>
+                    <option value="gbp">GBP Post</option>
+                    <option value="service">Service Page</option>
+                    <option value="social">Social Post</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={8}
+                    defaultValue={reviseItem.excerpt}
+                    placeholder="Enter content..."
+                  />
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setReviseItem(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-outline" onClick={() => setReviseItem(null)}>
+                Save Draft
+              </button>
+              <button className="btn btn-primary" onClick={() => setReviseItem(null)}>
+                Submit for Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Continue Editing Modal */}
+      {continueItem && (
+        <div className="modal-overlay active" onClick={() => setContinueItem(null)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Continue Editing</h2>
+              <button className="modal-close" onClick={() => setContinueItem(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="draft-info">
+                <span className="status-badge status-draft">Draft</span>
+                <span className="draft-date">Last saved: {continueItem.submitted}</span>
+              </div>
+              <form className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Title</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    defaultValue={continueItem.title}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Client</label>
+                  <select className="form-select" defaultValue={continueItem.clientId}>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content Type</label>
+                  <select className="form-select" defaultValue={continueItem.type}>
+                    <option value="blog">Blog Post</option>
+                    <option value="gbp">GBP Post</option>
+                    <option value="service">Service Page</option>
+                    <option value="social">Social Post</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={8}
+                    defaultValue={continueItem.excerpt}
+                    placeholder="Enter content..."
+                  />
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setContinueItem(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-outline" onClick={() => setContinueItem(null)}>
+                Save Draft
+              </button>
+              <button className="btn btn-primary" onClick={() => setContinueItem(null)}>
+                Submit for Review
               </button>
             </div>
           </div>
