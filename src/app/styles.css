@@ -18435,6 +18435,8 @@ input[type="date"].form-control {
 .social-platform-checkbox .social-icon {
     width: 24px;
     height: 24px;
+    display: block;
+    flex-shrink: 0;
 }
 
 .social-platform-checkbox .social-icon.facebook {
