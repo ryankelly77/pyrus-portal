@@ -18177,7 +18177,7 @@ input[type="date"].form-control {
 /* Create Content Page Layout */
 .create-content-layout {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr 380px;
     gap: 24px;
     align-items: start;
 }
@@ -18226,6 +18226,11 @@ input[type="date"].form-control {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+}
+
+.platform-options-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
 }
 
 .platform-option {
@@ -18394,4 +18399,63 @@ input[type="date"].form-control {
 .back-link svg {
     width: 16px;
     height: 16px;
+}
+
+/* Social Platform Checkboxes */
+.social-platform-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.social-platform-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 2px solid #E8EDE7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.social-platform-checkbox:hover {
+    border-color: #D4DCD2;
+}
+
+.social-platform-checkbox:has(input:checked) {
+    border-color: #885430;
+    background: #FDF8F3;
+}
+
+.social-platform-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.social-platform-checkbox .social-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.social-platform-checkbox .social-icon.facebook {
+    color: #1877F2;
+}
+
+.social-platform-checkbox .social-icon.instagram {
+    color: #E4405F;
+}
+
+.social-platform-checkbox .social-icon.linkedin {
+    color: #0A66C2;
+}
+
+.social-platform-checkbox .social-icon.x-twitter {
+    color: #000000;
+}
+
+.social-platform-checkbox span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1A1F16;
 }

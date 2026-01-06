@@ -13,10 +13,16 @@ const clients = [
 ]
 
 export default function CreateContentPage() {
-  const [platform, setPlatform] = useState<'website' | 'gbp'>('website')
+  const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>('website')
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
   const [basecampTask, setBasecampTask] = useState(true)
   const [emailNotification, setEmailNotification] = useState(true)
+  const [socialPlatforms, setSocialPlatforms] = useState({
+    facebook: true,
+    instagram: true,
+    linkedin: false,
+    x: false,
+  })
 
   return (
     <>
@@ -131,7 +137,7 @@ export default function CreateContentPage() {
                 <label className="form-label">
                   Platform <span className="required">*</span>
                 </label>
-                <div className="platform-options">
+                <div className="platform-options platform-options-3">
                   <button
                     type="button"
                     className={`platform-option ${platform === 'website' ? 'active' : ''}`}
@@ -155,8 +161,77 @@ export default function CreateContentPage() {
                     </svg>
                     <span>Google Business Profile</span>
                   </button>
+                  <button
+                    type="button"
+                    className={`platform-option ${platform === 'social' ? 'active' : ''}`}
+                    onClick={() => setPlatform('social')}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                    </svg>
+                    <span>Social</span>
+                  </button>
                 </div>
               </div>
+
+              {/* Social Platform Selection */}
+              {platform === 'social' && (
+                <div className="form-group">
+                  <label className="form-label">
+                    Social Platforms <span className="required">*</span>
+                  </label>
+                  <div className="social-platform-checkboxes">
+                    <label className="social-platform-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={socialPlatforms.facebook}
+                        onChange={(e) => setSocialPlatforms({ ...socialPlatforms, facebook: e.target.checked })}
+                      />
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon facebook">
+                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                      </svg>
+                      <span>Facebook</span>
+                    </label>
+                    <label className="social-platform-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={socialPlatforms.instagram}
+                        onChange={(e) => setSocialPlatforms({ ...socialPlatforms, instagram: e.target.checked })}
+                      />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" className="social-icon instagram">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                      </svg>
+                      <span>Instagram</span>
+                    </label>
+                    <label className="social-platform-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={socialPlatforms.linkedin}
+                        onChange={(e) => setSocialPlatforms({ ...socialPlatforms, linkedin: e.target.checked })}
+                      />
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon linkedin">
+                        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                        <rect x="2" y="9" width="4" height="12"></rect>
+                        <circle cx="4" cy="4" r="2"></circle>
+                      </svg>
+                      <span>LinkedIn</span>
+                    </label>
+                    <label className="social-platform-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={socialPlatforms.x}
+                        onChange={(e) => setSocialPlatforms({ ...socialPlatforms, x: e.target.checked })}
+                      />
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon x-twitter">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                      </svg>
+                      <span>X</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">
@@ -164,17 +239,26 @@ export default function CreateContentPage() {
                 </label>
                 <select className="form-select">
                   <option value="">Select type...</option>
-                  {platform === 'website' ? (
+                  {platform === 'website' && (
                     <>
                       <option value="blog">Blog Post</option>
                       <option value="service">Service Page</option>
                       <option value="landing">Landing Page</option>
                     </>
-                  ) : (
+                  )}
+                  {platform === 'gbp' && (
                     <>
                       <option value="update">Business Update</option>
                       <option value="offer">Offer</option>
                       <option value="event">Event</option>
+                    </>
+                  )}
+                  {platform === 'social' && (
+                    <>
+                      <option value="post">Social Post</option>
+                      <option value="story">Story</option>
+                      <option value="reel">Reel / Short Video</option>
+                      <option value="carousel">Carousel</option>
                     </>
                   )}
                 </select>
