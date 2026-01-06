@@ -2,10 +2,20 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 export function ClientSidebar() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+
+  // Helper to build href with viewingAs param preserved
+  const buildHref = (path: string) => {
+    if (viewingAs) {
+      return `${path}?viewingAs=${viewingAs}`
+    }
+    return path
+  }
 
   return (
     <aside className="client-sidebar">
@@ -21,7 +31,7 @@ export function ClientSidebar() {
       </div>
       <nav className="client-nav">
         <Link
-          href="/getting-started"
+          href={buildHref('/getting-started')}
           className={`client-nav-item ${pathname === '/getting-started' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -31,7 +41,7 @@ export function ClientSidebar() {
           <span>Getting Started</span>
         </Link>
         <Link
-          href="/results"
+          href={buildHref('/results')}
           className={`client-nav-item ${pathname === '/results' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -41,7 +51,7 @@ export function ClientSidebar() {
           <span>Results</span>
         </Link>
         <Link
-          href="/activity"
+          href={buildHref('/activity')}
           className={`client-nav-item ${pathname === '/activity' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -50,7 +60,7 @@ export function ClientSidebar() {
           <span>Activity</span>
         </Link>
         <Link
-          href="/content"
+          href={buildHref('/content')}
           className={`client-nav-item ${pathname === '/content' || pathname.startsWith('/content/') ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -63,7 +73,7 @@ export function ClientSidebar() {
           <span>Content<span className="nav-new-badge">NEW!</span></span>
         </Link>
         <Link
-          href="/communication"
+          href={buildHref('/communication')}
           className={`client-nav-item ${pathname === '/communication' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -72,7 +82,7 @@ export function ClientSidebar() {
           <span>Communication</span>
         </Link>
         <Link
-          href="/recommendations"
+          href={buildHref('/recommendations')}
           className={`client-nav-item ${pathname === '/recommendations' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -81,7 +91,7 @@ export function ClientSidebar() {
           <span>Recommendations</span>
         </Link>
         <Link
-          href="/settings"
+          href={buildHref('/settings')}
           className={`client-nav-item ${pathname === '/settings' ? 'active' : ''}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

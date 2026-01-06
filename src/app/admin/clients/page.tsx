@@ -182,7 +182,7 @@ const clients: Client[] = [
   },
 ]
 
-export default function DashboardPage() {
+export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterOption>('all')
   const [sortBy, setSortBy] = useState<SortOption>('name')
@@ -338,7 +338,7 @@ export default function DashboardPage() {
               className={`client-card ${client.status === 'paused' ? 'paused' : ''}`}
               data-status={client.status}
             >
-              <Link href={`/clients/${client.id}`} className="client-card-link">
+              <Link href={`/admin/clients/${client.id}`} className="client-card-link">
                 <div className="client-card-header">
                   <div
                     className="client-card-avatar"

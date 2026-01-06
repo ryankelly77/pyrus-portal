@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 
 interface AdminHeaderProps {
   title: string
@@ -9,17 +10,23 @@ interface AdminHeaderProps {
     initials: string
   }
   hasNotifications?: boolean
+  breadcrumb?: ReactNode
 }
 
 export function AdminHeader({
   title,
   user = { name: 'User', initials: 'U' },
   hasNotifications = false,
+  breadcrumb,
 }: AdminHeaderProps) {
   return (
     <div className="admin-top-header">
       <div className="admin-top-header-left">
-        <h1>{title}</h1>
+        {breadcrumb ? (
+          <nav className="breadcrumb">{breadcrumb}</nav>
+        ) : (
+          <h1>{title}</h1>
+        )}
       </div>
       <div className="admin-top-header-right">
         <Link href="/notifications" className={`btn-icon ${hasNotifications ? 'has-notification' : ''}`}>

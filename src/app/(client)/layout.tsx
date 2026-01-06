@@ -31,7 +31,9 @@ export default async function ClientLayout({
 
   return (
     <div className="client-layout">
-      <ClientSidebar />
+      <Suspense fallback={null}>
+        <ClientSidebar />
+      </Suspense>
       <main className="client-main">
         <Suspense fallback={null}>
           <PreviewBanner clientName={clientName} />
