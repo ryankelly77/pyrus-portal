@@ -174,6 +174,23 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'invited'>('all')
   const [clientFilter, setClientFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showInviteUserModal, setShowInviteUserModal] = useState(false)
+  const [showInviteAdminModal, setShowInviteAdminModal] = useState(false)
+
+  // Invite user form state
+  const [inviteUserForm, setInviteUserForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    client: '',
+  })
+
+  // Invite admin form state
+  const [inviteAdminForm, setInviteAdminForm] = useState({
+    name: '',
+    email: '',
+    role: 'production_team' as AdminRole,
+  })
 
   const filteredAdminUsers = useMemo(() => {
     return adminUsers.filter((user) => {
@@ -254,6 +271,27 @@ export default function AdminUsersPage() {
     console.log('Resend admin invite:', userId)
   }
 
+  const handleInviteUser = () => {
+    console.log('Invite user:', inviteUserForm)
+    setShowInviteUserModal(false)
+    setInviteUserForm({
+      name: '',
+      email: '',
+      phone: '',
+      client: '',
+    })
+  }
+
+  const handleInviteAdmin = () => {
+    console.log('Invite admin:', inviteAdminForm)
+    setShowInviteAdminModal(false)
+    setInviteAdminForm({
+      name: '',
+      email: '',
+      role: 'production_team',
+    })
+  }
+
   const totalUsers = filteredAdminUsers.length + filteredClientUsers.length
 
   return (
@@ -270,7 +308,7 @@ export default function AdminUsersPage() {
           <div className="page-header-content">
             <p>Manage portal users and their access</p>
           </div>
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={() => setShowInviteUserModal(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -280,42 +318,41 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Filters */}
-        <div className="users-filters">
+        <div className="clients-toolbar">
           <div className="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input
               type="text"
               placeholder="Search users..."
-              className="search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="filter-tabs">
+          <div className="filter-buttons">
             <button
-              className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`}
+              className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
               onClick={() => setStatusFilter('all')}
             >
               All Users
             </button>
             <button
-              className={`filter-tab ${statusFilter === 'registered' ? 'active' : ''}`}
+              className={`filter-btn ${statusFilter === 'registered' ? 'active' : ''}`}
               onClick={() => setStatusFilter('registered')}
             >
               Registered
             </button>
             <button
-              className={`filter-tab ${statusFilter === 'invited' ? 'active' : ''}`}
+              className={`filter-btn ${statusFilter === 'invited' ? 'active' : ''}`}
               onClick={() => setStatusFilter('invited')}
             >
               Invited
             </button>
           </div>
           <select
-            className="filter-select"
+            className="sort-select"
             value={clientFilter}
             onChange={(e) => setClientFilter(e.target.value)}
           >
@@ -395,7 +432,7 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
-          <button className="btn btn-secondary" style={{ marginTop: '16px' }}>
+          <button className="btn btn-secondary" style={{ marginTop: '16px' }} onClick={() => setShowInviteAdminModal(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -474,21 +511,203 @@ export default function AdminUsersPage() {
         {/* Pagination */}
         <div className="table-pagination">
           <span className="pagination-info">Showing 1-{totalUsers} of {totalUsers} users</span>
-          <div className="pagination-controls">
-            <button className="pagination-btn" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
+          <div className="pagination-buttons">
+            <button className="btn btn-sm btn-secondary" disabled>
+              Previous
             </button>
-            <button className="pagination-btn active">1</button>
-            <button className="pagination-btn" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+            <button className="btn btn-sm btn-secondary">Next</button>
           </div>
         </div>
       </div>
+
+      {/* Invite User Modal */}
+      {showInviteUserModal && (
+        <div className="modal-overlay active" onClick={() => setShowInviteUserModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Invite Client User</h2>
+              <button className="modal-close" onClick={() => setShowInviteUserModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="modal-description">Send an invitation to a client user to access their portal.</p>
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter full name"
+                  value={inviteUserForm.name}
+                  onChange={(e) => setInviteUserForm({ ...inviteUserForm, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="Enter email address"
+                  value={inviteUserForm.email}
+                  onChange={(e) => setInviteUserForm({ ...inviteUserForm, email: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  placeholder="(555) 123-4567"
+                  value={inviteUserForm.phone}
+                  onChange={(e) => setInviteUserForm({ ...inviteUserForm, phone: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Client Account</label>
+                <select
+                  className="form-control"
+                  value={inviteUserForm.client}
+                  onChange={(e) => setInviteUserForm({ ...inviteUserForm, client: e.target.value })}
+                >
+                  <option value="">Select a client</option>
+                  {clients.map((client) => (
+                    <option key={client} value={client}>
+                      {client}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowInviteUserModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleInviteUser}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M22 2L11 13"></path>
+                  <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+                Send Invitation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Admin Modal */}
+      {showInviteAdminModal && (
+        <div className="modal-overlay active" onClick={() => setShowInviteAdminModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Invite Admin User</h2>
+              <button className="modal-close" onClick={() => setShowInviteAdminModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="modal-description">Add a new team member with admin access to the portal.</p>
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter full name"
+                  value={inviteAdminForm.name}
+                  onChange={(e) => setInviteAdminForm({ ...inviteAdminForm, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="Enter email address"
+                  value={inviteAdminForm.email}
+                  onChange={(e) => setInviteAdminForm({ ...inviteAdminForm, email: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Role</label>
+                <div className="radio-group vertical">
+                  <label className="radio-option role-super-admin">
+                    <input
+                      type="radio"
+                      name="adminRole"
+                      value="super_admin"
+                      checked={inviteAdminForm.role === 'super_admin'}
+                      onChange={() => setInviteAdminForm({ ...inviteAdminForm, role: 'super_admin' })}
+                    />
+                    <span className="radio-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      </svg>
+                      <span>
+                        <strong>Super Admin</strong>
+                        <small>Full access to all features and settings</small>
+                      </span>
+                    </span>
+                  </label>
+                  <label className="radio-option role-production-team">
+                    <input
+                      type="radio"
+                      name="adminRole"
+                      value="production_team"
+                      checked={inviteAdminForm.role === 'production_team'}
+                      onChange={() => setInviteAdminForm({ ...inviteAdminForm, role: 'production_team' })}
+                    />
+                    <span className="radio-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                      </svg>
+                      <span>
+                        <strong>Production Team</strong>
+                        <small>Access to content and client management</small>
+                      </span>
+                    </span>
+                  </label>
+                  <label className="radio-option role-sales">
+                    <input
+                      type="radio"
+                      name="adminRole"
+                      value="sales"
+                      checked={inviteAdminForm.role === 'sales'}
+                      onChange={() => setInviteAdminForm({ ...inviteAdminForm, role: 'sales' })}
+                    />
+                    <span className="radio-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      <span>
+                        <strong>Sales</strong>
+                        <small>Access to revenue and client information</small>
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowInviteAdminModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleInviteAdmin}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M22 2L11 13"></path>
+                  <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+                Send Invitation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

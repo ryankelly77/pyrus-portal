@@ -10425,6 +10425,140 @@
             }
         }
 
+        /* Modal Description */
+        .modal-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+
+        /* Radio Group Styles */
+        .radio-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .radio-group.vertical {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+        }
+
+        .radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+        }
+
+        .radio-label svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .radio-option input[type="radio"]:checked + .radio-label {
+            background: var(--pyrus-green-pale);
+            border-color: var(--pyrus-green);
+            color: var(--pyrus-green-dark);
+        }
+
+        .radio-option input[type="radio"]:checked + .radio-label svg {
+            color: var(--pyrus-green);
+        }
+
+        .radio-option:hover .radio-label {
+            border-color: var(--pyrus-green-light);
+        }
+
+        /* Vertical radio group with description */
+        .radio-group.vertical .radio-label {
+            flex: 1;
+            padding: 12px 16px;
+        }
+
+        .radio-group.vertical .radio-label > span {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .radio-group.vertical .radio-label strong {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .radio-group.vertical .radio-label small {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .radio-option input[type="radio"]:checked + .radio-label small {
+            color: var(--pyrus-green);
+        }
+
+        /* Role-specific Radio Colors */
+        .radio-option.role-super-admin input[type="radio"]:checked + .radio-label {
+            background: #FEF3C7;
+            border-color: #D97706;
+            color: #92400E;
+        }
+
+        .radio-option.role-super-admin input[type="radio"]:checked + .radio-label svg {
+            color: #D97706;
+        }
+
+        .radio-option.role-super-admin input[type="radio"]:checked + .radio-label small {
+            color: #B45309;
+        }
+
+        .radio-option.role-production-team input[type="radio"]:checked + .radio-label {
+            background: #DBEAFE;
+            border-color: #2563EB;
+            color: #1E40AF;
+        }
+
+        .radio-option.role-production-team input[type="radio"]:checked + .radio-label svg {
+            color: #2563EB;
+        }
+
+        .radio-option.role-production-team input[type="radio"]:checked + .radio-label small {
+            color: #3B82F6;
+        }
+
+        .radio-option.role-sales input[type="radio"]:checked + .radio-label {
+            background: #D1FAE5;
+            border-color: #059669;
+            color: #065F46;
+        }
+
+        .radio-option.role-sales input[type="radio"]:checked + .radio-label svg {
+            color: #059669;
+        }
+
+        .radio-option.role-sales input[type="radio"]:checked + .radio-label small {
+            color: #10B981;
+        }
+
         /* Content Preview Modal */
         .preview-meta {
             display: flex;
@@ -13573,6 +13707,17 @@ input[type="date"].form-control {
     gap: 16px;
 }
 
+/* Stats Grid 5 */
+.stats-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.stats-grid-5 .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
 .stat-icon {
     width: 48px;
     height: 48px;
@@ -13603,8 +13748,18 @@ input[type="date"].form-control {
     margin-bottom: 0;
 }
 
+@media (max-width: 1400px) {
+    .stats-grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 1200px) {
     .stats-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-grid-5 {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -13628,7 +13783,8 @@ input[type="date"].form-control {
         grid-template-columns: 1fr;
     }
 
-    .stats-grid-4 {
+    .stats-grid-4,
+    .stats-grid-5 {
         grid-template-columns: 1fr;
     }
 
@@ -13678,8 +13834,6 @@ input[type="date"].form-control {
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-users-section h3 svg,
@@ -16214,6 +16368,46 @@ input[type="date"].form-control {
     background: var(--bg-page);
 }
 
+.activity-item.unread {
+    background: #FFFBEB;
+    position: relative;
+    cursor: pointer;
+}
+
+.activity-item.unread:hover {
+    background: #FEF3C7;
+}
+
+.activity-item.unread .activity-user {
+    font-weight: 600;
+}
+
+.unread-indicator {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--pyrus-brown);
+    border-radius: 50%;
+}
+
+.unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--pyrus-brown);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
 .activity-icon {
     width: 36px;
     height: 36px;
@@ -18589,4 +18783,17 @@ input[type="date"].form-control {
 
 .social-platform-checkbox .social-icon.x-twitter {
     color: #000000;
+}
+
+/* Form Row Variants */
+.form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
 }

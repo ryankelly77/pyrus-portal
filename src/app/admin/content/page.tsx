@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
 type ContentStatus = 'draft' | 'awaiting' | 'revision' | 'approved' | 'published'
-type ContentType = 'blog' | 'gbp' | 'service' | 'social'
+type ContentType = 'blog' | 'gbp' | 'service' | 'social' | 'ai'
 
 interface ContentItem {
   id: string
@@ -122,6 +122,30 @@ const contentItems: ContentItem[] = [
     submitted: 'Nov 14, 2024',
     excerpt: 'Just listed! Stunning oceanfront condo with panoramic views. 3 bed, 2 bath, modern finishes throughout...',
   },
+  {
+    id: '9',
+    title: 'AI-Generated Patient Education Video',
+    client: 'Summit Dental',
+    clientId: 'summit',
+    type: 'ai',
+    typeLabel: 'AI Creative',
+    status: 'awaiting',
+    statusLabel: 'Awaiting Review',
+    submitted: 'Nov 21, 2024',
+    excerpt: 'An AI-generated educational video explaining the benefits of regular dental checkups and proper oral hygiene techniques...',
+  },
+  {
+    id: '10',
+    title: 'AI Product Showcase Animation',
+    client: 'Precision Auto Care',
+    clientId: 'precision',
+    type: 'ai',
+    typeLabel: 'AI Creative',
+    status: 'draft',
+    statusLabel: 'Draft',
+    submitted: 'Nov 22, 2024',
+    excerpt: 'Dynamic AI-generated animation showcasing our premium detailing services and before/after transformations...',
+  },
 ]
 
 const clients = [
@@ -185,6 +209,8 @@ export default function AdminContentPage() {
         return 'website'
       case 'social':
         return 'social'
+      case 'ai':
+        return 'ai-creative'
     }
   }
 
@@ -212,7 +238,21 @@ export default function AdminContentPage() {
         </div>
 
         {/* Stat Cards */}
-        <div className="stats-grid stats-grid-4" style={{ marginBottom: '24px' }}>
+        <div className="stats-grid stats-grid-5" style={{ marginBottom: '24px' }}>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div className="stat-content">
+              <span className="stat-value">12</span>
+              <span className="stat-label">Clients Managing Content</span>
+            </div>
+          </div>
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#DBEAFE', color: '#2563EB' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
@@ -310,6 +350,7 @@ export default function AdminContentPage() {
               <option value="gbp">GBP Post</option>
               <option value="service">Service Page</option>
               <option value="social">Social Post</option>
+              <option value="ai">AI Creative</option>
             </select>
           </div>
           <div className="filter-actions">

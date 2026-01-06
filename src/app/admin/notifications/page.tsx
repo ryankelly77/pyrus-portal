@@ -14,9 +14,10 @@ interface Activity {
   highlight?: string
   time: string
   date: 'today' | 'yesterday' | 'jan1'
+  isRead: boolean
 }
 
-const activities: Activity[] = [
+const initialActivities: Activity[] = [
   // Today
   {
     id: '1',
@@ -26,6 +27,7 @@ const activities: Activity[] = [
     description: 'Logged into the portal',
     time: '2 minutes ago',
     date: 'today',
+    isRead: false,
   },
   {
     id: '2',
@@ -36,6 +38,7 @@ const activities: Activity[] = [
     highlight: 'Results',
     time: '2 minutes ago',
     date: 'today',
+    isRead: false,
   },
   {
     id: '3',
@@ -46,6 +49,7 @@ const activities: Activity[] = [
     highlight: 'Monthly Report - December 2025',
     time: '5 minutes ago',
     date: 'today',
+    isRead: false,
   },
   {
     id: '4',
@@ -56,6 +60,7 @@ const activities: Activity[] = [
     highlight: 'Recommendations',
     time: '23 minutes ago',
     date: 'today',
+    isRead: false,
   },
   {
     id: '5',
@@ -66,6 +71,7 @@ const activities: Activity[] = [
     highlight: 'SEO Content Package',
     time: '25 minutes ago',
     date: 'today',
+    isRead: false,
   },
   {
     id: '6',
@@ -75,6 +81,7 @@ const activities: Activity[] = [
     description: 'Logged into the portal',
     time: '28 minutes ago',
     date: 'today',
+    isRead: true,
   },
   {
     id: '7',
@@ -85,6 +92,7 @@ const activities: Activity[] = [
     highlight: 'Getting Started',
     time: '1 hour ago',
     date: 'today',
+    isRead: true,
   },
   {
     id: '8',
@@ -94,6 +102,7 @@ const activities: Activity[] = [
     description: 'Logged into the portal',
     time: '1 hour ago',
     date: 'today',
+    isRead: true,
   },
   // Yesterday
   {
@@ -105,6 +114,7 @@ const activities: Activity[] = [
     highlight: 'Results',
     time: 'Yesterday at 4:32 PM',
     date: 'yesterday',
+    isRead: true,
   },
   {
     id: '10',
@@ -115,6 +125,7 @@ const activities: Activity[] = [
     highlight: 'Pro Dashboard',
     time: 'Yesterday at 4:35 PM',
     date: 'yesterday',
+    isRead: true,
   },
   {
     id: '11',
@@ -124,6 +135,7 @@ const activities: Activity[] = [
     description: 'Logged into the portal',
     time: 'Yesterday at 4:30 PM',
     date: 'yesterday',
+    isRead: true,
   },
   {
     id: '12',
@@ -134,6 +146,7 @@ const activities: Activity[] = [
     highlight: 'Recommendations',
     time: 'Yesterday at 11:15 AM',
     date: 'yesterday',
+    isRead: true,
   },
   {
     id: '13',
@@ -143,6 +156,7 @@ const activities: Activity[] = [
     description: 'Logged into the portal',
     time: 'Yesterday at 11:14 AM',
     date: 'yesterday',
+    isRead: true,
   },
   // January 1, 2026
   {
@@ -153,6 +167,7 @@ const activities: Activity[] = [
     description: 'Monthly reports generated for all active clients',
     time: 'Jan 1 at 12:00 AM',
     date: 'jan1',
+    isRead: true,
   },
 ]
 
@@ -168,6 +183,7 @@ const clients = [
 export default function AdminNotificationsPage() {
   const [typeFilter, setTypeFilter] = useState<'all' | ActivityType>('all')
   const [clientFilter, setClientFilter] = useState('All Clients')
+  const [activities, setActivities] = useState<Activity[]>(initialActivities)
 
   const filteredActivities = useMemo(() => {
     return activities.filter((activity) => {
@@ -175,7 +191,17 @@ export default function AdminNotificationsPage() {
       if (clientFilter !== 'All Clients' && activity.company !== clientFilter) return false
       return true
     })
-  }, [typeFilter, clientFilter])
+  }, [typeFilter, clientFilter, activities])
+
+  const unreadCount = activities.filter((a) => !a.isRead).length
+
+  const markAllRead = () => {
+    setActivities(activities.map((a) => ({ ...a, isRead: true })))
+  }
+
+  const markAsRead = (id: string) => {
+    setActivities(activities.map((a) => (a.id === id ? { ...a, isRead: true } : a)))
+  }
 
   const todayActivities = filteredActivities.filter((a) => a.date === 'today')
   const yesterdayActivities = filteredActivities.filter((a) => a.date === 'yesterday')
@@ -252,7 +278,12 @@ export default function AdminNotificationsPage() {
   }
 
   const renderActivityItem = (activity: Activity) => (
-    <div key={activity.id} className="activity-item">
+    <div
+      key={activity.id}
+      className={`activity-item ${!activity.isRead ? 'unread' : ''}`}
+      onClick={() => markAsRead(activity.id)}
+    >
+      {!activity.isRead && <span className="unread-indicator" />}
       <div className={`activity-icon ${getIconClass(activity.type, activity.description)}`}>
         {getActivityIcon(activity.type, activity.description)}
       </div>
@@ -297,7 +328,14 @@ export default function AdminNotificationsPage() {
               </svg>
               Export Activity
             </button>
-            <button className="btn btn-secondary">Mark All Read</button>
+            <button
+              className="btn btn-secondary"
+              onClick={markAllRead}
+              disabled={unreadCount === 0}
+            >
+              Mark All Read
+              {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
+            </button>
           </div>
         </div>
 
