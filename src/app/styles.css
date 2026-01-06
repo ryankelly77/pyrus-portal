@@ -18403,16 +18403,16 @@ input[type="date"].form-control {
 
 /* Social Platform Checkboxes */
 .social-platform-checkboxes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 10px;
 }
 
 .social-platform-checkbox {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
     border: 2px solid #E8EDE7;
     border-radius: 8px;
     cursor: pointer;
@@ -18433,9 +18433,8 @@ input[type="date"].form-control {
 }
 
 .social-platform-checkbox .social-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
 }
 
 .social-platform-checkbox .social-icon.facebook {
@@ -18452,10 +18451,4 @@ input[type="date"].form-control {
 
 .social-platform-checkbox .social-icon.x-twitter {
     color: #000000;
-}
-
-.social-platform-checkbox span {
-    font-size: 13px;
-    font-weight: 500;
-    color: #1A1F16;
 }

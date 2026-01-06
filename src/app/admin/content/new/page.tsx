@@ -159,7 +159,7 @@ export default function CreateContentPage() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                       <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <span>Google Business Profile</span>
+                    <span>GBP</span>
                   </button>
                   <button
                     type="button"
@@ -181,53 +181,49 @@ export default function CreateContentPage() {
                     Social Platforms <span className="required">*</span>
                   </label>
                   <div className="social-platform-checkboxes">
-                    <label className="social-platform-checkbox">
+                    <label className="social-platform-checkbox" title="Facebook">
                       <input
                         type="checkbox"
                         checked={socialPlatforms.facebook}
                         onChange={(e) => setSocialPlatforms({ ...socialPlatforms, facebook: e.target.checked })}
                       />
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon facebook">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" className="social-icon facebook">
                         <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                       </svg>
-                      <span>Facebook</span>
                     </label>
-                    <label className="social-platform-checkbox">
+                    <label className="social-platform-checkbox" title="Instagram">
                       <input
                         type="checkbox"
                         checked={socialPlatforms.instagram}
                         onChange={(e) => setSocialPlatforms({ ...socialPlatforms, instagram: e.target.checked })}
                       />
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" className="social-icon instagram">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24" className="social-icon instagram">
                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                       </svg>
-                      <span>Instagram</span>
                     </label>
-                    <label className="social-platform-checkbox">
+                    <label className="social-platform-checkbox" title="LinkedIn">
                       <input
                         type="checkbox"
                         checked={socialPlatforms.linkedin}
                         onChange={(e) => setSocialPlatforms({ ...socialPlatforms, linkedin: e.target.checked })}
                       />
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon linkedin">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" className="social-icon linkedin">
                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
                         <rect x="2" y="9" width="4" height="12"></rect>
                         <circle cx="4" cy="4" r="2"></circle>
                       </svg>
-                      <span>LinkedIn</span>
                     </label>
-                    <label className="social-platform-checkbox">
+                    <label className="social-platform-checkbox" title="X">
                       <input
                         type="checkbox"
                         checked={socialPlatforms.x}
                         onChange={(e) => setSocialPlatforms({ ...socialPlatforms, x: e.target.checked })}
                       />
-                      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" className="social-icon x-twitter">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" className="social-icon x-twitter">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
                       </svg>
-                      <span>X</span>
                     </label>
                   </div>
                 </div>
