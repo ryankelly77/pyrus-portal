@@ -95,6 +95,8 @@ export default function ContentViewPage() {
   const params = useParams()
   const contentId = params.id as string
   const content = contentData[contentId] || contentData['2'] // Default to item 2 for demo
+  const currentClient = clients.find(c => c.id === content.clientId)
+  const hasAiMonitoring = currentClient?.hasAiMonitoring ?? false
 
   const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>(content.platform)
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
@@ -259,16 +261,16 @@ export default function ContentViewPage() {
                         <span>Content follows SEO best practices</span>
                       </span>
                     </label>
-                    <label className={`seo-checkbox ${!clients.find(c => c.id === content.clientId)?.hasAiMonitoring ? 'disabled' : ''}`}>
+                    <label className={`seo-checkbox ${!hasAiMonitoring ? 'disabled' : ''}`}>
                       <input
                         type="checkbox"
                         checked={aiOptimized}
                         onChange={(e) => setAiOptimized(e.target.checked)}
-                        disabled={!clients.find(c => c.id === content.clientId)?.hasAiMonitoring}
+                        disabled={!hasAiMonitoring}
                       />
                       <span className="seo-checkbox-content">
                         <strong>Optimized for AI</strong>
-                        {clients.find(c => c.id === content.clientId)?.hasAiMonitoring ? (
+                        {hasAiMonitoring ? (
                           <span>Content optimized for AI search results</span>
                         ) : (
                           <span className="disabled-hint">Client not enrolled in AI Monitoring program</span>
