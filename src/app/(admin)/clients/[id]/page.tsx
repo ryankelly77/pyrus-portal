@@ -2,9 +2,100 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
+
+interface ClientData {
+  id: string
+  name: string
+  initials: string
+  avatarColor: string
+  email: string
+  clientSince: string
+  status: 'active' | 'paused' | 'onboarding'
+  servicesCount: number
+}
+
+// Client database - matches admin/clients/page.tsx
+const clients: Record<string, ClientData> = {
+  'tc-clinical': {
+    id: 'tc-clinical',
+    name: 'TC Clinical Services',
+    initials: 'TC',
+    avatarColor: '#885430',
+    email: 'dlg.mdservices@gmail.com',
+    clientSince: 'Sep 2025',
+    status: 'active',
+    servicesCount: 4,
+  },
+  'raptor-vending': {
+    id: 'raptor-vending',
+    name: 'Raptor Vending',
+    initials: 'RV',
+    avatarColor: '#2563EB',
+    email: 'info@raptorvending.com',
+    clientSince: 'Jun 2025',
+    status: 'active',
+    servicesCount: 3,
+  },
+  'raptor-services': {
+    id: 'raptor-services',
+    name: 'Raptor Services',
+    initials: 'RS',
+    avatarColor: '#7C3AED',
+    email: 'contact@raptorservices.com',
+    clientSince: 'Mar 2025',
+    status: 'active',
+    servicesCount: 5,
+  },
+  'gohfr': {
+    id: 'gohfr',
+    name: 'Gohfr',
+    initials: 'GO',
+    avatarColor: '#0B7277',
+    email: 'hello@gohfr.com',
+    clientSince: 'Dec 2025',
+    status: 'onboarding',
+    servicesCount: 3,
+  },
+  'espronceda-law': {
+    id: 'espronceda-law',
+    name: 'Espronceda Law',
+    initials: 'EL',
+    avatarColor: '#DC2626',
+    email: 'maria@espronceda.law',
+    clientSince: 'Aug 2025',
+    status: 'active',
+    servicesCount: 4,
+  },
+}
+
+const avatarColors = [
+  { name: 'Brown', value: '#885430' },
+  { name: 'Blue', value: '#2563EB' },
+  { name: 'Purple', value: '#7C3AED' },
+  { name: 'Teal', value: '#0B7277' },
+  { name: 'Red', value: '#DC2626' },
+  { name: 'Orange', value: '#EA580C' },
+  { name: 'Green', value: '#16A34A' },
+  { name: 'Cyan', value: '#0891B2' },
+  { name: 'Indigo', value: '#4F46E5' },
+  { name: 'Pink', value: '#DB2777' },
+  { name: 'Gray', value: '#6B7280' },
+  { name: 'Violet', value: '#9333EA' },
+]
 
 export default function ClientDetailPage() {
+  const params = useParams()
+  const clientId = params.id as string
+  const client = clients[clientId] || clients['tc-clinical']
+
   const [activeSubtab, setActiveSubtab] = useState('checklist')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: client.name,
+    email: client.email,
+    avatarColor: client.avatarColor,
+  })
 
   return (
     <>
@@ -16,11 +107,11 @@ export default function ClientDetailPage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-            <span>TC Clinical Services</span>
+            <span>{client.name}</span>
           </nav>
         </div>
         <div className="admin-top-header-right">
-          <Link href="/getting-started?viewingAs=tc-clinical" className="btn btn-secondary">
+          <Link href={`/getting-started?viewingAs=${client.id}`} className="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
@@ -48,13 +139,13 @@ export default function ClientDetailPage() {
         <div className="client-header-card">
           <div className="client-header">
             <div className="client-info">
-              <div className="client-avatar">TC</div>
+              <div className="client-avatar" style={{ background: editFormData.avatarColor }}>{client.initials}</div>
               <div className="client-details">
                 <h1>
-                  TC Clinical Services
-                  <span className="status-badge active">Active</span>
+                  {client.name}
+                  <span className={`status-badge ${client.status}`}>{client.status.charAt(0).toUpperCase() + client.status.slice(1)}</span>
                 </h1>
-                <p className="client-meta">dlg.mdservices@gmail.com • Client since Sep 2025 • <Link href="#current-services" className="services-link">4 services</Link></p>
+                <p className="client-meta">{client.email} • Client since {client.clientSince} • <Link href="#current-services" className="services-link">{client.servicesCount} services</Link></p>
               </div>
             </div>
             <div className="header-actions">
@@ -71,7 +162,7 @@ export default function ClientDetailPage() {
                 </svg>
                 Resend Invitation
               </button>
-              <button className="btn btn-primary">
+              <button className="btn btn-primary" onClick={() => setShowEditModal(true)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 20h9"></path>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -685,6 +776,74 @@ export default function ClientDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Client Modal */}
+      {showEditModal && (
+        <div className="edit-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Client</h2>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="clientName">Client Name</label>
+                <input
+                  type="text"
+                  id="clientName"
+                  className="form-control"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="clientEmail">Email</label>
+                <input
+                  type="email"
+                  id="clientEmail"
+                  className="form-control"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Avatar Color</label>
+                <div className="color-picker-grid">
+                  {avatarColors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      className={`color-picker-option ${editFormData.avatarColor === color.value ? 'selected' : ''}`}
+                      style={{ background: color.value }}
+                      onClick={() => setEditFormData({ ...editFormData, avatarColor: color.value })}
+                      title={color.name}
+                    >
+                      {editFormData.avatarColor === color.value && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowEditModal(false)}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

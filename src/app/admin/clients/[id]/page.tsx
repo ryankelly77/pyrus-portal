@@ -16,55 +16,165 @@ interface EditRequest {
   status: RequestStatus
   date: string
 }
+
+interface ClientData {
+  id: string
+  name: string
+  initials: string
+  avatarColor: string
+  email: string
+  clientSince: string
+  status: 'active' | 'paused' | 'onboarding'
+  servicesCount: number
+  hasWebsite: boolean
+  hasContent: boolean
+  websiteData?: {
+    domain: string
+    previewUrl: string
+    plan: string
+    carePlan: string
+    status: 'active' | 'development' | 'maintenance'
+    launchDate: string
+    hosting: {
+      provider: string
+      uptime: string
+      lastUpdated: string
+    }
+  }
+  editRequests?: EditRequest[]
+  checklistProgress: {
+    completed: number
+    total: number
+  }
+}
+
+const avatarColors = [
+  { name: 'Brown', value: '#885430' },
+  { name: 'Blue', value: '#2563EB' },
+  { name: 'Purple', value: '#7C3AED' },
+  { name: 'Teal', value: '#0B7277' },
+  { name: 'Red', value: '#DC2626' },
+  { name: 'Orange', value: '#EA580C' },
+  { name: 'Green', value: '#16A34A' },
+  { name: 'Cyan', value: '#0891B2' },
+  { name: 'Indigo', value: '#4F46E5' },
+  { name: 'Pink', value: '#DB2777' },
+  { name: 'Gray', value: '#6B7280' },
+  { name: 'Violet', value: '#9333EA' },
+]
+
+// Client database
+const clients: Record<string, ClientData> = {
+  'tc-clinical': {
+    id: 'tc-clinical',
+    name: 'TC Clinical Services',
+    initials: 'TC',
+    avatarColor: '#885430',
+    email: 'dlg.mdservices@gmail.com',
+    clientSince: 'Sep 2025',
+    status: 'active',
+    servicesCount: 4,
+    hasWebsite: true,
+    hasContent: true,
+    websiteData: {
+      domain: 'tc-clinicalservices.com',
+      previewUrl: 'https://app.landingsite.ai/website-preview?id=8869fd44-f6ea-4bd7-bc24-92a7a14f17a5',
+      plan: 'Seed Site (AI-Built)',
+      carePlan: 'Website Care Plan',
+      status: 'active',
+      launchDate: 'Dec 30, 2025',
+      hosting: {
+        provider: 'Landingsite.ai',
+        uptime: '99.9%',
+        lastUpdated: 'Jan 3, 2026',
+      },
+    },
+    editRequests: [
+      { id: 1, title: 'Update contact page hours', type: 'Content Update', status: 'completed', date: 'Jan 3, 2026' },
+      { id: 2, title: 'Add new wound care service page', type: 'New Feature', status: 'in-progress', date: 'Jan 2, 2026' },
+      { id: 3, title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed', date: 'Dec 28, 2025' },
+      { id: 4, title: 'Update footer contact info', type: 'Content Update', status: 'completed', date: 'Dec 20, 2025' },
+    ],
+    checklistProgress: { completed: 5, total: 6 },
+  },
+  'raptor-vending': {
+    id: 'raptor-vending',
+    name: 'Raptor Vending',
+    initials: 'RV',
+    avatarColor: '#2563EB',
+    email: 'info@raptorvending.com',
+    clientSince: 'Nov 2025',
+    status: 'active',
+    servicesCount: 2,
+    hasWebsite: false,
+    hasContent: false,
+    checklistProgress: { completed: 3, total: 6 },
+  },
+}
+
 type GettingStartedSubtab = 'checklist' | 'onboarding-summary'
 type ResultsSubtab = 'overview' | 'pro-dashboard'
 type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
 
 export default function ClientDetailPage() {
   const params = useParams()
+  const clientId = params.id as string
+  const client = clients[clientId] || clients['tc-clinical']
+
   const [activeTab, setActiveTab] = useState<MainTab>('getting-started')
   const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('checklist')
   const [resultsSubtab, setResultsSubtab] = useState<ResultsSubtab>('overview')
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
   const [isClientView, setIsClientView] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editModalTab, setEditModalTab] = useState<'general' | 'billing' | 'notifications'>('general')
+  const [editFormData, setEditFormData] = useState({
+    companyName: client.name,
+    status: client.status,
+    primaryContact: 'Jon De La Garza',
+    email: client.email,
+    phone: '(210) 394-5245',
+    website: client.websiteData?.domain ? `https://${client.websiteData.domain}` : '',
+    growthStage: 'sprouting' as 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
+    internalNotes: 'Services: Content Writing, Website Design & Development. Target: Medicare patients needing wound care and gait deficit patients 25+. Content focus: advanced wound care and gait deficit rehab. Requires approval before posting. Website pages: Home, Products, Contact, Company Story. Reference: woundsmart.com',
+    avatarColor: client.avatarColor,
+    // Billing
+    billingEmail: `billing@${client.websiteData?.domain || 'example.com'}`,
+    paymentMethod: '**** **** **** 4242',
+    billingCycle: 'monthly' as 'monthly' | 'quarterly' | 'annually',
+    // Notifications
+    monthlyReports: true,
+    resultAlerts: true,
+    recommendationUpdates: true,
+    weeklyDigest: false,
+  })
 
-  // Activity data
-  const activities = [
-    { id: 1, type: 'content' as const, title: 'Content approved and published', description: '"January Services Update" blog post is now live on your website', time: 'Today, 3:30 PM' },
-    { id: 2, type: 'alert' as const, title: 'Keyword reached Page 1!', description: '"precision wound care San Antonio" moved to position #7', time: 'Today, 2:45 PM' },
-    { id: 3, type: 'content' as const, title: 'New content ready for review', description: '"Q1 2026 Marketing Goals" blog post submitted for your approval', time: 'Today, 11:00 AM' },
-    { id: 4, type: 'task' as const, title: 'Monthly blog post published', description: '"5 Signs Your Wound Care Needs a Specialist" is now live', time: 'Today, 10:30 AM' },
-    { id: 5, type: 'alert' as const, title: 'Traffic milestone: 2,500 visitors!', description: 'Monthly website traffic exceeded 2,500 unique visitors', time: 'Yesterday, 4:30 PM' },
-    { id: 6, type: 'update' as const, title: 'Google Ads campaign optimized', description: 'Adjusted bid strategy based on conversion data', time: 'Yesterday, 3:00 PM' },
-    { id: 7, type: 'task' as const, title: 'Google Business Profile updated', description: 'Added new photos and updated business hours', time: 'Yesterday, 11:15 AM' },
-    { id: 8, type: 'task' as const, title: 'Website launched!', description: 'tc-clinicalservices.com is now live and indexed by Google', time: 'Dec 30, 4:00 PM' },
-  ]
+  // Activity data - varies by client
+  const activitiesByClient: Record<string, typeof activities> = {
+    'tc-clinical': [
+      { id: 1, type: 'content' as const, title: 'Content approved and published', description: '"January Services Update" blog post is now live on your website', time: 'Today, 3:30 PM' },
+      { id: 2, type: 'alert' as const, title: 'Keyword reached Page 1!', description: '"precision wound care San Antonio" moved to position #7', time: 'Today, 2:45 PM' },
+      { id: 3, type: 'content' as const, title: 'New content ready for review', description: '"Q1 2026 Marketing Goals" blog post submitted for your approval', time: 'Today, 11:00 AM' },
+      { id: 4, type: 'task' as const, title: 'Monthly blog post published', description: '"5 Signs Your Wound Care Needs a Specialist" is now live', time: 'Today, 10:30 AM' },
+      { id: 5, type: 'alert' as const, title: 'Traffic milestone: 2,500 visitors!', description: 'Monthly website traffic exceeded 2,500 unique visitors', time: 'Yesterday, 4:30 PM' },
+      { id: 6, type: 'update' as const, title: 'Google Ads campaign optimized', description: 'Adjusted bid strategy based on conversion data', time: 'Yesterday, 3:00 PM' },
+      { id: 7, type: 'task' as const, title: 'Google Business Profile updated', description: 'Added new photos and updated business hours', time: 'Yesterday, 11:15 AM' },
+      { id: 8, type: 'task' as const, title: 'Website launched!', description: 'tc-clinicalservices.com is now live and indexed by Google', time: 'Dec 30, 4:00 PM' },
+    ],
+    'raptor-vending': [
+      { id: 1, type: 'update' as const, title: 'Google Ads campaign launched', description: 'Search campaign now live targeting vending machine keywords', time: 'Today, 2:00 PM' },
+      { id: 2, type: 'alert' as const, title: 'First lead received!', description: 'New lead from Google Ads: Office building in Austin', time: 'Today, 11:30 AM' },
+      { id: 3, type: 'task' as const, title: 'Google Business Profile claimed', description: 'Business verified and profile optimized', time: 'Yesterday, 4:00 PM' },
+      { id: 4, type: 'update' as const, title: 'Ad copy approved', description: 'Client approved Google Ads copy and extensions', time: 'Jan 3, 2026' },
+      { id: 5, type: 'task' as const, title: 'Onboarding completed', description: 'Initial setup and strategy call completed', time: 'Jan 2, 2026' },
+    ],
+  }
+
+  const activities = activitiesByClient[clientId] || activitiesByClient['tc-clinical']
 
   const filteredActivities = activities.filter(
     activity => activityFilter === 'all' || activity.type === activityFilter
   )
-
-  // Website data
-  const websiteData = {
-    domain: 'tc-clinicalservices.com',
-    previewUrl: 'https://app.landingsite.ai/website-preview?id=8869fd44-f6ea-4bd7-bc24-92a7a14f17a5',
-    plan: 'Seed Site (AI-Built)',
-    carePlan: 'Website Care Plan',
-    status: 'active' as const,
-    launchDate: 'Dec 30, 2025',
-    hosting: {
-      provider: 'Landingsite.ai',
-      uptime: '99.9%',
-      lastUpdated: 'Jan 3, 2026',
-    },
-  }
-
-  const editRequests: EditRequest[] = [
-    { id: 1, title: 'Update contact page hours', type: 'Content Update', status: 'completed', date: 'Jan 3, 2026' },
-    { id: 2, title: 'Add new wound care service page', type: 'New Feature', status: 'in-progress', date: 'Jan 2, 2026' },
-    { id: 3, title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed', date: 'Dec 28, 2025' },
-    { id: 4, title: 'Update footer contact info', type: 'Content Update', status: 'completed', date: 'Dec 20, 2025' },
-  ]
 
   const getStatusIcon = (status: RequestStatus) => {
     switch (status) {
@@ -104,7 +214,7 @@ export default function ClientDetailPage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-            <span>TC Clinical Services</span>
+            <span>{client.name}</span>
           </>
         }
         actions={
@@ -123,13 +233,13 @@ export default function ClientDetailPage() {
         <div className="client-header-card">
           <div className="client-header">
             <div className="client-info">
-              <div className="client-avatar">TC</div>
+              <div className="client-avatar" style={{ background: editFormData.avatarColor }}>{client.initials}</div>
               <div className="client-details">
                 <h1>
-                  TC Clinical Services
-                  <span className="status-badge active">Active</span>
+                  {client.name}
+                  <span className={`status-badge ${client.status}`}>{client.status.charAt(0).toUpperCase() + client.status.slice(1)}</span>
                 </h1>
-                <p className="client-meta">dlg.mdservices@gmail.com • Client since Sep 2025 • <Link href="#current-services" className="services-link">4 services</Link></p>
+                <p className="client-meta">{client.email} • Client since {client.clientSince} • <Link href="#current-services" className="services-link">{client.servicesCount} services</Link></p>
               </div>
             </div>
             <div className="header-actions">
@@ -146,7 +256,7 @@ export default function ClientDetailPage() {
                 </svg>
                 Resend Invitation
               </button>
-              <button className="btn btn-primary">
+              <button className="btn btn-primary" onClick={() => setShowEditModal(true)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 20h9"></path>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -162,8 +272,14 @@ export default function ClientDetailPage() {
           <button className={`tab-btn ${activeTab === 'getting-started' ? 'active' : ''}`} onClick={() => setActiveTab('getting-started')}>Getting Started</button>
           <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>Results</button>
           <button className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>Activity</button>
-          <button className={`tab-btn ${activeTab === 'website' ? 'active' : ''}`} onClick={() => setActiveTab('website')}>Website</button>
-          <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>Content</button>
+          <button className={`tab-btn ${activeTab === 'website' ? 'active' : ''}`} onClick={() => setActiveTab('website')}>
+            Website
+            {!client.hasWebsite && <span className="tab-badge inactive">Inactive</span>}
+          </button>
+          <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>
+            Content
+            {!client.hasContent && <span className="tab-badge inactive">Inactive</span>}
+          </button>
           <button className={`tab-btn ${activeTab === 'communication' ? 'active' : ''}`} onClick={() => setActiveTab('communication')}>Communication</button>
           <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>Recommendations</button>
         </div>
@@ -655,210 +771,362 @@ export default function ClientDetailPage() {
         {/* ==================== WEBSITE TAB ==================== */}
         {activeTab === 'website' && (
           <div className="website-tab-content">
-            {/* Website Preview and Info Grid */}
-            <div className="website-hero-grid">
-              {/* Website Preview */}
-              <div className="website-preview-card">
-                <div className="website-preview-header">
-                  <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                      <line x1="8" y1="21" x2="16" y2="21"></line>
-                      <line x1="12" y1="17" x2="12" y2="21"></line>
-                    </svg>
-                    Website Preview
-                  </h3>
-                  <a href={`https://${websiteData.domain}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                      <polyline points="15 3 21 3 21 9"></polyline>
-                      <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                    Visit Site
-                  </a>
-                </div>
-                <div className="website-preview-container">
-                  <iframe
-                    src={websiteData.previewUrl}
-                    title="Website Preview"
-                    frameBorder="0"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              </div>
-
-              {/* Website Info Card */}
-              <div className="website-info-card">
-                <div className="website-info-header">
-                  <div className="website-status-badge active">
-                    <span className="status-dot"></span>
-                    Active
-                  </div>
-                </div>
-
-                <div className="website-domain">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  <span>{websiteData.domain}</span>
-                </div>
-
-                <div className="website-info-details">
-                  <div className="info-row">
-                    <span className="info-label">Website Plan</span>
-                    <span className="info-value">{websiteData.plan}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Care Plan</span>
-                    <span className="info-value">{websiteData.carePlan}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Launched</span>
-                    <span className="info-value">{websiteData.launchDate}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">Hosting</span>
-                    <span className="info-value">{websiteData.hosting.provider}</span>
-                  </div>
-                </div>
-
-                <div className="website-stats-mini">
-                  <div className="stat-mini">
-                    <div className="stat-mini-value success">{websiteData.hosting.uptime}</div>
-                    <div className="stat-mini-label">Uptime</div>
-                  </div>
-                  <div className="stat-mini">
-                    <div className="stat-mini-value">{websiteData.hosting.lastUpdated}</div>
-                    <div className="stat-mini-label">Last Updated</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Edit Requests Section */}
-            <div className="edit-requests-card">
-              <div className="edit-requests-header">
-                <div className="edit-requests-title">
-                  <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                    Website Edit Requests
-                  </h3>
-                  <p>Client-requested changes to their website</p>
-                </div>
-              </div>
-
-              {/* Requests List */}
-              <div className="edit-requests-list">
-                {editRequests.map((request) => (
-                  <div key={request.id} className={`edit-request-item ${request.status}`}>
-                    <div className={`request-status-icon ${request.status}`}>
-                      {getStatusIcon(request.status)}
+            {client.hasWebsite && client.websiteData ? (
+              <>
+                {/* Website Preview and Info Grid */}
+                <div className="website-hero-grid">
+                  {/* Website Preview */}
+                  <div className="website-preview-card">
+                    <div className="website-preview-header">
+                      <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                          <line x1="8" y1="21" x2="16" y2="21"></line>
+                          <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        Website Preview
+                      </h3>
+                      <a href={`https://${client.websiteData.domain}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Visit Site
+                      </a>
                     </div>
-                    <div className="request-details">
-                      <div className="request-title">{request.title}</div>
-                      <div className="request-meta">
-                        <span className="request-type">{request.type}</span>
+                    <div className="website-preview-container">
+                      <iframe
+                        src={client.websiteData.previewUrl}
+                        title="Website Preview"
+                        frameBorder="0"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+
+                  {/* Website Info Card */}
+                  <div className="website-info-card">
+                    <div className="website-info-header">
+                      <div className="website-status-badge active">
+                        <span className="status-dot"></span>
+                        Active
                       </div>
                     </div>
-                    <div className="request-info">
-                      <span className={`request-status-badge ${request.status}`}>
-                        {request.status === 'in-progress' ? 'In Progress' : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                      </span>
-                      <span className="request-date">{request.date}</span>
+
+                    <div className="website-domain">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                      </svg>
+                      <span>{client.websiteData.domain}</span>
+                    </div>
+
+                    <div className="website-info-details">
+                      <div className="info-row">
+                        <span className="info-label">Website Plan</span>
+                        <span className="info-value">{client.websiteData.plan}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="info-label">Care Plan</span>
+                        <span className="info-value">{client.websiteData.carePlan}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="info-label">Launched</span>
+                        <span className="info-value">{client.websiteData.launchDate}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="info-label">Hosting</span>
+                        <span className="info-value">{client.websiteData.hosting.provider}</span>
+                      </div>
+                    </div>
+
+                    <div className="website-stats-mini">
+                      <div className="stat-mini">
+                        <div className="stat-mini-value success">{client.websiteData.hosting.uptime}</div>
+                        <div className="stat-mini-label">Uptime</div>
+                      </div>
+                      <div className="stat-mini">
+                        <div className="stat-mini-value">{client.websiteData.hosting.lastUpdated}</div>
+                        <div className="stat-mini-label">Last Updated</div>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Edit Requests Section */}
+                {client.editRequests && client.editRequests.length > 0 && (
+                  <div className="edit-requests-card">
+                    <div className="edit-requests-header">
+                      <div className="edit-requests-title">
+                        <h3>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                          Website Edit Requests
+                        </h3>
+                        <p>Client-requested changes to their website</p>
+                      </div>
+                    </div>
+
+                    {/* Requests List */}
+                    <div className="edit-requests-list">
+                      {client.editRequests.map((request) => (
+                        <div key={request.id} className={`edit-request-item ${request.status}`}>
+                          <div className={`request-status-icon ${request.status}`}>
+                            {getStatusIcon(request.status)}
+                          </div>
+                          <div className="request-details">
+                            <div className="request-title">{request.title}</div>
+                            <div className="request-meta">
+                              <span className="request-type">{request.type}</span>
+                            </div>
+                          </div>
+                          <div className="request-info">
+                            <span className={`request-status-badge ${request.status}`}>
+                              {request.status === 'in-progress' ? 'In Progress' : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </span>
+                            <span className="request-date">{request.date}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Inactive Website State */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                  </div>
+                  <h3>Website Service Not Active</h3>
+                  <p>This client does not currently have a website service. Activate a website plan to manage their site here.</p>
+
+                  <div className="inactive-service-actions">
+                    <button className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      Activate Website Service
+                    </button>
+                    <button className="btn btn-secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                      </svg>
+                      View Website Plans
+                    </button>
+                  </div>
+                </div>
+
+                <div className="inactive-service-info">
+                  <h4>Website Services Include:</h4>
+                  <ul>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Custom website design and development
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Mobile-responsive layouts
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Website hosting and maintenance
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Edit request management
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Performance monitoring
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* ==================== CONTENT TAB ==================== */}
         {activeTab === 'content' && (
           <div className="content-manager-tab">
-            {/* Content Stats */}
-            <div className="content-stats">
-              <div className="content-stat-card urgent">
-                <div className="stat-label">Urgent Reviews</div>
-                <div className="stat-value">2</div>
-                <div className="stat-desc">Less than 24 hours</div>
-              </div>
-              <div className="content-stat-card">
-                <div className="stat-label">Pending Approval</div>
-                <div className="stat-value">5</div>
-                <div className="stat-desc">Awaiting client review</div>
-              </div>
-              <div className="content-stat-card">
-                <div className="stat-label">Approved</div>
-                <div className="stat-value">2</div>
-                <div className="stat-desc">Ready for publishing</div>
-              </div>
-              <div className="content-stat-card">
-                <div className="stat-label">Published</div>
-                <div className="stat-value">6</div>
-                <div className="stat-desc">Live content</div>
-              </div>
-            </div>
-
-            {/* Content List */}
-            <div className="content-section">
-              <div className="content-section-header">
-                <h3 className="urgent-title">Urgent Reviews</h3>
-              </div>
-              <div className="content-list">
-                <div className="content-item urgent">
-                  <div className="content-item-header">
-                    <span className="platform-badge website">Website Content</span>
-                    <div className="time-remaining urgent">
-                      <span className="time-label">Time remaining</span>
-                      <span className="time-value">23 hours</span>
-                    </div>
+            {client.hasContent ? (
+              <>
+                {/* Content Stats */}
+                <div className="content-stats">
+                  <div className="content-stat-card urgent">
+                    <div className="stat-label">Urgent Reviews</div>
+                    <div className="stat-value">2</div>
+                    <div className="stat-desc">Less than 24 hours</div>
                   </div>
-                  <h4 className="content-title">Black Friday Sale Announcement</h4>
-                  <div className="content-meta">
-                    <span className="content-type">Blog Post</span>
-                    <span className="content-date">Added Nov 15</span>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Pending Approval</div>
+                    <div className="stat-value">5</div>
+                    <div className="stat-desc">Awaiting client review</div>
                   </div>
-                  <p className="content-preview">Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
-                  <div className="content-actions">
-                    <button className="btn btn-primary btn-sm">Review &amp; Edit</button>
-                    <button className="btn btn-outline btn-sm">Quick Approve</button>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Approved</div>
+                    <div className="stat-value">2</div>
+                    <div className="stat-desc">Ready for publishing</div>
+                  </div>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Published</div>
+                    <div className="stat-value">6</div>
+                    <div className="stat-desc">Live content</div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="content-section">
-              <div className="content-section-header">
-                <h3>Pending Approval</h3>
-              </div>
-              <div className="content-list">
-                <div className="content-item">
-                  <div className="content-item-header">
-                    <span className="platform-badge website">Website Content</span>
-                    <div className="time-remaining">
-                      <span className="time-label">Time remaining</span>
-                      <span className="time-value">4 days</span>
+                {/* Content List */}
+                <div className="content-section">
+                  <div className="content-section-header">
+                    <h3 className="urgent-title">Urgent Reviews</h3>
+                  </div>
+                  <div className="content-list">
+                    <div className="content-item urgent">
+                      <div className="content-item-header">
+                        <span className="platform-badge website">Website Content</span>
+                        <div className="time-remaining urgent">
+                          <span className="time-label">Time remaining</span>
+                          <span className="time-value">23 hours</span>
+                        </div>
+                      </div>
+                      <h4 className="content-title">Black Friday Sale Announcement</h4>
+                      <div className="content-meta">
+                        <span className="content-type">Blog Post</span>
+                        <span className="content-date">Added Nov 15</span>
+                      </div>
+                      <p className="content-preview">Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
+                      <div className="content-actions">
+                        <button className="btn btn-primary btn-sm">Review &amp; Edit</button>
+                        <button className="btn btn-outline btn-sm">Quick Approve</button>
+                      </div>
                     </div>
                   </div>
-                  <h4 className="content-title">2025 Marketing Trends You Need to Know</h4>
-                  <div className="content-meta">
-                    <span className="content-type">Blog Post</span>
-                    <span className="content-date">Added Nov 20</span>
+                </div>
+
+                <div className="content-section">
+                  <div className="content-section-header">
+                    <h3>Pending Approval</h3>
                   </div>
-                  <p className="content-preview">Stay ahead of the curve with these 10 marketing trends that will dominate 2025...</p>
-                  <div className="content-actions">
-                    <button className="btn btn-primary btn-sm">Review &amp; Edit</button>
-                    <button className="btn btn-outline btn-sm">Quick Approve</button>
+                  <div className="content-list">
+                    <div className="content-item">
+                      <div className="content-item-header">
+                        <span className="platform-badge website">Website Content</span>
+                        <div className="time-remaining">
+                          <span className="time-label">Time remaining</span>
+                          <span className="time-value">4 days</span>
+                        </div>
+                      </div>
+                      <h4 className="content-title">2025 Marketing Trends You Need to Know</h4>
+                      <div className="content-meta">
+                        <span className="content-type">Blog Post</span>
+                        <span className="content-date">Added Nov 20</span>
+                      </div>
+                      <p className="content-preview">Stay ahead of the curve with these 10 marketing trends that will dominate 2025...</p>
+                      <div className="content-actions">
+                        <button className="btn btn-primary btn-sm">Review &amp; Edit</button>
+                        <button className="btn btn-outline btn-sm">Quick Approve</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </>
+            ) : (
+              /* Inactive Content State */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <h3>Content Service Not Active</h3>
+                  <p>This client does not currently have a content service. Activate a content plan to manage their blog posts, social media, and more.</p>
+
+                  <div className="inactive-service-actions">
+                    <button className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      Activate Content Service
+                    </button>
+                    <button className="btn btn-secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                      </svg>
+                      View Content Plans
+                    </button>
+                  </div>
+                </div>
+
+                <div className="inactive-service-info">
+                  <h4>Content Services Include:</h4>
+                  <ul>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Blog post writing and publishing
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Social media content creation
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Content calendar management
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      SEO-optimized content
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Client approval workflow
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1114,6 +1382,301 @@ export default function ClientDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Client Modal */}
+      {showEditModal && (
+        <div className="edit-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="edit-modal-content edit-modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <div className="modal-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h2>Edit Client</h2>
+                  <p className="modal-subtitle">Update client information and settings</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="modal-tabs">
+              <button
+                className={`modal-tab ${editModalTab === 'general' ? 'active' : ''}`}
+                onClick={() => setEditModalTab('general')}
+              >
+                General
+              </button>
+              <button
+                className={`modal-tab ${editModalTab === 'billing' ? 'active' : ''}`}
+                onClick={() => setEditModalTab('billing')}
+              >
+                Billing
+              </button>
+              <button
+                className={`modal-tab ${editModalTab === 'notifications' ? 'active' : ''}`}
+                onClick={() => setEditModalTab('notifications')}
+              >
+                Notifications
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {editModalTab === 'general' && (
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="companyName">Company Name</label>
+                      <input
+                        type="text"
+                        id="companyName"
+                        className="form-control"
+                        value={editFormData.companyName}
+                        onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="status">Status</label>
+                      <select
+                        id="status"
+                        className="form-control"
+                        value={editFormData.status}
+                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as 'active' | 'paused' | 'onboarding' })}
+                      >
+                        <option value="active">Active</option>
+                        <option value="onboarding">Onboarding</option>
+                        <option value="paused">Paused</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="primaryContact">Primary Contact Name</label>
+                      <input
+                        type="text"
+                        id="primaryContact"
+                        className="form-control"
+                        value={editFormData.primaryContact}
+                        onChange={(e) => setEditFormData({ ...editFormData, primaryContact: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="email">Email Address</label>
+                      <input
+                        type="email"
+                        id="email"
+                        className="form-control"
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="phone">Phone Number</label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        className="form-control"
+                        value={editFormData.phone}
+                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="website">Website</label>
+                      <input
+                        type="url"
+                        id="website"
+                        className="form-control"
+                        value={editFormData.website}
+                        onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Growth Stage</label>
+                    <div className="growth-stage-options">
+                      {(['seedling', 'sprouting', 'blooming', 'harvesting'] as const).map((stage) => (
+                        <button
+                          key={stage}
+                          type="button"
+                          className={`growth-stage-btn ${editFormData.growthStage === stage ? 'active' : ''}`}
+                          onClick={() => setEditFormData({ ...editFormData, growthStage: stage })}
+                        >
+                          {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Avatar Color</label>
+                    <div className="color-picker-grid">
+                      {avatarColors.map((color) => (
+                        <button
+                          key={color.value}
+                          type="button"
+                          className={`color-picker-option ${editFormData.avatarColor === color.value ? 'selected' : ''}`}
+                          style={{ background: color.value }}
+                          onClick={() => setEditFormData({ ...editFormData, avatarColor: color.value })}
+                          title={color.name}
+                        >
+                          {editFormData.avatarColor === color.value && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="internalNotes">Internal Notes</label>
+                    <textarea
+                      id="internalNotes"
+                      className="form-control"
+                      rows={4}
+                      value={editFormData.internalNotes}
+                      onChange={(e) => setEditFormData({ ...editFormData, internalNotes: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+
+              {editModalTab === 'billing' && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="billingEmail">Billing Contact Email</label>
+                    <input
+                      type="email"
+                      id="billingEmail"
+                      className="form-control"
+                      value={editFormData.billingEmail}
+                      onChange={(e) => setEditFormData({ ...editFormData, billingEmail: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Payment Method</label>
+                    <div className="payment-method-display">
+                      <div className="payment-method-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <span>{editFormData.paymentMethod}</span>
+                      </div>
+                      <button type="button" className="payment-update-btn">Update</button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="billingCycle">Billing Cycle</label>
+                    <select
+                      id="billingCycle"
+                      className="form-control"
+                      value={editFormData.billingCycle}
+                      onChange={(e) => setEditFormData({ ...editFormData, billingCycle: e.target.value as 'monthly' | 'quarterly' | 'annually' })}
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="annually">Annually</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {editModalTab === 'notifications' && (
+                <div className="notification-toggles">
+                  <div className="notification-toggle-item">
+                    <div className="notification-toggle-info">
+                      <div className="notification-toggle-title">Monthly Reports</div>
+                      <div className="notification-toggle-desc">Send automated monthly performance reports</div>
+                    </div>
+                    <div className="edit-toggle-wrap">
+                      <input
+                        type="checkbox"
+                        checked={editFormData.monthlyReports}
+                        onChange={(e) => setEditFormData({ ...editFormData, monthlyReports: e.target.checked })}
+                      />
+                      <span className="edit-toggle-track"></span>
+                    </div>
+                  </div>
+
+                  <div className="notification-toggle-item">
+                    <div className="notification-toggle-info">
+                      <div className="notification-toggle-title">Result Alerts</div>
+                      <div className="notification-toggle-desc">Notify when significant milestones are achieved</div>
+                    </div>
+                    <div className="edit-toggle-wrap">
+                      <input
+                        type="checkbox"
+                        checked={editFormData.resultAlerts}
+                        onChange={(e) => setEditFormData({ ...editFormData, resultAlerts: e.target.checked })}
+                      />
+                      <span className="edit-toggle-track"></span>
+                    </div>
+                  </div>
+
+                  <div className="notification-toggle-item">
+                    <div className="notification-toggle-info">
+                      <div className="notification-toggle-title">Recommendation Updates</div>
+                      <div className="notification-toggle-desc">Notify when new recommendations are available</div>
+                    </div>
+                    <div className="edit-toggle-wrap">
+                      <input
+                        type="checkbox"
+                        checked={editFormData.recommendationUpdates}
+                        onChange={(e) => setEditFormData({ ...editFormData, recommendationUpdates: e.target.checked })}
+                      />
+                      <span className="edit-toggle-track"></span>
+                    </div>
+                  </div>
+
+                  <div className="notification-toggle-item">
+                    <div className="notification-toggle-info">
+                      <div className="notification-toggle-title">Weekly Digest</div>
+                      <div className="notification-toggle-desc">Send weekly summary of activity and results</div>
+                    </div>
+                    <div className="edit-toggle-wrap">
+                      <input
+                        type="checkbox"
+                        checked={editFormData.weeklyDigest}
+                        onChange={(e) => setEditFormData({ ...editFormData, weeklyDigest: e.target.checked })}
+                      />
+                      <span className="edit-toggle-track"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowEditModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
