@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ Core Tables ============
+
+model clients {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  contact_name String?
+  contact_email String?
+  avatar_url   String?
+  growth_stage String?
+  status       String?   @default("active")
+  monthly_spend Decimal?  @default(0) @db.Decimal
+  start_date   DateTime? @db.Date
+  highlevel_id String?
+  basecamp_id  String?
+  notes        String?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  profiles          profiles[]
+  activity_log      activity_log[]
+  content           content[]
+  recommendations   recommendations[]
+  revenue_records   revenue_records[]
+  subscriptions     subscriptions[]
+}
+
+model profiles {
+  id         String    @id @db.Uuid
+  email      String    @unique
+  full_name  String?
+  avatar_url String?
+  role       String
+  client_id  String?   @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  client            clients?            @relation(fields: [client_id], references: [id])
+  activity_log      activity_log[]
+  content_authored  content[]           @relation("content_author")
+  content_assigned  content[]           @relation("content_assigned")
+  content_comments  content_comments[]
+  content_revisions content_revisions[]
+  notifications     notifications[]
+  recommendations   recommendations[]
+}
+
+// ============ Products & Bundles ============
+
+model products {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                    String
+  short_description       String?
+  long_description        String?
+  category                String
+  monthly_price           Decimal?  @db.Decimal
+  onetime_price           Decimal?  @db.Decimal
+  stripe_product_id       String?
+  stripe_monthly_price_id String?
+  stripe_onetime_price_id String?
+  supports_quantity       Boolean?  @default(false)
+  status                  String?   @default("active")
+  sort_order              Int?      @default(0)
+  created_at              DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime? @default(now()) @db.Timestamptz(6)
+
+  addon_products       addon_products[]
+  bundle_products      bundle_products[]
+  free_products        free_products[]
+  product_dependencies product_dependencies[] @relation("product")
+  required_by          product_dependencies[] @relation("requires")
+  recommendation_items recommendation_items[]
+  subscription_items   subscription_items[]
+}
+
+model bundles {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String?
+  monthly_price     Decimal?  @db.Decimal
+  onetime_price     Decimal?  @db.Decimal
+  stripe_product_id String?
+  stripe_price_id   String?
+  status            String?   @default("active")
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  bundle_products      bundle_products[]
+  recommendation_items recommendation_items[]
+  subscription_items   subscription_items[]
+}
+
+model addons {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String?
+  price             Decimal   @db.Decimal
+  stripe_product_id String?
+  stripe_price_id   String?
+  status            String?   @default("active")
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  addon_products       addon_products[]
+  recommendation_items recommendation_items[]
+}
+
+model bundle_products {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundle_id  String  @db.Uuid
+  product_id String  @db.Uuid
+  sort_order Int?    @default(0)
+
+  bundle  bundles  @relation(fields: [bundle_id], references: [id])
+  product products @relation(fields: [product_id], references: [id])
+}
+
+model addon_products {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  addon_id   String @db.Uuid
+  product_id String @db.Uuid
+
+  addon   addons   @relation(fields: [addon_id], references: [id])
+  product products @relation(fields: [product_id], references: [id])
+}
+
+model product_dependencies {
+  id                  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id          String @db.Uuid
+  requires_product_id String @db.Uuid
+
+  product  products @relation("product", fields: [product_id], references: [id])
+  requires products @relation("requires", fields: [requires_product_id], references: [id])
+}
+
+model free_products {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String @db.Uuid
+  type       String
+
+  product products @relation(fields: [product_id], references: [id])
+}
+
+// ============ Content Management ============
+
+model content {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id        String    @db.Uuid
+  title            String
+  content_type     String?
+  body             String?
+  status           String?   @default("draft")
+  author_id        String?   @db.Uuid
+  assigned_to      String?   @db.Uuid
+  due_date         DateTime? @db.Date
+  published_at     DateTime? @db.Timestamptz(6)
+  basecamp_todo_id String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  client            clients             @relation(fields: [client_id], references: [id])
+  author            profiles?           @relation("content_author", fields: [author_id], references: [id])
+  assignee          profiles?           @relation("content_assigned", fields: [assigned_to], references: [id])
+  content_comments  content_comments[]
+  content_revisions content_revisions[]
+}
+
+model content_comments {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content_id  String    @db.Uuid
+  user_id     String    @db.Uuid
+  comment     String
+  is_internal Boolean?  @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  content content  @relation(fields: [content_id], references: [id])
+  user    profiles @relation(fields: [user_id], references: [id])
+}
+
+model content_revisions {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content_id     String    @db.Uuid
+  body           String
+  revision_notes String?
+  created_by     String?   @db.Uuid
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+
+  content content   @relation(fields: [content_id], references: [id])
+  creator profiles? @relation(fields: [created_by], references: [id])
+}
+
+// ============ Recommendations ============
+
+model recommendations {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id        String    @db.Uuid
+  created_by       String?   @db.Uuid
+  status           String?   @default("draft")
+  pricing_type     String?
+  total_monthly    Decimal?  @db.Decimal
+  total_onetime    Decimal?  @db.Decimal
+  discount_applied Decimal?  @default(0) @db.Decimal
+  reward_tier_id   String?   @db.Uuid
+  notes            String?
+  sent_at          DateTime? @db.Timestamptz(6)
+  responded_at     DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  client               clients                @relation(fields: [client_id], references: [id])
+  creator              profiles?              @relation(fields: [created_by], references: [id])
+  reward_tier          reward_tiers?          @relation(fields: [reward_tier_id], references: [id])
+  recommendation_items recommendation_items[]
+}
+
+model recommendation_items {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recommendation_id String    @db.Uuid
+  product_id        String?   @db.Uuid
+  bundle_id         String?   @db.Uuid
+  addon_id          String?   @db.Uuid
+  quantity          Int?      @default(1)
+  monthly_price     Decimal?  @db.Decimal
+  onetime_price     Decimal?  @db.Decimal
+  is_free           Boolean?  @default(false)
+  notes             String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  recommendation recommendations @relation(fields: [recommendation_id], references: [id])
+  product        products?       @relation(fields: [product_id], references: [id])
+  bundle         bundles?        @relation(fields: [bundle_id], references: [id])
+  addon          addons?         @relation(fields: [addon_id], references: [id])
+}
+
+model reward_tiers {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  monthly_threshold   Decimal   @db.Decimal
+  discount_percentage Int?      @default(0)
+  coupon_code         String?
+  free_product_slots  Int?      @default(0)
+  sort_order          Int?      @default(0)
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+
+  recommendations recommendations[]
+}
+
+// ============ Subscriptions ============
+
+model subscriptions {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id              String    @db.Uuid
+  stripe_subscription_id String?   @unique
+  stripe_customer_id     String?
+  status                 String?
+  current_period_start   DateTime? @db.Timestamptz(6)
+  current_period_end     DateTime? @db.Timestamptz(6)
+  monthly_amount         Decimal?  @db.Decimal
+  created_at             DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+
+  client             clients              @relation(fields: [client_id], references: [id])
+  subscription_items subscription_items[]
+}
+
+model subscription_items {
+  id                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id             String    @db.Uuid
+  product_id                  String?   @db.Uuid
+  bundle_id                   String?   @db.Uuid
+  stripe_subscription_item_id String?
+  quantity                    Int?      @default(1)
+  unit_amount                 Decimal?  @db.Decimal
+  created_at                  DateTime? @default(now()) @db.Timestamptz(6)
+
+  subscription subscriptions @relation(fields: [subscription_id], references: [id])
+  product      products?     @relation(fields: [product_id], references: [id])
+  bundle       bundles?      @relation(fields: [bundle_id], references: [id])
+}
+
+// ============ Activity & Notifications ============
+
+model activity_log {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id     String?   @db.Uuid
+  user_id       String?   @db.Uuid
+  activity_type String
+  description   String?
+  metadata      Json?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients?  @relation(fields: [client_id], references: [id])
+  user   profiles? @relation(fields: [user_id], references: [id])
+}
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  title      String
+  message    String?
+  type       String?
+  link       String?
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  user profiles @relation(fields: [user_id], references: [id])
+}
+
+// ============ Revenue & Settings ============
+
+model revenue_records {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id     String    @db.Uuid
+  month         DateTime  @db.Date
+  mrr           Decimal   @db.Decimal
+  arr           Decimal?  @db.Decimal
+  change_type   String?
+  change_amount Decimal?  @db.Decimal
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id])
+}
+
+model role_permissions {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role       String
+  permission String
+}
+
+model settings {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String    @unique
+  value      Json?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}

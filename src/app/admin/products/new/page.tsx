@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+
+interface ProductOption {
+  id: string
+  name: string
+}
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -23,9 +28,52 @@ export default function NewProductPage() {
     dependencies: [] as string[],
   })
 
-  const handleSave = () => {
-    console.log('Saving product:', productForm)
-    router.push('/admin/products')
+  const [allProducts, setAllProducts] = useState<ProductOption[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch('/api/admin/products')
+        if (res.ok) {
+          const products = await res.json()
+          setAllProducts(products.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  const handleSave = async () => {
+    if (!productForm.name || !productForm.category) {
+      setError('Please fill in required fields (Name and Category)')
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productForm),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to create product')
+      }
+
+      router.push('/admin/products')
+    } catch (err) {
+      console.error('Failed to save product:', err)
+      setError('Failed to save product')
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -47,6 +95,12 @@ export default function NewProductPage() {
           </Link>
           <h1 className="content-page-title">Add New Product</h1>
         </div>
+
+        {error && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', color: '#dc2626' }}>
+            {error}
+          </div>
+        )}
 
         {/* Form Content */}
         <div className="content-form">
@@ -107,7 +161,6 @@ export default function NewProductPage() {
                       />
                       <span className="input-addon-right">/mo</span>
                     </div>
-                    <span className="form-hint">For 12 months term</span>
                   </div>
                   <div className="form-group">
                     <label htmlFor="onetimePrice">One-time Price</label>
@@ -225,24 +278,26 @@ export default function NewProductPage() {
                       setProductForm({ ...productForm, dependencies: selected })
                     }}
                   >
-                    <option value="pro-dashboard">Pro Dashboard</option>
-                    <option value="analytics-tracking">Analytics Tracking</option>
-                    <option value="seo-content">SEO Content Package</option>
-                    <option value="google-ads">Google Ads Management</option>
-                    <option value="social-media">Social Media Management</option>
+                    {allProducts.map(product => (
+                      <option key={product.id} value={product.id}>{product.name}</option>
+                    ))}
                   </select>
                   <span className="form-hint">Hold Ctrl/Cmd to select multiple</span>
                 </div>
               </div>
 
               <div className="form-actions-sidebar">
-                <button className="btn btn-primary btn-block" onClick={handleSave}>
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
                   </svg>
-                  Save Product
+                  {isSaving ? 'Saving...' : 'Save Product'}
                 </button>
                 <Link href="/admin/products" className="btn btn-secondary btn-block">
                   Cancel

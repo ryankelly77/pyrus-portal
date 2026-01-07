@@ -5,63 +5,32 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
-// Mock product data - in real app this would come from API
-const mockProducts: Record<string, {
+interface Product {
+  id: string
   name: string
-  shortDesc: string
-  longDesc: string
+  short_description: string | null
+  long_description: string | null
   category: string
-  status: string
-  monthlyPrice: string
-  onetimePrice: string
-  supportsQuantity: boolean
-  stripeProductId: string
-  stripeMonthlyPriceId: string
-  stripeOnetimePriceId: string
-  dependencies: string[]
-}> = {
-  '1': {
-    name: 'Pro Dashboard',
-    shortDesc: 'Comprehensive analytics dashboard',
-    longDesc: 'Full-featured analytics dashboard with real-time metrics, custom reports, and AI-powered insights.',
-    category: 'root',
-    status: 'active',
-    monthlyPrice: '99',
-    onetimePrice: '1188',
-    supportsQuantity: false,
-    stripeProductId: 'prod_ProDashboard123',
-    stripeMonthlyPriceId: 'price_monthly_99',
-    stripeOnetimePriceId: 'price_onetime_1188',
-    dependencies: [],
-  },
-  '2': {
-    name: 'Analytics Tracking',
-    shortDesc: 'GA4 & conversion tracking setup',
-    longDesc: 'Complete Google Analytics 4 setup with conversion tracking, custom events, and goal configuration.',
-    category: 'root',
-    status: 'active',
-    monthlyPrice: '',
-    onetimePrice: '99',
-    supportsQuantity: false,
-    stripeProductId: 'prod_Analytics123',
-    stripeMonthlyPriceId: '',
-    stripeOnetimePriceId: 'price_onetime_99',
-    dependencies: [],
-  },
-  '3': {
-    name: 'SEO Content Package',
-    shortDesc: 'Monthly SEO-optimized content',
-    longDesc: 'Monthly package of SEO-optimized blog posts, landing pages, and content updates to improve search rankings.',
-    category: 'growth',
-    status: 'active',
-    monthlyPrice: '299',
-    onetimePrice: '3588',
-    supportsQuantity: true,
-    stripeProductId: 'prod_SEOContent123',
-    stripeMonthlyPriceId: 'price_monthly_299',
-    stripeOnetimePriceId: 'price_onetime_3588',
-    dependencies: ['pro-dashboard'],
-  },
+  status: string | null
+  monthly_price: string | null
+  onetime_price: string | null
+  supports_quantity: boolean | null
+  stripe_product_id: string | null
+  stripe_monthly_price_id: string | null
+  stripe_onetime_price_id: string | null
+  sort_order: number | null
+  product_dependencies: {
+    requires_product_id: string
+    requires: {
+      id: string
+      name: string
+    }
+  }[]
+}
+
+interface ProductOption {
+  id: string
+  name: string
 }
 
 export default function EditProductPage() {
@@ -82,22 +51,82 @@ export default function EditProductPage() {
     stripeMonthlyPriceId: '',
     stripeOnetimePriceId: '',
     dependencies: [] as string[],
+    sortOrder: 0,
   })
 
+  const [allProducts, setAllProducts] = useState<ProductOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate loading product data
-    const product = mockProducts[productId]
-    if (product) {
-      setProductForm(product)
+    async function fetchData() {
+      try {
+        const [productRes, productsRes] = await Promise.all([
+          fetch(`/api/admin/products/${productId}`),
+          fetch('/api/admin/products'),
+        ])
+
+        if (!productRes.ok) {
+          setError('Product not found')
+          setIsLoading(false)
+          return
+        }
+
+        const product: Product = await productRes.json()
+        const products: Product[] = await productsRes.json()
+
+        // Set all products for dependencies dropdown (excluding current product)
+        setAllProducts(products.filter(p => p.id !== productId).map(p => ({ id: p.id, name: p.name })))
+
+        // Set form data
+        setProductForm({
+          name: product.name,
+          shortDesc: product.short_description || '',
+          longDesc: product.long_description || '',
+          category: product.category,
+          status: product.status || 'active',
+          monthlyPrice: product.monthly_price ? String(product.monthly_price) : '',
+          onetimePrice: product.onetime_price ? String(product.onetime_price) : '',
+          supportsQuantity: product.supports_quantity || false,
+          stripeProductId: product.stripe_product_id || '',
+          stripeMonthlyPriceId: product.stripe_monthly_price_id || '',
+          stripeOnetimePriceId: product.stripe_onetime_price_id || '',
+          dependencies: product.product_dependencies.map(d => d.requires_product_id),
+          sortOrder: product.sort_order || 0,
+        })
+      } catch (err) {
+        console.error('Failed to fetch product:', err)
+        setError('Failed to load product')
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setIsLoading(false)
+
+    fetchData()
   }, [productId])
 
-  const handleSave = () => {
-    console.log('Updating product:', productId, productForm)
-    router.push('/admin/products')
+  const handleSave = async () => {
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productForm),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to update product')
+      }
+
+      router.push('/admin/products')
+    } catch (err) {
+      console.error('Failed to save product:', err)
+      setError('Failed to save product')
+      setIsSaving(false)
+    }
   }
 
   if (isLoading) {
@@ -111,6 +140,29 @@ export default function EditProductPage() {
         <div className="admin-content">
           <div className="content-page-header">
             <p>Loading...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error && !productForm.name) {
+    return (
+      <>
+        <AdminHeader
+          title="Product Management"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+        />
+        <div className="admin-content">
+          <div className="content-page-header">
+            <Link href="/admin/products" className="back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Back to Products
+            </Link>
+            <p style={{ color: '#dc2626', marginTop: '16px' }}>{error}</p>
           </div>
         </div>
       </>
@@ -136,6 +188,12 @@ export default function EditProductPage() {
           </Link>
           <h1 className="content-page-title">Edit Product</h1>
         </div>
+
+        {error && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', color: '#dc2626' }}>
+            {error}
+          </div>
+        )}
 
         {/* Form Content */}
         <div className="content-form">
@@ -196,7 +254,6 @@ export default function EditProductPage() {
                       />
                       <span className="input-addon-right">/mo</span>
                     </div>
-                    <span className="form-hint">For 12 months term</span>
                   </div>
                   <div className="form-group">
                     <label htmlFor="onetimePrice">One-time Price</label>
@@ -297,6 +354,16 @@ export default function EditProductPage() {
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
+                <div className="form-group">
+                  <label htmlFor="sortOrder">Sort Order</label>
+                  <input
+                    type="number"
+                    id="sortOrder"
+                    className="form-control"
+                    value={productForm.sortOrder}
+                    onChange={(e) => setProductForm({ ...productForm, sortOrder: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
               </div>
 
               <div className="form-card">
@@ -314,24 +381,26 @@ export default function EditProductPage() {
                       setProductForm({ ...productForm, dependencies: selected })
                     }}
                   >
-                    <option value="pro-dashboard">Pro Dashboard</option>
-                    <option value="analytics-tracking">Analytics Tracking</option>
-                    <option value="seo-content">SEO Content Package</option>
-                    <option value="google-ads">Google Ads Management</option>
-                    <option value="social-media">Social Media Management</option>
+                    {allProducts.map(product => (
+                      <option key={product.id} value={product.id}>{product.name}</option>
+                    ))}
                   </select>
                   <span className="form-hint">Hold Ctrl/Cmd to select multiple</span>
                 </div>
               </div>
 
               <div className="form-actions-sidebar">
-                <button className="btn btn-primary btn-block" onClick={handleSave}>
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
                   </svg>
-                  Update Product
+                  {isSaving ? 'Saving...' : 'Update Product'}
                 </button>
                 <Link href="/admin/products" className="btn btn-secondary btn-block">
                   Cancel

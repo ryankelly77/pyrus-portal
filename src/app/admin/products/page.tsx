@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
@@ -11,80 +11,108 @@ type ViewTab = 'products' | 'bundles' | 'addons'
 interface Product {
   id: string
   name: string
-  description: string
-  category: ProductCategory
-  monthlyPrice: string
-  onetimePrice: string
-  status: ProductStatus
+  short_description: string | null
+  category: string
+  monthly_price: string | null
+  onetime_price: string | null
+  status: string | null
 }
 
 interface Bundle {
   id: string
   name: string
-  price: string
-  savings: string
-  productCount: number
-  products: string[]
-  status: ProductStatus
+  description: string | null
+  monthly_price: string | null
+  onetime_price: string | null
+  status: string | null
+  bundle_products: {
+    product: {
+      id: string
+      name: string
+    }
+  }[]
 }
 
 interface AddOn {
   id: string
   name: string
+  description: string | null
   price: string
-  description: string
-  status: ProductStatus
+  status: string | null
 }
-
-const products: Product[] = [
-  { id: '1', name: 'Pro Dashboard', description: 'Comprehensive analytics dashboard', category: 'root', monthlyPrice: '$99/mo', onetimePrice: '$1,188', status: 'active' },
-  { id: '2', name: 'Analytics Tracking', description: 'GA4 & conversion tracking setup', category: 'root', monthlyPrice: '-', onetimePrice: '$99', status: 'active' },
-  { id: '3', name: 'SEO Content Package', description: 'Monthly SEO-optimized content', category: 'growth', monthlyPrice: '$299/mo', onetimePrice: '$3,588', status: 'active' },
-  { id: '4', name: 'Google Ads Management', description: 'Full-service PPC campaign management', category: 'growth', monthlyPrice: '$499/mo', onetimePrice: '$5,988', status: 'active' },
-  { id: '5', name: 'Social Media Management', description: 'Complete social media strategy & posting', category: 'cultivation', monthlyPrice: '$399/mo', onetimePrice: '$4,788', status: 'active' },
-  { id: '6', name: 'Email Marketing Automation', description: 'Automated email sequences & campaigns', category: 'cultivation', monthlyPrice: '$249/mo', onetimePrice: '$2,988', status: 'draft' },
-]
-
-const bundles: Bundle[] = [
-  { id: '1', name: 'Starter Package', price: '$199/mo', savings: 'Save $98/mo', productCount: 4, products: ['Pro Dashboard', 'Analytics Tracking', 'SEO Starter', 'Monthly Report'], status: 'active' },
-  { id: '2', name: 'Growth Package', price: '$599/mo', savings: 'Save $297/mo', productCount: 8, products: ['Pro Dashboard', 'Analytics Tracking', 'SEO Content Package', 'Google Ads Management', '+ 4 more'], status: 'active' },
-  { id: '3', name: 'Enterprise Package', price: '$1,299/mo', savings: 'Save $599/mo', productCount: 15, products: ['All Growth Package items', 'Social Media Management', 'Email Marketing', 'Reputation Management', '+ 7 more'], status: 'active' },
-  { id: '4', name: 'Custom Package', price: '$899/mo', savings: 'Save $401/mo', productCount: 10, products: ['Customized selection', 'Based on client needs'], status: 'draft' },
-]
-
-const addons: AddOn[] = [
-  { id: '1', name: 'Monthly Report', price: '$99/mo', description: 'Comprehensive monthly performance report with insights and recommendations.', status: 'active' },
-  { id: '2', name: 'GBP Posting', price: '$99/mo', description: 'Regular Google Business Profile posts to keep your listing active and engaging.', status: 'active' },
-  { id: '3', name: 'Review Management', price: '$99/mo', description: 'Monitor and respond to customer reviews across platforms.', status: 'active' },
-  { id: '4', name: 'WordPress Care Plan', price: '$49/mo', description: 'Secure, updated hosting and maintenance for WordPress sites.', status: 'active' },
-  { id: '5', name: 'AI Visibility Monitoring', price: '$149/mo', description: 'Track your AI citation performance and visibility in AI assistants.', status: 'active' },
-  { id: '6', name: 'Call Tracking', price: '$79/mo', description: 'Track and record inbound calls with detailed analytics.', status: 'draft' },
-]
 
 export default function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState<ViewTab>('products')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [products, setProducts] = useState<Product[]>([])
+  const [bundles, setBundles] = useState<Bundle[]>([])
+  const [addons, setAddons] = useState<AddOn[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [productsRes, bundlesRes, addonsRes] = await Promise.all([
+          fetch('/api/admin/products'),
+          fetch('/api/admin/bundles'),
+          fetch('/api/admin/addons'),
+        ])
+
+        if (productsRes.ok) {
+          const productsData = await productsRes.json()
+          setProducts(productsData)
+        }
+        if (bundlesRes.ok) {
+          const bundlesData = await bundlesRes.json()
+          setBundles(bundlesData)
+        }
+        if (addonsRes.ok) {
+          const addonsData = await addonsRes.json()
+          setAddons(addonsData)
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       if (categoryFilter !== 'all' && product.category !== categoryFilter) return false
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
-        if (!product.name.toLowerCase().includes(query) && !product.description.toLowerCase().includes(query)) {
+        if (!product.name.toLowerCase().includes(query) &&
+            !(product.short_description?.toLowerCase().includes(query))) {
           return false
         }
       }
       return true
     })
-  }, [categoryFilter, searchQuery])
+  }, [products, categoryFilter, searchQuery])
 
-  const getCategoryBadgeClass = (category: ProductCategory) => {
+  const getCategoryBadgeClass = (category: string) => {
     switch (category) {
       case 'root': return 'category-root'
       case 'growth': return 'category-growth'
       case 'cultivation': return 'category-cultivation'
+      default: return ''
     }
+  }
+
+  const formatPrice = (price: string | null, type: 'monthly' | 'onetime') => {
+    if (!price || parseFloat(price) === 0) return '-'
+    const formatted = parseFloat(price).toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+    return type === 'monthly' ? `${formatted}/mo` : formatted
   }
 
   const stats = {
@@ -92,6 +120,25 @@ export default function AdminProductsPage() {
     active: products.filter((p) => p.status === 'active').length,
     draft: products.filter((p) => p.status === 'draft').length,
     bundles: bundles.length,
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <AdminHeader
+          title="Product Management"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+        />
+        <div className="admin-content">
+          <div className="page-header">
+            <div className="page-header-content">
+              <p>Loading products...</p>
+            </div>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
@@ -268,7 +315,7 @@ export default function AdminProductsPage() {
                       <td>
                         <div className="product-cell">
                           <span className="product-name">{product.name}</span>
-                          <span className="product-desc">{product.description}</span>
+                          <span className="product-desc">{product.short_description || ''}</span>
                         </div>
                       </td>
                       <td>
@@ -276,11 +323,11 @@ export default function AdminProductsPage() {
                           {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
                         </span>
                       </td>
-                      <td>{product.monthlyPrice}</td>
-                      <td>{product.onetimePrice}</td>
+                      <td>{formatPrice(product.monthly_price, 'monthly')}</td>
+                      <td>{formatPrice(product.onetime_price, 'onetime')}</td>
                       <td>
                         <span className={`status-badge ${product.status}`}>
-                          {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                          {(product.status || 'active').charAt(0).toUpperCase() + (product.status || 'active').slice(1)}
                         </span>
                       </td>
                       <td>
@@ -315,19 +362,21 @@ export default function AdminProductsPage() {
                 <div className="bundle-header">
                   <h3>{bundle.name}</h3>
                   <span className={`status-badge ${bundle.status}`}>
-                    {bundle.status.charAt(0).toUpperCase() + bundle.status.slice(1)}
+                    {(bundle.status || 'active').charAt(0).toUpperCase() + (bundle.status || 'active').slice(1)}
                   </span>
                 </div>
                 <div className="bundle-pricing">
-                  <span className="bundle-price">{bundle.price}</span>
-                  <span className="bundle-savings">{bundle.savings}</span>
+                  <span className="bundle-price">{formatPrice(bundle.monthly_price, 'monthly')}</span>
                 </div>
                 <div className="bundle-products">
-                  <div className="bundle-product-count">{bundle.productCount} Products Included:</div>
+                  <div className="bundle-product-count">{bundle.bundle_products.length} Products Included:</div>
                   <ul className="bundle-product-list">
-                    {bundle.products.map((product, index) => (
-                      <li key={index}>{product}</li>
+                    {bundle.bundle_products.slice(0, 5).map((bp) => (
+                      <li key={bp.product.id}>{bp.product.name}</li>
                     ))}
+                    {bundle.bundle_products.length > 5 && (
+                      <li>+ {bundle.bundle_products.length - 5} more</li>
+                    )}
                   </ul>
                 </div>
                 <div className="bundle-actions">
@@ -353,14 +402,14 @@ export default function AdminProductsPage() {
                 <div className="bundle-header">
                   <h3>{addon.name}</h3>
                   <span className={`status-badge ${addon.status}`}>
-                    {addon.status.charAt(0).toUpperCase() + addon.status.slice(1)}
+                    {(addon.status || 'active').charAt(0).toUpperCase() + (addon.status || 'active').slice(1)}
                   </span>
                 </div>
                 <div className="bundle-pricing">
-                  <span className="bundle-price">{addon.price}</span>
+                  <span className="bundle-price">{formatPrice(addon.price, 'monthly')}</span>
                 </div>
                 <div className="bundle-products">
-                  <p className="addon-desc">{addon.description}</p>
+                  <p className="addon-desc">{addon.description || ''}</p>
                 </div>
                 <div className="bundle-actions">
                   <Link href={`/admin/products/addon/${addon.id}/edit`} className="btn btn-sm btn-secondary">
