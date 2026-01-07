@@ -5,62 +5,18 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
+interface Product {
+  id: string
+  name: string
+  monthly_price: string | null
+  onetime_price: string | null
+  category: string
+}
+
 interface DraggableProduct {
   id: string
   name: string
   price: string
-}
-
-const availableProducts: DraggableProduct[] = [
-  { id: 'pro-dashboard', name: 'Pro Dashboard', price: '$99/mo' },
-  { id: 'analytics-tracking', name: 'Analytics Tracking', price: '$99' },
-  { id: 'seo-content', name: 'SEO Content Package', price: '$299/mo' },
-  { id: 'google-ads', name: 'Google Ads Management', price: '$499/mo' },
-  { id: 'social-media', name: 'Social Media Management', price: '$399/mo' },
-  { id: 'email-marketing', name: 'Email Marketing Automation', price: '$249/mo' },
-]
-
-// Mock bundle data - in real app this would come from API
-const mockBundles: Record<string, {
-  name: string
-  description: string
-  monthlyPrice: string
-  onetimePrice: string
-  status: string
-  stripeProductId: string
-  stripePriceId: string
-  includedProductIds: string[]
-}> = {
-  '1': {
-    name: 'Starter Package',
-    description: 'Perfect for small businesses just getting started with digital marketing.',
-    monthlyPrice: '199',
-    onetimePrice: '2388',
-    status: 'active',
-    stripeProductId: 'prod_StarterBundle123',
-    stripePriceId: 'price_starter_199',
-    includedProductIds: ['pro-dashboard', 'analytics-tracking'],
-  },
-  '2': {
-    name: 'Growth Package',
-    description: 'Comprehensive marketing solution for businesses ready to scale.',
-    monthlyPrice: '599',
-    onetimePrice: '7188',
-    status: 'active',
-    stripeProductId: 'prod_GrowthBundle123',
-    stripePriceId: 'price_growth_599',
-    includedProductIds: ['pro-dashboard', 'analytics-tracking', 'seo-content', 'google-ads'],
-  },
-  '3': {
-    name: 'Enterprise Package',
-    description: 'Full-service marketing for established businesses seeking maximum growth.',
-    monthlyPrice: '1299',
-    onetimePrice: '15588',
-    status: 'active',
-    stripeProductId: 'prod_EnterpriseBundle123',
-    stripePriceId: 'price_enterprise_1299',
-    includedProductIds: ['pro-dashboard', 'analytics-tracking', 'seo-content', 'google-ads', 'social-media', 'email-marketing'],
-  },
 }
 
 export default function EditBundlePage() {
@@ -78,28 +34,79 @@ export default function EditBundlePage() {
     stripePriceId: '',
   })
 
+  const [availableProducts, setAvailableProducts] = useState<DraggableProduct[]>([])
   const [includedProducts, setIncludedProducts] = useState<DraggableProduct[]>([])
   const [dragOver, setDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate loading bundle data
-    const bundle = mockBundles[bundleId]
-    if (bundle) {
-      setBundleForm({
-        name: bundle.name,
-        description: bundle.description,
-        monthlyPrice: bundle.monthlyPrice,
-        onetimePrice: bundle.onetimePrice,
-        status: bundle.status,
-        stripeProductId: bundle.stripeProductId,
-        stripePriceId: bundle.stripePriceId,
-      })
-      // Load included products
-      const included = availableProducts.filter(p => bundle.includedProductIds.includes(p.id))
-      setIncludedProducts(included)
+    async function fetchData() {
+      try {
+        const [bundleRes, productsRes] = await Promise.all([
+          fetch(`/api/admin/bundles/${bundleId}`),
+          fetch('/api/admin/products'),
+        ])
+
+        if (!bundleRes.ok) {
+          setError('Bundle not found')
+          setIsLoading(false)
+          return
+        }
+
+        const bundle = await bundleRes.json()
+        const products: Product[] = await productsRes.json()
+
+        // Set form data
+        setBundleForm({
+          name: bundle.name,
+          description: bundle.description || '',
+          monthlyPrice: bundle.monthly_price ? String(bundle.monthly_price) : '',
+          onetimePrice: bundle.onetime_price ? String(bundle.onetime_price) : '',
+          status: bundle.status || 'active',
+          stripeProductId: bundle.stripe_product_id || '',
+          stripePriceId: bundle.stripe_price_id || '',
+        })
+
+        // Format products for drag and drop
+        const formatPrice = (product: Product) => {
+          if (product.monthly_price && parseFloat(product.monthly_price) > 0) {
+            return `$${parseFloat(product.monthly_price).toLocaleString()}/mo`
+          }
+          if (product.onetime_price && parseFloat(product.onetime_price) > 0) {
+            return `$${parseFloat(product.onetime_price).toLocaleString()}`
+          }
+          return '-'
+        }
+
+        const allProducts: DraggableProduct[] = products.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: formatPrice(p),
+        }))
+
+        // Get included product IDs from bundle
+        const includedIds = bundle.bundle_products.map((bp: { product: { id: string } }) => bp.product.id)
+
+        // Split into included and available
+        const included = allProducts.filter(p => includedIds.includes(p.id))
+        const available = allProducts.filter(p => !includedIds.includes(p.id))
+
+        // Sort included products by bundle order
+        const sortedIncluded = includedIds.map((id: string) => included.find(p => p.id === id)).filter(Boolean) as DraggableProduct[]
+
+        setIncludedProducts(sortedIncluded)
+        setAvailableProducts(available)
+      } catch (err) {
+        console.error('Failed to fetch data:', err)
+        setError('Failed to load bundle')
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setIsLoading(false)
+
+    fetchData()
   }, [bundleId])
 
   // Drag and drop handlers
@@ -125,11 +132,23 @@ export default function EditBundlePage() {
 
     if (!includedProducts.find(p => p.id === product.id)) {
       setIncludedProducts([...includedProducts, product])
+      setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
     }
   }
 
   const removeFromBundle = (productId: string) => {
-    setIncludedProducts(includedProducts.filter(p => p.id !== productId))
+    const product = includedProducts.find(p => p.id === productId)
+    if (product) {
+      setIncludedProducts(includedProducts.filter(p => p.id !== productId))
+      setAvailableProducts([...availableProducts, product])
+    }
+  }
+
+  const addToBundle = (product: DraggableProduct) => {
+    if (!includedProducts.find(p => p.id === product.id)) {
+      setIncludedProducts([...includedProducts, product])
+      setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
+    }
   }
 
   // Calculate bundle summary
@@ -151,9 +170,30 @@ export default function EditBundlePage() {
 
   const summary = calculateBundleSummary()
 
-  const handleSave = () => {
-    console.log('Updating bundle:', bundleId, bundleForm, includedProducts)
-    router.push('/admin/products')
+  const handleSave = async () => {
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/bundles/${bundleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...bundleForm,
+          products: includedProducts.map(p => p.id),
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to update bundle')
+      }
+
+      router.push('/admin/products')
+    } catch (err) {
+      console.error('Failed to save bundle:', err)
+      setError('Failed to save bundle')
+      setIsSaving(false)
+    }
   }
 
   if (isLoading) {
@@ -167,6 +207,29 @@ export default function EditBundlePage() {
         <div className="admin-content">
           <div className="content-page-header">
             <p>Loading...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error && !bundleForm.name) {
+    return (
+      <>
+        <AdminHeader
+          title="Product Management"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+        />
+        <div className="admin-content">
+          <div className="content-page-header">
+            <Link href="/admin/products" className="back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Back to Products
+            </Link>
+            <p style={{ color: '#dc2626', marginTop: '16px' }}>{error}</p>
           </div>
         </div>
       </>
@@ -192,6 +255,12 @@ export default function EditBundlePage() {
           </Link>
           <h1 className="content-page-title">Edit Bundle</h1>
         </div>
+
+        {error && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', color: '#dc2626' }}>
+            {error}
+          </div>
+        )}
 
         {/* Form Content */}
         <div className="content-form">
@@ -261,36 +330,42 @@ export default function EditBundlePage() {
 
               <div className="form-card">
                 <h3 className="form-card-title">Included Products</h3>
-                <p className="form-hint" style={{ marginBottom: '16px' }}>Drag products from Available to add them to this bundle</p>
+                <p className="form-hint" style={{ marginBottom: '16px' }}>Drag products from Available or click to add them to this bundle</p>
 
                 <div className="product-selector-container">
                   <div className="available-products">
-                    <h4>Available Products</h4>
-                    <div className="product-list">
-                      {availableProducts
-                        .filter(p => !includedProducts.find(ip => ip.id === p.id))
-                        .map((product) => (
-                          <div
-                            key={product.id}
-                            className="draggable-product"
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, product)}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                              <line x1="3" y1="12" x2="21" y2="12"></line>
-                              <line x1="3" y1="6" x2="21" y2="6"></line>
-                              <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                            <span>{product.name}</span>
-                            <span className="product-price">{product.price}</span>
-                          </div>
-                        ))}
+                    <h4>Available Products ({availableProducts.length})</h4>
+                    <div className="product-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {availableProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="draggable-product"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, product)}
+                          onClick={() => addToBundle(product)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                          </svg>
+                          <span>{product.name}</span>
+                          <span className="product-price">{product.price}</span>
+                        </div>
+                      ))}
+                      {availableProducts.length === 0 && (
+                        <div style={{ padding: '16px', color: '#6b7280', textAlign: 'center' }}>
+                          All products are in the bundle
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="included-products">
-                    <h4>In This Bundle</h4>
+                    <h4>In This Bundle ({includedProducts.length})</h4>
                     <div
                       className={`product-list drop-zone ${dragOver ? 'drag-over' : ''}`}
+                      style={{ maxHeight: '300px', overflowY: 'auto' }}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
@@ -393,13 +468,17 @@ export default function EditBundlePage() {
               </div>
 
               <div className="form-actions-sidebar">
-                <button className="btn btn-primary btn-block" onClick={handleSave}>
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
                   </svg>
-                  Update Bundle
+                  {isSaving ? 'Saving...' : 'Update Bundle'}
                 </button>
                 <Link href="/admin/products" className="btn btn-secondary btn-block">
                   Cancel

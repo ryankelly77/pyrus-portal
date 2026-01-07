@@ -49,6 +49,7 @@ export default function AdminProductsPage() {
   const [bundles, setBundles] = useState<Bundle[]>([])
   const [addons, setAddons] = useState<AddOn[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -80,6 +81,49 @@ export default function AdminProductsPage() {
 
     fetchData()
   }, [])
+
+  const handleDuplicateProduct = async (productId: string) => {
+    setIsDuplicating(productId)
+    try {
+      // Fetch the product to duplicate
+      const res = await fetch(`/api/admin/products/${productId}`)
+      if (!res.ok) throw new Error('Failed to fetch product')
+
+      const product = await res.json()
+
+      // Create a duplicate with "Copy" suffix
+      const duplicateData = {
+        name: `${product.name} (Copy)`,
+        shortDesc: product.short_description || '',
+        longDesc: product.long_description || '',
+        category: product.category,
+        status: 'draft',
+        monthlyPrice: product.monthly_price || '',
+        onetimePrice: product.onetime_price || '',
+        supportsQuantity: product.supports_quantity || false,
+        stripeProductId: '',
+        stripeMonthlyPriceId: '',
+        stripeOnetimePriceId: '',
+        dependencies: product.product_dependencies?.map((d: { requires_product_id: string }) => d.requires_product_id) || [],
+      }
+
+      const createRes = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicateData),
+      })
+
+      if (!createRes.ok) throw new Error('Failed to create duplicate')
+
+      const newProduct = await createRes.json()
+      setProducts(prev => [...prev, newProduct])
+    } catch (error) {
+      console.error('Failed to duplicate product:', error)
+      alert('Failed to duplicate product')
+    } finally {
+      setIsDuplicating(null)
+    }
+  }
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -338,11 +382,22 @@ export default function AdminProductsPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                           </Link>
-                          <button className="btn-icon-sm" title="Duplicate">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
+                          <button
+                            className="btn-icon-sm"
+                            title="Duplicate"
+                            onClick={() => handleDuplicateProduct(product.id)}
+                            disabled={isDuplicating === product.id}
+                          >
+                            {isDuplicating === product.id ? (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" className="animate-spin">
+                                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12"></circle>
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            )}
                           </button>
                         </div>
                       </td>
