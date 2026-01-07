@@ -21940,3 +21940,260 @@ input[type="date"].form-control {
     border-top: 1px solid var(--border-light);
     background: var(--bg-page);
 }
+
+/* ============================================
+   Accordion List Styles (Recommendations)
+   ============================================ */
+.accordion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.accordion-item {
+    background: var(--bg-white);
+}
+
+.accordion-item.expanded {
+    background: var(--bg-white);
+}
+
+.accordion-header {
+    display: grid;
+    grid-template-columns: 32px 1.5fr 100px 80px 140px 100px auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.accordion-header:hover {
+    background: var(--pyrus-brown-wash);
+}
+
+.accordion-item.expanded .accordion-header {
+    background: var(--pyrus-brown-wash);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.accordion-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.accordion-toggle .chevron-icon {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+}
+
+.accordion-item.expanded .accordion-toggle .chevron-icon {
+    transform: rotate(180deg);
+    color: var(--pyrus-brown);
+}
+
+.client-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.client-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+}
+
+.client-info-inline {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.client-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.client-name:hover {
+    color: var(--pyrus-brown);
+    text-decoration: underline;
+}
+
+.recommendation-status {
+    display: flex;
+    align-items: center;
+}
+
+.recommendation-items-count {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.recommendation-pricing {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pricing-monthly {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.pricing-onetime {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.recommendation-date {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.recommendation-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-danger {
+    color: var(--error) !important;
+}
+
+.btn-danger:hover {
+    background: var(--error-bg) !important;
+    border-color: var(--error) !important;
+}
+
+/* Accordion Content */
+.accordion-content {
+    background: var(--bg-page);
+    padding: 20px 20px 20px 64px;
+}
+
+.accordion-section {
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.no-users-message {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+}
+
+.no-users-message p {
+    font-size: 14px;
+}
+
+/* Users Table inside accordion */
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.users-table td {
+    padding: 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.users-table tr:last-child td {
+    border-bottom: none;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--pyrus-brown-pale);
+    color: var(--pyrus-brown);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Status badge variations */
+.status-badge.pending {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.status-badge.viewed {
+    background: var(--info-bg);
+    color: var(--info-text);
+}
+
+.status-badge.rejected {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+/* Delete button styling fix */
+.btn.btn-danger,
+.btn-sm.btn-danger {
+    background: var(--error) !important;
+    border-color: var(--error) !important;
+    color: white !important;
+}
+
+.btn.btn-danger:hover,
+.btn-sm.btn-danger:hover {
+    background: #DC2626 !important;
+    border-color: #DC2626 !important;
+}
