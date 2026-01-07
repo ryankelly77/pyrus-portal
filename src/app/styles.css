@@ -5927,6 +5927,7 @@
         }
 
         .client-card {
+            position: relative;
             display: block;
             background: var(--bg-white);
             border: 1px solid var(--border-light);
@@ -6070,6 +6071,58 @@
         .client-card-paused-overlay svg {
             width: 16px;
             height: 16px;
+        }
+
+        /* Client Card Actions */
+        .client-card-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .client-card:hover .client-card-actions {
+            opacity: 1;
+        }
+
+        .card-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            background: var(--bg-white, #fff);
+            border: 1px solid var(--border-light, #E8EDE7);
+            border-radius: 6px;
+            color: var(--text-muted, #8A928A);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .card-action-btn:hover {
+            background: var(--bg-page, #FEFBF7);
+            color: var(--text-primary, #1A1F16);
+            border-color: var(--border-medium, #D1D9D1);
+        }
+
+        .card-action-btn.delete:hover {
+            background: var(--error-bg, #FEE2E2);
+            color: var(--error-text, #DC2626);
+            border-color: var(--error-text, #DC2626);
+        }
+
+        .card-action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .card-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Client Card Hidden State (for filtering) */

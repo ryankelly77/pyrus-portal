@@ -70,3 +70,52 @@ export async function PATCH(
     )
   }
 }
+
+// DELETE /api/admin/clients/[id] - Delete a client
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    // Delete related records first (foreign key constraints)
+    // Delete recommendation items for this client's recommendations
+    const recommendations = await prisma.recommendations.findMany({
+      where: { client_id: id },
+      select: { id: true },
+    })
+
+    for (const rec of recommendations) {
+      await prisma.recommendation_items.deleteMany({
+        where: { recommendation_id: rec.id },
+      })
+      // Try to delete invites if table exists
+      try {
+        await prisma.recommendation_invites.deleteMany({
+          where: { recommendation_id: rec.id },
+        })
+      } catch {
+        // Table may not exist
+      }
+    }
+
+    // Delete recommendations
+    await prisma.recommendations.deleteMany({
+      where: { client_id: id },
+    })
+
+    // Delete the client
+    await prisma.clients.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Failed to delete client:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete client' },
+      { status: 500 }
+    )
+  }
+}
