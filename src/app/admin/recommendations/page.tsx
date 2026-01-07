@@ -201,6 +201,17 @@ export default function RecommendationsPage() {
   })
   const [isSendingInvite, setIsSendingInvite] = useState(false)
 
+  // Edit client modal state
+  const [showEditClientModal, setShowEditClientModal] = useState(false)
+  const [editingClient, setEditingClient] = useState<{
+    id: string
+    name: string
+    contactName: string
+    contactEmail: string
+    growthStage: string
+  } | null>(null)
+  const [isSavingClient, setIsSavingClient] = useState(false)
+
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('Are you sure you want to delete this recommendation?')) return
@@ -285,6 +296,87 @@ export default function RecommendationsPage() {
       alert('Failed to send invite')
     } finally {
       setIsSendingInvite(false)
+    }
+  }
+
+  // Open edit client modal
+  const openEditClientModal = async (clientId: string, clientName: string, clientEmail: string | null) => {
+    // Fetch full client data from API
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}`)
+      if (res.ok) {
+        const client = await res.json()
+        setEditingClient({
+          id: client.id,
+          name: client.name,
+          contactName: client.contact_name || '',
+          contactEmail: client.contact_email || '',
+          growthStage: client.growth_stage || 'prospect',
+        })
+      } else {
+        // Fallback to basic data we have
+        setEditingClient({
+          id: clientId,
+          name: clientName,
+          contactName: '',
+          contactEmail: clientEmail || '',
+          growthStage: 'prospect',
+        })
+      }
+    } catch {
+      // Fallback to basic data we have
+      setEditingClient({
+        id: clientId,
+        name: clientName,
+        contactName: '',
+        contactEmail: clientEmail || '',
+        growthStage: 'prospect',
+      })
+    }
+    setShowEditClientModal(true)
+  }
+
+  // Save client changes
+  const handleSaveClient = async () => {
+    if (!editingClient) return
+
+    setIsSavingClient(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${editingClient.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingClient.name,
+          contactName: editingClient.contactName,
+          contactEmail: editingClient.contactEmail,
+          growthStage: editingClient.growthStage,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to update client')
+
+      // Update recommendations list with new client name
+      setRecommendations(prev => prev.map(rec => {
+        if (rec.clientId === editingClient.id) {
+          return {
+            ...rec,
+            client: editingClient.name,
+            clientEmail: editingClient.contactEmail,
+            initials: getInitials(editingClient.name),
+            avatarColor: getAvatarColor(editingClient.name),
+            clientStage: editingClient.growthStage === 'prospect' ? 'Prospect' : 'Active',
+          }
+        }
+        return rec
+      }))
+
+      setShowEditClientModal(false)
+      setEditingClient(null)
+    } catch (error) {
+      console.error('Failed to update client:', error)
+      alert('Failed to update client')
+    } finally {
+      setIsSavingClient(false)
     }
   }
 
@@ -552,17 +644,19 @@ export default function RecommendationsPage() {
                           >
                             {rec.client}
                           </Link>
-                          <Link
-                            href={`/admin/clients/${rec.clientId}?edit=true`}
+                          <button
                             className="edit-client-link"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openEditClientModal(rec.clientId, rec.client, rec.clientEmail)
+                            }}
                             title="Edit client"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                          </Link>
+                          </button>
                         </div>
                       </div>
                       <div className="client-stage">
@@ -780,6 +874,124 @@ export default function RecommendationsPage() {
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
                 {isSendingInvite ? 'Sending...' : 'Send Invite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {showEditClientModal && editingClient && (
+        <div className="modal-overlay active" onClick={() => setShowEditClientModal(false)}>
+          <div className="modal modal-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Client</h2>
+              <button className="modal-close" onClick={() => setShowEditClientModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="editClientName">Client/Business Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="editClientName"
+                  className="form-control"
+                  value={editingClient.name}
+                  onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editContactName">Contact Name</label>
+                <input
+                  type="text"
+                  id="editContactName"
+                  className="form-control"
+                  placeholder="e.g., John Smith"
+                  value={editingClient.contactName}
+                  onChange={(e) => setEditingClient({ ...editingClient, contactName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editContactEmail">Contact Email</label>
+                <input
+                  type="email"
+                  id="editContactEmail"
+                  className="form-control"
+                  placeholder="e.g., john@company.com"
+                  value={editingClient.contactEmail}
+                  onChange={(e) => setEditingClient({ ...editingClient, contactEmail: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="editGrowthStage">Client Stage</label>
+                <select
+                  id="editGrowthStage"
+                  className="form-control"
+                  value={editingClient.growthStage}
+                  onChange={(e) => setEditingClient({ ...editingClient, growthStage: e.target.value })}
+                >
+                  <option value="prospect">Prospect</option>
+                  <option value="seedling">Seedling</option>
+                  <option value="sprouting">Sprouting</option>
+                  <option value="blooming">Blooming</option>
+                  <option value="harvesting">Harvesting</option>
+                </select>
+              </div>
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
+                {editingClient.growthStage === 'prospect' ? (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    padding: '12px',
+                    background: 'var(--accent-amber-bg, #FEF3C7)',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: 'var(--accent-amber, #D97706)'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ flexShrink: 0, marginTop: '1px' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>This client is still a <strong>Prospect</strong>. Full client details will be available once they become an active client.</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/admin/clients/${editingClient.id}`}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '13px' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    View Full Client Details
+                  </Link>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowEditClientModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveClient}
+                disabled={!editingClient.name.trim() || isSavingClient}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {isSavingClient ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>

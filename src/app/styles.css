@@ -18215,6 +18215,31 @@ input[type="date"].form-control {
     height: 20px;
 }
 
+/* Edit Client Link Button */
+.edit-client-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 4px;
+    margin-left: 6px;
+    color: var(--text-muted, #8A928A);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.edit-client-link:hover {
+    background: var(--bg-page, #FEFBF7);
+    color: var(--text-primary, #1A1F16);
+}
+
+.edit-client-link svg {
+    width: 14px;
+    height: 14px;
+}
+
 /* Content Title Link */
 .content-title-link {
     background: none;
