@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
-type ClientStatus = 'active' | 'inactive'
+type ClientStatus = 'active' | 'inactive' | 'prospect'
 type SortOption = 'name' | 'date-desc' | 'date-asc'
 type ViewMode = 'grid' | 'list'
 type FilterOption = 'all' | ClientStatus
@@ -30,6 +30,7 @@ interface DBClient {
   contact_name: string | null
   contact_email: string | null
   status: string | null
+  growth_stage: string | null
   created_at: string
 }
 
@@ -85,19 +86,29 @@ export default function ClientsPage() {
       const dbClients: DBClient[] = await res.json()
 
       // Transform DB clients to Client interface
-      const transformedClients: Client[] = dbClients.map(c => ({
-        id: c.id,
-        name: c.name,
-        email: c.contact_email || '',
-        initials: getInitials(c.name),
-        avatarColor: getAvatarColor(c.name),
-        status: (c.status as ClientStatus) || 'active',
-        services: 0, // Placeholder - would come from subscriptions
-        since: formatDate(c.created_at),
-        visitors: null, // Placeholder - would come from analytics
-        leads: null, // Placeholder - would come from CRM
-        growth: null, // Placeholder - would come from analytics
-      }))
+      const transformedClients: Client[] = dbClients.map(c => {
+        // Determine display status based on growth_stage
+        let displayStatus: ClientStatus = 'active'
+        if (c.growth_stage === 'prospect' || !c.growth_stage) {
+          displayStatus = 'prospect'
+        } else if (c.status === 'inactive') {
+          displayStatus = 'inactive'
+        }
+
+        return {
+          id: c.id,
+          name: c.name,
+          email: c.contact_email || '',
+          initials: getInitials(c.name),
+          avatarColor: getAvatarColor(c.name),
+          status: displayStatus,
+          services: 0, // Placeholder - would come from subscriptions
+          since: formatDate(c.created_at),
+          visitors: null, // Placeholder - would come from analytics
+          leads: null, // Placeholder - would come from CRM
+          growth: null, // Placeholder - would come from analytics
+        }
+      })
 
       setClients(transformedClients)
     } catch (error) {
@@ -219,6 +230,12 @@ export default function ClientsPage() {
               onClick={() => setStatusFilter('all')}
             >
               All Clients
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'prospect' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('prospect')}
+            >
+              Prospects
             </button>
             <button
               className={`filter-btn ${statusFilter === 'active' ? 'active' : ''}`}
