@@ -1,9 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+
+// Helper to generate initials from name (same as Clients page)
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+// Helper to generate a consistent color from a string (same as Clients page)
+function getAvatarColor(str: string): string {
+  const colors = ['#885430', '#2563EB', '#7C3AED', '#0B7277', '#DC2626', '#6B7280', '#059669', '#D97706']
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+}
+
+// Helper to format date
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+// Database client interface
+interface DBClient {
+  id: string
+  name: string
+  contact_name: string | null
+  contact_email: string | null
+  status: string | null
+  growth_stage: string | null
+  notes: string | null
+  created_at: string
+}
 
 type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
 
@@ -119,7 +157,10 @@ type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
 export default function ClientDetailPage() {
   const params = useParams()
   const clientId = params.id as string
-  const client = clients[clientId] || clients['tc-clinical']
+
+  // Database client state
+  const [dbClient, setDbClient] = useState<DBClient | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   const [activeTab, setActiveTab] = useState<MainTab>('getting-started')
   const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('checklist')
@@ -129,17 +170,17 @@ export default function ClientDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editModalTab, setEditModalTab] = useState<'general' | 'billing' | 'notifications'>('general')
   const [editFormData, setEditFormData] = useState({
-    companyName: client.name,
-    status: client.status,
-    primaryContact: 'Jon De La Garza',
-    email: client.email,
-    phone: '(210) 394-5245',
-    website: client.websiteData?.domain ? `https://${client.websiteData.domain}` : '',
-    growthStage: 'sprouting' as 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
-    internalNotes: 'Services: Content Writing, Website Design & Development. Target: Medicare patients needing wound care and gait deficit patients 25+. Content focus: advanced wound care and gait deficit rehab. Requires approval before posting. Website pages: Home, Products, Contact, Company Story. Reference: woundsmart.com',
-    avatarColor: client.avatarColor,
+    companyName: '',
+    status: 'active' as 'active' | 'paused' | 'onboarding',
+    primaryContact: '',
+    email: '',
+    phone: '',
+    website: '',
+    growthStage: 'prospect' as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
+    internalNotes: '',
+    avatarColor: '#885430',
     // Billing
-    billingEmail: `billing@${client.websiteData?.domain || 'example.com'}`,
+    billingEmail: '',
     paymentMethod: '**** **** **** 4242',
     billingCycle: 'monthly' as 'monthly' | 'quarterly' | 'annually',
     // Notifications
@@ -149,8 +190,62 @@ export default function ClientDetailPage() {
     weeklyDigest: false,
   })
 
-  // Activity data - varies by client
-  const activitiesByClient: Record<string, typeof activities> = {
+  // Fetch client from database
+  useEffect(() => {
+    const fetchClient = async () => {
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}`)
+        if (res.ok) {
+          const data: DBClient = await res.json()
+          setDbClient(data)
+          // Update edit form with fetched data
+          setEditFormData(prev => ({
+            ...prev,
+            companyName: data.name,
+            status: (data.status as 'active' | 'paused' | 'onboarding') || 'active',
+            primaryContact: data.contact_name || '',
+            email: data.contact_email || '',
+            growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
+            internalNotes: data.notes || '',
+            avatarColor: getAvatarColor(data.name),
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to fetch client:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchClient()
+  }, [clientId])
+
+  // Derived client data from database or fallback
+  const client: ClientData = dbClient ? {
+    id: dbClient.id,
+    name: dbClient.name,
+    initials: getInitials(dbClient.name),
+    avatarColor: getAvatarColor(dbClient.name),
+    email: dbClient.contact_email || '',
+    clientSince: formatDate(dbClient.created_at),
+    status: (dbClient.growth_stage === 'prospect' || !dbClient.growth_stage) ? 'onboarding' :
+            (dbClient.status === 'paused' ? 'paused' : 'active'),
+    servicesCount: 0, // TODO: Get from recommendations
+    hasWebsite: false,
+    hasContent: false,
+    checklistProgress: { completed: 0, total: 6 },
+  } : clients['tc-clinical'] // Fallback to hardcoded data while loading
+
+  // Activity type and data
+  type Activity = {
+    id: number
+    type: 'content' | 'alert' | 'task' | 'update'
+    title: string
+    description: string
+    time: string
+  }
+
+  // Activity data - varies by client (dummy data for now)
+  const activitiesByClient: Record<string, Activity[]> = {
     'tc-clinical': [
       { id: 1, type: 'content' as const, title: 'Content approved and published', description: '"January Services Update" blog post is now live on your website', time: 'Today, 3:30 PM' },
       { id: 2, type: 'alert' as const, title: 'Keyword reached Page 1!', description: '"precision wound care San Antonio" moved to position #7', time: 'Today, 2:45 PM' },
@@ -170,10 +265,10 @@ export default function ClientDetailPage() {
     ],
   }
 
-  const activities = activitiesByClient[clientId] || activitiesByClient['tc-clinical']
+  const activities: Activity[] = activitiesByClient[clientId] || activitiesByClient['tc-clinical']
 
   const filteredActivities = activities.filter(
-    activity => activityFilter === 'all' || activity.type === activityFilter
+    (activity: Activity) => activityFilter === 'all' || activity.type === activityFilter
   )
 
   const getStatusIcon = (status: RequestStatus) => {
@@ -200,6 +295,60 @@ export default function ClientDetailPage() {
           </svg>
         )
     }
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <>
+        <AdminHeader
+          title="Client Details"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+          breadcrumb={
+            <>
+              <Link href="/admin/clients">Clients</Link>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span>Loading...</span>
+            </>
+          }
+        />
+        <div className="admin-content">
+          <div className="loading-state">
+            <p>Loading client details...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // Show not found state
+  if (!dbClient) {
+    return (
+      <>
+        <AdminHeader
+          title="Client Details"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+          breadcrumb={
+            <>
+              <Link href="/admin/clients">Clients</Link>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span>Not Found</span>
+            </>
+          }
+        />
+        <div className="admin-content">
+          <div className="no-results">
+            <p>Client not found. <Link href="/admin/clients">Return to Clients</Link></p>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
@@ -233,7 +382,7 @@ export default function ClientDetailPage() {
         <div className="client-header-card">
           <div className="client-header">
             <div className="client-info">
-              <div className="client-avatar" style={{ background: editFormData.avatarColor }}>{client.initials}</div>
+              <div className="client-avatar" style={{ background: client.avatarColor }}>{client.initials}</div>
               <div className="client-details">
                 <h1>
                   {client.name}
