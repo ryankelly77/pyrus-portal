@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
@@ -12,8 +12,44 @@ import {
   ServiceInfoModal,
 } from '@/components/recommendation-builder'
 import { useRecommendationStore } from '@/stores/recommendation-store'
-import { products, productsByCategory } from '@/lib/data/products'
 import type { Product, TierName, ServiceCategory, Client } from '@/types/recommendation'
+
+// Database product interface
+interface DBProduct {
+  id: string
+  name: string
+  short_description: string | null
+  long_description: string | null
+  category: string
+  monthly_price: string | null
+  onetime_price: string | null
+  supports_quantity: boolean | null
+  status: string | null
+  product_dependencies?: {
+    requires_product_id: string
+    requires: {
+      id: string
+      name: string
+    }
+  }[]
+}
+
+interface DBBundle {
+  id: string
+  name: string
+  description: string | null
+  monthly_price: string | null
+  onetime_price: string | null
+  status: string | null
+}
+
+interface DBAddon {
+  id: string
+  name: string
+  description: string | null
+  price: string | null
+  status: string | null
+}
 
 // Sample clients data
 const clients: Client[] = [
@@ -40,6 +76,17 @@ export default function RecommendationBuilderPage() {
   // Get initial client from URL
   const initialClient = clients.find((c) => c.id === clientId) || null
 
+  // Products state
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsByCategory, setProductsByCategory] = useState<Record<ServiceCategory, Product[]>>({
+    root: [],
+    growth: [],
+    cultivation: [],
+    bundle: [],
+    fertilizer: [],
+  })
+  const [isLoading, setIsLoading] = useState(true)
+
   // Store
   const {
     tiers,
@@ -60,6 +107,88 @@ export default function RecommendationBuilderPage() {
   // Local state
   const [selectedClient, setSelectedClient] = useState<Client | null>(initialClient)
   const [dragOverTier, setDragOverTier] = useState<TierName | null>(null)
+
+  // Fetch products from database
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const [productsRes, bundlesRes, addonsRes] = await Promise.all([
+          fetch('/api/admin/products'),
+          fetch('/api/admin/bundles'),
+          fetch('/api/admin/addons'),
+        ])
+
+        const dbProducts: DBProduct[] = await productsRes.json()
+        const dbBundles: DBBundle[] = await bundlesRes.json()
+        const dbAddons: DBAddon[] = await addonsRes.json()
+
+        // Transform products
+        const transformedProducts: Product[] = dbProducts
+          .filter(p => p.status === 'active')
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.short_description || '',
+            category: p.category as ServiceCategory,
+            monthlyPrice: p.monthly_price ? parseFloat(p.monthly_price) : 0,
+            onetimePrice: p.onetime_price ? parseFloat(p.onetime_price) : 0,
+            hasQuantity: p.supports_quantity || false,
+            requires: p.product_dependencies?.[0]?.requires?.name,
+          }))
+
+        // Transform bundles
+        const transformedBundles: Product[] = dbBundles
+          .filter(b => b.status === 'active')
+          .map(b => ({
+            id: b.id,
+            name: b.name,
+            description: b.description || '',
+            category: 'bundle' as ServiceCategory,
+            monthlyPrice: b.monthly_price ? parseFloat(b.monthly_price) : 0,
+            onetimePrice: b.onetime_price ? parseFloat(b.onetime_price) : 0,
+          }))
+
+        // Transform addons (fertilizers)
+        const transformedAddons: Product[] = dbAddons
+          .filter(a => a.status === 'active')
+          .map(a => ({
+            id: a.id,
+            name: a.name,
+            description: a.description || '',
+            category: 'fertilizer' as ServiceCategory,
+            monthlyPrice: a.price ? parseFloat(a.price) : 0,
+            onetimePrice: 0,
+          }))
+
+        // Combine all products
+        const allProducts = [...transformedProducts, ...transformedBundles, ...transformedAddons]
+        setProducts(allProducts)
+
+        // Group by category
+        const grouped: Record<ServiceCategory, Product[]> = {
+          root: [],
+          growth: [],
+          cultivation: [],
+          bundle: [],
+          fertilizer: [],
+        }
+
+        allProducts.forEach(product => {
+          if (grouped[product.category]) {
+            grouped[product.category].push(product)
+          }
+        })
+
+        setProductsByCategory(grouped)
+      } catch (error) {
+        console.error('Failed to fetch products:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   // Drag handlers
   const handleDragStart = useCallback((e: React.DragEvent, product: Product) => {
@@ -134,6 +263,23 @@ export default function RecommendationBuilderPage() {
 
         <button className="btn btn-purchase">Purchase Now</button>
       </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <AdminHeader
+          title="Recommendation Builder"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+        />
+        <div className="admin-content">
+          <div className="content-page-header">
+            <p>Loading products...</p>
+          </div>
+        </div>
+      </>
     )
   }
 
