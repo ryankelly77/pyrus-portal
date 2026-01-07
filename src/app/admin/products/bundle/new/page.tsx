@@ -1,24 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+
+interface Product {
+  id: string
+  name: string
+  monthly_price: string | null
+  onetime_price: string | null
+  category: string
+}
 
 interface DraggableProduct {
   id: string
   name: string
   price: string
 }
-
-const availableProducts: DraggableProduct[] = [
-  { id: 'pro-dashboard', name: 'Pro Dashboard', price: '$99/mo' },
-  { id: 'analytics-tracking', name: 'Analytics Tracking', price: '$99' },
-  { id: 'seo-content', name: 'SEO Content Package', price: '$299/mo' },
-  { id: 'google-ads', name: 'Google Ads Management', price: '$499/mo' },
-  { id: 'social-media', name: 'Social Media Management', price: '$399/mo' },
-  { id: 'email-marketing', name: 'Email Marketing Automation', price: '$249/mo' },
-]
 
 export default function NewBundlePage() {
   const router = useRouter()
@@ -33,8 +32,49 @@ export default function NewBundlePage() {
     stripePriceId: '',
   })
 
+  const [availableProducts, setAvailableProducts] = useState<DraggableProduct[]>([])
   const [includedProducts, setIncludedProducts] = useState<DraggableProduct[]>([])
   const [dragOver, setDragOver] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch('/api/admin/products')
+        if (!res.ok) throw new Error('Failed to fetch products')
+
+        const products: Product[] = await res.json()
+
+        // Format products for drag and drop
+        const formatPrice = (product: Product) => {
+          if (product.monthly_price && parseFloat(product.monthly_price) > 0) {
+            return `$${parseFloat(product.monthly_price).toLocaleString()}/mo`
+          }
+          if (product.onetime_price && parseFloat(product.onetime_price) > 0) {
+            return `$${parseFloat(product.onetime_price).toLocaleString()}`
+          }
+          return '-'
+        }
+
+        const formattedProducts: DraggableProduct[] = products.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: formatPrice(p),
+        }))
+
+        setAvailableProducts(formattedProducts)
+      } catch (err) {
+        console.error('Failed to fetch products:', err)
+        setError('Failed to load products')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, product: DraggableProduct) => {
@@ -59,11 +99,23 @@ export default function NewBundlePage() {
 
     if (!includedProducts.find(p => p.id === product.id)) {
       setIncludedProducts([...includedProducts, product])
+      setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
     }
   }
 
   const removeFromBundle = (productId: string) => {
-    setIncludedProducts(includedProducts.filter(p => p.id !== productId))
+    const product = includedProducts.find(p => p.id === productId)
+    if (product) {
+      setIncludedProducts(includedProducts.filter(p => p.id !== productId))
+      setAvailableProducts([...availableProducts, product])
+    }
+  }
+
+  const addToBundle = (product: DraggableProduct) => {
+    if (!includedProducts.find(p => p.id === product.id)) {
+      setIncludedProducts([...includedProducts, product])
+      setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
+    }
   }
 
   // Calculate bundle summary
@@ -85,9 +137,58 @@ export default function NewBundlePage() {
 
   const summary = calculateBundleSummary()
 
-  const handleSave = () => {
-    console.log('Saving bundle:', bundleForm, includedProducts)
-    router.push('/admin/products?tab=bundles')
+  const handleSave = async () => {
+    if (!bundleForm.name.trim()) {
+      setError('Bundle name is required')
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/admin/bundles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: bundleForm.name,
+          description: bundleForm.description,
+          monthlyPrice: bundleForm.monthlyPrice,
+          onetimePrice: bundleForm.onetimePrice,
+          status: bundleForm.status,
+          stripeProductId: bundleForm.stripeProductId,
+          stripePriceId: bundleForm.stripePriceId,
+          products: includedProducts.map(p => p.id),
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to create bundle')
+      }
+
+      router.push('/admin/products?tab=bundles')
+    } catch (err) {
+      console.error('Failed to save bundle:', err)
+      setError('Failed to save bundle')
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <AdminHeader
+          title="Product Management"
+          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          hasNotifications={true}
+        />
+        <div className="admin-content">
+          <div className="content-page-header">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
@@ -109,6 +210,12 @@ export default function NewBundlePage() {
           </Link>
           <h1 className="content-page-title">Create New Bundle</h1>
         </div>
+
+        {error && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', color: '#dc2626' }}>
+            {error}
+          </div>
+        )}
 
         {/* Form Content */}
         <div className="content-form">
@@ -178,36 +285,42 @@ export default function NewBundlePage() {
 
               <div className="form-card">
                 <h3 className="form-card-title">Included Products</h3>
-                <p className="form-hint" style={{ marginBottom: '16px' }}>Drag products from Available to add them to this bundle</p>
+                <p className="form-hint" style={{ marginBottom: '16px' }}>Click or drag products to add them to this bundle</p>
 
                 <div className="product-selector-container">
                   <div className="available-products">
-                    <h4>Available Products</h4>
-                    <div className="product-list">
-                      {availableProducts
-                        .filter(p => !includedProducts.find(ip => ip.id === p.id))
-                        .map((product) => (
-                          <div
-                            key={product.id}
-                            className="draggable-product"
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, product)}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                              <line x1="3" y1="12" x2="21" y2="12"></line>
-                              <line x1="3" y1="6" x2="21" y2="6"></line>
-                              <line x1="3" y1="18" x2="21" y2="18"></line>
-                            </svg>
-                            <span>{product.name}</span>
-                            <span className="product-price">{product.price}</span>
-                          </div>
-                        ))}
+                    <h4>Available Products ({availableProducts.length})</h4>
+                    <div className="product-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {availableProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="draggable-product"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, product)}
+                          onClick={() => addToBundle(product)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                          </svg>
+                          <span>{product.name}</span>
+                          <span className="product-price">{product.price}</span>
+                        </div>
+                      ))}
+                      {availableProducts.length === 0 && (
+                        <div style={{ padding: '16px', color: '#6b7280', textAlign: 'center' }}>
+                          All products are included
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="included-products">
-                    <h4>In This Bundle</h4>
+                    <h4>In This Bundle ({includedProducts.length})</h4>
                     <div
                       className={`product-list drop-zone ${dragOver ? 'drag-over' : ''}`}
+                      style={{ maxHeight: '300px', overflowY: 'auto' }}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
@@ -310,13 +423,17 @@ export default function NewBundlePage() {
               </div>
 
               <div className="form-actions-sidebar">
-                <button className="btn btn-primary btn-block" onClick={handleSave}>
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
                   </svg>
-                  Save Bundle
+                  {isSaving ? 'Saving...' : 'Save Bundle'}
                 </button>
                 <Link href="/admin/products?tab=bundles" className="btn btn-secondary btn-block">
                   Cancel
