@@ -21954,22 +21954,40 @@ input[type="date"].form-control {
     overflow: hidden;
 }
 
+.accordion-list-header {
+    display: grid;
+    grid-template-columns: 32px minmax(160px, 1.5fr) 90px 70px 70px 80px 80px 80px 200px 100px 140px;
+    gap: 20px;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--bg-page);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.accordion-list-header > div {
+    text-align: left;
+}
+
+.accordion-header {
+    display: grid;
+    grid-template-columns: 32px minmax(160px, 1.5fr) 90px 70px 70px 80px 80px 80px 200px 100px 140px;
+    gap: 20px;
+    align-items: center;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
 .accordion-item {
     background: var(--bg-white);
 }
 
 .accordion-item.expanded {
     background: var(--bg-white);
-}
-
-.accordion-header {
-    display: grid;
-    grid-template-columns: 32px 1.5fr 100px 80px 140px 100px auto;
-    gap: 16px;
-    align-items: center;
-    padding: 16px 20px;
-    cursor: pointer;
-    transition: background 0.15s ease;
 }
 
 .accordion-header:hover {
@@ -22018,8 +22036,27 @@ input[type="date"].form-control {
 
 .client-info-inline {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
+}
+
+.edit-client-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.accordion-header:hover .edit-client-link {
+    opacity: 1;
+}
+
+.edit-client-link:hover {
+    color: var(--pyrus-brown);
 }
 
 .client-name {
@@ -22036,6 +22073,41 @@ input[type="date"].form-control {
     text-decoration: underline;
 }
 
+.client-stage {
+    display: flex;
+    align-items: center;
+}
+
+.stage-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.stage-badge.prospect {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.stage-badge.active,
+.stage-badge.client {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.stage-badge.churned,
+.stage-badge.inactive {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.stage-badge.onboarding {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+}
+
 .recommendation-status {
     display: flex;
     align-items: center;
@@ -22044,6 +22116,7 @@ input[type="date"].form-control {
 .recommendation-items-count {
     font-size: 14px;
     color: var(--text-secondary);
+    text-align: left;
 }
 
 .recommendation-pricing {
@@ -22063,15 +22136,83 @@ input[type="date"].form-control {
     color: var(--text-muted);
 }
 
+.tier-pricing-cell {
+    text-align: left;
+}
+
+.tier-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tier-price.empty {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.created-by-cell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.creator-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.creator-unknown {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    width: fit-content;
+}
+
+.role-badge.super_admin {
+    background: var(--accent-purple-bg);
+    color: var(--accent-purple);
+}
+
+.role-badge.sales {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+}
+
+.role-badge.production_team,
+.role-badge.admin {
+    background: var(--accent-teal-bg);
+    color: var(--accent-teal);
+}
+
+.role-badge.user {
+    background: var(--border-light);
+    color: var(--text-secondary);
+}
+
 .recommendation-date {
     font-size: 14px;
     color: var(--text-secondary);
+    text-align: left;
 }
 
 .recommendation-actions {
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .btn-danger {

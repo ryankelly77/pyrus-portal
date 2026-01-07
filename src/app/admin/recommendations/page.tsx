@@ -45,7 +45,13 @@ interface DBRecommendation {
     id: string
     name: string
     contact_email: string | null
+    growth_stage: string | null
   }
+  creator: {
+    id: string
+    full_name: string | null
+    role: string | null
+  } | null
   recommendation_items: {
     id: string
     quantity: number | null
@@ -59,21 +65,35 @@ interface DBRecommendation {
   recommendation_invites: DBRecommendationInvite[]
 }
 
+interface TierPricing {
+  monthly: number
+  onetime: number
+  itemCount: number
+}
+
 interface Recommendation {
   id: string
   client: string
   clientId: string
   clientEmail: string | null
+  clientStage: string
   initials: string
   avatarColor: string
   status: RecommendationStatus
-  totalMonthly: number
-  totalOnetime: number
+  tierPricing: {
+    good: TierPricing
+    better: TierPricing
+    best: TierPricing
+  }
   itemCount: number
   items: { name: string; tier: string }[]
   createdAt: string
   sentAt: string | null
   invitedUsers: InvitedUser[]
+  createdBy: {
+    name: string
+    role: string
+  } | null
 }
 
 // Helper to generate initials from name
@@ -100,6 +120,17 @@ function getAvatarColor(str: string): string {
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// Helper to format role label
+function getRoleLabel(role: string | null): string {
+  switch (role) {
+    case 'super_admin': return 'Super Admin'
+    case 'sales': return 'Sales'
+    case 'production_team': return 'Production'
+    case 'admin': return 'Admin'
+    default: return 'User'
+  }
 }
 
 // Helper to format relative time
@@ -240,6 +271,22 @@ export default function RecommendationsPage() {
             tier: item.notes || 'good',
           }))
 
+          // Calculate pricing per tier
+          const tierPricing = {
+            good: { monthly: 0, onetime: 0, itemCount: 0 },
+            better: { monthly: 0, onetime: 0, itemCount: 0 },
+            best: { monthly: 0, onetime: 0, itemCount: 0 },
+          }
+
+          rec.recommendation_items.forEach(item => {
+            const tier = (item.notes as 'good' | 'better' | 'best') || 'good'
+            if (tierPricing[tier]) {
+              tierPricing[tier].monthly += item.monthly_price ? parseFloat(item.monthly_price) : 0
+              tierPricing[tier].onetime += item.onetime_price ? parseFloat(item.onetime_price) : 0
+              tierPricing[tier].itemCount += 1
+            }
+          })
+
           // Transform invites from database
           const invitedUsers: InvitedUser[] = (rec.recommendation_invites || []).map(invite => ({
             id: invite.id,
@@ -255,16 +302,20 @@ export default function RecommendationsPage() {
             client: rec.client.name,
             clientId: rec.client.id,
             clientEmail: rec.client.contact_email,
+            clientStage: rec.client.growth_stage || 'Prospect',
             initials: getInitials(rec.client.name),
             avatarColor: getAvatarColor(rec.client.name),
             status: (rec.status as RecommendationStatus) || 'draft',
-            totalMonthly: rec.total_monthly ? parseFloat(rec.total_monthly) : 0,
-            totalOnetime: rec.total_onetime ? parseFloat(rec.total_onetime) : 0,
+            tierPricing,
             itemCount: rec.recommendation_items.length,
             items,
             createdAt: rec.created_at,
             sentAt: rec.sent_at,
             invitedUsers,
+            createdBy: rec.creator ? {
+              name: rec.creator.full_name || 'Unknown',
+              role: rec.creator.role || 'user',
+            } : null,
           }
         })
 
@@ -420,6 +471,20 @@ export default function RecommendationsPage() {
               </div>
             ) : (
               <div className="accordion-list">
+                {/* Table Header */}
+                <div className="accordion-list-header">
+                  <div className="header-toggle"></div>
+                  <div className="header-client">Client</div>
+                  <div className="header-stage">Stage</div>
+                  <div className="header-status">Status</div>
+                  <div className="header-items">Items</div>
+                  <div className="header-good">Good</div>
+                  <div className="header-better">Better</div>
+                  <div className="header-best">Best</div>
+                  <div className="header-created-by">Created By</div>
+                  <div className="header-date">Date</div>
+                  <div className="header-actions">Actions</div>
+                </div>
                 {filteredAndSortedRecommendations.map((rec) => (
                   <div
                     key={rec.id}
@@ -455,7 +520,23 @@ export default function RecommendationsPage() {
                           >
                             {rec.client}
                           </Link>
+                          <Link
+                            href={`/admin/clients/${rec.clientId}?edit=true`}
+                            className="edit-client-link"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Edit client"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </Link>
                         </div>
+                      </div>
+                      <div className="client-stage">
+                        <span className={`stage-badge ${rec.clientStage.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {rec.clientStage}
+                        </span>
                       </div>
                       <div className="recommendation-status">
                         <span className={`status-badge ${rec.status}`}>
@@ -465,10 +546,37 @@ export default function RecommendationsPage() {
                       <div className="recommendation-items-count">
                         {rec.itemCount} items
                       </div>
-                      <div className="recommendation-pricing">
-                        <span className="pricing-monthly">${rec.totalMonthly.toLocaleString()}/mo</span>
-                        {rec.totalOnetime > 0 && (
-                          <span className="pricing-onetime">+ ${rec.totalOnetime.toLocaleString()}</span>
+                      <div className="tier-pricing-cell">
+                        {rec.tierPricing.good.itemCount > 0 ? (
+                          <span className="tier-price good">${rec.tierPricing.good.monthly.toLocaleString()}</span>
+                        ) : (
+                          <span className="tier-price empty">—</span>
+                        )}
+                      </div>
+                      <div className="tier-pricing-cell">
+                        {rec.tierPricing.better.itemCount > 0 ? (
+                          <span className="tier-price better">${rec.tierPricing.better.monthly.toLocaleString()}</span>
+                        ) : (
+                          <span className="tier-price empty">—</span>
+                        )}
+                      </div>
+                      <div className="tier-pricing-cell">
+                        {rec.tierPricing.best.itemCount > 0 ? (
+                          <span className="tier-price best">${rec.tierPricing.best.monthly.toLocaleString()}</span>
+                        ) : (
+                          <span className="tier-price empty">—</span>
+                        )}
+                      </div>
+                      <div className="created-by-cell">
+                        {rec.createdBy ? (
+                          <>
+                            <span className="creator-name">{rec.createdBy.name}</span>
+                            <span className={`role-badge ${rec.createdBy.role}`}>
+                              {getRoleLabel(rec.createdBy.role)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="creator-unknown">—</span>
                         )}
                       </div>
                       <div className="recommendation-date">

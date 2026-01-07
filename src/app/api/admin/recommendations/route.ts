@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
 // DELETE /api/admin/recommendations?id=xxx - Delete a recommendation
 export async function DELETE(request: NextRequest) {
@@ -49,6 +50,13 @@ export async function GET() {
     const recommendations = await prisma.recommendations.findMany({
       include: {
         client: true,
+        creator: {
+          select: {
+            id: true,
+            full_name: true,
+            role: true,
+          },
+        },
         recommendation_items: {
           include: {
             product: true,
@@ -88,6 +96,10 @@ export async function GET() {
 // POST /api/admin/recommendations - Create or update a recommendation
 export async function POST(request: NextRequest) {
   try {
+    // Get current user
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
     const body = await request.json()
 
     const {
@@ -142,6 +154,7 @@ export async function POST(request: NextRequest) {
       recommendation = await prisma.recommendations.create({
         data: {
           client_id: clientId,
+          created_by: user?.id || null,
           status: 'draft',
           pricing_type: pricingType,
           total_monthly: totalMonthly || 0,
