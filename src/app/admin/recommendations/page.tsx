@@ -426,7 +426,7 @@ export default function RecommendationsPage() {
             client: rec.client.name,
             clientId: rec.client.id,
             clientEmail: rec.client.contact_email,
-            clientStage: rec.client.growth_stage || 'Prospect',
+            clientStage: (!rec.client.growth_stage || rec.client.growth_stage === 'prospect') ? 'Prospect' : 'Active',
             initials: getInitials(rec.client.name),
             avatarColor: getAvatarColor(rec.client.name),
             status: (rec.status as RecommendationStatus) || 'draft',
