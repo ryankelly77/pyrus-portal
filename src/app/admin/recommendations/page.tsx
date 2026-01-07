@@ -122,14 +122,46 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-// Helper to format role label
-function getRoleLabel(role: string | null): string {
+// Helper to get role badge content (matches users page styling)
+function getRoleBadgeContent(role: string | null) {
   switch (role) {
-    case 'super_admin': return 'Super Admin'
-    case 'sales': return 'Sales'
-    case 'production_team': return 'Production'
-    case 'admin': return 'Admin'
-    default: return 'User'
+    case 'super_admin':
+      return {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        ),
+        label: 'Super Admin',
+        className: 'super-admin',
+      }
+    case 'production_team':
+      return {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+        ),
+        label: 'Production',
+        className: 'production-team',
+      }
+    case 'sales':
+      return {
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        ),
+        label: 'Sales',
+        className: 'sales',
+      }
+    default:
+      return {
+        icon: null,
+        label: 'User',
+        className: 'user',
+      }
   }
 }
 
@@ -571,9 +603,15 @@ export default function RecommendationsPage() {
                         {rec.createdBy ? (
                           <>
                             <span className="creator-name">{rec.createdBy.name}</span>
-                            <span className={`role-badge ${rec.createdBy.role}`}>
-                              {getRoleLabel(rec.createdBy.role)}
-                            </span>
+                            {(() => {
+                              const roleContent = getRoleBadgeContent(rec.createdBy.role)
+                              return (
+                                <span className={`role-badge ${roleContent.className}`}>
+                                  {roleContent.icon}
+                                  {roleContent.label}
+                                </span>
+                              )
+                            })()}
                           </>
                         ) : (
                           <span className="creator-unknown">—</span>

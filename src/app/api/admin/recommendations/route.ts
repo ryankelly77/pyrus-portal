@@ -122,12 +122,13 @@ export async function POST(request: NextRequest) {
     const validPricingTypes = ['good', 'better', 'best']
     const pricingType = validPricingTypes.includes(tierName) ? tierName : null
 
-    // Check for existing draft recommendation for this client
+    // Check for existing recommendation for this client (draft or sent - allow editing both)
     const existingRecommendation = await prisma.recommendations.findFirst({
       where: {
         client_id: clientId,
-        status: 'draft',
+        status: { in: ['draft', 'sent'] },
       },
+      orderBy: { updated_at: 'desc' },
     })
 
     let recommendation
