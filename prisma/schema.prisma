@@ -214,10 +214,11 @@ model recommendations {
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamptz(6)
 
-  client               clients                @relation(fields: [client_id], references: [id])
-  creator              profiles?              @relation(fields: [created_by], references: [id])
-  reward_tier          reward_tiers?          @relation(fields: [reward_tier_id], references: [id])
+  client               clients                  @relation(fields: [client_id], references: [id])
+  creator              profiles?                @relation(fields: [created_by], references: [id])
+  reward_tier          reward_tiers?            @relation(fields: [reward_tier_id], references: [id])
   recommendation_items recommendation_items[]
+  recommendation_invites recommendation_invites[]
 }
 
 model recommendation_items {
@@ -237,6 +238,22 @@ model recommendation_items {
   product        products?       @relation(fields: [product_id], references: [id])
   bundle         bundles?        @relation(fields: [bundle_id], references: [id])
   addon          addons?         @relation(fields: [addon_id], references: [id])
+}
+
+model recommendation_invites {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recommendation_id String    @db.Uuid
+  first_name        String
+  last_name         String
+  email             String
+  status            String?   @default("pending")
+  invite_token      String?   @unique
+  sent_at           DateTime? @db.Timestamptz(6)
+  viewed_at         DateTime? @db.Timestamptz(6)
+  responded_at      DateTime? @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  recommendation recommendations @relation(fields: [recommendation_id], references: [id])
 }
 
 model reward_tiers {

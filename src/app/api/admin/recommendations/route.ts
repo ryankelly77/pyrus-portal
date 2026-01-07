@@ -14,7 +14,16 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete recommendation items first (foreign key constraint)
+    // Delete invites first (foreign key constraint) - skip if table doesn't exist
+    try {
+      await prisma.recommendation_invites.deleteMany({
+        where: { recommendation_id: id },
+      })
+    } catch {
+      // Table may not exist yet, continue
+    }
+
+    // Delete recommendation items (foreign key constraint)
     await prisma.recommendation_items.deleteMany({
       where: { recommendation_id: id },
     })
@@ -51,7 +60,22 @@ export async function GET() {
       orderBy: { created_at: 'desc' },
     })
 
-    return NextResponse.json(recommendations)
+    // Fetch invites separately to handle schema mismatches
+    const recommendationsWithInvites = await Promise.all(
+      recommendations.map(async (rec) => {
+        try {
+          const invites = await prisma.recommendation_invites.findMany({
+            where: { recommendation_id: rec.id },
+            orderBy: { created_at: 'desc' },
+          })
+          return { ...rec, recommendation_invites: invites }
+        } catch {
+          return { ...rec, recommendation_invites: [] }
+        }
+      })
+    )
+
+    return NextResponse.json(recommendationsWithInvites)
   } catch (error) {
     console.error('Failed to fetch recommendations:', error)
     return NextResponse.json(

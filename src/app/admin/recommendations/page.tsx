@@ -18,6 +18,19 @@ interface InvitedUser {
   respondedAt: string | null
 }
 
+interface DBRecommendationInvite {
+  id: string
+  recommendation_id: string
+  first_name: string
+  last_name: string
+  email: string
+  status: string | null
+  sent_at: string | null
+  viewed_at: string | null
+  responded_at: string | null
+  created_at: string | null
+}
+
 interface DBRecommendation {
   id: string
   client_id: string
@@ -43,6 +56,7 @@ interface DBRecommendation {
     bundle: { id: string; name: string } | null
     addon: { id: string; name: string } | null
   }[]
+  recommendation_invites: DBRecommendationInvite[]
 }
 
 interface Recommendation {
@@ -114,6 +128,16 @@ export default function RecommendationsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareRecommendationId, setShareRecommendationId] = useState<string | null>(null)
+  const [shareForm, setShareForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  })
+  const [isSendingInvite, setIsSendingInvite] = useState(false)
+
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('Are you sure you want to delete this recommendation?')) return
@@ -136,6 +160,71 @@ export default function RecommendationsPage() {
     setExpandedId(expandedId === id ? null : id)
   }
 
+  // Open share modal for a specific recommendation
+  const openShareModal = (recId: string, clientEmail: string | null) => {
+    setShareRecommendationId(recId)
+    setShareForm({
+      firstName: '',
+      lastName: '',
+      email: clientEmail || '',
+    })
+    setShowShareModal(true)
+  }
+
+  // Handle sharing the recommendation
+  const handleShare = async () => {
+    if (!shareRecommendationId) return
+
+    if (!shareForm.firstName || !shareForm.lastName || !shareForm.email) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    setIsSendingInvite(true)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${shareRecommendationId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shareForm),
+      })
+
+      if (!res.ok) throw new Error('Failed to send invite')
+
+      const newInvite = await res.json()
+
+      // Update the recommendations list with the new invite
+      setRecommendations(prev => prev.map(rec => {
+        if (rec.id === shareRecommendationId) {
+          return {
+            ...rec,
+            status: 'sent' as RecommendationStatus,
+            invitedUsers: [
+              {
+                id: newInvite.id,
+                email: newInvite.email,
+                name: `${newInvite.first_name} ${newInvite.last_name}`,
+                status: 'pending' as const,
+                invitedAt: newInvite.sent_at || newInvite.created_at,
+                respondedAt: null,
+              },
+              ...rec.invitedUsers,
+            ],
+          }
+        }
+        return rec
+      }))
+
+      setShowShareModal(false)
+      setShareForm({ firstName: '', lastName: '', email: '' })
+      setShareRecommendationId(null)
+    } catch (error) {
+      console.error('Failed to send invite:', error)
+      alert('Failed to send invite')
+    } finally {
+      setIsSendingInvite(false)
+    }
+  }
+
   // Fetch recommendations
   useEffect(() => {
     async function fetchRecommendations() {
@@ -151,17 +240,15 @@ export default function RecommendationsPage() {
             tier: item.notes || 'good',
           }))
 
-          // Mock invited users for now (would come from database)
-          const invitedUsers: InvitedUser[] = rec.status === 'sent' || rec.status === 'approved'
-            ? [{
-                id: '1',
-                email: rec.client.contact_email || 'client@example.com',
-                name: rec.client.name,
-                status: rec.status === 'approved' ? 'approved' : 'pending',
-                invitedAt: rec.sent_at || rec.created_at,
-                respondedAt: rec.status === 'approved' ? rec.created_at : null,
-              }]
-            : []
+          // Transform invites from database
+          const invitedUsers: InvitedUser[] = (rec.recommendation_invites || []).map(invite => ({
+            id: invite.id,
+            email: invite.email,
+            name: `${invite.first_name} ${invite.last_name}`,
+            status: (invite.status as InvitedUser['status']) || 'pending',
+            invitedAt: invite.sent_at || invite.created_at || rec.created_at,
+            respondedAt: invite.responded_at,
+          }))
 
           return {
             id: rec.id,
@@ -410,15 +497,19 @@ export default function RecommendationsPage() {
                         <div className="accordion-section">
                           <div className="section-header">
                             <h4>Invited Users</h4>
-                            {rec.status === 'draft' && (
-                              <button className="btn btn-sm btn-primary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                </svg>
-                                Send to Client
-                              </button>
-                            )}
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => openShareModal(rec.id, rec.clientEmail)}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                              </svg>
+                              Add User
+                            </button>
                           </div>
 
                           {rec.invitedUsers.length === 0 ? (
@@ -473,6 +564,81 @@ export default function RecommendationsPage() {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="modal-overlay active" onClick={() => setShowShareModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Share Recommendation</h2>
+              <button className="modal-close" onClick={() => setShowShareModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                Enter the details of the person you want to share this recommendation with.
+              </p>
+              <div className="form-group">
+                <label htmlFor="shareFirstName">First Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="shareFirstName"
+                  className="form-control"
+                  placeholder="e.g., John"
+                  value={shareForm.firstName}
+                  onChange={(e) => setShareForm({ ...shareForm, firstName: e.target.value })}
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="shareLastName">Last Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="shareLastName"
+                  className="form-control"
+                  placeholder="e.g., Smith"
+                  value={shareForm.lastName}
+                  onChange={(e) => setShareForm({ ...shareForm, lastName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="shareEmail">Email <span className="required">*</span></label>
+                <input
+                  type="email"
+                  id="shareEmail"
+                  className="form-control"
+                  placeholder="e.g., john@example.com"
+                  value={shareForm.email}
+                  onChange={(e) => setShareForm({ ...shareForm, email: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowShareModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleShare}
+                disabled={!shareForm.firstName.trim() || !shareForm.lastName.trim() || !shareForm.email.trim() || isSendingInvite}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                {isSendingInvite ? 'Sending...' : 'Send Invite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -138,6 +138,16 @@ export default function RecommendationBuilderPage() {
   })
   const [isSavingClient, setIsSavingClient] = useState(false)
   const [isSavingPlan, setIsSavingPlan] = useState(false)
+  const [savedRecommendationId, setSavedRecommendationId] = useState<string | null>(null)
+
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareForm, setShareForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  })
+  const [isSendingInvite, setIsSendingInvite] = useState(false)
 
   // Store
   const {
@@ -257,6 +267,23 @@ export default function RecommendationBuilderPage() {
             const recRes = await fetch(`/api/admin/recommendations/client/${clientId}`)
             const existingRec: DBRecommendation | null = await recRes.json()
 
+            if (existingRec && existingRec.id) {
+              // Store the recommendation ID so Share button shows
+              setSavedRecommendationId(existingRec.id)
+
+              // Pre-fill share form with client contact info
+              if (currentClient?.contact_name) {
+                const nameParts = currentClient.contact_name.split(' ')
+                setShareForm({
+                  firstName: nameParts[0] || '',
+                  lastName: nameParts.slice(1).join(' ') || '',
+                  email: currentClient.contact_email || '',
+                })
+              } else if (currentClient?.contact_email) {
+                setShareForm(prev => ({ ...prev, email: currentClient.contact_email || '' }))
+              }
+            }
+
             if (existingRec && existingRec.recommendation_items) {
               // Group items by tier
               const tierItemsMap: Record<TierName, RecommendationItem[]> = {
@@ -374,11 +401,11 @@ export default function RecommendationBuilderPage() {
       // Add to clients list
       setClients(prev => [...prev, newClient].sort((a, b) => a.name.localeCompare(b.name)))
 
-      // Select the new client
+      // Select the new client (don't navigate - keep items in place)
       setSelectedClient(newClient)
 
-      // Navigate to new client's URL
-      router.push(`/admin/recommendation-builder/${newClient.id}`)
+      // Update URL without full navigation to preserve state
+      window.history.replaceState(null, '', `/admin/recommendation-builder/${newClient.id}`)
 
       // Close modal and reset form
       setShowAddClientModal(false)
@@ -465,13 +492,60 @@ export default function RecommendationBuilderPage() {
 
       if (!res.ok) throw new Error('Failed to save plan')
 
-      // Navigate to recommendations page
-      router.push('/admin/recommendations')
+      const savedRec = await res.json()
+      setSavedRecommendationId(savedRec.id)
+
+      // Pre-fill share form with client contact info if available
+      if (selectedClient.contact_name) {
+        const nameParts = selectedClient.contact_name.split(' ')
+        setShareForm({
+          firstName: nameParts[0] || '',
+          lastName: nameParts.slice(1).join(' ') || '',
+          email: selectedClient.contact_email || '',
+        })
+      } else if (selectedClient.contact_email) {
+        setShareForm(prev => ({ ...prev, email: selectedClient.contact_email || '' }))
+      }
     } catch (error) {
       console.error('Failed to save plan:', error)
       alert('Failed to save plan')
     } finally {
       setIsSavingPlan(false)
+    }
+  }
+
+  // Handle sharing the recommendation
+  const handleShare = async () => {
+    if (!savedRecommendationId) {
+      alert('Please save the plan first')
+      return
+    }
+
+    if (!shareForm.firstName || !shareForm.lastName || !shareForm.email) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    setIsSendingInvite(true)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${savedRecommendationId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shareForm),
+      })
+
+      if (!res.ok) throw new Error('Failed to send invite')
+
+      setShowShareModal(false)
+      setShareForm({ firstName: '', lastName: '', email: '' })
+
+      // Navigate to recommendations page after successful share
+      router.push('/admin/recommendations')
+    } catch (error) {
+      console.error('Failed to send invite:', error)
+      alert('Failed to send invite')
+    } finally {
+      setIsSendingInvite(false)
     }
   }
 
@@ -636,6 +710,21 @@ export default function RecommendationBuilderPage() {
             >
               {isSavingPlan ? 'Saving...' : 'Save Plan'}
             </button>
+            {savedRecommendationId && (
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowShareModal(true)}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Share
+              </button>
+            )}
           </div>
 
           {/* Good / Better / Best Columns */}
@@ -714,6 +803,81 @@ export default function RecommendationBuilderPage() {
                 disabled={!newClientForm.name.trim() || isSavingClient}
               >
                 {isSavingClient ? 'Creating...' : 'Create Client'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="modal-overlay active" onClick={() => setShowShareModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Share Recommendation</h2>
+              <button className="modal-close" onClick={() => setShowShareModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                Enter the details of the person you want to share this recommendation with.
+              </p>
+              <div className="form-group">
+                <label htmlFor="shareFirstName">First Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="shareFirstName"
+                  className="form-control"
+                  placeholder="e.g., John"
+                  value={shareForm.firstName}
+                  onChange={(e) => setShareForm({ ...shareForm, firstName: e.target.value })}
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="shareLastName">Last Name <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="shareLastName"
+                  className="form-control"
+                  placeholder="e.g., Smith"
+                  value={shareForm.lastName}
+                  onChange={(e) => setShareForm({ ...shareForm, lastName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="shareEmail">Email <span className="required">*</span></label>
+                <input
+                  type="email"
+                  id="shareEmail"
+                  className="form-control"
+                  placeholder="e.g., john@example.com"
+                  value={shareForm.email}
+                  onChange={(e) => setShareForm({ ...shareForm, email: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowShareModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleShare}
+                disabled={!shareForm.firstName.trim() || !shareForm.lastName.trim() || !shareForm.email.trim() || isSendingInvite}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                {isSendingInvite ? 'Sending...' : 'Send Invite'}
               </button>
             </div>
           </div>
