@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
-type ClientStatus = 'active' | 'inactive' | 'prospect'
+type ClientStatus = 'active' | 'inactive' | 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
 type SortOption = 'name' | 'date-desc' | 'date-asc'
 type ViewMode = 'grid' | 'list'
 type FilterOption = 'all' | ClientStatus
@@ -102,11 +102,15 @@ export default function ClientsPage() {
       // Transform DB clients to Client interface
       const transformedClients: Client[] = dbClients.map(c => {
         // Determine display status based on growth_stage
-        let displayStatus: ClientStatus = 'active'
-        if (c.growth_stage === 'prospect' || !c.growth_stage) {
-          displayStatus = 'prospect'
-        } else if (c.status === 'inactive') {
+        let displayStatus: ClientStatus = 'prospect'
+        const validStages: ClientStatus[] = ['seedling', 'sprouting', 'blooming', 'harvesting']
+
+        if (c.status === 'inactive') {
           displayStatus = 'inactive'
+        } else if (c.growth_stage && validStages.includes(c.growth_stage as ClientStatus)) {
+          displayStatus = c.growth_stage as ClientStatus
+        } else if (c.growth_stage === 'prospect' || !c.growth_stage) {
+          displayStatus = 'prospect'
         }
 
         return {

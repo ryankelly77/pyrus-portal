@@ -6036,6 +6036,26 @@
             color: var(--error-text);
         }
 
+        .status-badge.seedling {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+
+        .status-badge.sprouting {
+            background: #D1FAE5;
+            color: #059669;
+        }
+
+        .status-badge.blooming {
+            background: #DBEAFE;
+            color: #2563EB;
+        }
+
+        .status-badge.harvesting {
+            background: #EDE9FE;
+            color: #7C3AED;
+        }
+
         /* Paused Client Card */
         .client-card[data-status="paused"] {
             position: relative;
