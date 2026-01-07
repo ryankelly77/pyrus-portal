@@ -31,6 +31,8 @@ interface RecommendationState {
   updateItemQuantity: (tier: TierName, itemId: string, quantity: number) => void
   updateItemPricingType: (tier: TierName, itemId: string, pricingType: PricingType) => void
   clearTier: (tier: TierName) => void
+  clearAllTiers: () => void
+  setTierItems: (tier: TierName, items: RecommendationItem[]) => void
   openInfoModal: (product: Product) => void
   closeInfoModal: () => void
 
@@ -110,6 +112,25 @@ export const useRecommendationStore = create<RecommendationState>((set, get) => 
       tiers: {
         ...state.tiers,
         [tier]: [],
+      },
+    }))
+  },
+
+  clearAllTiers: () => {
+    set({
+      tiers: {
+        good: [],
+        better: [],
+        best: [],
+      },
+    })
+  },
+
+  setTierItems: (tier, items) => {
+    set((state) => ({
+      tiers: {
+        ...state.tiers,
+        [tier]: items,
       },
     }))
   },

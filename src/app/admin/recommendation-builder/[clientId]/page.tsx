@@ -12,7 +12,7 @@ import {
   ServiceInfoModal,
 } from '@/components/recommendation-builder'
 import { useRecommendationStore } from '@/stores/recommendation-store'
-import type { Product, TierName, ServiceCategory } from '@/types/recommendation'
+import type { Product, TierName, ServiceCategory, RecommendationItem, PricingType } from '@/types/recommendation'
 
 // Database interfaces
 interface DBProduct {
@@ -59,6 +59,29 @@ interface DBClient {
   avatar_url: string | null
   growth_stage: string | null
   status: string | null
+}
+
+interface DBRecommendationItem {
+  id: string
+  recommendation_id: string
+  product_id: string | null
+  bundle_id: string | null
+  addon_id: string | null
+  quantity: number | null
+  monthly_price: string | null
+  onetime_price: string | null
+  is_free: boolean | null
+  notes: string | null  // Used to store tier name
+  product: DBProduct | null
+  bundle: DBBundle | null
+  addon: DBAddon | null
+}
+
+interface DBRecommendation {
+  id: string
+  client_id: string
+  status: string | null
+  recommendation_items: DBRecommendationItem[]
 }
 
 // Helper to generate initials from name
@@ -114,6 +137,7 @@ export default function RecommendationBuilderPage() {
     contactEmail: '',
   })
   const [isSavingClient, setIsSavingClient] = useState(false)
+  const [isSavingPlan, setIsSavingPlan] = useState(false)
 
   // Store
   const {
@@ -122,6 +146,8 @@ export default function RecommendationBuilderPage() {
     removeItem,
     updateItemQuantity,
     updateItemPricingType,
+    clearAllTiers,
+    setTierItems,
     getTierPricing,
     getTierRewards,
     getTierClaimHints,
@@ -139,6 +165,9 @@ export default function RecommendationBuilderPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Clear existing tiers when loading new client
+        clearAllTiers()
+
         const [productsRes, bundlesRes, addonsRes, clientsRes] = await Promise.all([
           fetch('/api/admin/products'),
           fetch('/api/admin/bundles'),
@@ -201,6 +230,10 @@ export default function RecommendationBuilderPage() {
         // Combine all products
         const allProducts = [...transformedProducts, ...transformedBundles, ...transformedAddons]
 
+        // Create a map for quick lookup
+        const productMap = new Map<string, Product>()
+        allProducts.forEach(p => productMap.set(p.id, p))
+
         // Group by category
         const grouped: Record<ServiceCategory, Product[]> = {
           root: [],
@@ -217,6 +250,101 @@ export default function RecommendationBuilderPage() {
         })
 
         setProductsByCategory(grouped)
+
+        // Fetch existing recommendation for this client
+        if (clientId && clientId !== 'new') {
+          try {
+            const recRes = await fetch(`/api/admin/recommendations/client/${clientId}`)
+            const existingRec: DBRecommendation | null = await recRes.json()
+
+            if (existingRec && existingRec.recommendation_items) {
+              // Group items by tier
+              const tierItemsMap: Record<TierName, RecommendationItem[]> = {
+                good: [],
+                better: [],
+                best: [],
+              }
+
+              existingRec.recommendation_items.forEach(item => {
+                // Find the product from our loaded products
+                let product: Product | undefined
+
+                if (item.product_id && item.product) {
+                  product = productMap.get(item.product_id)
+                } else if (item.bundle_id && item.bundle) {
+                  product = productMap.get(item.bundle_id)
+                } else if (item.addon_id && item.addon) {
+                  product = productMap.get(item.addon_id)
+                }
+
+                if (!product) {
+                  // Fallback: create product from DB item
+                  if (item.product) {
+                    product = {
+                      id: item.product.id,
+                      name: item.product.name,
+                      description: item.product.short_description || '',
+                      category: item.product.category as ServiceCategory,
+                      monthlyPrice: item.product.monthly_price ? parseFloat(item.product.monthly_price) : 0,
+                      onetimePrice: item.product.onetime_price ? parseFloat(item.product.onetime_price) : 0,
+                      hasQuantity: item.product.supports_quantity || false,
+                    }
+                  } else if (item.bundle) {
+                    product = {
+                      id: item.bundle.id,
+                      name: item.bundle.name,
+                      description: item.bundle.description || '',
+                      category: 'bundle' as ServiceCategory,
+                      monthlyPrice: item.bundle.monthly_price ? parseFloat(item.bundle.monthly_price) : 0,
+                      onetimePrice: item.bundle.onetime_price ? parseFloat(item.bundle.onetime_price) : 0,
+                    }
+                  } else if (item.addon) {
+                    product = {
+                      id: item.addon.id,
+                      name: item.addon.name,
+                      description: item.addon.description || '',
+                      category: 'fertilizer' as ServiceCategory,
+                      monthlyPrice: item.addon.price ? parseFloat(item.addon.price) : 0,
+                      onetimePrice: 0,
+                    }
+                  }
+                }
+
+                if (!product) return
+
+                // Determine pricing type based on stored prices
+                const monthlyPrice = item.monthly_price ? parseFloat(item.monthly_price) : 0
+                const pricingType: PricingType = monthlyPrice > 0 ? 'monthly' : 'onetime'
+
+                // Get tier name from notes field (default to 'good')
+                const tierName = (item.notes as TierName) || 'good'
+                const validTier = ['good', 'better', 'best'].includes(tierName) ? tierName as TierName : 'good'
+
+                const recItem: RecommendationItem = {
+                  id: `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  product,
+                  quantity: item.quantity || 1,
+                  pricingType,
+                }
+
+                tierItemsMap[validTier].push(recItem)
+              })
+
+              // Load items into their respective tiers
+              if (tierItemsMap.good.length > 0) {
+                setTierItems('good', tierItemsMap.good)
+              }
+              if (tierItemsMap.better.length > 0) {
+                setTierItems('better', tierItemsMap.better)
+              }
+              if (tierItemsMap.best.length > 0) {
+                setTierItems('best', tierItemsMap.best)
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch existing recommendation:', error)
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error)
       } finally {
@@ -225,7 +353,7 @@ export default function RecommendationBuilderPage() {
     }
 
     fetchData()
-  }, [clientId])
+  }, [clientId, clearAllTiers, setTierItems])
 
   // Handle adding a new client
   const handleAddClient = async () => {
@@ -269,6 +397,81 @@ export default function RecommendationBuilderPage() {
     setSelectedClient(client || null)
     if (clientIdValue) {
       router.push(`/admin/recommendation-builder/${clientIdValue}`)
+    }
+  }
+
+  // Handle saving the plan
+  const handleSavePlan = async () => {
+    if (!selectedClient) {
+      alert('Please select a client first')
+      return
+    }
+
+    // Collect all items from all tiers
+    const allItems: {
+      productId?: string
+      bundleId?: string
+      addonId?: string
+      quantity: number
+      monthlyPrice: number
+      onetimePrice: number
+      tierName: string
+    }[] = []
+
+    let totalMonthly = 0
+    let totalOnetime = 0
+
+    // Process each tier
+    const tierNames: TierName[] = ['good', 'better', 'best']
+    tierNames.forEach(tierName => {
+      const tierItems = tiers[tierName]
+      tierItems.forEach(item => {
+        const category = item.product.category
+        const monthlyPrice = item.pricingType === 'monthly' ? item.product.monthlyPrice * item.quantity : 0
+        const onetimePrice = item.pricingType === 'onetime' ? item.product.onetimePrice * item.quantity : 0
+
+        allItems.push({
+          productId: category === 'bundle' ? undefined : (category === 'fertilizer' ? undefined : item.product.id),
+          bundleId: category === 'bundle' ? item.product.id : undefined,
+          addonId: category === 'fertilizer' ? item.product.id : undefined,
+          quantity: item.quantity,
+          monthlyPrice,
+          onetimePrice,
+          tierName,
+        })
+
+        totalMonthly += monthlyPrice
+        totalOnetime += onetimePrice
+      })
+    })
+
+    if (allItems.length === 0) {
+      alert('Please add at least one product to the plan')
+      return
+    }
+
+    setIsSavingPlan(true)
+    try {
+      const res = await fetch('/api/admin/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          items: allItems,
+          totalMonthly,
+          totalOnetime,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to save plan')
+
+      // Navigate to recommendations page
+      router.push('/admin/recommendations')
+    } catch (error) {
+      console.error('Failed to save plan:', error)
+      alert('Failed to save plan')
+    } finally {
+      setIsSavingPlan(false)
     }
   }
 
@@ -426,7 +629,13 @@ export default function RecommendationBuilderPage() {
                 ))}
               </select>
             </div>
-            <button className="btn btn-primary save-plan-btn">Save Plan</button>
+            <button
+              className="btn btn-primary save-plan-btn"
+              onClick={handleSavePlan}
+              disabled={isSavingPlan}
+            >
+              {isSavingPlan ? 'Saving...' : 'Save Plan'}
+            </button>
           </div>
 
           {/* Good / Better / Best Columns */}
