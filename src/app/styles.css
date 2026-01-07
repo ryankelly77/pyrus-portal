@@ -15574,13 +15574,41 @@ input[type="date"].form-control {
 /* Dropped items in tier dropzone */
 .tier-dropzone .service-item {
     cursor: default;
-    background: #FEF9E7;
-    border: 1px solid #E8DFC0;
-    border-left: 3px solid var(--accent-teal);
 }
 
 .tier-dropzone .service-item.dropped {
     cursor: default;
+}
+
+/* Category-specific colors for dropped items */
+.tier-dropzone .service-item[data-category="root"] {
+    background: #FFF2D9;
+    border: 1px solid #D4A72C;
+    border-left: 3px solid #D4A72C;
+}
+
+.tier-dropzone .service-item[data-category="growth"] {
+    background: #E6F2D9;
+    border: 1px solid #7A9C3A;
+    border-left: 3px solid #7A9C3A;
+}
+
+.tier-dropzone .service-item[data-category="cultivation"] {
+    background: #FFE8D4;
+    border: 1px solid #E07830;
+    border-left: 3px solid #E07830;
+}
+
+.tier-dropzone .service-item[data-category="bundle"] {
+    background: #F3E8FF;
+    border: 1px solid #9333EA;
+    border-left: 3px solid #9333EA;
+}
+
+.tier-dropzone .service-item[data-category="fertilizer"] {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    border-left: 3px solid #F59E0B;
 }
 
 .remove-service-btn {

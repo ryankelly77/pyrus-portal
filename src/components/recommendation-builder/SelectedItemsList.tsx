@@ -89,6 +89,7 @@ export function SelectedItemsList({
           <div
             key={item.id}
             className={`service-item dropped${item.product.requires ? ' has-requirement' : ''}`}
+            data-category={item.product.category}
           >
             <div className="service-item-header">
               <span className="service-item-title">{item.product.name}</span>
