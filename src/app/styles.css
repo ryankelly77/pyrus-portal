@@ -22450,3 +22450,83 @@ input[type="date"].form-control {
     background: #DC2626 !important;
     border-color: #DC2626 !important;
 }
+
+/* Client status badge variations */
+.status-badge.prospect {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.status-badge.paused {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.status-badge.inactive {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+/* Growth stage icon next to growth percentage */
+.growth-with-stage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.growth-stage-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+/* Client card action buttons */
+.client-card {
+    position: relative;
+}
+
+.client-card-actions {
+    position: absolute;
+    top: 12px;
+    right: 50px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+}
+
+.client-card:hover .client-card-actions {
+    opacity: 1;
+}
+
+.card-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-white);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.card-action-btn:hover {
+    background: var(--pyrus-green-wash);
+    border-color: var(--pyrus-green);
+    color: var(--pyrus-green);
+}
+
+.card-action-btn.delete:hover {
+    background: var(--error-bg);
+    border-color: var(--error);
+    color: var(--error);
+}

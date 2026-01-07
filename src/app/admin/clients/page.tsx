@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
-type ClientStatus = 'active' | 'inactive' | 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
-type SortOption = 'name' | 'date-desc' | 'date-asc'
+type ClientStatus = 'active' | 'inactive' | 'prospect' | 'paused'
+type GrowthStage = 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
+type SortOption = 'name' | 'date-desc' | 'date-asc' | 'stage'
 type ViewMode = 'grid' | 'list'
 type FilterOption = 'all' | ClientStatus
 
@@ -17,6 +18,7 @@ interface Client {
   initials: string
   avatarColor: string
   status: ClientStatus
+  growthStage: GrowthStage
   services: number
   since: string
   visitors: number | null
@@ -60,6 +62,15 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
+// Growth stage icons and colors
+const growthStageConfig: Record<GrowthStage, { icon: string; color: string; bg: string; label: string }> = {
+  prospect: { icon: '○', color: '#6B7280', bg: '#F3F4F6', label: 'Prospect' },
+  seedling: { icon: '🌱', color: '#D97706', bg: '#FEF3C7', label: 'Seedling' },
+  sprouting: { icon: '🌿', color: '#059669', bg: '#D1FAE5', label: 'Sprouting' },
+  blooming: { icon: '🌸', color: '#2563EB', bg: '#DBEAFE', label: 'Blooming' },
+  harvesting: { icon: '🌾', color: '#7C3AED', bg: '#EDE9FE', label: 'Harvesting' },
+}
+
 export default function ClientsPage() {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
@@ -101,16 +112,55 @@ export default function ClientsPage() {
 
       // Transform DB clients to Client interface
       const transformedClients: Client[] = dbClients.map(c => {
-        // Determine display status based on growth_stage
-        let displayStatus: ClientStatus = 'prospect'
-        const validStages: ClientStatus[] = ['seedling', 'sprouting', 'blooming', 'harvesting']
+        // Determine display status and growth stage
+        const growthStage: GrowthStage = (c.growth_stage as GrowthStage) || 'prospect'
+        const isProspect = growthStage === 'prospect'
 
+        let displayStatus: ClientStatus = 'active'
         if (c.status === 'inactive') {
           displayStatus = 'inactive'
-        } else if (c.growth_stage && validStages.includes(c.growth_stage as ClientStatus)) {
-          displayStatus = c.growth_stage as ClientStatus
-        } else if (c.growth_stage === 'prospect' || !c.growth_stage) {
+        } else if (c.status === 'paused') {
+          displayStatus = 'paused'
+        } else if (isProspect) {
           displayStatus = 'prospect'
+        }
+
+        // Generate dummy data for active clients based on growth stage
+        let visitors: number | null = null
+        let leads: number | null = null
+        let growth: number | null = null
+        let services = 0
+
+        if (!isProspect && displayStatus !== 'inactive') {
+          // Generate consistent dummy data based on client name hash
+          const hash = c.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+
+          switch (growthStage) {
+            case 'seedling':
+              visitors = 500 + (hash % 1000)
+              leads = 5 + (hash % 10)
+              growth = 5 + (hash % 15)
+              services = 1 + (hash % 2)
+              break
+            case 'sprouting':
+              visitors = 2000 + (hash % 3000)
+              leads = 15 + (hash % 25)
+              growth = 12 + (hash % 20)
+              services = 2 + (hash % 3)
+              break
+            case 'blooming':
+              visitors = 8000 + (hash % 7000)
+              leads = 50 + (hash % 50)
+              growth = 20 + (hash % 25)
+              services = 3 + (hash % 4)
+              break
+            case 'harvesting':
+              visitors = 20000 + (hash % 15000)
+              leads = 150 + (hash % 100)
+              growth = 30 + (hash % 20)
+              services = 5 + (hash % 5)
+              break
+          }
         }
 
         return {
@@ -120,11 +170,12 @@ export default function ClientsPage() {
           initials: getInitials(c.name),
           avatarColor: getAvatarColor(c.name),
           status: displayStatus,
-          services: 0, // Placeholder - would come from subscriptions
+          growthStage,
+          services,
           since: formatDate(c.created_at),
-          visitors: null, // Placeholder - would come from analytics
-          leads: null, // Placeholder - would come from CRM
-          growth: null, // Placeholder - would come from analytics
+          visitors,
+          leads,
+          growth,
         }
       })
 
@@ -265,6 +316,13 @@ export default function ClientsPage() {
     }
 
     // Sort
+    const stageOrder: Record<GrowthStage, number> = {
+      prospect: 0,
+      seedling: 1,
+      sprouting: 2,
+      blooming: 3,
+      harvesting: 4,
+    }
     result.sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -273,6 +331,8 @@ export default function ClientsPage() {
           return new Date(b.since).getTime() - new Date(a.since).getTime()
         case 'date-asc':
           return new Date(a.since).getTime() - new Date(b.since).getTime()
+        case 'stage':
+          return stageOrder[b.growthStage] - stageOrder[a.growthStage]
         default:
           return 0
       }
@@ -340,10 +400,10 @@ export default function ClientsPage() {
               Active
             </button>
             <button
-              className={`filter-btn ${statusFilter === 'inactive' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('inactive')}
+              className={`filter-btn ${statusFilter === 'paused' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('paused')}
             >
-              Inactive
+              Paused
             </button>
           </div>
           <div className="sort-dropdown">
@@ -354,6 +414,7 @@ export default function ClientsPage() {
               onChange={(e) => setSortBy(e.target.value as SortOption)}
             >
               <option value="name">Name</option>
+              <option value="stage">Growth Stage</option>
               <option value="date-desc">Newest First</option>
               <option value="date-asc">Oldest First</option>
             </select>
@@ -441,13 +502,27 @@ export default function ClientsPage() {
                     <div className="client-stat">
                       {client.status === 'inactive' ? (
                         <span className="client-stat-value muted">Inactive</span>
+                      ) : client.status === 'paused' ? (
+                        <span className="client-stat-value muted">Paused</span>
                       ) : client.growth !== null ? (
-                        <span className="client-stat-value positive">+{client.growth}%</span>
+                        <div className="growth-with-stage">
+                          <span className="client-stat-value positive">+{client.growth}%</span>
+                          <span
+                            className="growth-stage-icon"
+                            title={growthStageConfig[client.growthStage].label}
+                            style={{
+                              background: growthStageConfig[client.growthStage].bg,
+                              color: growthStageConfig[client.growthStage].color
+                            }}
+                          >
+                            {growthStageConfig[client.growthStage].icon}
+                          </span>
+                        </div>
                       ) : (
                         <span className="client-stat-value">--</span>
                       )}
                       <span className="client-stat-label">
-                        {client.status === 'inactive' ? 'Status' : 'Growth'}
+                        {client.status === 'inactive' || client.status === 'paused' ? 'Status' : 'Growth'}
                       </span>
                     </div>
                   </div>
