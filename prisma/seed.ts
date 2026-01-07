@@ -278,6 +278,70 @@ const addonsData = [
   },
 ]
 
+// Clients data (status must be 'active' or 'inactive' per DB constraint)
+const clientsData = [
+  {
+    name: 'TC Clinical Services',
+    contact_email: 'dlg.mdservices@gmail.com',
+    status: 'active',
+  },
+  {
+    name: 'Raptor Vending',
+    contact_email: 'info@raptorvending.com',
+    status: 'active',
+  },
+  {
+    name: 'Raptor Services',
+    contact_email: 'contact@raptorservices.com',
+    status: 'active',
+  },
+  {
+    name: 'Gohfr',
+    contact_email: 'hello@gohfr.com',
+    status: 'active',
+  },
+  {
+    name: 'Espronceda Law',
+    contact_email: 'maria@espronceda.law',
+    status: 'active',
+  },
+  {
+    name: 'American Fence & Deck',
+    contact_email: 'sales@americanfence.com',
+    status: 'active',
+  },
+  {
+    name: 'Peak Performance Gym',
+    contact_email: 'owner@peakperformancegym.com',
+    status: 'active',
+  },
+  {
+    name: 'Sunrise Dental',
+    contact_email: 'dr.smith@sunrisedental.com',
+    status: 'active',
+  },
+  {
+    name: 'Metro Plumbing',
+    contact_email: 'dispatch@metroplumbing.com',
+    status: 'active',
+  },
+  {
+    name: 'Green Thumb Landscaping',
+    contact_email: 'info@greenthumb.com',
+    status: 'active',
+  },
+  {
+    name: 'Horizon Real Estate',
+    contact_email: 'broker@horizonre.com',
+    status: 'active',
+  },
+  {
+    name: 'Coastal Insurance',
+    contact_email: 'agent@coastalins.com',
+    status: 'active',
+  },
+]
+
 async function main() {
   console.log('Seeding database...')
 
@@ -357,6 +421,22 @@ async function main() {
       },
     })
     console.log(`Created addon: ${addon.name}`)
+  }
+
+  // Clear existing clients
+  await prisma.clients.deleteMany()
+  console.log('Cleared existing clients')
+
+  // Create clients
+  for (const client of clientsData) {
+    await prisma.clients.create({
+      data: {
+        name: client.name,
+        contact_email: client.contact_email,
+        status: client.status,
+      },
+    })
+    console.log(`Created client: ${client.name}`)
   }
 
   console.log('Seeding complete!')

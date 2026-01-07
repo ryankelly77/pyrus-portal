@@ -21801,6 +21801,44 @@ input[type="date"].form-control {
 }
 
 /* ============================================
+   Client Selector Bar
+   ============================================ */
+.client-selector-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    margin-bottom: 16px;
+    background: var(--bg-white);
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+}
+
+.client-dropdown-wrapper {
+    flex: 1;
+}
+
+.client-dropdown {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    background: var(--bg-white);
+}
+
+.add-client-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.save-plan-btn {
+    margin-left: auto;
+}
+
+/* ============================================
    Modal Styles
    ============================================ */
 .modal-overlay {

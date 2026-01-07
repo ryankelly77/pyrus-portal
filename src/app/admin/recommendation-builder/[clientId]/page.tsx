@@ -445,7 +445,7 @@ export default function RecommendationBuilderPage() {
 
       {/* Add Client Modal */}
       {showAddClientModal && (
-        <div className="modal-overlay" onClick={() => setShowAddClientModal(false)}>
+        <div className="modal-overlay active" onClick={() => setShowAddClientModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Add New Client</h2>
