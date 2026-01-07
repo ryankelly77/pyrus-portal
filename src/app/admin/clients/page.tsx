@@ -638,18 +638,38 @@ export default function ClientsPage() {
                 </select>
               </div>
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
-                <Link
-                  href={`/admin/clients/${editingClient.id}`}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '13px' }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                  View Full Client Details
-                </Link>
+                {editingClient.growthStage === 'prospect' ? (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    padding: '12px',
+                    background: 'var(--accent-amber-bg, #FEF3C7)',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: 'var(--accent-amber, #D97706)'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ flexShrink: 0, marginTop: '1px' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>This client is still a <strong>Prospect</strong>. Full client details will be available once they become an active client.</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/admin/clients/${editingClient.id}`}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '13px' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    View Full Client Details
+                  </Link>
+                )}
               </div>
             </div>
             <div className="modal-footer">
