@@ -178,13 +178,14 @@ export default function NewProductPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="checkbox-label">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={productForm.supportsQuantity}
                       onChange={(e) => setProductForm({ ...productForm, supportsQuantity: e.target.checked })}
+                      style={{ width: '16px', height: '16px', margin: 0, accentColor: '#2D5A27' }}
                     />
-                    <span>Supports quantity selector</span>
+                    <span style={{ fontSize: '14px', color: '#1f2937' }}>Supports quantity selector</span>
                   </label>
                   <span className="form-hint">Allow clients to select multiple quantities</span>
                 </div>

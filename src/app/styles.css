@@ -3633,18 +3633,22 @@
 
         /* Checkbox */
         .checkbox-label {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
         .checkbox-label input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex-shrink: 0;
             accent-color: var(--pyrus-green);
+            cursor: pointer;
         }
 
         /* Edit Tabs */
@@ -4206,18 +4210,22 @@
 
         /* Checkbox */
         .checkbox-label {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
         .checkbox-label input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            flex-shrink: 0;
             accent-color: var(--pyrus-green);
+            cursor: pointer;
         }
 
         /* Edit Tabs */
