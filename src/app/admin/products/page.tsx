@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
 type ProductCategory = 'root' | 'growth' | 'cultivation'
@@ -42,7 +43,9 @@ interface AddOn {
 }
 
 export default function AdminProductsPage() {
-  const [activeTab, setActiveTab] = useState<ViewTab>('products')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab') as ViewTab | null
+  const [activeTab, setActiveTab] = useState<ViewTab>(tabParam || 'products')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [products, setProducts] = useState<Product[]>([])
@@ -50,6 +53,11 @@ export default function AdminProductsPage() {
   const [addons, setAddons] = useState<AddOn[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
+  const [isDuplicatingBundle, setIsDuplicatingBundle] = useState<string | null>(null)
+  const [isDuplicatingAddon, setIsDuplicatingAddon] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isDeletingBundle, setIsDeletingBundle] = useState<string | null>(null)
+  const [isDeletingAddon, setIsDeletingAddon] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -122,6 +130,145 @@ export default function AdminProductsPage() {
       alert('Failed to duplicate product')
     } finally {
       setIsDuplicating(null)
+    }
+  }
+
+  const handleDuplicateBundle = async (bundleId: string) => {
+    setIsDuplicatingBundle(bundleId)
+    try {
+      const res = await fetch(`/api/admin/bundles/${bundleId}`)
+      if (!res.ok) throw new Error('Failed to fetch bundle')
+
+      const bundle = await res.json()
+
+      const duplicateData = {
+        name: `${bundle.name} (Copy)`,
+        description: bundle.description || '',
+        monthlyPrice: bundle.monthly_price || '',
+        onetimePrice: bundle.onetime_price || '',
+        status: 'draft',
+        stripeProductId: '',
+        stripePriceId: '',
+        products: bundle.bundle_products?.map((bp: { product: { id: string } }) => bp.product.id) || [],
+      }
+
+      const createRes = await fetch('/api/admin/bundles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicateData),
+      })
+
+      if (!createRes.ok) throw new Error('Failed to create duplicate')
+
+      const newBundle = await createRes.json()
+      setBundles(prev => [...prev, newBundle])
+    } catch (error) {
+      console.error('Failed to duplicate bundle:', error)
+      alert('Failed to duplicate bundle')
+    } finally {
+      setIsDuplicatingBundle(null)
+    }
+  }
+
+  const handleDuplicateAddon = async (addonId: string) => {
+    setIsDuplicatingAddon(addonId)
+    try {
+      const res = await fetch(`/api/admin/addons/${addonId}`)
+      if (!res.ok) throw new Error('Failed to fetch addon')
+
+      const addon = await res.json()
+
+      const duplicateData = {
+        name: `${addon.name} (Copy)`,
+        description: addon.description || '',
+        price: addon.price || '0',
+        status: 'draft',
+        stripeProductId: '',
+        stripePriceId: '',
+        products: addon.addon_products?.map((ap: { product: { id: string } }) => ap.product.id) || [],
+      }
+
+      const createRes = await fetch('/api/admin/addons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicateData),
+      })
+
+      if (!createRes.ok) throw new Error('Failed to create duplicate')
+
+      const newAddon = await createRes.json()
+      setAddons(prev => [...prev, newAddon])
+    } catch (error) {
+      console.error('Failed to duplicate addon:', error)
+      alert('Failed to duplicate addon')
+    } finally {
+      setIsDuplicatingAddon(null)
+    }
+  }
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeleting(productId)
+    try {
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('Failed to delete product')
+
+      setProducts(prev => prev.filter(p => p.id !== productId))
+    } catch (error) {
+      console.error('Failed to delete product:', error)
+      alert('Failed to delete product')
+    } finally {
+      setIsDeleting(null)
+    }
+  }
+
+  const handleDeleteBundle = async (bundleId: string, bundleName: string) => {
+    if (!confirm(`Are you sure you want to delete "${bundleName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeletingBundle(bundleId)
+    try {
+      const res = await fetch(`/api/admin/bundles/${bundleId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('Failed to delete bundle')
+
+      setBundles(prev => prev.filter(b => b.id !== bundleId))
+    } catch (error) {
+      console.error('Failed to delete bundle:', error)
+      alert('Failed to delete bundle')
+    } finally {
+      setIsDeletingBundle(null)
+    }
+  }
+
+  const handleDeleteAddon = async (addonId: string, addonName: string) => {
+    if (!confirm(`Are you sure you want to delete "${addonName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeletingAddon(addonId)
+    try {
+      const res = await fetch(`/api/admin/addons/${addonId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('Failed to delete add-on')
+
+      setAddons(prev => prev.filter(a => a.id !== addonId))
+    } catch (error) {
+      console.error('Failed to delete add-on:', error)
+      alert('Failed to delete add-on')
+    } finally {
+      setIsDeletingAddon(null)
     }
   }
 
@@ -399,6 +546,17 @@ export default function AdminProductsPage() {
                               </svg>
                             )}
                           </button>
+                          <button
+                            className="btn-icon-sm btn-icon-danger"
+                            title="Delete"
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            disabled={isDeleting === product.id}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -434,7 +592,7 @@ export default function AdminProductsPage() {
                     )}
                   </ul>
                 </div>
-                <div className="bundle-actions">
+                <div className="bundle-actions" style={{ display: 'flex', gap: '8px' }}>
                   <Link href={`/admin/products/bundle/${bundle.id}/edit`} className="btn btn-sm btn-secondary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -442,7 +600,28 @@ export default function AdminProductsPage() {
                     </svg>
                     Edit
                   </Link>
-                  <button className="btn btn-sm btn-outline">Duplicate</button>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => handleDuplicateBundle(bundle.id)}
+                    disabled={isDuplicatingBundle === bundle.id}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    {isDuplicatingBundle === bundle.id ? 'Duplicating...' : 'Duplicate'}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDeleteBundle(bundle.id, bundle.name)}
+                    disabled={isDeletingBundle === bundle.id}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    {isDeletingBundle === bundle.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -466,7 +645,7 @@ export default function AdminProductsPage() {
                 <div className="bundle-products">
                   <p className="addon-desc">{addon.description || ''}</p>
                 </div>
-                <div className="bundle-actions">
+                <div className="bundle-actions" style={{ display: 'flex', gap: '8px' }}>
                   <Link href={`/admin/products/addon/${addon.id}/edit`} className="btn btn-sm btn-secondary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -474,7 +653,28 @@ export default function AdminProductsPage() {
                     </svg>
                     Edit
                   </Link>
-                  <button className="btn btn-sm btn-outline">Duplicate</button>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => handleDuplicateAddon(addon.id)}
+                    disabled={isDuplicatingAddon === addon.id}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    {isDuplicatingAddon === addon.id ? 'Duplicating...' : 'Duplicate'}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDeleteAddon(addon.id, addon.name)}
+                    disabled={isDeletingAddon === addon.id}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    {isDeletingAddon === addon.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
               </div>
             ))}

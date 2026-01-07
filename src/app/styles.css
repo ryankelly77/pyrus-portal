@@ -7195,6 +7195,16 @@
             height: 14px;
         }
 
+        .btn-icon-sm.btn-icon-danger {
+            color: var(--text-muted);
+        }
+
+        .btn-icon-sm.btn-icon-danger:hover {
+            background: var(--error-bg);
+            border-color: var(--error-border);
+            color: #DC2626;
+        }
+
         .required {
             color: var(--accent-orange);
         }
@@ -16714,6 +16724,8 @@ input[type="date"].form-control {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
 }
 .bundle-card.bundle-draft {
     opacity: 0.7;
@@ -16744,6 +16756,7 @@ input[type="date"].form-control {
 }
 .bundle-products {
     margin-bottom: 20px;
+    flex: 1;
 }
 .bundle-product-count {
     font-size: 13px;
@@ -16769,6 +16782,7 @@ input[type="date"].form-control {
 .bundle-actions {
     display: flex;
     gap: 8px;
+    margin-top: auto;
 }
 
 /* Large Modal */

@@ -87,7 +87,7 @@ export default function NewBundlePage() {
 
   const handleSave = () => {
     console.log('Saving bundle:', bundleForm, includedProducts)
-    router.push('/admin/products')
+    router.push('/admin/products?tab=bundles')
   }
 
   return (
@@ -101,7 +101,7 @@ export default function NewBundlePage() {
       <div className="admin-content">
         {/* Back Link and Title */}
         <div className="content-page-header">
-          <Link href="/admin/products" className="back-link">
+          <Link href="/admin/products?tab=bundles" className="back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -318,7 +318,7 @@ export default function NewBundlePage() {
                   </svg>
                   Save Bundle
                 </button>
-                <Link href="/admin/products" className="btn btn-secondary btn-block">
+                <Link href="/admin/products?tab=bundles" className="btn btn-secondary btn-block">
                   Cancel
                 </Link>
               </div>
