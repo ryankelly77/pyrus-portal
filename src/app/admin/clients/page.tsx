@@ -449,6 +449,37 @@ export default function ClientsPage() {
           </div>
         </div>
 
+        {/* Growth Stage Legend */}
+        <div className="growth-stage-legend">
+          <span className="legend-label">Growth Stages:</span>
+          <div className="legend-items">
+            <div className="legend-item">
+              <span className="legend-icon" style={{ background: growthStageConfig.seedling.bg, color: growthStageConfig.seedling.color }}>
+                {growthStageConfig.seedling.icon}
+              </span>
+              <span>Seedling</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon" style={{ background: growthStageConfig.sprouting.bg, color: growthStageConfig.sprouting.color }}>
+                {growthStageConfig.sprouting.icon}
+              </span>
+              <span>Sprouting</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon" style={{ background: growthStageConfig.blooming.bg, color: growthStageConfig.blooming.color }}>
+                {growthStageConfig.blooming.icon}
+              </span>
+              <span>Blooming</span>
+            </div>
+            <div className="legend-item">
+              <span className="legend-icon" style={{ background: growthStageConfig.harvesting.bg, color: growthStageConfig.harvesting.color }}>
+                {growthStageConfig.harvesting.icon}
+              </span>
+              <span>Harvesting</span>
+            </div>
+          </div>
+        </div>
+
         {/* Loading State */}
         {isLoading && (
           <div className="loading-state">

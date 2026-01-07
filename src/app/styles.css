@@ -22530,3 +22530,47 @@ input[type="date"].form-control {
     border-color: var(--error);
     color: var(--error);
 }
+
+/* Growth Stage Legend */
+.growth-stage-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+}
+
+.growth-stage-legend .legend-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.growth-stage-legend .legend-items {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.growth-stage-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.growth-stage-legend .legend-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+}
