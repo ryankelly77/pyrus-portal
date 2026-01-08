@@ -211,7 +211,11 @@ export default function ClientDetailPage() {
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to update client')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('API error:', errorData)
+        throw new Error(errorData.error || 'Failed to update client')
+      }
 
       // Refetch client to get updated data
       const updatedClient = await res.json()

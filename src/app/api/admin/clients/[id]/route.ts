@@ -67,7 +67,7 @@ export async function PATCH(
   } catch (error) {
     console.error('Failed to update client:', error)
     return NextResponse.json(
-      { error: 'Failed to update client' },
+      { error: 'Failed to update client', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
