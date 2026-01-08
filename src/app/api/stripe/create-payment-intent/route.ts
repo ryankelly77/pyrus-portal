@@ -1,7 +1,7 @@
 // @ts-nocheck - Stripe and Supabase types may not perfectly align
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getOrCreateCoupon, COUPON_CODES } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
 interface CartItem {
   id: string
@@ -30,22 +30,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get client from database
-    const supabase = await createClient()
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', clientId)
-      .single()
+    // Get client from database using Prisma
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId }
+    })
 
-    if (clientError || !client) {
+    if (!client) {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       )
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clientData = client as any
 
     // Create or retrieve Stripe customer
@@ -61,16 +57,10 @@ export async function POST(request: NextRequest) {
       })
       stripeCustomerId = customer.id
 
-      // Save Stripe customer ID to database - use raw query to bypass type checking
-      await supabase.rpc('update_client_stripe_id', {
-        p_client_id: clientId,
-        p_stripe_customer_id: stripeCustomerId,
-      }).catch(() => {
-        // Fallback to direct update if RPC doesn't exist
-        return supabase
-          .from('clients')
-          .update({ stripe_customer_id: stripeCustomerId } as Record<string, string>)
-          .eq('id', clientId)
+      // Save Stripe customer ID to database
+      await prisma.clients.update({
+        where: { id: clientId },
+        data: { stripe_customer_id: stripeCustomerId }
       })
     }
 

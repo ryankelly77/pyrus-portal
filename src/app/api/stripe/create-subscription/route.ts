@@ -1,7 +1,7 @@
 // @ts-nocheck - Stripe and Supabase types may not perfectly align
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getOrCreateCoupon } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
 interface CartItem {
   id: string
@@ -54,15 +54,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get client from database
-    const supabase = await createClient()
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', clientId)
-      .single()
+    // Get client from database using Prisma
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId }
+    })
 
-    if (clientError || !client) {
+    if (!client) {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
@@ -70,7 +67,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or retrieve Stripe customer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let stripeCustomerId = (client as any).stripe_customer_id as string | null
 
     if (!stripeCustomerId) {
@@ -84,10 +80,10 @@ export async function POST(request: NextRequest) {
       stripeCustomerId = customer.id
 
       // Save Stripe customer ID to database
-      await supabase
-        .from('clients')
-        .update({ stripe_customer_id: stripeCustomerId } as Record<string, unknown>)
-        .eq('id', clientId)
+      await prisma.clients.update({
+        where: { id: clientId },
+        data: { stripe_customer_id: stripeCustomerId }
+      })
     }
 
     // Get or create coupon if provided
@@ -181,23 +177,22 @@ export async function POST(request: NextRequest) {
 
     // Save subscription ID to database
     if (recommendationId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sub = subscription as any
-      await supabase
-        .from('subscriptions')
-        .insert({
+      await prisma.subscriptions.create({
+        data: {
           client_id: clientId,
           recommendation_id: recommendationId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
           status: 'incomplete',
           current_period_start: sub.current_period_start
-            ? new Date(sub.current_period_start * 1000).toISOString()
+            ? new Date(sub.current_period_start * 1000)
             : null,
           current_period_end: sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
+            ? new Date(sub.current_period_end * 1000)
             : null,
-        } as Record<string, unknown>)
+        }
+      })
     }
 
     return NextResponse.json({
