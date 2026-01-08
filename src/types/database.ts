@@ -48,12 +48,14 @@ export type Database = {
           contact_name: string | null
           contact_email: string | null
           avatar_url: string | null
+          avatar_color: string | null
           growth_stage: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
           status: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend: number
           start_date: string | null
           highlevel_id: string | null
           basecamp_id: string | null
+          stripe_customer_id: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -64,12 +66,14 @@ export type Database = {
           contact_name?: string | null
           contact_email?: string | null
           avatar_url?: string | null
+          avatar_color?: string | null
           growth_stage?: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
           status?: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend?: number
           start_date?: string | null
           highlevel_id?: string | null
           basecamp_id?: string | null
+          stripe_customer_id?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -80,12 +84,14 @@ export type Database = {
           contact_name?: string | null
           contact_email?: string | null
           avatar_url?: string | null
+          avatar_color?: string | null
           growth_stage?: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
           status?: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend?: number
           start_date?: string | null
           highlevel_id?: string | null
           basecamp_id?: string | null
+          stripe_customer_id?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -414,36 +420,42 @@ export type Database = {
         Row: {
           id: string
           client_id: string
+          recommendation_id: string | null
           stripe_subscription_id: string | null
           stripe_customer_id: string | null
-          status: 'active' | 'past_due' | 'canceled' | 'paused' | null
+          status: 'active' | 'past_due' | 'canceled' | 'paused' | 'incomplete' | null
           current_period_start: string | null
           current_period_end: string | null
           monthly_amount: number | null
+          canceled_at: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           client_id: string
+          recommendation_id?: string | null
           stripe_subscription_id?: string | null
           stripe_customer_id?: string | null
-          status?: 'active' | 'past_due' | 'canceled' | 'paused' | null
+          status?: 'active' | 'past_due' | 'canceled' | 'paused' | 'incomplete' | null
           current_period_start?: string | null
           current_period_end?: string | null
           monthly_amount?: number | null
+          canceled_at?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           client_id?: string
+          recommendation_id?: string | null
           stripe_subscription_id?: string | null
           stripe_customer_id?: string | null
-          status?: 'active' | 'past_due' | 'canceled' | 'paused' | null
+          status?: 'active' | 'past_due' | 'canceled' | 'paused' | 'incomplete' | null
           current_period_start?: string | null
           current_period_end?: string | null
           monthly_amount?: number | null
+          canceled_at?: string | null
           created_at?: string
           updated_at?: string
         }

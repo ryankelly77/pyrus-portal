@@ -124,7 +124,7 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
     } else {
       totalMonthly += item.product.monthlyPrice * paidUnits
       // For bundles, track the full price (sum of products) separately
-      if (isBundle) {
+      if (isBundle && item.product.fullPrice) {
         fullPriceTotal += item.product.fullPrice * paidUnits
         bundleSavings += (item.product.fullPrice - item.product.monthlyPrice) * paidUnits
       } else {

@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
 import { AdminHeader } from '@/components/layout'
+import CheckoutForm from './CheckoutForm'
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 interface BundleProduct {
   id: string
@@ -68,7 +74,10 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'card_on_file' | 'new_card'>('card_on_file')
+  const [paymentMethod, setPaymentMethod] = useState<'card_on_file' | 'new_card'>('new_card')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false)
 
   // Load client and cart items from sessionStorage
   useEffect(() => {
@@ -96,6 +105,49 @@ export default function CheckoutPage() {
     loadData()
   }, [clientId, tier])
 
+  // Create PaymentIntent when cart is loaded and payment method is new_card
+  const createPaymentIntent = async () => {
+    if (!client || cartItems.length === 0 || clientSecret) return
+
+    setIsCreatingPayment(true)
+    setPaymentError(null)
+
+    try {
+      // Determine if we have monthly items (needs subscription) or just one-time
+      const hasMonthlyItems = cartItems.some(
+        item => item.pricingType === 'monthly' && item.monthlyPrice > 0 && !item.isFree
+      )
+      const hasOnetimeItems = cartItems.some(
+        item => item.pricingType === 'onetime' && item.onetimePrice > 0
+      )
+
+      // For now, use a simple PaymentIntent for the total due today
+      // Full subscription support requires Stripe price IDs on products
+      const response = await fetch('/api/stripe/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId,
+          items: cartItems,
+          amount: dueToday * 100, // Convert to cents
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create payment')
+      }
+
+      setClientSecret(data.clientSecret)
+    } catch (error) {
+      console.error('Error creating payment:', error)
+      setPaymentError(error instanceof Error ? error.message : 'Failed to initialize payment')
+    } finally {
+      setIsCreatingPayment(false)
+    }
+  }
+
   // Calculate totals (accounting for free items and bundle savings)
   // Items can have BOTH monthly AND one-time fees - both are charged in month 1
 
@@ -109,7 +161,7 @@ export default function CheckoutPage() {
       const isBundle = item.category === 'bundle' && item.fullPrice && item.fullPrice > 0
       // For bundles, use fullPrice (sum of individual products)
       // For regular items, use monthlyPrice
-      const itemFullPrice = isBundle ? item.fullPrice : item.monthlyPrice
+      const itemFullPrice = isBundle ? item.fullPrice! : item.monthlyPrice
       return sum + (itemFullPrice * item.quantity)
     }
     return sum
@@ -153,20 +205,28 @@ export default function CheckoutPage() {
   // Due today = first month's recurring + all one-time fees
   const dueToday = monthlyTotal + onetimeTotal
 
+  const handlePaymentSuccess = () => {
+    // Clear cart from sessionStorage
+    sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+
+    // Redirect to success page
+    router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${dueToday}`)
+  }
+
+  const handlePaymentError = (error: string) => {
+    setPaymentError(error)
+  }
+
   const handleProcessPayment = async () => {
+    // For card on file - simulate for now
     setIsProcessing(true)
     try {
-      // Simulate payment processing - Stripe integration later
       await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Clear cart from sessionStorage
       sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
-
-      // Redirect to success page or back to recommendation builder
       router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${dueToday}`)
     } catch (error) {
       console.error('Payment failed:', error)
-      alert('Payment failed. Please try again.')
+      setPaymentError('Payment failed. Please try again.')
     } finally {
       setIsProcessing(false)
     }
@@ -411,14 +471,60 @@ export default function CheckoutPage() {
 
                 {paymentMethod === 'new_card' && (
                   <div className="new-card-form">
-                    <p className="stripe-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                      </svg>
-                      Stripe payment form will be integrated here
-                    </p>
+                    {!clientSecret && !isCreatingPayment && (
+                      <button
+                        className="btn btn-primary btn-full"
+                        onClick={createPaymentIntent}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        Enter Card Details
+                      </button>
+                    )}
+                    {isCreatingPayment && (
+                      <div className="payment-loading">
+                        <span className="spinner"></span>
+                        <span>Preparing payment form...</span>
+                      </div>
+                    )}
+                    {paymentError && (
+                      <div className="payment-error">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="8" x2="12" y2="12"></line>
+                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>{paymentError}</span>
+                      </div>
+                    )}
+                    {clientSecret && (
+                      <Elements
+                        stripe={stripePromise}
+                        options={{
+                          clientSecret,
+                          appearance: {
+                            theme: 'stripe',
+                            variables: {
+                              colorPrimary: '#2563EB',
+                              colorBackground: '#ffffff',
+                              colorText: '#1f2937',
+                              colorDanger: '#dc2626',
+                              fontFamily: 'Inter, system-ui, sans-serif',
+                              borderRadius: '8px',
+                            },
+                          },
+                        }}
+                      >
+                        <CheckoutForm
+                          amount={dueToday}
+                          clientName={client.name}
+                          onSuccess={handlePaymentSuccess}
+                          onError={handlePaymentError}
+                        />
+                      </Elements>
+                    )}
                   </div>
                 )}
               </div>
@@ -467,30 +573,42 @@ export default function CheckoutPage() {
                   </p>
                 )}
 
-                <button
-                  className="btn btn-success btn-large btn-full"
-                  onClick={handleProcessPayment}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>
-                      <span className="spinner"></span>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                      </svg>
-                      Charge ${dueToday.toLocaleString()}
-                    </>
-                  )}
-                </button>
+                {/* Only show charge button for card on file method */}
+                {paymentMethod === 'card_on_file' && (
+                  <>
+                    <button
+                      className="btn btn-success btn-large btn-full"
+                      onClick={handleProcessPayment}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <span className="spinner"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                          </svg>
+                          Charge ${dueToday.toLocaleString()}
+                        </>
+                      )}
+                    </button>
 
-                <p className="checkout-disclaimer">
-                  By processing this payment, you confirm the client has authorized this charge. A receipt will be sent to {client.contact_email || 'the client'}.
-                </p>
+                    <p className="checkout-disclaimer">
+                      By processing this payment, you confirm the client has authorized this charge. A receipt will be sent to {client.contact_email || 'the client'}.
+                    </p>
+                  </>
+                )}
+
+                {/* Show message when new card is selected */}
+                {paymentMethod === 'new_card' && !clientSecret && (
+                  <p className="checkout-disclaimer">
+                    Click "Enter Card Details" to begin payment.
+                  </p>
+                )}
 
                 <div className="stripe-security-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">

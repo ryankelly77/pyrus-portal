@@ -350,11 +350,11 @@ export default function CheckoutPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="firstName">First Name</label>
-                    <input type="text" id="firstName" defaultValue={client.firstName} />
+                    <input type="text" id="firstName" defaultValue={client.primaryContact.split(' ')[0] || ''} />
                   </div>
                   <div className="form-group">
                     <label htmlFor="lastName">Last Name</label>
-                    <input type="text" id="lastName" defaultValue={client.lastName} />
+                    <input type="text" id="lastName" defaultValue={client.primaryContact.split(' ').slice(1).join(' ') || ''} />
                   </div>
                 </div>
                 <div className="form-group">
