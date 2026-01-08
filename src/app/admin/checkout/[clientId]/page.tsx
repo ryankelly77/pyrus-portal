@@ -249,9 +249,20 @@ export default function CheckoutPage() {
     : 0
   const finalDueToday = Math.max(0, dueToday - couponDiscount)
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     // Clear cart from sessionStorage
     sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+
+    // Update client's growth stage to "active"
+    try {
+      await fetch(`/api/admin/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ growthStage: 'active' }),
+      })
+    } catch (error) {
+      console.error('Failed to update client stage:', error)
+    }
 
     // Redirect to success page
     router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${finalDueToday}`)
