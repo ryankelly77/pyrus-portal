@@ -220,6 +220,31 @@ export default function ClientDetailPage() {
   }, [clientId])
 
   // Derived client data from database or fallback
+  const isActiveClient = dbClient && dbClient.growth_stage && dbClient.growth_stage !== 'prospect'
+
+  // Generate dummy website data for active clients
+  const dummyWebsiteData = isActiveClient ? {
+    domain: `${dbClient.name.toLowerCase().replace(/\s+/g, '')}.com`,
+    previewUrl: 'https://app.landingsite.ai/website-preview?id=8869fd44-f6ea-4bd7-bc24-92a7a14f17a5',
+    plan: 'Seed Site (AI-Built)',
+    carePlan: 'Website Care Plan',
+    status: 'active' as const,
+    launchDate: 'Dec 30, 2025',
+    hosting: {
+      provider: 'Landingsite.ai',
+      uptime: '99.9%',
+      lastUpdated: 'Jan 3, 2026',
+    },
+  } : undefined
+
+  // Generate dummy edit requests for active clients
+  const dummyEditRequests = isActiveClient ? [
+    { id: 1, title: 'Update contact page hours', type: 'Content Update', status: 'completed' as RequestStatus, date: 'Jan 3, 2026' },
+    { id: 2, title: 'Add new service page', type: 'New Feature', status: 'in-progress' as RequestStatus, date: 'Jan 2, 2026' },
+    { id: 3, title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed' as RequestStatus, date: 'Dec 28, 2025' },
+    { id: 4, title: 'Update footer contact info', type: 'Content Update', status: 'completed' as RequestStatus, date: 'Dec 20, 2025' },
+  ] : undefined
+
   const client: ClientData = dbClient ? {
     id: dbClient.id,
     name: dbClient.name,
@@ -229,10 +254,12 @@ export default function ClientDetailPage() {
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.growth_stage === 'prospect' || !dbClient.growth_stage) ? 'onboarding' :
             (dbClient.status === 'paused' ? 'paused' : 'active'),
-    servicesCount: 0, // TODO: Get from recommendations
-    hasWebsite: false,
-    hasContent: false,
-    checklistProgress: { completed: 0, total: 6 },
+    servicesCount: isActiveClient ? 4 : 0,
+    hasWebsite: !!isActiveClient,
+    hasContent: !!isActiveClient,
+    websiteData: dummyWebsiteData,
+    editRequests: dummyEditRequests,
+    checklistProgress: isActiveClient ? { completed: 5, total: 6 } : { completed: 0, total: 6 },
   } : clients['tc-clinical'] // Fallback to hardcoded data while loading
 
   // Activity type and data
