@@ -2,20 +2,50 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getClientByViewingAs } from '@/lib/client-data'
 
 type TabType = 'smart-recommendations' | 'original-plan' | 'current-services'
 
+interface PurchaseItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  priceType: 'monthly' | 'one-time'
+  currentPrice?: number
+}
+
 export default function RecommendationsPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
   const client = getClientByViewingAs(viewingAs)
 
   const [activeTab, setActiveTab] = useState<TabType>('smart-recommendations')
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<PurchaseItem | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   // Client-specific data
   const isRaptorVending = client.id === 'raptor-vending'
+
+  // Handle purchase button click
+  const handlePurchaseClick = (item: PurchaseItem) => {
+    setSelectedItem(item)
+    setShowPurchaseModal(true)
+  }
+
+  // Handle purchase confirmation
+  const handleConfirmPurchase = async () => {
+    setIsProcessing(true)
+    // Simulate API call - Stripe integration will be added later
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setIsProcessing(false)
+    setShowPurchaseModal(false)
+    setShowSuccessModal(true)
+  }
 
   return (
     <>
@@ -200,7 +230,17 @@ export default function RecommendationsPage() {
                     <span className="rec-investment-value">+$750/mo</span>
                     <span className="rec-investment-detail">50% increase from current</span>
                   </div>
-                  <button className="rec-cta primary">
+                  <button
+                    className="rec-cta primary"
+                    onClick={() => handlePurchaseClick({
+                      id: 'google-ads-increase',
+                      name: 'Google Ads Budget Increase',
+                      description: 'Increase your Google Ads spend to capture more leads',
+                      price: 750,
+                      priceType: 'monthly',
+                      currentPrice: 1500
+                    })}
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
@@ -254,7 +294,16 @@ export default function RecommendationsPage() {
                     <span className="rec-investment-value">$3,000</span>
                     <span className="rec-investment-detail">One-time or $300/mo x 12</span>
                   </div>
-                  <button className="rec-cta add">
+                  <button
+                    className="rec-cta add"
+                    onClick={() => handlePurchaseClick({
+                      id: 'ai-visibility',
+                      name: 'AI Visibility Foundation',
+                      description: 'Get discovered in AI search results like ChatGPT and Perplexity',
+                      price: 3000,
+                      priceType: 'one-time'
+                    })}
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -310,7 +359,17 @@ export default function RecommendationsPage() {
                     <span className="rec-investment-value">$1,499/mo</span>
                     <span className="rec-investment-detail">Currently $899/mo</span>
                   </div>
-                  <button className="rec-cta upgrade">
+                  <button
+                    className="rec-cta upgrade"
+                    onClick={() => handlePurchaseClick({
+                      id: 'harvest-seo',
+                      name: 'Harvest SEO Plan',
+                      description: 'Accelerate organic growth with content clusters and authority building',
+                      price: 1499,
+                      priceType: 'monthly',
+                      currentPrice: 899
+                    })}
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="18 15 12 9 6 15"></polyline>
                     </svg>
@@ -727,6 +786,141 @@ export default function RecommendationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Purchase Confirmation Modal */}
+      {showPurchaseModal && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowPurchaseModal(false)}>
+          <div className="modal purchase-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Confirm Purchase</h2>
+              <button className="modal-close" onClick={() => setShowPurchaseModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="purchase-item-card">
+                <div className="purchase-item-header">
+                  <div className="purchase-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <div className="purchase-item-info">
+                    <h3>{selectedItem.name}</h3>
+                    <p>{selectedItem.description}</p>
+                  </div>
+                </div>
+                <div className="purchase-item-pricing">
+                  {selectedItem.currentPrice && (
+                    <div className="current-price">
+                      <span className="label">Current:</span>
+                      <span className="value">${selectedItem.currentPrice.toLocaleString()}/mo</span>
+                    </div>
+                  )}
+                  <div className="new-price">
+                    <span className="label">{selectedItem.currentPrice ? 'New Total:' : 'Investment:'}</span>
+                    <span className="value highlight">
+                      ${selectedItem.price.toLocaleString()}
+                      {selectedItem.priceType === 'monthly' ? '/mo' : ' one-time'}
+                    </span>
+                  </div>
+                  {selectedItem.currentPrice && (
+                    <div className="price-change">
+                      <span className="label">Change:</span>
+                      <span className="value">+${(selectedItem.price).toLocaleString()}/mo</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="purchase-summary">
+                <div className="summary-row">
+                  <span>Billing starts</span>
+                  <span>Immediately</span>
+                </div>
+                <div className="summary-row">
+                  <span>Billing cycle</span>
+                  <span>{selectedItem.priceType === 'monthly' ? 'Monthly' : 'One-time payment'}</span>
+                </div>
+                <div className="summary-row total">
+                  <span>Total due today</span>
+                  <span>${selectedItem.price.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <p className="purchase-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Your existing payment method on file will be charged. You can cancel or modify anytime.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowPurchaseModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleConfirmPurchase}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <span className="spinner"></span>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    Confirm Purchase
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && selectedItem && (
+        <div className="modal-overlay" onClick={() => setShowSuccessModal(false)}>
+          <div className="modal success-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="success-content">
+              <div className="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <h2>Purchase Confirmed!</h2>
+              <p>Your {selectedItem.name} has been activated.</p>
+              <div className="success-details">
+                <div className="detail-row">
+                  <span>Amount charged</span>
+                  <span>${selectedItem.price.toLocaleString()}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Confirmation #</span>
+                  <span>PYR-{Date.now().toString().slice(-8)}</span>
+                </div>
+              </div>
+              <p className="success-note">
+                A confirmation email has been sent to {client.email || 'your email address'}.
+              </p>
+              <button className="btn btn-primary" onClick={() => setShowSuccessModal(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

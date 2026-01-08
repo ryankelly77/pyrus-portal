@@ -149,6 +149,12 @@ export default function RecommendationBuilderPage() {
   })
   const [isSendingInvite, setIsSendingInvite] = useState(false)
 
+  // Purchase modal state
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [selectedTierForPurchase, setSelectedTierForPurchase] = useState<TierName>('better')
+  const [isProcessingPurchase, setIsProcessingPurchase] = useState(false)
+  const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false)
+
   // Store
   const {
     tiers,
@@ -549,6 +555,28 @@ export default function RecommendationBuilderPage() {
     }
   }
 
+  // Handle purchase confirmation (admin initiating purchase for client)
+  const handlePurchase = async () => {
+    if (!savedRecommendationId || !selectedClient) {
+      alert('Please save the plan first')
+      return
+    }
+
+    setIsProcessingPurchase(true)
+    try {
+      // Simulate API call - Stripe integration will be added later
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      setShowPurchaseModal(false)
+      setShowPurchaseSuccess(true)
+    } catch (error) {
+      console.error('Failed to process purchase:', error)
+      alert('Failed to process purchase')
+    } finally {
+      setIsProcessingPurchase(false)
+    }
+  }
+
   // Drag handlers
   const handleDragStart = useCallback((e: React.DragEvent, product: Product) => {
     e.dataTransfer.setData('application/json', JSON.stringify(product))
@@ -711,19 +739,31 @@ export default function RecommendationBuilderPage() {
               {isSavingPlan ? 'Saving...' : 'Save Plan'}
             </button>
             {savedRecommendationId && (
-              <button
-                className="btn btn-primary"
-                onClick={() => setShowShareModal(true)}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <circle cx="18" cy="5" r="3"></circle>
-                  <circle cx="6" cy="12" r="3"></circle>
-                  <circle cx="18" cy="19" r="3"></circle>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                </svg>
-                Share
-              </button>
+              <>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowShareModal(true)}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                  Share
+                </button>
+                <button
+                  className="btn btn-success"
+                  onClick={() => setShowPurchaseModal(true)}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                  Purchase Now
+                </button>
+              </>
             )}
           </div>
 
@@ -878,6 +918,150 @@ export default function RecommendationBuilderPage() {
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
                 {isSendingInvite ? 'Sending...' : 'Send Invite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Modal */}
+      {showPurchaseModal && selectedClient && (
+        <div className="modal-overlay active" onClick={() => setShowPurchaseModal(false)}>
+          <div className="modal purchase-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Process Purchase</h2>
+              <button className="modal-close" onClick={() => setShowPurchaseModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="purchase-client-info">
+                <div className="client-avatar-small" style={{ background: getAvatarColor(selectedClient.name) }}>
+                  {getInitials(selectedClient.name)}
+                </div>
+                <div>
+                  <strong>{selectedClient.name}</strong>
+                  <p>{selectedClient.contact_email || 'No email on file'}</p>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Select Tier to Purchase</label>
+                <div className="tier-selector">
+                  {(['good', 'better', 'best'] as TierName[]).map((tier) => {
+                    const pricing = getTierPricing(tier)
+                    const hasItems = tiers[tier].length > 0
+                    return (
+                      <button
+                        key={tier}
+                        className={`tier-option ${selectedTierForPurchase === tier ? 'selected' : ''} ${!hasItems ? 'disabled' : ''}`}
+                        onClick={() => hasItems && setSelectedTierForPurchase(tier)}
+                        disabled={!hasItems}
+                      >
+                        <span className="tier-name">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+                        <span className="tier-price">
+                          {hasItems ? `$${pricing.afterFreePrice.monthly.toLocaleString()}/mo` : 'No items'}
+                        </span>
+                        <span className="tier-items">{tiers[tier].length} item{tiers[tier].length !== 1 ? 's' : ''}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="purchase-summary">
+                <div className="summary-row">
+                  <span>Monthly recurring</span>
+                  <span>${getTierPricing(selectedTierForPurchase).afterFreePrice.monthly.toLocaleString()}/mo</span>
+                </div>
+                {getTierPricing(selectedTierForPurchase).afterFreePrice.onetime > 0 && (
+                  <div className="summary-row">
+                    <span>One-time setup</span>
+                    <span>${getTierPricing(selectedTierForPurchase).afterFreePrice.onetime.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="summary-row total">
+                  <span>Due today</span>
+                  <span>
+                    ${(getTierPricing(selectedTierForPurchase).afterFreePrice.monthly + getTierPricing(selectedTierForPurchase).afterFreePrice.onetime).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <p className="purchase-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                This will charge the client&apos;s payment method on file. A confirmation email will be sent automatically.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowPurchaseModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-success"
+                onClick={handlePurchase}
+                disabled={isProcessingPurchase || tiers[selectedTierForPurchase].length === 0}
+              >
+                {isProcessingPurchase ? (
+                  <>
+                    <span className="spinner"></span>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    Charge ${(getTierPricing(selectedTierForPurchase).afterFreePrice.monthly + getTierPricing(selectedTierForPurchase).afterFreePrice.onetime).toLocaleString()}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Success Modal */}
+      {showPurchaseSuccess && selectedClient && (
+        <div className="modal-overlay active" onClick={() => setShowPurchaseSuccess(false)}>
+          <div className="modal success-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="success-content">
+              <div className="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <h2>Purchase Complete!</h2>
+              <p>{selectedClient.name}&apos;s {selectedTierForPurchase.charAt(0).toUpperCase() + selectedTierForPurchase.slice(1)} plan has been activated.</p>
+              <div className="success-details">
+                <div className="detail-row">
+                  <span>Amount charged</span>
+                  <span>${(getTierPricing(selectedTierForPurchase).afterFreePrice.monthly + getTierPricing(selectedTierForPurchase).afterFreePrice.onetime).toLocaleString()}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Confirmation #</span>
+                  <span>PYR-{Date.now().toString().slice(-8)}</span>
+                </div>
+              </div>
+              <p className="success-note">
+                A confirmation email has been sent to {selectedClient.contact_email || 'the client'}.
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowPurchaseSuccess(false)
+                  router.push('/admin/recommendations')
+                }}
+              >
+                Done
               </button>
             </div>
           </div>
