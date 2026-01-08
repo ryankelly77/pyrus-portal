@@ -1451,69 +1451,55 @@ export default function ClientDetailPage() {
         {activeTab === 'recommendations' && (
           <div className="recommendations-content">
             {/* Growth Stage Hero Section */}
-            <div className="growth-stage-hero">
-              <div className="growth-stage-main">
-                <div className="stage-icon-large">🌿</div>
-                <div className="stage-content">
-                  <div className="stage-label">Growth Stage</div>
-                  <div className="stage-name-large">
-                    Sprouting
-                    <span className="month-badge">Month 4</span>
+            {(() => {
+              const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
+                prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
+                seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
+                sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
+                blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
+                harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
+              }
+              const currentStage = client.growthStage || 'prospect'
+              const current = stageInfo[currentStage] || stageInfo.prospect
+              const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
+
+              return (
+                <div className="growth-stage-hero">
+                  <div className="growth-stage-main">
+                    <div className="stage-icon-large">{current.icon}</div>
+                    <div className="stage-content">
+                      <div className="stage-label">Growth Stage</div>
+                      <div className="stage-name-large">
+                        {current.name}
+                      </div>
+                      <div className="stage-description-large">
+                        {current.description}
+                      </div>
+                    </div>
                   </div>
-                  <div className="stage-description-large">
-                    Building momentum with early results appearing. Marketing foundation is taking root.
-                  </div>
-                </div>
-                <div className="stage-stats">
-                  <div className="stage-stat">
-                    <span className="stage-stat-value">47</span>
-                    <span className="stage-stat-label">Keywords Ranking</span>
-                  </div>
-                  <div className="stage-stat">
-                    <span className="stage-stat-value">28</span>
-                    <span className="stage-stat-label">Leads This Month</span>
-                  </div>
-                  <div className="stage-stat">
-                    <span className="stage-stat-value">+85%</span>
-                    <span className="stage-stat-label">Traffic Growth</span>
-                  </div>
-                </div>
-              </div>
-              <div className="growth-progress-section">
-                <div className="progress-track-large">
-                  <div className="progress-stage completed">
-                    <div className="stage-icon">🌱</div>
-                    <div className="progress-dot"></div>
-                    <span>Seedling</span>
-                  </div>
-                  <div className="progress-line completed"></div>
-                  <div className="progress-stage current">
-                    <div className="stage-icon">🌿</div>
-                    <div className="progress-dot"></div>
-                    <span>Sprouting</span>
-                  </div>
-                  <div className="progress-line"></div>
-                  <div className="progress-stage">
-                    <div className="stage-icon">🌸</div>
-                    <div className="progress-dot"></div>
-                    <span>Blooming</span>
-                  </div>
-                  <div className="progress-line"></div>
-                  <div className="progress-stage">
-                    <div className="stage-icon">🌾</div>
-                    <div className="progress-dot"></div>
-                    <span>Harvesting</span>
+                  <div className="growth-progress-section">
+                    <div className="progress-track-large">
+                      {stages.map((stage, idx) => {
+                        const info = stageInfo[stage]
+                        const currentIndex = stageInfo[currentStage]?.index || 0
+                        const isCompleted = info.index < currentIndex
+                        const isCurrent = stage === currentStage
+                        return (
+                          <div key={stage}>
+                            {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
+                            <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
+                              <div className="stage-icon">{info.icon}</div>
+                              <div className="progress-dot"></div>
+                              <span>{info.name}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className="refresh-info">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                  </svg>
-                  Next recommendations refresh: <strong>February 18, 2026</strong> (47 days)
-                </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {/* Current Services */}
             <div className="current-services-list">
