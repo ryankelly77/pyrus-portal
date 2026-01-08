@@ -120,7 +120,7 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
     // Calculate totals based on paid units only
     if (item.pricingType === 'onetime') {
       totalOnetime += item.product.onetimePrice * paidUnits
-      fullPriceTotal += item.product.onetimePrice * paidUnits
+      // Don't add to fullPriceTotal - it's for monthly amounts only
     } else {
       totalMonthly += item.product.monthlyPrice * paidUnits
       // For bundles, track the full price (sum of products) separately
