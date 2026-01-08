@@ -82,6 +82,7 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
+  const [isCardFormExpanded, setIsCardFormExpanded] = useState(false)
 
   // Load client and cart items from sessionStorage
   useEffect(() => {
@@ -134,23 +135,29 @@ export default function CheckoutPage() {
 
     setAppliedCoupon({ code, discount })
     setCouponCode('')
-    // Reset client secret so payment intent will be recreated with coupon
+    // Mark that we need to refresh the payment intent (but keep form expanded)
     setClientSecret(null)
   }
 
   // Remove coupon
   const removeCoupon = () => {
     setAppliedCoupon(null)
+    // Mark that we need to refresh the payment intent (but keep form expanded)
     setClientSecret(null)
   }
 
-  // Create PaymentIntent when cart is loaded and payment method is new_card
-  const createPaymentIntent = async () => {
-    if (!client || cartItems.length === 0 || clientSecret) return
+  // Expand card form
+  const expandCardForm = () => {
+    setIsCardFormExpanded(true)
+  }
 
-    // If total is $0 (e.g., 100% coupon), skip payment and go to success
+  // Create PaymentIntent when cart is loaded and payment method is new_card
+  const createPaymentIntent = async (forceRefresh = false) => {
+    if (!client || cartItems.length === 0) return
+    if (clientSecret && !forceRefresh) return
+
+    // If total is $0 (e.g., 100% coupon), we'll handle this in the UI
     if (finalDueToday === 0) {
-      handlePaymentSuccess()
       return
     }
 
@@ -185,6 +192,13 @@ export default function CheckoutPage() {
       setIsCreatingPayment(false)
     }
   }
+
+  // Auto-create payment intent when form is expanded and we don't have a clientSecret
+  useEffect(() => {
+    if (isCardFormExpanded && !clientSecret && !isCreatingPayment && finalDueToday > 0 && client) {
+      createPaymentIntent()
+    }
+  }, [isCardFormExpanded, clientSecret, finalDueToday, client])
 
   // Calculate totals (accounting for free items and bundle savings)
   // Items can have BOTH monthly AND one-time fees - both are charged in month 1
@@ -526,10 +540,11 @@ export default function CheckoutPage() {
 
                 {paymentMethod === 'new_card' && (
                   <div className="new-card-form">
-                    {!clientSecret && !isCreatingPayment && (
+                    {/* Show expand button if form not yet expanded */}
+                    {!isCardFormExpanded && (
                       <button
-                        className="btn btn-primary btn-full"
-                        onClick={createPaymentIntent}
+                        className="btn btn-secondary btn-full"
+                        onClick={expandCardForm}
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                           <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -538,47 +553,73 @@ export default function CheckoutPage() {
                         Enter Card Details
                       </button>
                     )}
-                    {isCreatingPayment && (
-                      <div className="payment-loading">
-                        <span className="spinner"></span>
-                        <span>Preparing payment form...</span>
+
+                    {/* Card form area - stays visible once expanded */}
+                    {isCardFormExpanded && (
+                      <div className="card-form-expanded">
+                        {/* Show $0 message if coupon makes it free */}
+                        {finalDueToday === 0 ? (
+                          <div className="free-order-message">
+                            <div className="free-order-icon">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <p>Your total is $0 - no payment required!</p>
+                            <button
+                              className="btn btn-success btn-full"
+                              onClick={handlePaymentSuccess}
+                            >
+                              Complete Order
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            {isCreatingPayment && (
+                              <div className="payment-loading">
+                                <span className="spinner"></span>
+                                <span>Preparing payment form...</span>
+                              </div>
+                            )}
+                            {paymentError && (
+                              <div className="payment-error">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <span>{paymentError}</span>
+                              </div>
+                            )}
+                            {clientSecret && (
+                              <Elements
+                                stripe={stripePromise}
+                                options={{
+                                  clientSecret,
+                                  appearance: {
+                                    theme: 'stripe',
+                                    variables: {
+                                      colorPrimary: '#2563EB',
+                                      colorBackground: '#ffffff',
+                                      colorText: '#1f2937',
+                                      colorDanger: '#dc2626',
+                                      fontFamily: 'Inter, system-ui, sans-serif',
+                                      borderRadius: '8px',
+                                    },
+                                  },
+                                }}
+                              >
+                                <CheckoutForm
+                                  amount={finalDueToday}
+                                  clientName={client.name}
+                                  onSuccess={handlePaymentSuccess}
+                                  onError={handlePaymentError}
+                                />
+                              </Elements>
+                            )}
+                          </>
+                        )}
                       </div>
-                    )}
-                    {paymentError && (
-                      <div className="payment-error">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <line x1="12" y1="8" x2="12" y2="12"></line>
-                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <span>{paymentError}</span>
-                      </div>
-                    )}
-                    {clientSecret && (
-                      <Elements
-                        stripe={stripePromise}
-                        options={{
-                          clientSecret,
-                          appearance: {
-                            theme: 'stripe',
-                            variables: {
-                              colorPrimary: '#2563EB',
-                              colorBackground: '#ffffff',
-                              colorText: '#1f2937',
-                              colorDanger: '#dc2626',
-                              fontFamily: 'Inter, system-ui, sans-serif',
-                              borderRadius: '8px',
-                            },
-                          },
-                        }}
-                      >
-                        <CheckoutForm
-                          amount={dueToday}
-                          clientName={client.name}
-                          onSuccess={handlePaymentSuccess}
-                          onError={handlePaymentError}
-                        />
-                      </Elements>
                     )}
                   </div>
                 )}

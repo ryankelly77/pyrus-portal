@@ -23580,6 +23580,36 @@ input[type="date"].form-control {
     margin-top: 12px;
 }
 
+/* Card Form Expanded */
+.card-form-expanded {
+    margin-top: 16px;
+}
+
+.free-order-message {
+    text-align: center;
+    padding: 24px;
+    background: var(--success-bg);
+    border-radius: var(--radius-md);
+}
+
+.free-order-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--success);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    color: white;
+}
+
+.free-order-message p {
+    color: var(--success);
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
 .recurring-note {
     font-size: 12px;
     color: var(--text-muted);
