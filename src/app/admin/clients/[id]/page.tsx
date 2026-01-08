@@ -189,6 +189,40 @@ export default function ClientDetailPage() {
     recommendationUpdates: true,
     weeklyDigest: false,
   })
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Handle saving client changes
+  const handleSaveClient = async () => {
+    if (!dbClient) return
+
+    setIsSaving(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editFormData.companyName,
+          contactName: editFormData.primaryContact,
+          contactEmail: editFormData.email,
+          growthStage: editFormData.growthStage,
+          notes: editFormData.internalNotes,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to update client')
+
+      // Refetch client to get updated data
+      const updatedClient = await res.json()
+      setDbClient(updatedClient)
+
+      setShowEditModal(false)
+    } catch (error) {
+      console.error('Failed to save client:', error)
+      alert('Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   // Fetch client from database
   useEffect(() => {
@@ -1843,11 +1877,11 @@ export default function ClientDetailPage() {
               <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={() => setShowEditModal(false)}>
+              <button className="btn btn-primary" onClick={handleSaveClient} disabled={isSaving}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
