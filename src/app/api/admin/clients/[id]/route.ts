@@ -46,6 +46,7 @@ export async function PATCH(
       growthStage,
       status,
       notes,
+      avatarColor,
     } = body
 
     const client = await prisma.clients.update({
@@ -57,6 +58,7 @@ export async function PATCH(
         ...(growthStage !== undefined && { growth_stage: growthStage || null }),
         ...(status !== undefined && { status }),
         ...(notes !== undefined && { notes: notes || null }),
+        ...(avatarColor !== undefined && { avatar_color: avatarColor || null }),
         updated_at: new Date(),
       },
     })

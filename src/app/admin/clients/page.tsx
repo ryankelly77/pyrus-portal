@@ -33,6 +33,7 @@ interface DBClient {
   contact_email: string | null
   status: string | null
   growth_stage: string | null
+  avatar_color: string | null
   created_at: string
 }
 
@@ -168,7 +169,7 @@ export default function ClientsPage() {
           name: c.name,
           email: c.contact_email || '',
           initials: getInitials(c.name),
-          avatarColor: getAvatarColor(c.name),
+          avatarColor: c.avatar_color || getAvatarColor(c.name),
           status: displayStatus,
           growthStage,
           services,

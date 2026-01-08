@@ -39,6 +39,7 @@ interface DBClient {
   contact_email: string | null
   status: string | null
   growth_stage: string | null
+  avatar_color: string | null
   notes: string | null
   created_at: string
 }
@@ -206,6 +207,7 @@ export default function ClientDetailPage() {
           contactEmail: editFormData.email,
           growthStage: editFormData.growthStage,
           notes: editFormData.internalNotes,
+          avatarColor: editFormData.avatarColor,
         }),
       })
 
@@ -241,7 +243,7 @@ export default function ClientDetailPage() {
             email: data.contact_email || '',
             growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
             internalNotes: data.notes || '',
-            avatarColor: getAvatarColor(data.name),
+            avatarColor: data.avatar_color || getAvatarColor(data.name),
           }))
         }
       } catch (error) {
@@ -283,7 +285,7 @@ export default function ClientDetailPage() {
     id: dbClient.id,
     name: dbClient.name,
     initials: getInitials(dbClient.name),
-    avatarColor: getAvatarColor(dbClient.name),
+    avatarColor: dbClient.avatar_color || getAvatarColor(dbClient.name),
     email: dbClient.contact_email || '',
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.growth_stage === 'prospect' || !dbClient.growth_stage) ? 'onboarding' :
