@@ -22420,6 +22420,10 @@ input[type="date"].form-control {
     color: var(--warning-text);
 }
 
+.stage-badge.seedling,
+.stage-badge.sprouting,
+.stage-badge.blooming,
+.stage-badge.harvesting,
 .stage-badge.active,
 .stage-badge.client {
     background: var(--success-bg);
