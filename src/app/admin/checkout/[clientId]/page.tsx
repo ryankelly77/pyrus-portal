@@ -267,12 +267,12 @@ export default function CheckoutPage() {
     // Clear cart from sessionStorage
     sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
 
-    // Update client's growth stage to "active"
+    // Update client's growth stage to "seedling"
     try {
       await fetch(`/api/admin/clients/${clientId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ growthStage: 'active' }),
+        body: JSON.stringify({ growthStage: 'seedling' }),
       })
     } catch (error) {
       console.error('Failed to update client stage:', error)
