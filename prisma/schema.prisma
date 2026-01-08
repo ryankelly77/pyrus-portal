@@ -9,21 +9,22 @@ datasource db {
 // ============ Core Tables ============
 
 model clients {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  contact_name String?
-  contact_email String?
-  avatar_url   String?
-  avatar_color String?   @db.VarChar(7)
-  growth_stage String?
-  status       String?   @default("active")
-  monthly_spend Decimal?  @default(0) @db.Decimal
-  start_date   DateTime? @db.Date
-  highlevel_id String?
-  basecamp_id  String?
-  notes        String?
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  contact_name       String?
+  contact_email      String?
+  avatar_url         String?
+  avatar_color       String?   @db.VarChar(7)
+  growth_stage       String?
+  status             String?   @default("active")
+  monthly_spend      Decimal?  @default(0) @db.Decimal
+  start_date         DateTime? @db.Date
+  highlevel_id       String?
+  basecamp_id        String?
+  stripe_customer_id String?
+  notes              String?
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
   profiles          profiles[]
   activity_log      activity_log[]
@@ -220,6 +221,7 @@ model recommendations {
   reward_tier          reward_tiers?            @relation(fields: [reward_tier_id], references: [id])
   recommendation_items recommendation_items[]
   recommendation_invites recommendation_invites[]
+  subscriptions        subscriptions[]
 }
 
 model recommendation_items {
@@ -276,6 +278,7 @@ model reward_tiers {
 model subscriptions {
   id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   client_id              String    @db.Uuid
+  recommendation_id      String?   @db.Uuid
   stripe_subscription_id String?   @unique
   stripe_customer_id     String?
   status                 String?
@@ -286,6 +289,7 @@ model subscriptions {
   updated_at             DateTime? @default(now()) @db.Timestamptz(6)
 
   client             clients              @relation(fields: [client_id], references: [id])
+  recommendation     recommendations?     @relation(fields: [recommendation_id], references: [id])
   subscription_items subscription_items[]
 }
 
