@@ -97,10 +97,15 @@ export default function CheckoutPage() {
   }, [clientId, tier])
 
   // Calculate totals (accounting for free items and bundle savings)
+  // Items can have BOTH monthly AND one-time fees - both are charged in month 1
 
-  // Full price = sum of all items at regular price (using fullPrice for bundles, monthlyPrice for others)
+  // Full price = sum of all monthly items at regular price (using fullPrice for bundles)
   const fullPriceMonthly = cartItems.reduce((sum, item) => {
-    if (item.pricingType === 'monthly') {
+    // Skip items that chose one-time only pricing (no monthly component)
+    if (item.pricingType === 'onetime') {
+      return sum
+    }
+    if (item.monthlyPrice > 0) {
       const isBundle = item.category === 'bundle' && item.fullPrice && item.fullPrice > 0
       // For bundles, use fullPrice (sum of individual products)
       // For regular items, use monthlyPrice
@@ -112,34 +117,40 @@ export default function CheckoutPage() {
 
   // Bundle savings = difference between full price and bundle price
   const bundleSavings = cartItems.reduce((sum, item) => {
-    if (item.pricingType === 'monthly' && item.category === 'bundle' && item.fullPrice && item.fullPrice > 0) {
+    if (item.pricingType !== 'onetime' && item.category === 'bundle' && item.fullPrice && item.fullPrice > 0) {
       return sum + ((item.fullPrice - item.monthlyPrice) * item.quantity)
     }
     return sum
   }, 0)
 
-  // Free items value
+  // Free items value (monthly items that are free)
   const freeItemsValue = cartItems.reduce((sum, item) => {
-    if (item.isFree && item.pricingType === 'monthly') {
+    if (item.pricingType === 'onetime') return sum
+    if (item.isFree && item.monthlyPrice > 0) {
       return sum + (item.monthlyPrice * item.quantity)
     }
     const freeQty = item.freeQuantity || 0
-    if (freeQty > 0 && item.pricingType === 'monthly') {
+    if (freeQty > 0 && item.monthlyPrice > 0) {
       return sum + (item.monthlyPrice * freeQty)
     }
     return sum
   }, 0)
 
-  // Actual monthly total (what they pay)
+  // Actual monthly total (what they pay recurring)
   const monthlyTotal = fullPriceMonthly - bundleSavings - freeItemsValue
 
+  // One-time fees
+  // - If pricingType is 'onetime', charge onetimePrice (user chose one-time instead of monthly)
+  // - Items with both prices are alternatives, not additive
   const onetimeTotal = cartItems.reduce((sum, item) => {
-    if (item.pricingType === 'onetime') {
+    // Only charge one-time if user explicitly chose one-time pricing
+    if (item.pricingType === 'onetime' && item.onetimePrice > 0) {
       return sum + (item.onetimePrice * item.quantity)
     }
     return sum
   }, 0)
 
+  // Due today = first month's recurring + all one-time fees
   const dueToday = monthlyTotal + onetimeTotal
 
   const handleProcessPayment = async () => {
@@ -452,7 +463,7 @@ export default function CheckoutPage() {
 
                 {monthlyTotal > 0 && (
                   <p className="recurring-note">
-                    Then ${monthlyTotal.toLocaleString()}/mo starting next billing cycle
+                    Then ${monthlyTotal.toLocaleString()}/mo each month
                   </p>
                 )}
 

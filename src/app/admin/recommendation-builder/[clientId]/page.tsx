@@ -632,6 +632,7 @@ export default function RecommendationBuilderPage() {
             onRemove={(itemId) => removeItem(tier, itemId)}
             onQuantityChange={(itemId, quantity) => updateItemQuantity(tier, itemId, quantity)}
             onPricingTypeChange={(itemId, pricingType) => updateItemPricingType(tier, itemId, pricingType)}
+            onInfoClick={openInfoModal}
             free99SlotUsed={pricing.free99SlotUsed}
             hasFree99Reward={pricing.hasFree99Reward}
           />

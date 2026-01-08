@@ -1,6 +1,6 @@
 'use client'
 
-import type { RecommendationItem, TierName, PricingType } from '@/types/recommendation'
+import type { RecommendationItem, TierName, PricingType, Product } from '@/types/recommendation'
 
 interface SelectedItemsListProps {
   items: RecommendationItem[]
@@ -9,6 +9,7 @@ interface SelectedItemsListProps {
   onRemove: (itemId: string) => void
   onQuantityChange: (itemId: string, quantity: number) => void
   onPricingTypeChange: (itemId: string, pricingType: PricingType) => void
+  onInfoClick: (product: Product) => void
   free99SlotUsed: boolean
   hasFree99Reward: boolean
 }
@@ -20,6 +21,7 @@ export function SelectedItemsList({
   onRemove,
   onQuantityChange,
   onPricingTypeChange,
+  onInfoClick,
   free99SlotUsed,
   hasFree99Reward,
 }: SelectedItemsListProps) {
@@ -95,6 +97,19 @@ export function SelectedItemsList({
           >
             <div className="service-item-header">
               <span className="service-item-title">{item.product.name}</span>
+              <button
+                className="info-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onInfoClick(item.product)
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </button>
             </div>
 
             {/* Regular price display for non-bundles */}
