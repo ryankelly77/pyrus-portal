@@ -83,6 +83,8 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
   // Track totals
   let totalMonthly = 0
   let totalOnetime = 0
+  let fullPriceTotal = 0 // For bundles, this is sum of individual products
+  let bundleSavings = 0
   let freeItemsValue = 0
   const savingsDetails: string[] = []
 
@@ -94,6 +96,7 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
   // Process each item
   for (const item of items) {
     const isAnalyticsTracking = item.product.name.includes('Analytics Tracking')
+    const isBundle = item.product.category === 'bundle' && item.product.fullPrice && item.product.fullPrice > 0
 
     // Analytics Tracking is always free
     if (isAnalyticsTracking) {
@@ -117,8 +120,16 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
     // Calculate totals based on paid units only
     if (item.pricingType === 'onetime') {
       totalOnetime += item.product.onetimePrice * paidUnits
+      fullPriceTotal += item.product.onetimePrice * paidUnits
     } else {
       totalMonthly += item.product.monthlyPrice * paidUnits
+      // For bundles, track the full price (sum of products) separately
+      if (isBundle) {
+        fullPriceTotal += item.product.fullPrice * paidUnits
+        bundleSavings += (item.product.fullPrice - item.product.monthlyPrice) * paidUnits
+      } else {
+        fullPriceTotal += item.product.monthlyPrice * paidUnits
+      }
     }
   }
 
@@ -133,6 +144,11 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
     savingsDetails.push('Free $99 Product')
   }
 
+  // Add bundle savings to savings details
+  if (bundleSavings > 0) {
+    savingsDetails.push(`Bundle Savings (-$${bundleSavings.toLocaleString()}/mo)`)
+  }
+
   // Calculate discount
   let discountAmount = 0
   if (currentTier.discount > 0 && totalMonthly > 0) {
@@ -140,8 +156,8 @@ export function calculateTierPricing(items: RecommendationItem[]): PricingResult
     savingsDetails.push(`${currentTier.discount}% off (-$${discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`)
   }
 
-  const totalSavings = freeItemsValue + discountAmount
-  const fullPriceMonthly = totalMonthly + freeItemsValue
+  const totalSavings = freeItemsValue + discountAmount + bundleSavings
+  const fullPriceMonthly = fullPriceTotal + freeItemsValue
   const yourPriceMonthly = totalMonthly - discountAmount
 
   return {

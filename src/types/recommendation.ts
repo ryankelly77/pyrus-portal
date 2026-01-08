@@ -7,6 +7,14 @@ export type PricingType = 'monthly' | 'onetime'
 // Tier names for Good/Better/Best columns
 export type TierName = 'good' | 'better' | 'best'
 
+// Bundle product info
+export interface BundleProduct {
+  id: string
+  name: string
+  monthlyPrice: number
+  onetimePrice: number
+}
+
 // Base product interface
 export interface Product {
   id: string
@@ -18,6 +26,8 @@ export interface Product {
   hasQuantity?: boolean
   requires?: string // Name of product this depends on
   detailContent?: string // Key for detailed modal content
+  bundleProducts?: BundleProduct[] // Products included in this bundle (for bundle category)
+  fullPrice?: number // Sum of individual product prices (for bundles)
 }
 
 // Item added to a recommendation tier

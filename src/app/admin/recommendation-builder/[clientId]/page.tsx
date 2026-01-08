@@ -34,6 +34,16 @@ interface DBProduct {
   }[]
 }
 
+interface DBBundleProduct {
+  product_id: string
+  product: {
+    id: string
+    name: string
+    monthly_price: string | null
+    onetime_price: string | null
+  }
+}
+
 interface DBBundle {
   id: string
   name: string
@@ -41,6 +51,7 @@ interface DBBundle {
   monthly_price: string | null
   onetime_price: string | null
   status: string | null
+  bundle_products?: DBBundleProduct[]
 }
 
 interface DBAddon {
@@ -216,14 +227,28 @@ export default function RecommendationBuilderPage() {
         // Transform bundles
         const transformedBundles: Product[] = dbBundles
           .filter(b => b.status === 'active')
-          .map(b => ({
-            id: b.id,
-            name: b.name,
-            description: b.description || '',
-            category: 'bundle' as ServiceCategory,
-            monthlyPrice: b.monthly_price ? parseFloat(b.monthly_price) : 0,
-            onetimePrice: b.onetime_price ? parseFloat(b.onetime_price) : 0,
-          }))
+          .map(b => {
+            // Calculate full price (sum of individual products)
+            const bundleProducts = b.bundle_products?.map(bp => ({
+              id: bp.product.id,
+              name: bp.product.name,
+              monthlyPrice: bp.product.monthly_price ? parseFloat(bp.product.monthly_price) : 0,
+              onetimePrice: bp.product.onetime_price ? parseFloat(bp.product.onetime_price) : 0,
+            })) || []
+
+            const fullPrice = bundleProducts.reduce((sum, p) => sum + p.monthlyPrice, 0)
+
+            return {
+              id: b.id,
+              name: b.name,
+              description: b.description || '',
+              category: 'bundle' as ServiceCategory,
+              monthlyPrice: b.monthly_price ? parseFloat(b.monthly_price) : 0,
+              onetimePrice: b.onetime_price ? parseFloat(b.onetime_price) : 0,
+              bundleProducts,
+              fullPrice,
+            }
+          })
 
         // Transform addons (fertilizers)
         const transformedAddons: Product[] = dbAddons

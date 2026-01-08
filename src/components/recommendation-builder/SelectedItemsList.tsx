@@ -84,23 +84,56 @@ export function SelectedItemsList({
         const unmetRequirement = unmetRequirements.get(item.id)
         const hasBothPricing = item.product.monthlyPrice > 0 && item.product.onetimePrice > 0
         const uniqueId = `pricing-${tier}-${item.id}`
+        const isBundle = item.product.category === 'bundle' && item.product.bundleProducts && item.product.bundleProducts.length > 0
+        const bundleProducts = item.product.bundleProducts || []
 
         return (
           <div
             key={item.id}
-            className={`service-item dropped${item.product.requires ? ' has-requirement' : ''}`}
+            className={`service-item dropped${item.product.requires ? ' has-requirement' : ''}${isBundle ? ' is-bundle' : ''}`}
             data-category={item.product.category}
           >
             <div className="service-item-header">
               <span className="service-item-title">{item.product.name}</span>
             </div>
-            <div className={`service-item-price${priceDisplay.isFree ? ' free-item' : ''}`}>
-              {priceDisplay.originalPrice && (
-                <span className="original-price">{priceDisplay.originalPrice}</span>
-              )}
-              {priceDisplay.text}
-            </div>
-            <p className="service-item-desc">{item.product.description}</p>
+
+            {/* Regular price display for non-bundles */}
+            {!isBundle && (
+              <div className={`service-item-price${priceDisplay.isFree ? ' free-item' : ''}`}>
+                {priceDisplay.originalPrice && (
+                  <span className="original-price">{priceDisplay.originalPrice}</span>
+                )}
+                {priceDisplay.text}
+              </div>
+            )}
+
+            {/* Bundle price display */}
+            {isBundle && (
+              <div className="service-item-price">
+                ${item.product.monthlyPrice}/mo
+              </div>
+            )}
+
+            {/* Bundle includes list */}
+            {isBundle && bundleProducts.length > 0 && (
+              <div className="bundle-includes">
+                <div className="bundle-includes-header">
+                  <span className="bundle-header-includes">Includes</span>
+                  <span className="bundle-header-price">Reg. Price</span>
+                </div>
+                <ul className="bundle-products-list">
+                  {bundleProducts.map((bp) => (
+                    <li key={bp.id} className="bundle-product-item">
+                      <span className="product-name">{bp.name}</span>
+                      <span className="product-price">${bp.monthlyPrice}/mo</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Description for non-bundles */}
+            {!isBundle && <p className="service-item-desc">{item.product.description}</p>}
 
             {/* Pricing selector for items with both options */}
             {hasBothPricing && (
