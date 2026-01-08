@@ -317,7 +317,7 @@ export default function CheckoutPage() {
                       )
                     } else {
                       priceDisplay = (
-                        <span>${(item.onetimePrice * item.quantity).toLocaleString()}</span>
+                        <span>${(item.onetimePrice * item.quantity).toLocaleString()} one-time</span>
                       )
                     }
 
@@ -438,7 +438,7 @@ export default function CheckoutPage() {
                   )}
                   {onetimeTotal > 0 && (
                     <div className="summary-line">
-                      <span>One-time Setup</span>
+                      <span>One-Time Fees</span>
                       <span>${onetimeTotal.toLocaleString()}</span>
                     </div>
                   )}
