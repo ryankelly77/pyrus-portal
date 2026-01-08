@@ -64,6 +64,7 @@ interface ClientData {
   email: string
   clientSince: string
   status: 'active' | 'paused' | 'onboarding'
+  growthStage: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
   servicesCount: number
   hasWebsite: boolean
   hasContent: boolean
@@ -112,6 +113,7 @@ const clients: Record<string, ClientData> = {
     email: 'dlg.mdservices@gmail.com',
     clientSince: 'Sep 2025',
     status: 'active',
+    growthStage: 'sprouting',
     servicesCount: 4,
     hasWebsite: true,
     hasContent: true,
@@ -144,6 +146,7 @@ const clients: Record<string, ClientData> = {
     email: 'info@raptorvending.com',
     clientSince: 'Nov 2025',
     status: 'active',
+    growthStage: 'seedling',
     servicesCount: 2,
     hasWebsite: false,
     hasContent: false,
@@ -294,6 +297,7 @@ export default function ClientDetailPage() {
     email: dbClient.contact_email || '',
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
+    growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
     servicesCount: isActiveClient ? 4 : 0,
     hasWebsite: !!isActiveClient,
     hasContent: !!isActiveClient,
