@@ -158,20 +158,9 @@ export default function CheckoutPage() {
     setPaymentError(null)
 
     try {
-      // Determine if we have monthly items (needs subscription) or just one-time
-      const hasMonthlyItems = cartItems.some(
-        item => item.pricingType === 'monthly' && item.monthlyPrice > 0 && !item.isFree
-      )
-      const hasOnetimeItems = cartItems.some(
-        item => item.pricingType === 'onetime' && item.onetimePrice > 0
-      )
-
-      // Use subscription endpoint for monthly items, payment-intent for one-time only
-      const endpoint = hasMonthlyItems
-        ? '/api/stripe/create-subscription'
-        : '/api/stripe/create-payment-intent'
-
-      const response = await fetch(endpoint, {
+      // For now, use payment-intent with total amount for all payments
+      // TODO: Use subscription endpoint when products have Stripe Price IDs configured
+      const response = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
