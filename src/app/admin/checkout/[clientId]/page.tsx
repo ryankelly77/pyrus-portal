@@ -148,6 +148,12 @@ export default function CheckoutPage() {
   const createPaymentIntent = async () => {
     if (!client || cartItems.length === 0 || clientSecret) return
 
+    // If total is $0 (e.g., 100% coupon), skip payment and go to success
+    if (finalDueToday === 0) {
+      handlePaymentSuccess()
+      return
+    }
+
     setIsCreatingPayment(true)
     setPaymentError(null)
 
@@ -160,9 +166,12 @@ export default function CheckoutPage() {
         item => item.pricingType === 'onetime' && item.onetimePrice > 0
       )
 
-      // For now, use a simple PaymentIntent for the total due today
-      // Full subscription support requires Stripe price IDs on products
-      const response = await fetch('/api/stripe/create-payment-intent', {
+      // Use subscription endpoint for monthly items, payment-intent for one-time only
+      const endpoint = hasMonthlyItems
+        ? '/api/stripe/create-subscription'
+        : '/api/stripe/create-payment-intent'
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
