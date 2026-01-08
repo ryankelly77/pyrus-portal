@@ -653,15 +653,52 @@ export default function RecommendationBuilderPage() {
               return
             }
             // Store cart items in sessionStorage for checkout page
-            const cartItems = items.map(item => ({
-              id: item.id,
-              name: item.product.name,
-              description: item.product.description || '',
-              quantity: item.quantity,
-              monthlyPrice: item.product.monthlyPrice || 0,
-              onetimePrice: item.product.onetimePrice || 0,
-              pricingType: item.pricingType,
-            }))
+            // Track which items are free
+            let free99Used = 0
+            const cartItems = items.map(item => {
+              const isAnalytics = item.product.name.includes('Analytics Tracking')
+              const is99Product = item.product.monthlyPrice === 99 && item.pricingType === 'monthly'
+
+              // Analytics is always free
+              if (isAnalytics) {
+                return {
+                  id: item.id,
+                  name: item.product.name,
+                  description: item.product.description || '',
+                  quantity: item.quantity,
+                  monthlyPrice: item.product.monthlyPrice || 0,
+                  onetimePrice: item.product.onetimePrice || 0,
+                  pricingType: item.pricingType,
+                  category: item.product.category,
+                  bundleProducts: item.product.bundleProducts || [],
+                  fullPrice: item.product.fullPrice || 0,
+                  isFree: true,
+                  freeQuantity: item.quantity,
+                }
+              }
+
+              // Check if this $99 product can be free
+              let freeQuantity = 0
+              if (is99Product && pricing.hasFree99Reward && free99Used === 0) {
+                freeQuantity = Math.min(item.quantity, 1)
+                free99Used += freeQuantity
+              }
+
+              return {
+                id: item.id,
+                name: item.product.name,
+                description: item.product.description || '',
+                quantity: item.quantity,
+                monthlyPrice: item.product.monthlyPrice || 0,
+                onetimePrice: item.product.onetimePrice || 0,
+                pricingType: item.pricingType,
+                category: item.product.category,
+                bundleProducts: item.product.bundleProducts || [],
+                fullPrice: item.product.fullPrice || 0,
+                isFree: freeQuantity > 0 && freeQuantity === item.quantity,
+                freeQuantity,
+              }
+            })
             sessionStorage.setItem(`checkout_${selectedClient.id}_${tier}`, JSON.stringify(cartItems))
             router.push(`/admin/checkout/${selectedClient.id}?tier=${tier}`)
           }}

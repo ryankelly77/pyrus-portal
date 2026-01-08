@@ -5,6 +5,13 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
+interface BundleProduct {
+  id: string
+  name: string
+  monthlyPrice: number
+  onetimePrice: number
+}
+
 interface CartItem {
   id: string
   name: string
@@ -13,6 +20,11 @@ interface CartItem {
   monthlyPrice: number
   onetimePrice: number
   pricingType: 'monthly' | 'onetime'
+  category?: string
+  bundleProducts?: BundleProduct[]
+  fullPrice?: number
+  isFree?: boolean
+  freeQuantity?: number
 }
 
 interface DBClient {
@@ -84,13 +96,42 @@ export default function CheckoutPage() {
     loadData()
   }, [clientId, tier])
 
-  // Calculate totals
-  const monthlyTotal = cartItems.reduce((sum, item) => {
+  // Calculate totals (accounting for free items and bundle savings)
+
+  // Full price = sum of all items at regular price (using fullPrice for bundles, monthlyPrice for others)
+  const fullPriceMonthly = cartItems.reduce((sum, item) => {
     if (item.pricingType === 'monthly') {
-      return sum + (item.monthlyPrice * item.quantity)
+      const isBundle = item.category === 'bundle' && item.fullPrice && item.fullPrice > 0
+      // For bundles, use fullPrice (sum of individual products)
+      // For regular items, use monthlyPrice
+      const itemFullPrice = isBundle ? item.fullPrice : item.monthlyPrice
+      return sum + (itemFullPrice * item.quantity)
     }
     return sum
   }, 0)
+
+  // Bundle savings = difference between full price and bundle price
+  const bundleSavings = cartItems.reduce((sum, item) => {
+    if (item.pricingType === 'monthly' && item.category === 'bundle' && item.fullPrice && item.fullPrice > 0) {
+      return sum + ((item.fullPrice - item.monthlyPrice) * item.quantity)
+    }
+    return sum
+  }, 0)
+
+  // Free items value
+  const freeItemsValue = cartItems.reduce((sum, item) => {
+    if (item.isFree && item.pricingType === 'monthly') {
+      return sum + (item.monthlyPrice * item.quantity)
+    }
+    const freeQty = item.freeQuantity || 0
+    if (freeQty > 0 && item.pricingType === 'monthly') {
+      return sum + (item.monthlyPrice * freeQty)
+    }
+    return sum
+  }, 0)
+
+  // Actual monthly total (what they pay)
+  const monthlyTotal = fullPriceMonthly - bundleSavings - freeItemsValue
 
   const onetimeTotal = cartItems.reduce((sum, item) => {
     if (item.pricingType === 'onetime') {
@@ -240,23 +281,73 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="checkout-items">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="checkout-item">
-                      <div className="checkout-item-info">
-                        <span className="item-name">{item.name}</span>
-                        {item.quantity > 1 && (
-                          <span className="item-quantity">x{item.quantity}</span>
+                  {cartItems.map((item) => {
+                    const isBundle = item.category === 'bundle' && item.bundleProducts && item.bundleProducts.length > 0
+                    const bundleSavings = isBundle && item.fullPrice ? item.fullPrice - item.monthlyPrice : 0
+                    const freeQty = item.freeQuantity || 0
+                    const paidQty = item.quantity - freeQty
+
+                    // Determine price display
+                    let priceDisplay: React.ReactNode
+                    if (item.isFree) {
+                      priceDisplay = (
+                        <>
+                          <span className="original-price">${item.monthlyPrice}/mo</span>
+                          <span>Free</span>
+                        </>
+                      )
+                    } else if (freeQty > 0 && item.pricingType === 'monthly') {
+                      priceDisplay = (
+                        <span>{freeQty} Free, {paidQty} × ${item.monthlyPrice}/mo</span>
+                      )
+                    } else if (item.pricingType === 'monthly') {
+                      priceDisplay = (
+                        <span>${(item.monthlyPrice * item.quantity).toLocaleString()}/mo</span>
+                      )
+                    } else {
+                      priceDisplay = (
+                        <span>${(item.onetimePrice * item.quantity).toLocaleString()}</span>
+                      )
+                    }
+
+                    return (
+                      <div key={item.id} className={`checkout-item${isBundle ? ' is-bundle' : ''}${item.isFree ? ' is-free' : ''}`}>
+                        <div className="checkout-item-info">
+                          <span className="item-name">{item.name}</span>
+                          {item.quantity > 1 && !item.isFree && freeQty === 0 && (
+                            <span className="item-quantity">x{item.quantity}</span>
+                          )}
+                        </div>
+                        <div className="checkout-item-price">
+                          {priceDisplay}
+                        </div>
+
+                        {/* Bundle breakdown */}
+                        {isBundle && item.bundleProducts && (
+                          <div className="checkout-bundle-details">
+                            <div className="bundle-products-header">
+                              <span>Includes</span>
+                              <span>Reg. Price</span>
+                            </div>
+                            <ul className="bundle-products-breakdown">
+                              {item.bundleProducts.map((bp) => (
+                                <li key={bp.id} className="bundle-product-row">
+                                  <span className="product-name">{bp.name}</span>
+                                  <span className="product-price">${bp.monthlyPrice}/mo</span>
+                                </li>
+                              ))}
+                            </ul>
+                            {bundleSavings > 0 && (
+                              <div className="bundle-savings-row">
+                                <span className="savings-label">Bundle Savings</span>
+                                <span className="savings-amount">-${bundleSavings.toLocaleString()}/mo</span>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div className="checkout-item-price">
-                        {item.pricingType === 'monthly' ? (
-                          <span>${(item.monthlyPrice * item.quantity).toLocaleString()}/mo</span>
-                        ) : (
-                          <span>${(item.onetimePrice * item.quantity).toLocaleString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -328,16 +419,28 @@ export default function CheckoutPage() {
                 <h3>Price Summary</h3>
 
                 <div className="summary-lines">
-                  {monthlyTotal > 0 && (
+                  {fullPriceMonthly > 0 && (
                     <div className="summary-line">
                       <span>Monthly Services</span>
-                      <span>${monthlyTotal.toLocaleString()}/mo</span>
+                      <span>${fullPriceMonthly.toLocaleString()}/mo</span>
                     </div>
                   )}
                   {onetimeTotal > 0 && (
                     <div className="summary-line">
                       <span>One-time Setup</span>
                       <span>${onetimeTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {bundleSavings > 0 && (
+                    <div className="summary-line savings">
+                      <span>Bundle Savings</span>
+                      <span className="savings-amount">-${bundleSavings.toLocaleString()}/mo</span>
+                    </div>
+                  )}
+                  {freeItemsValue > 0 && (
+                    <div className="summary-line savings">
+                      <span>Free Items</span>
+                      <span className="savings-amount">-${freeItemsValue.toLocaleString()}/mo</span>
                     </div>
                   )}
                 </div>
@@ -377,6 +480,14 @@ export default function CheckoutPage() {
                 <p className="checkout-disclaimer">
                   By processing this payment, you confirm the client has authorized this charge. A receipt will be sent to {client.contact_email || 'the client'}.
                 </p>
+
+                <div className="stripe-security-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <span>Secure payments powered by <strong>Stripe</strong></span>
+                </div>
               </div>
 
               <Link
