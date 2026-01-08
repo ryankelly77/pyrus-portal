@@ -193,13 +193,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Auto-create payment intent when form is expanded and we don't have a clientSecret
-  useEffect(() => {
-    if (isCardFormExpanded && !clientSecret && !isCreatingPayment && finalDueToday > 0 && client) {
-      createPaymentIntent()
-    }
-  }, [isCardFormExpanded, clientSecret, finalDueToday, client])
-
   // Calculate totals (accounting for free items and bundle savings)
   // Items can have BOTH monthly AND one-time fees - both are charged in month 1
 
@@ -262,6 +255,13 @@ export default function CheckoutPage() {
     ? Math.round(dueToday * (appliedCoupon.discount / 100))
     : 0
   const finalDueToday = Math.max(0, dueToday - couponDiscount)
+
+  // Auto-create payment intent when form is expanded and we don't have a clientSecret
+  useEffect(() => {
+    if (isCardFormExpanded && !clientSecret && !isCreatingPayment && finalDueToday > 0 && client) {
+      createPaymentIntent()
+    }
+  }, [isCardFormExpanded, clientSecret, finalDueToday, client])
 
   const handlePaymentSuccess = async () => {
     // Clear cart from sessionStorage
