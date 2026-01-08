@@ -26,11 +26,13 @@ export function PricingSummary({ pricing, rewards, claimHints }: PricingSummaryP
   const hasItems = fullPriceMonthly > 0 || fullPriceOnetime > 0
 
   // Format price lines
+  // "Today" includes one-time fees + first month's recurring
   const formatPriceLine = (onetime: number, monthly: number, decimals: boolean = false) => {
-    if (onetime > 0) {
-      return `$${formatPrice(onetime)} today, then $${formatPrice(monthly, decimals)}/month`
+    const today = onetime + monthly
+    if (today > 0) {
+      return `$${formatPrice(today, decimals)} today, then $${formatPrice(monthly, decimals)}/month`
     }
-    return `$${formatPrice(monthly, decimals)}/month`
+    return `$0/month`
   }
 
   return (
