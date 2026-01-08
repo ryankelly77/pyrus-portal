@@ -78,6 +78,10 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [isCreatingPayment, setIsCreatingPayment] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
 
   // Load client and cart items from sessionStorage
   useEffect(() => {
@@ -105,6 +109,41 @@ export default function CheckoutPage() {
     loadData()
   }, [clientId, tier])
 
+  // Valid coupon codes (client-side validation, server validates too)
+  const VALID_COUPONS: Record<string, number> = {
+    'HARVEST5X': 5,
+    'CULTIVATE10': 10,
+    'TEST2': 100,
+  }
+
+  // Apply coupon code
+  const applyCoupon = () => {
+    setCouponError(null)
+    const code = couponCode.trim().toUpperCase()
+
+    if (!code) {
+      setCouponError('Please enter a coupon code')
+      return
+    }
+
+    const discount = VALID_COUPONS[code]
+    if (discount === undefined) {
+      setCouponError('Invalid coupon code')
+      return
+    }
+
+    setAppliedCoupon({ code, discount })
+    setCouponCode('')
+    // Reset client secret so payment intent will be recreated with coupon
+    setClientSecret(null)
+  }
+
+  // Remove coupon
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+    setClientSecret(null)
+  }
+
   // Create PaymentIntent when cart is loaded and payment method is new_card
   const createPaymentIntent = async () => {
     if (!client || cartItems.length === 0 || clientSecret) return
@@ -129,7 +168,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           clientId,
           items: cartItems,
-          amount: dueToday * 100, // Convert to cents
+          amount: finalDueToday * 100, // Convert to cents (after coupon discount)
+          couponCode: appliedCoupon?.code,
         }),
       })
 
@@ -205,12 +245,18 @@ export default function CheckoutPage() {
   // Due today = first month's recurring + all one-time fees
   const dueToday = monthlyTotal + onetimeTotal
 
+  // Apply coupon discount
+  const couponDiscount = appliedCoupon
+    ? Math.round(dueToday * (appliedCoupon.discount / 100))
+    : 0
+  const finalDueToday = Math.max(0, dueToday - couponDiscount)
+
   const handlePaymentSuccess = () => {
     // Clear cart from sessionStorage
     sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
 
     // Redirect to success page
-    router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${dueToday}`)
+    router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${finalDueToday}`)
   }
 
   const handlePaymentError = (error: string) => {
@@ -223,7 +269,7 @@ export default function CheckoutPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000))
       sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
-      router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${dueToday}`)
+      router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${finalDueToday}`)
     } catch (error) {
       console.error('Payment failed:', error)
       setPaymentError('Payment failed. Please try again.')
@@ -562,9 +608,67 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
+                {/* Coupon Code Section */}
+                <div className="coupon-section">
+                  {appliedCoupon ? (
+                    <div className="coupon-applied">
+                      <div className="coupon-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>{appliedCoupon.code}</span>
+                        <span className="coupon-discount">-{appliedCoupon.discount}%</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="coupon-remove"
+                        onClick={removeCoupon}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="coupon-input-group">
+                      <input
+                        type="text"
+                        placeholder="Coupon code"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value)
+                          setCouponError(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            applyCoupon()
+                          }
+                        }}
+                        className={couponError ? 'input-error' : ''}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={applyCoupon}
+                        disabled={isApplyingCoupon}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                  {couponError && (
+                    <p className="coupon-error">{couponError}</p>
+                  )}
+                  {appliedCoupon && couponDiscount > 0 && (
+                    <div className="summary-line savings coupon-savings">
+                      <span>Coupon Discount</span>
+                      <span className="savings-amount">-${couponDiscount.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="summary-total">
                   <span>Due Today</span>
-                  <span className="total-amount">${dueToday.toLocaleString()}</span>
+                  <span className="total-amount">${finalDueToday.toLocaleString()}</span>
                 </div>
 
                 {monthlyTotal > 0 && (
@@ -592,7 +696,7 @@ export default function CheckoutPage() {
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                             <line x1="1" y1="10" x2="23" y2="10"></line>
                           </svg>
-                          Charge ${dueToday.toLocaleString()}
+                          Charge ${finalDueToday.toLocaleString()}
                         </>
                       )}
                     </button>
