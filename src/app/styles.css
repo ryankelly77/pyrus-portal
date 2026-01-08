@@ -6059,15 +6059,6 @@
         /* Paused Client Card */
         .client-card[data-status="paused"] {
             position: relative;
-            opacity: 0.85;
-        }
-
-        .client-card[data-status="paused"]:hover {
-            opacity: 1;
-        }
-
-        .client-card[data-status="paused"] .client-card-avatar {
-            filter: grayscale(50%);
         }
 
         .client-stat-value.muted {

@@ -205,6 +205,7 @@ export default function ClientDetailPage() {
           name: editFormData.companyName,
           contactName: editFormData.primaryContact,
           contactEmail: editFormData.email,
+          status: editFormData.status,
           growthStage: editFormData.growthStage,
           notes: editFormData.internalNotes,
           avatarColor: editFormData.avatarColor,
@@ -292,8 +293,7 @@ export default function ClientDetailPage() {
     avatarColor: dbClient.avatar_color || getAvatarColor(dbClient.name),
     email: dbClient.contact_email || '',
     clientSince: formatDate(dbClient.created_at),
-    status: (dbClient.growth_stage === 'prospect' || !dbClient.growth_stage) ? 'onboarding' :
-            (dbClient.status === 'paused' ? 'paused' : 'active'),
+    status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
     servicesCount: isActiveClient ? 4 : 0,
     hasWebsite: !!isActiveClient,
     hasContent: !!isActiveClient,

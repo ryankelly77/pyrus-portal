@@ -46,6 +46,7 @@ interface DBRecommendation {
     name: string
     contact_email: string | null
     growth_stage: string | null
+    avatar_color: string | null
   }
   creator: {
     id: string
@@ -163,6 +164,15 @@ function getRoleBadgeContent(role: string | null) {
         className: 'user',
       }
   }
+}
+
+// Growth stage labels
+const growthStageLabels: Record<string, string> = {
+  prospect: 'Prospect',
+  seedling: 'Seedling',
+  sprouting: 'Sprouting',
+  blooming: 'Blooming',
+  harvesting: 'Harvesting',
 }
 
 // Helper to format relative time
@@ -363,8 +373,9 @@ export default function RecommendationsPage() {
             client: editingClient.name,
             clientEmail: editingClient.contactEmail,
             initials: getInitials(editingClient.name),
-            avatarColor: getAvatarColor(editingClient.name),
-            clientStage: editingClient.growthStage === 'prospect' ? 'Prospect' : 'Active',
+            // Preserve existing avatar color - it's stored in the database
+            avatarColor: rec.avatarColor,
+            clientStage: growthStageLabels[editingClient.growthStage] || 'Prospect',
           }
         }
         return rec
@@ -426,9 +437,9 @@ export default function RecommendationsPage() {
             client: rec.client.name,
             clientId: rec.client.id,
             clientEmail: rec.client.contact_email,
-            clientStage: (!rec.client.growth_stage || rec.client.growth_stage === 'prospect') ? 'Prospect' : 'Active',
+            clientStage: growthStageLabels[rec.client.growth_stage || 'prospect'] || 'Prospect',
             initials: getInitials(rec.client.name),
-            avatarColor: getAvatarColor(rec.client.name),
+            avatarColor: rec.client.avatar_color || getAvatarColor(rec.client.name),
             status: (rec.status as RecommendationStatus) || 'draft',
             tierPricing,
             itemCount: rec.recommendation_items.length,
