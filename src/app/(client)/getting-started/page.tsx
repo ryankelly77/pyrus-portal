@@ -85,7 +85,7 @@ export default function GettingStartedPage() {
   useEffect(() => {
     async function fetchVideoChapters() {
       try {
-        const res = await fetch('/api/admin/onboarding/video-chapters')
+        const res = await fetch('/api/client/video-chapters')
         if (res.ok) {
           const data = await res.json()
           const chapters = data.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
