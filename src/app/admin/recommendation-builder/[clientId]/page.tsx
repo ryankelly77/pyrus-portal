@@ -465,6 +465,7 @@ export default function RecommendationBuilderPage() {
       productId?: string
       bundleId?: string
       addonId?: string
+      name: string
       quantity: number
       monthlyPrice: number
       onetimePrice: number

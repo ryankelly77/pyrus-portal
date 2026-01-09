@@ -974,9 +974,9 @@ export default function ClientDetailPage() {
                     const activeSubscriptions = subscriptions.filter(s => s.status === 'active' && s.subscription_items.length > 0)
                     if (activeSubscriptions.length > 0) {
                       const oldestSub = activeSubscriptions.reduce((oldest, sub) =>
-                        new Date(sub.created_at) < new Date(oldest.created_at) ? sub : oldest
+                        new Date(sub.created_at || 0) < new Date(oldest.created_at || 0) ? sub : oldest
                       )
-                      const date = new Date(oldestSub.created_at)
+                      const date = new Date(oldestSub.created_at || 0)
                       const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                       return ` • Client since ${monthYear}`
                     } else if (dbClient?.created_at) {
@@ -3645,7 +3645,7 @@ export default function ClientDetailPage() {
                               onetimePrice: 0,
                               pricingType: 'monthly' as const,
                               category: 'content',
-                              supportsQuantity: product.supports_quantity || false,
+                              supportsQuantity: true, // Content writing supports quantity
                             }
 
                             // Store in sessionStorage

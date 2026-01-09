@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 // Communication types
-export const COMM_TYPES = {
+const COMM_TYPES = {
   EMAIL_INVITE: 'email_invite',
   EMAIL_REMINDER: 'email_reminder',
   EMAIL_GENERAL: 'email_general',
@@ -16,7 +16,7 @@ export const COMM_TYPES = {
 } as const
 
 // Delivery statuses
-export const COMM_STATUS = {
+const COMM_STATUS = {
   SENT: 'sent',
   DELIVERED: 'delivered',
   OPENED: 'opened',
