@@ -19,10 +19,13 @@ model clients {
   status             String?   @default("active")
   monthly_spend      Decimal?  @default(0) @db.Decimal
   start_date         DateTime? @db.Date
-  highlevel_id       String?
-  basecamp_id        String?
-  stripe_customer_id String?
-  notes              String?
+  highlevel_id              String?
+  basecamp_id               String?
+  basecamp_project_id       String?
+  stripe_customer_id        String?
+  agency_dashboard_share_key String?
+  landingsite_preview_url   String?
+  notes                     String?
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 

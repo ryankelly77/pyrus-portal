@@ -47,6 +47,11 @@ export async function PATCH(
       status,
       notes,
       avatarColor,
+      // Integration fields
+      agencyDashboardShareKey,
+      basecampId,
+      basecampProjectId,
+      landsitePreviewUrl,
     } = body
 
     const client = await prisma.clients.update({
@@ -59,6 +64,11 @@ export async function PATCH(
         ...(status !== undefined && { status }),
         ...(notes !== undefined && { notes: notes || null }),
         ...(avatarColor !== undefined && { avatar_color: avatarColor || null }),
+        // Integration fields
+        ...(agencyDashboardShareKey !== undefined && { agency_dashboard_share_key: agencyDashboardShareKey || null }),
+        ...(basecampId !== undefined && { basecamp_id: basecampId || null }),
+        ...(basecampProjectId !== undefined && { basecamp_project_id: basecampProjectId || null }),
+        ...(landsitePreviewUrl !== undefined && { landingsite_preview_url: landsitePreviewUrl || null }),
         updated_at: new Date(),
       },
     })

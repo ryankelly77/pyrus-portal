@@ -42,6 +42,11 @@ interface DBClient {
   avatar_color: string | null
   notes: string | null
   created_at: string
+  // Integration fields
+  agency_dashboard_share_key: string | null
+  basecamp_id: string | null
+  basecamp_project_id: string | null
+  landingsite_preview_url: string | null
 }
 
 type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
@@ -72,6 +77,22 @@ interface ChecklistItem {
     name: string
     category: string
   }
+}
+
+interface OnboardingResponse {
+  id: string
+  question: string
+  answer: string
+  questionType: string
+  product: {
+    id: string
+    name: string
+    category: string
+  }
+}
+
+interface OnboardingSummary {
+  [section: string]: OnboardingResponse[]
 }
 
 interface ClientData {
@@ -190,7 +211,7 @@ export default function ClientDetailPage() {
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
   const [isClientView, setIsClientView] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editModalTab, setEditModalTab] = useState<'general' | 'billing' | 'notifications'>('general')
+  const [editModalTab, setEditModalTab] = useState<'general' | 'integrations' | 'billing' | 'notifications'>('general')
   const [editFormData, setEditFormData] = useState({
     companyName: '',
     status: 'active' as 'active' | 'paused' | 'onboarding',
@@ -201,6 +222,11 @@ export default function ClientDetailPage() {
     growthStage: 'prospect' as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
     internalNotes: '',
     avatarColor: '#885430',
+    // Integrations
+    agencyDashboardShareKey: '',
+    basecampId: '',
+    basecampProjectId: '',
+    landsitePreviewUrl: '',
     // Billing
     billingEmail: '',
     paymentMethod: '**** **** **** 4242',
@@ -219,6 +245,10 @@ export default function ClientDetailPage() {
   const [syncingChecklist, setSyncingChecklist] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
+  // Onboarding summary state
+  const [onboardingSummary, setOnboardingSummary] = useState<OnboardingSummary | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+
   // Handle saving client changes
   const handleSaveClient = async () => {
     if (!dbClient) return
@@ -236,6 +266,11 @@ export default function ClientDetailPage() {
           growthStage: editFormData.growthStage,
           notes: editFormData.internalNotes,
           avatarColor: editFormData.avatarColor,
+          // Integration fields
+          agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
+          basecampId: editFormData.basecampId,
+          basecampProjectId: editFormData.basecampProjectId,
+          landsitePreviewUrl: editFormData.landsitePreviewUrl,
         }),
       })
 
@@ -276,6 +311,11 @@ export default function ClientDetailPage() {
             growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
             internalNotes: data.notes || '',
             avatarColor: data.avatar_color || getAvatarColor(data.name),
+            // Integration fields
+            agencyDashboardShareKey: data.agency_dashboard_share_key || '',
+            basecampId: data.basecamp_id || '',
+            basecampProjectId: data.basecamp_project_id || '',
+            landsitePreviewUrl: data.landingsite_preview_url || '',
           }))
         }
       } catch (error) {
@@ -304,6 +344,25 @@ export default function ClientDetailPage() {
       }
     }
     fetchChecklist()
+  }, [clientId])
+
+  // Fetch onboarding summary
+  useEffect(() => {
+    const fetchOnboardingSummary = async () => {
+      setSummaryLoading(true)
+      try {
+        const res = await fetch(`/api/client/onboarding?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setOnboardingSummary(data.onboardingSummary || null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding summary:', error)
+      } finally {
+        setSummaryLoading(false)
+      }
+    }
+    fetchOnboardingSummary()
   }, [clientId])
 
   // Toggle checklist item completion
@@ -361,14 +420,31 @@ export default function ClientDetailPage() {
   // Derived client data from database or fallback
   const isActiveClient = dbClient && dbClient.growth_stage && dbClient.growth_stage !== 'prospect'
 
-  // Generate dummy website data for active clients
-  const dummyWebsiteData = isActiveClient ? {
+  // Determine which tabs should be active based on integrations and purchased products
+  const hasResultsAccess = !!dbClient?.agency_dashboard_share_key
+  const hasActivityAccess = !!dbClient?.basecamp_id
+  const hasWebsiteAccess = !!dbClient?.landingsite_preview_url
+
+  // Check purchased products from checklist items
+  const purchasedProductNames = Array.from(new Set(checklistItems.map(item => item.product.name.toLowerCase())))
+  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'website care plan', 'wordpress care plan']
+  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing']
+
+  const hasWebsiteProducts = purchasedProductNames.some(name =>
+    websiteProducts.some(wp => name.includes(wp))
+  )
+  const hasContentProducts = purchasedProductNames.some(name =>
+    contentProducts.some(cp => name.includes(cp))
+  )
+
+  // Generate website data only when preview URL is available in database
+  const realWebsiteData = hasWebsiteAccess && dbClient ? {
     domain: `${dbClient.name.toLowerCase().replace(/\s+/g, '')}.com`,
-    previewUrl: 'https://app.landingsite.ai/website-preview?id=8869fd44-f6ea-4bd7-bc24-92a7a14f17a5',
-    plan: 'Seed Site (AI-Built)',
-    carePlan: 'Website Care Plan',
+    previewUrl: dbClient.landingsite_preview_url!,
+    plan: 'Seed Site (AI-Built)', // TODO: Get from purchased products
+    carePlan: 'Website Care Plan', // TODO: Get from purchased products
     status: 'active' as const,
-    launchDate: 'Dec 30, 2025',
+    launchDate: 'Coming Soon', // TODO: Track actual launch date
     hosting: {
       provider: 'Landingsite.ai',
       uptime: '99.9%',
@@ -393,10 +469,10 @@ export default function ClientDetailPage() {
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
-    servicesCount: isActiveClient ? 4 : 0,
-    hasWebsite: !!isActiveClient,
-    hasContent: !!isActiveClient,
-    websiteData: dummyWebsiteData,
+    servicesCount: checklistItems.length > 0 ? Array.from(new Set(checklistItems.map(i => i.product.id))).length : 0,
+    hasWebsite: hasWebsiteProducts,
+    hasContent: hasContentProducts,
+    websiteData: realWebsiteData,
     editRequests: dummyEditRequests,
     checklistProgress: isActiveClient ? { completed: 5, total: 6 } : { completed: 0, total: 6 },
   } : clients['tc-clinical'] // Fallback to hardcoded data while loading
@@ -585,8 +661,14 @@ export default function ClientDetailPage() {
         {/* Tab Navigation */}
         <div className="tab-nav">
           <button className={`tab-btn ${activeTab === 'getting-started' ? 'active' : ''}`} onClick={() => setActiveTab('getting-started')}>Getting Started</button>
-          <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>Results</button>
-          <button className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>Activity</button>
+          <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>
+            Results
+            {!hasResultsAccess && <span className="tab-badge inactive">Inactive</span>}
+          </button>
+          <button className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
+            Activity
+            {!hasActivityAccess && <span className="tab-badge inactive">Inactive</span>}
+          </button>
           <button className={`tab-btn ${activeTab === 'website' ? 'active' : ''}`} onClick={() => setActiveTab('website')}>
             Website
             {!client.hasWebsite && <span className="tab-badge inactive">Inactive</span>}
@@ -749,6 +831,7 @@ export default function ClientDetailPage() {
             {/* Onboarding Summary Tab Content */}
             <div className={`gs-tab-content ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`} id="onboarding-summary">
               <div className="onboarding-summary">
+                {/* Client Info Section - from database */}
                 <div className="summary-section">
                   <h3 className="summary-section-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
@@ -759,68 +842,52 @@ export default function ClientDetailPage() {
                   </h3>
                   <div className="summary-grid">
                     <div className="summary-field">
-                      <label>Name</label>
-                      <span>Jon De La Garza</span>
+                      <label>Contact Name</label>
+                      <span>{dbClient?.contact_name || 'Not provided'}</span>
                     </div>
                     <div className="summary-field">
                       <label>Company</label>
-                      <span>TC Clinical Services</span>
+                      <span>{dbClient?.name || 'Not provided'}</span>
                     </div>
                     <div className="summary-field">
                       <label>Email</label>
-                      <span>dlg.mdservices@gmail.com</span>
-                    </div>
-                    <div className="summary-field">
-                      <label>Phone</label>
-                      <span>(210) 394-5245</span>
+                      <span>{dbClient?.contact_email || 'Not provided'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="summary-section">
-                  <h3 className="summary-section-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <path d="M12 20h9"></path>
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                    Content Writing
-                  </h3>
-                  <div className="summary-content">
-                    <div className="summary-field full-width">
-                      <label>Content creation focus</label>
-                      <span>Updates on advanced wound care and gait deficit rehab</span>
-                    </div>
-                    <div className="summary-field full-width">
-                      <label>Content posting process</label>
-                      <span>Client needs to approve every piece of content before it gets posted</span>
-                    </div>
+                {/* Dynamic Onboarding Responses */}
+                {summaryLoading ? (
+                  <div className="summary-section">
+                    <p>Loading onboarding responses...</p>
                   </div>
-                </div>
-
-                <div className="summary-section">
-                  <h3 className="summary-section-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                      <line x1="8" y1="21" x2="16" y2="21"></line>
-                      <line x1="12" y1="17" x2="12" y2="21"></line>
-                    </svg>
-                    Website Design &amp; Development
-                  </h3>
-                  <div className="summary-content">
-                    <div className="summary-field full-width">
-                      <label>Primary website goal</label>
-                      <span>Generate leads</span>
+                ) : onboardingSummary && Object.keys(onboardingSummary).length > 0 ? (
+                  Object.entries(onboardingSummary).map(([section, responses]) => (
+                    <div key={section} className="summary-section">
+                      <h3 className="summary-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        {section}
+                      </h3>
+                      <div className="summary-content">
+                        {responses.map((response) => (
+                          <div key={response.id} className="summary-field full-width">
+                            <label>{response.question}</label>
+                            <span>{response.answer || 'Not answered'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="summary-field full-width">
-                      <label>Ideal customer description</label>
-                      <span>Medicare patients needing wound care and gait deficit disease patients over the age of 25</span>
-                    </div>
-                    <div className="summary-field full-width">
-                      <label>Required pages/sections</label>
-                      <span>Home, Products, Contact, Company Story</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="summary-section">
+                    <p style={{ color: '#6B7280', fontStyle: 'italic' }}>No onboarding responses yet. The client will complete the onboarding form after checkout.</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </>
@@ -829,35 +896,37 @@ export default function ClientDetailPage() {
         {/* ==================== RESULTS TAB ==================== */}
         {activeTab === 'results' && (
           <div className="results-content">
-            {/* Results Sub-tabs */}
-            <div className="results-subtabs">
-              <button
-                className={`results-subtab ${resultsSubtab === 'overview' ? 'active' : ''}`}
-                onClick={() => setResultsSubtab('overview')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <line x1="18" y1="20" x2="18" y2="10"></line>
-                  <line x1="12" y1="20" x2="12" y2="4"></line>
-                  <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                Overview
-              </button>
-              <button
-                className={`results-subtab ${resultsSubtab === 'pro-dashboard' ? 'active' : ''}`}
-                onClick={() => setResultsSubtab('pro-dashboard')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
-                  <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
-                Pro Dashboard
-                <span className="pro-badge">PRO</span>
-              </button>
-            </div>
+            {hasResultsAccess ? (
+              <>
+                {/* Results Sub-tabs */}
+                <div className="results-subtabs">
+                  <button
+                    className={`results-subtab ${resultsSubtab === 'overview' ? 'active' : ''}`}
+                    onClick={() => setResultsSubtab('overview')}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Overview
+                  </button>
+                  <button
+                    className={`results-subtab ${resultsSubtab === 'pro-dashboard' ? 'active' : ''}`}
+                    onClick={() => setResultsSubtab('pro-dashboard')}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="3" y1="9" x2="21" y2="9"></line>
+                      <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    Pro Dashboard
+                    <span className="pro-badge">PRO</span>
+                  </button>
+                </div>
 
-            {/* Overview Content */}
-            {resultsSubtab === 'overview' && (
+                {/* Overview Content */}
+                {resultsSubtab === 'overview' && (
               <>
                 <div className="results-header">
                   <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Performance Overview</h3>
@@ -1028,10 +1097,128 @@ export default function ClientDetailPage() {
                 </div>
                 <div className="pro-dashboard-embed">
                   <iframe
-                    src="https://agencydashboard.io/campaign/detail/MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM="
+                    src={dbClient?.agency_dashboard_share_key
+                      ? `https://agencydashboard.io/campaign/detail/${dbClient.agency_dashboard_share_key}`
+                      : "https://agencydashboard.io/campaign/detail/MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM="}
                     frameBorder="0"
                     allowFullScreen
                   ></iframe>
+                </div>
+              </div>
+            )}
+            </>
+            ) : checklistItems.length > 0 ? (
+              /* Service purchased but not yet activated */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                  </div>
+                  <h3>Results Dashboard Coming Soon</h3>
+                  <p>We&apos;re setting up your performance dashboard. Once your marketing campaigns are connected, you&apos;ll be able to track website traffic, keyword rankings, leads, and more.</p>
+                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
+                    <h4>What you&apos;ll see here:</h4>
+                    <ul>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Website traffic and visitor analytics
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Keyword rankings and SEO performance
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Lead generation metrics
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Google Ads campaign performance
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* No service - Upsell */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                  </div>
+                  <h3>Results Dashboard Not Active</h3>
+                  <p>This client does not currently have marketing services. Activate a marketing plan to track their website performance, SEO rankings, and lead generation.</p>
+
+                  <div className="inactive-service-actions">
+                    <button className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      Create Recommendation
+                    </button>
+                    <button className="btn btn-secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                      </svg>
+                      View Marketing Plans
+                    </button>
+                  </div>
+                </div>
+
+                <div className="inactive-service-info">
+                  <h4>Marketing Services Include:</h4>
+                  <ul>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      SEO optimization and keyword tracking
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Google Ads management
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Website analytics and reporting
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Lead generation tracking
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Monthly performance reports
+                    </li>
+                  </ul>
                 </div>
               </div>
             )}
@@ -1041,59 +1228,174 @@ export default function ClientDetailPage() {
         {/* ==================== ACTIVITY TAB ==================== */}
         {activeTab === 'activity' && (
           <div className="activity-content">
-            <div className="activity-filters">
-              <button className={`filter-chip ${activityFilter === 'all' ? 'active' : ''}`} onClick={() => setActivityFilter('all')}>All Activity</button>
-              <button className={`filter-chip ${activityFilter === 'task' ? 'active' : ''}`} onClick={() => setActivityFilter('task')}>Tasks</button>
-              <button className={`filter-chip ${activityFilter === 'update' ? 'active' : ''}`} onClick={() => setActivityFilter('update')}>Updates</button>
-              <button className={`filter-chip ${activityFilter === 'alert' ? 'active' : ''}`} onClick={() => setActivityFilter('alert')}>Result Alerts</button>
-              <button className={`filter-chip ${activityFilter === 'content' ? 'active' : ''}`} onClick={() => setActivityFilter('content')}>Content</button>
-            </div>
+            {hasActivityAccess ? (
+              <>
+                <div className="activity-filters">
+                  <button className={`filter-chip ${activityFilter === 'all' ? 'active' : ''}`} onClick={() => setActivityFilter('all')}>All Activity</button>
+                  <button className={`filter-chip ${activityFilter === 'task' ? 'active' : ''}`} onClick={() => setActivityFilter('task')}>Tasks</button>
+                  <button className={`filter-chip ${activityFilter === 'update' ? 'active' : ''}`} onClick={() => setActivityFilter('update')}>Updates</button>
+                  <button className={`filter-chip ${activityFilter === 'alert' ? 'active' : ''}`} onClick={() => setActivityFilter('alert')}>Result Alerts</button>
+                  <button className={`filter-chip ${activityFilter === 'content' ? 'active' : ''}`} onClick={() => setActivityFilter('content')}>Content</button>
+                </div>
 
-            <div className="activity-card">
-              <ul className="activity-list">
-                {filteredActivities.map(activity => (
-                  <li key={activity.id} className="activity-item" data-type={activity.type}>
-                    <div className={`activity-icon ${activity.type}`}>
-                      {activity.type === 'content' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
+                <div className="activity-card">
+                  <ul className="activity-list">
+                    {filteredActivities.map(activity => (
+                      <li key={activity.id} className="activity-item" data-type={activity.type}>
+                        <div className={`activity-icon ${activity.type}`}>
+                          {activity.type === 'content' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                          )}
+                          {activity.type === 'alert' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                          )}
+                          {activity.type === 'task' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="9 11 12 14 22 4"></polyline>
+                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                          )}
+                          {activity.type === 'update' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="23 4 23 10 17 10"></polyline>
+                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                          )}
+                        </div>
+                        <div className="activity-details">
+                          <div className="activity-title">{activity.title}</div>
+                          <div className="activity-desc">{activity.description}</div>
+                        </div>
+                        <div className="activity-time">{activity.time}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : checklistItems.length > 0 ? (
+              /* Service purchased but not yet activated */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3>Activity Feed Coming Soon</h3>
+                  <p>We&apos;re connecting your project activity feed. Once set up, you&apos;ll see all tasks, updates, and milestones from your marketing projects here.</p>
+                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
+                    <h4>What you&apos;ll see here:</h4>
+                    <ul>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      )}
-                      {activity.type === 'alert' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        Task completions and updates
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      )}
-                      {activity.type === 'task' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="9 11 12 14 22 4"></polyline>
-                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        Project milestone achievements
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      )}
-                      {activity.type === 'update' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="23 4 23 10 17 10"></polyline>
-                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        Content approvals and publishing
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      )}
-                    </div>
-                    <div className="activity-details">
-                      <div className="activity-title">{activity.title}</div>
-                      <div className="activity-desc">{activity.description}</div>
-                    </div>
-                    <div className="activity-time">{activity.time}</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                        Team communication updates
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* No service - Upsell */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3>Activity Feed Not Active</h3>
+                  <p>This client does not currently have any active projects. Start a marketing service to track project activity, tasks, and team updates.</p>
+
+                  <div className="inactive-service-actions">
+                    <button className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      Create Recommendation
+                    </button>
+                    <button className="btn btn-secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                      </svg>
+                      View Service Plans
+                    </button>
+                  </div>
+                </div>
+
+                <div className="inactive-service-info">
+                  <h4>Active Projects Include:</h4>
+                  <ul>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Real-time project activity tracking
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Task and milestone updates
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Team communication visibility
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Content approval workflows
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Project timeline overview
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* ==================== WEBSITE TAB ==================== */}
         {activeTab === 'website' && (
           <div className="website-tab-content">
-            {client.hasWebsite && client.websiteData ? (
+            {hasWebsiteProducts && hasWebsiteAccess && client.websiteData ? (
+              /* Active Website - has products AND preview URL set */
               <>
                 {/* Website Preview and Info Grid */}
                 <div className="website-hero-grid">
@@ -1218,8 +1520,43 @@ export default function ClientDetailPage() {
                   </div>
                 )}
               </>
+            ) : hasWebsiteProducts && !hasWebsiteAccess ? (
+              /* Coming Soon - has website products but no preview URL set yet */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card coming-soon">
+                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #0B7277 0%, #14B8A6 100%)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                  </div>
+                  <h3>Website Coming Soon</h3>
+                  <p>Your website service is being set up. Once the preview URL is configured, you&apos;ll be able to view and manage your website here.</p>
+                  <div className="coming-soon-checklist">
+                    <div className="checklist-item completed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Website service purchased
+                    </div>
+                    <div className="checklist-item pending">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                      </svg>
+                      Website being built
+                    </div>
+                    <div className="checklist-item pending">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                      </svg>
+                      Preview URL configuration
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              /* Inactive Website State */
+              /* Upsell - no website products purchased */
               <div className="inactive-service-container">
                 <div className="inactive-service-card">
                   <div className="inactive-service-icon">
@@ -1724,6 +2061,12 @@ export default function ClientDetailPage() {
                 General
               </button>
               <button
+                className={`modal-tab ${editModalTab === 'integrations' ? 'active' : ''}`}
+                onClick={() => setEditModalTab('integrations')}
+              >
+                Integrations
+              </button>
+              <button
                 className={`modal-tab ${editModalTab === 'billing' ? 'active' : ''}`}
                 onClick={() => setEditModalTab('billing')}
               >
@@ -1859,6 +2202,75 @@ export default function ClientDetailPage() {
                       value={editFormData.internalNotes}
                       onChange={(e) => setEditFormData({ ...editFormData, internalNotes: e.target.value })}
                     />
+                  </div>
+                </>
+              )}
+
+              {editModalTab === 'integrations' && (
+                <>
+                  <p className="form-section-desc" style={{ marginBottom: '1.5rem', color: '#6B7280' }}>
+                    Connect external services to enable features like Results dashboard and Activity feed.
+                  </p>
+
+                  <div className="form-group">
+                    <label htmlFor="agencyDashboardShareKey">Agency Dashboard Share Key</label>
+                    <input
+                      type="text"
+                      id="agencyDashboardShareKey"
+                      className="form-control"
+                      placeholder="e.g., MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM="
+                      value={editFormData.agencyDashboardShareKey}
+                      onChange={(e) => setEditFormData({ ...editFormData, agencyDashboardShareKey: e.target.value })}
+                    />
+                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                      From agencydashboard.io campaign share link. Enables the Results tab.
+                    </small>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="basecampId">Basecamp Client ID</label>
+                      <input
+                        type="text"
+                        id="basecampId"
+                        className="form-control"
+                        placeholder="e.g., 12345678"
+                        value={editFormData.basecampId}
+                        onChange={(e) => setEditFormData({ ...editFormData, basecampId: e.target.value })}
+                      />
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        Enables the Activity tab.
+                      </small>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="basecampProjectId">Basecamp Project ID</label>
+                      <input
+                        type="text"
+                        id="basecampProjectId"
+                        className="form-control"
+                        placeholder="e.g., 87654321"
+                        value={editFormData.basecampProjectId}
+                        onChange={(e) => setEditFormData({ ...editFormData, basecampProjectId: e.target.value })}
+                      />
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        For content service integration.
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="landsitePreviewUrl">Landingsite Preview URL</label>
+                    <input
+                      type="url"
+                      id="landsitePreviewUrl"
+                      className="form-control"
+                      placeholder="e.g., https://app.landingsite.ai/website-preview?id=..."
+                      value={editFormData.landsitePreviewUrl}
+                      onChange={(e) => setEditFormData({ ...editFormData, landsitePreviewUrl: e.target.value })}
+                    />
+                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                      For Seedling Site (AI-built website) preview in Website tab.
+                    </small>
                   </div>
                 </>
               )}
