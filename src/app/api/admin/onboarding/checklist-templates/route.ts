@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
       actionUrl,
       actionLabel,
       sortOrder,
+      autoCompleteQuestionId,
+      autoCompleteValues,
     } = body
 
     if (!productId || !title) {
@@ -58,6 +60,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Parse auto-complete values from comma-separated string to array
+    const autoCompleteValuesArray = autoCompleteValues
+      ? autoCompleteValues.split(',').map((v: string) => v.trim()).filter(Boolean)
+      : null
 
     // Get max sort_order for the product
     const maxSortOrder = await prisma.onboarding_checklist_templates.aggregate({
@@ -74,6 +81,8 @@ export async function POST(request: NextRequest) {
         action_url: actionUrl || null,
         action_label: actionLabel || null,
         sort_order: sortOrder ?? (maxSortOrder._max.sort_order ?? 0) + 1,
+        auto_complete_question_id: autoCompleteQuestionId || null,
+        auto_complete_values: autoCompleteValuesArray,
       },
       include: {
         product: {

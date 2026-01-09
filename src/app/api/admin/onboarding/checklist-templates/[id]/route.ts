@@ -57,7 +57,17 @@ export async function PATCH(
       actionLabel,
       sortOrder,
       isActive,
+      autoCompleteQuestionId,
+      autoCompleteValues,
     } = body
+
+    // Parse auto-complete values from comma-separated string to array
+    let autoCompleteValuesArray = undefined
+    if (autoCompleteValues !== undefined) {
+      autoCompleteValuesArray = autoCompleteValues
+        ? autoCompleteValues.split(',').map((v: string) => v.trim()).filter(Boolean)
+        : null
+    }
 
     const template = await prisma.onboarding_checklist_templates.update({
       where: { id },
@@ -70,6 +80,8 @@ export async function PATCH(
         ...(actionLabel !== undefined && { action_label: actionLabel }),
         ...(sortOrder !== undefined && { sort_order: sortOrder }),
         ...(isActive !== undefined && { is_active: isActive }),
+        ...(autoCompleteQuestionId !== undefined && { auto_complete_question_id: autoCompleteQuestionId || null }),
+        ...(autoCompleteValuesArray !== undefined && { auto_complete_values: autoCompleteValuesArray }),
         updated_at: new Date(),
       },
       include: {

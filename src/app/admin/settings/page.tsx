@@ -31,6 +31,8 @@ interface ChecklistTemplate {
   action_label: string | null
   sort_order: number
   is_active: boolean
+  auto_complete_question_id: string | null
+  auto_complete_values: string[] | null
   product: Product
 }
 
@@ -83,6 +85,8 @@ export default function AdminSettingsPage() {
     actionType: '',
     actionUrl: '',
     actionLabel: '',
+    autoCompleteQuestionId: '',
+    autoCompleteValues: '',
   })
 
   // Questions state
@@ -187,7 +191,7 @@ export default function AdminSettingsPage() {
     }
   }, [activeTab, selectedProductId])
 
-  // Fetch question templates
+  // Fetch question templates (needed for both questions tab and checklist auto-complete)
   useEffect(() => {
     async function fetchQuestionTemplates() {
       setQuestionsLoading(true)
@@ -206,7 +210,8 @@ export default function AdminSettingsPage() {
         setQuestionsLoading(false)
       }
     }
-    if (activeTab === 'questions') {
+    // Fetch for questions tab OR checklist tab (for auto-complete dropdown)
+    if (activeTab === 'questions' || activeTab === 'checklist') {
       fetchQuestionTemplates()
     }
   }, [activeTab, selectedQuestionProductId])
@@ -254,6 +259,8 @@ export default function AdminSettingsPage() {
         actionType: template.action_type || '',
         actionUrl: template.action_url || '',
         actionLabel: template.action_label || '',
+        autoCompleteQuestionId: template.auto_complete_question_id || '',
+        autoCompleteValues: template.auto_complete_values?.join(', ') || '',
       })
     }
   }
@@ -268,6 +275,8 @@ export default function AdminSettingsPage() {
       actionType: '',
       actionUrl: '',
       actionLabel: '',
+      autoCompleteQuestionId: '',
+      autoCompleteValues: '',
     })
   }
 
@@ -992,6 +1001,40 @@ export default function AdminSettingsPage() {
                           />
                         </div>
                       </div>
+                      {/* Auto-complete Section */}
+                      <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+                        <p style={{ fontSize: '0.813rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>Auto-Complete Settings</p>
+                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem' }}>Link this item to a question. If the client answers with matching values, this item will be auto-checked.</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem' }}>Link to Question</label>
+                            <select
+                              style={{ width: '100%', padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem' }}
+                              value={checklistForm.autoCompleteQuestionId}
+                              onChange={(e) => setChecklistForm({ ...checklistForm, autoCompleteQuestionId: e.target.value })}
+                            >
+                              <option value="">None (manual completion)</option>
+                              {questionTemplates
+                                .filter(q => q.product_id === checklistForm.productId)
+                                .map((q) => (
+                                  <option key={q.id} value={q.id}>{q.question_text.substring(0, 60)}{q.question_text.length > 60 ? '...' : ''}</option>
+                                ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem' }}>Auto-Check Values</label>
+                            <input
+                              type="text"
+                              style={{ width: '100%', padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem' }}
+                              value={checklistForm.autoCompleteValues}
+                              onChange={(e) => setChecklistForm({ ...checklistForm, autoCompleteValues: e.target.value })}
+                              placeholder="e.g., Yes, yes, Y"
+                              disabled={!checklistForm.autoCompleteQuestionId}
+                            />
+                            <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>Comma-separated values that trigger auto-check</span>
+                          </div>
+                        </div>
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
                         <button
                           style={{ padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#F3F4F6', color: '#374151', border: '1px solid #D1D5DB' }}
@@ -1138,6 +1181,40 @@ export default function AdminSettingsPage() {
                                           value={checklistForm.actionUrl}
                                           onChange={(e) => setChecklistForm({ ...checklistForm, actionUrl: e.target.value })}
                                         />
+                                      </div>
+                                    </div>
+                                    {/* Auto-complete Section */}
+                                    <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+                                      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>Auto-Complete Settings</p>
+                                      <p style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '0.5rem' }}>Link this item to a question. If the client answers with matching values, this item will be auto-checked.</p>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                        <div>
+                                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem', color: '#374151' }}>Link to Question</label>
+                                          <select
+                                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', background: 'white' }}
+                                            value={checklistForm.autoCompleteQuestionId}
+                                            onChange={(e) => setChecklistForm({ ...checklistForm, autoCompleteQuestionId: e.target.value })}
+                                          >
+                                            <option value="">None (manual completion)</option>
+                                            {questionTemplates
+                                              .filter(q => q.product_id === checklistForm.productId)
+                                              .map((q) => (
+                                                <option key={q.id} value={q.id}>{q.question_text.substring(0, 60)}{q.question_text.length > 60 ? '...' : ''}</option>
+                                              ))}
+                                          </select>
+                                        </div>
+                                        <div>
+                                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, marginBottom: '0.25rem', color: '#374151' }}>Auto-Check Values</label>
+                                          <input
+                                            type="text"
+                                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem' }}
+                                            value={checklistForm.autoCompleteValues}
+                                            onChange={(e) => setChecklistForm({ ...checklistForm, autoCompleteValues: e.target.value })}
+                                            placeholder="e.g., Yes, yes, Y"
+                                            disabled={!checklistForm.autoCompleteQuestionId}
+                                          />
+                                          <span style={{ fontSize: '0.65rem', color: '#9CA3AF' }}>Comma-separated values that trigger auto-check</span>
+                                        </div>
                                       </div>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
