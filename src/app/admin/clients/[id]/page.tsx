@@ -216,6 +216,8 @@ export default function ClientDetailPage() {
   // Checklist state
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
   const [checklistLoading, setChecklistLoading] = useState(false)
+  const [syncingChecklist, setSyncingChecklist] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   // Handle saving client changes
   const handleSaveClient = async () => {
@@ -320,6 +322,39 @@ export default function ClientDetailPage() {
       }
     } catch (error) {
       console.error('Failed to toggle checklist item:', error)
+    }
+  }
+
+  // Sync checklist items with onboarding responses
+  const handleSyncChecklist = async () => {
+    setSyncingChecklist(true)
+    setSyncMessage(null)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/checklist/sync`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Refresh the checklist
+        const refreshRes = await fetch(`/api/admin/clients/${clientId}/checklist`)
+        if (refreshRes.ok) {
+          setChecklistItems(await refreshRes.json())
+        }
+        // Show result message
+        if (data.synced > 0) {
+          setSyncMessage(`${data.synced} item${data.synced > 1 ? 's' : ''} synced`)
+        } else {
+          setSyncMessage('All synced')
+        }
+        // Clear message after 3 seconds
+        setTimeout(() => setSyncMessage(null), 3000)
+      }
+    } catch (error) {
+      console.error('Failed to sync checklist:', error)
+      setSyncMessage('Sync failed')
+      setTimeout(() => setSyncMessage(null), 3000)
+    } finally {
+      setSyncingChecklist(false)
     }
   }
 
@@ -568,30 +603,48 @@ export default function ClientDetailPage() {
         {activeTab === 'getting-started' && (
           <>
             {/* Getting Started Sub-tabs */}
-            <div className="getting-started-subtabs">
-              <button
-                className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
-                onClick={() => setActiveSubtab('checklist')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                Checklist
-              </button>
-              <button
-                className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
-                onClick={() => setActiveSubtab('onboarding-summary')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                Onboarding Summary
-              </button>
+            <div className="getting-started-subtabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
+                  onClick={() => setActiveSubtab('checklist')}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  Checklist
+                </button>
+                <button
+                  className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
+                  onClick={() => setActiveSubtab('onboarding-summary')}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Onboarding Summary
+                </button>
+              </div>
+              {activeSubtab === 'checklist' && (
+                <button
+                  onClick={handleSyncChecklist}
+                  disabled={syncingChecklist || !!syncMessage}
+                  className="getting-started-subtab"
+                  title="Re-sync checklist with onboarding responses"
+                  style={{ opacity: syncingChecklist ? 0.6 : 1 }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  {syncMessage || (syncingChecklist ? 'Syncing...' : 'Sync')}
+                </button>
+              )}
             </div>
 
             {/* Checklist Tab Content */}
