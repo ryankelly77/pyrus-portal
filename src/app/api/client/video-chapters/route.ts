@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server'
-import { Pool } from 'pg'
-
-async function getPool() {
-  const connectionString = process.env.DATABASE_URL
-  return new Pool({ connectionString, ssl: { rejectUnauthorized: false } })
-}
+import { dbPool } from '@/lib/prisma'
 
 // GET - Fetch all active video chapters (client-facing, no auth required)
 export async function GET() {
-  const pool = await getPool()
-
   try {
-    const result = await pool.query(`
+    const result = await dbPool.query(`
       SELECT id, title, description, video_url, sort_order
       FROM onboarding_video_chapters
       WHERE is_active = true
@@ -22,7 +15,5 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching video chapters:', error)
     return NextResponse.json({ error: 'Failed to fetch video chapters' }, { status: 500 })
-  } finally {
-    await pool.end()
   }
 }
