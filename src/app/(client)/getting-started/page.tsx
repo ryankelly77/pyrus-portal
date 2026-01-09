@@ -34,6 +34,13 @@ interface OnboardingResponse {
   }
 }
 
+interface VideoChapter {
+  id: string
+  title: string
+  description: string
+  videoUrl: string
+}
+
 interface OnboardingData {
   client: {
     id: string
@@ -71,6 +78,33 @@ export default function GettingStartedPage() {
     initials: mockClient.initials,
     primaryContact: mockClient.primaryContact,
   })
+  const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
+  const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
+
+  // Fetch video chapters
+  useEffect(() => {
+    async function fetchVideoChapters() {
+      try {
+        const res = await fetch('/api/admin/onboarding/video-chapters')
+        if (res.ok) {
+          const data = await res.json()
+          const chapters = data.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
+            id: c.id,
+            title: c.title,
+            description: c.description || '',
+            videoUrl: c.video_url || ''
+          })).filter((c: VideoChapter) => c.videoUrl) // Only show chapters with videos
+          setVideoChapters(chapters)
+          if (chapters.length > 0) {
+            setActiveVideoChapter(chapters[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch video chapters:', error)
+      }
+    }
+    fetchVideoChapters()
+  }, [])
 
   // Fetch onboarding data
   useEffect(() => {
@@ -238,25 +272,62 @@ export default function GettingStartedPage() {
               </div>
             </div>
             <div>
-              <div className="sidebar-card">
+              <div className="sidebar-card video-sidebar">
                 <h4>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="23 7 16 12 23 17 23 7"></polygon>
                     <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                   </svg>
-                  Getting Started Video
+                  Getting Started Videos
                 </h4>
-                <div className="video-container">
-                  <div className="video-placeholder">
-                    <div className="video-play-btn">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
+                {videoChapters.length > 0 ? (
+                  <>
+                    <div className="video-player-wrapper">
+                      {(() => {
+                        const activeChapter = videoChapters.find(c => c.id === activeVideoChapter)
+                        return activeChapter?.videoUrl ? (
+                          <iframe
+                            src={activeChapter.videoUrl}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                            allowFullScreen
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: '8px' }}
+                          />
+                        ) : null
+                      })()}
                     </div>
-                    <span className="video-duration">2:45</span>
+                    <div className="video-chapter-list">
+                      {videoChapters.map((chapter, index) => (
+                        <button
+                          key={chapter.id}
+                          className={`video-chapter-btn ${activeVideoChapter === chapter.id ? 'active' : ''}`}
+                          onClick={() => setActiveVideoChapter(chapter.id)}
+                        >
+                          <span className="chapter-num">{index + 1}</span>
+                          <div className="chapter-info">
+                            <span className="chapter-title">{chapter.title}</span>
+                            <span className="chapter-desc">{chapter.description}</span>
+                          </div>
+                          {activeVideoChapter === chapter.id && (
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" className="chapter-playing">
+                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="video-container">
+                    <div className="video-placeholder">
+                      <div className="video-play-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="video-caption">Videos coming soon! Learn how to navigate your portal and get the most from your marketing partnership.</p>
                   </div>
-                  <p className="video-caption">Learn how to navigate your portal, track results, and get the most from your marketing partnership.</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -361,6 +432,96 @@ export default function GettingStartedPage() {
 
         .summary-field.full-width {
           grid-column: 1 / -1;
+        }
+
+        /* Video Sidebar Styles */
+        .video-sidebar h4 {
+          margin-bottom: 1rem;
+        }
+
+        .video-player-wrapper {
+          position: relative;
+          padding-top: 56.25%;
+          background: #000;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 1rem;
+        }
+
+        .video-chapter-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .video-chapter-btn {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding: 0.75rem;
+          background: none;
+          border: 1px solid transparent;
+          border-radius: 8px;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.15s;
+          width: 100%;
+        }
+
+        .video-chapter-btn:hover {
+          background: #F5F7F6;
+        }
+
+        .video-chapter-btn.active {
+          background: rgba(50, 68, 56, 0.08);
+          border-color: rgba(50, 68, 56, 0.2);
+        }
+
+        .chapter-num {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #E8EDEA;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #5A6358;
+          flex-shrink: 0;
+        }
+
+        .video-chapter-btn.active .chapter-num {
+          background: #324438;
+          color: white;
+        }
+
+        .chapter-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .chapter-title {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #1A1F16;
+          margin-bottom: 0.125rem;
+        }
+
+        .chapter-desc {
+          display: block;
+          font-size: 0.75rem;
+          color: #5A6358;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .chapter-playing {
+          color: #324438;
+          flex-shrink: 0;
+          margin-top: 0.25rem;
         }
       `}</style>
     </>

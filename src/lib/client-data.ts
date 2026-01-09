@@ -119,6 +119,19 @@ export const clients: Record<string, ClientData> = {
     hasWebsite: true,
     hasContent: true,
   },
+  'ruger': {
+    id: 'ruger',
+    name: 'Ruger',
+    initials: 'RU',
+    avatarColor: '#059669',
+    email: 'contact@ruger.com',
+    primaryContact: 'Ruger Team',
+    clientSince: 'Jan 2026',
+    status: 'active',
+    servicesCount: 5,
+    hasWebsite: false,
+    hasContent: false,
+  },
 }
 
 export function getClient(id: string): ClientData {

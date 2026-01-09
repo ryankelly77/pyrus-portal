@@ -20,6 +20,7 @@ interface BundleProduct {
 
 interface CartItem {
   id: string
+  productId?: string
   name: string
   description: string
   quantity: number
@@ -31,6 +32,7 @@ interface CartItem {
   fullPrice?: number
   isFree?: boolean
   freeQuantity?: number
+  supportsQuantity?: boolean
 }
 
 interface DBClient {
@@ -143,6 +145,24 @@ export default function CheckoutPage() {
   const removeCoupon = () => {
     setAppliedCoupon(null)
     // Mark that we need to refresh the payment intent (but keep form expanded)
+    setClientSecret(null)
+  }
+
+  // Update item quantity
+  const updateItemQuantity = (itemId: string, delta: number) => {
+    setCartItems(prev => {
+      const updated = prev.map(item => {
+        if (item.id === itemId) {
+          const newQty = Math.max(1, item.quantity + delta)
+          return { ...item, quantity: newQty }
+        }
+        return item
+      })
+      // Update sessionStorage
+      sessionStorage.setItem(`checkout_${clientId}_${tier}`, JSON.stringify(updated))
+      return updated
+    })
+    // Reset payment intent since total changed
     setClientSecret(null)
   }
 
@@ -267,6 +287,27 @@ export default function CheckoutPage() {
     // Note: Don't clear cart from sessionStorage yet - onboarding page needs it
     // sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
 
+    // Create subscription record in database
+    try {
+      const subscriptionRes = await fetch('/api/admin/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId,
+          items: cartItems,
+          tier,
+          totalMonthly: monthlyTotal,
+          userName: 'Ryan Kelly',
+          userRole: 'Super Admin',
+        }),
+      })
+      if (!subscriptionRes.ok) {
+        console.error('Failed to create subscription record')
+      }
+    } catch (error) {
+      console.error('Failed to create subscription:', error)
+    }
+
     // Update client's growth stage to "seedling"
     try {
       await fetch(`/api/admin/clients/${clientId}`, {
@@ -291,6 +332,39 @@ export default function CheckoutPage() {
     setIsProcessing(true)
     try {
       await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Create subscription record in database
+      try {
+        const subscriptionRes = await fetch('/api/admin/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId,
+            items: cartItems,
+            tier,
+            totalMonthly: monthlyTotal,
+            userName: 'Ryan Kelly',
+            userRole: 'Super Admin',
+          }),
+        })
+        if (!subscriptionRes.ok) {
+          console.error('Failed to create subscription record')
+        }
+      } catch (error) {
+        console.error('Failed to create subscription:', error)
+      }
+
+      // Update client's growth stage
+      try {
+        await fetch(`/api/admin/clients/${clientId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ growthStage: 'seedling' }),
+        })
+      } catch (error) {
+        console.error('Failed to update client stage:', error)
+      }
+
       // Don't clear sessionStorage yet - onboarding needs it
       router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
     } catch (error) {
@@ -426,6 +500,10 @@ export default function CheckoutPage() {
                     const bundleSavings = isBundle && item.fullPrice ? item.fullPrice - item.monthlyPrice : 0
                     const freeQty = item.freeQuantity || 0
                     const paidQty = item.quantity - freeQty
+                    // Check if item supports quantity adjustment (from product.supports_quantity field)
+                    // Fallback to name check for Content Writing if supportsQuantity not explicitly set
+                    const canAdjustQuantity = item.supportsQuantity === true ||
+                      (item.supportsQuantity === undefined && item.name.toLowerCase().includes('content writing'))
 
                     // Determine price display
                     let priceDisplay: React.ReactNode
@@ -454,8 +532,34 @@ export default function CheckoutPage() {
                       <div key={item.id} className={`checkout-item${isBundle ? ' is-bundle' : ''}${item.isFree ? ' is-free' : ''}`}>
                         <div className="checkout-item-info">
                           <span className="item-name">{item.name}</span>
-                          {item.quantity > 1 && !item.isFree && freeQty === 0 && (
-                            <span className="item-quantity">x{item.quantity}</span>
+                          {canAdjustQuantity ? (
+                            <div className="item-quantity-controls">
+                              <button
+                                type="button"
+                                className="qty-btn"
+                                onClick={() => updateItemQuantity(item.id, -1)}
+                                disabled={item.quantity <= 1}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                              </button>
+                              <span className="qty-value">{item.quantity}</span>
+                              <button
+                                type="button"
+                                className="qty-btn"
+                                onClick={() => updateItemQuantity(item.id, 1)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            item.quantity > 1 && !item.isFree && freeQty === 0 && (
+                              <span className="item-quantity">x{item.quantity}</span>
+                            )
                           )}
                         </div>
                         <div className="checkout-item-price">

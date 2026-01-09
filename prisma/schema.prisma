@@ -37,6 +37,7 @@ model clients {
   subscriptions        subscriptions[]
   checklist_items      client_checklist_items[]
   onboarding_responses client_onboarding_responses[]
+  communications       client_communications[]
 }
 
 model profiles {
@@ -217,18 +218,32 @@ model recommendations {
   total_onetime    Decimal?  @db.Decimal
   discount_applied Decimal?  @default(0) @db.Decimal
   reward_tier_id   String?   @db.Uuid
+  purchased_tier   String?   // 'good', 'better', 'best'
+  purchased_at     DateTime? @db.Timestamptz(6)
   notes            String?
   sent_at          DateTime? @db.Timestamptz(6)
   responded_at     DateTime? @db.Timestamptz(6)
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamptz(6)
 
-  client               clients                  @relation(fields: [client_id], references: [id])
-  creator              profiles?                @relation(fields: [created_by], references: [id])
-  reward_tier          reward_tiers?            @relation(fields: [reward_tier_id], references: [id])
+  client               clients                    @relation(fields: [client_id], references: [id])
+  creator              profiles?                  @relation(fields: [created_by], references: [id])
+  reward_tier          reward_tiers?              @relation(fields: [reward_tier_id], references: [id])
   recommendation_items recommendation_items[]
   recommendation_invites recommendation_invites[]
   subscriptions        subscriptions[]
+  history              recommendation_history[]
+}
+
+model recommendation_history {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recommendation_id String    @db.Uuid
+  action            String    // 'created', 'updated', 'sent', 'purchased', 'item_added', 'item_removed', 'tier_changed'
+  details           String?   // JSON or text description of changes
+  created_by        String?   @db.Uuid
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+
+  recommendation recommendations @relation(fields: [recommendation_id], references: [id], onDelete: Cascade)
 }
 
 model recommendation_items {
@@ -237,6 +252,7 @@ model recommendation_items {
   product_id        String?   @db.Uuid
   bundle_id         String?   @db.Uuid
   addon_id          String?   @db.Uuid
+  tier              String?   // 'good', 'better', 'best'
   quantity          Int?      @default(1)
   monthly_price     Decimal?  @db.Decimal
   onetime_price     Decimal?  @db.Decimal
@@ -295,9 +311,10 @@ model subscriptions {
   created_at             DateTime? @default(now()) @db.Timestamptz(6)
   updated_at             DateTime? @default(now()) @db.Timestamptz(6)
 
-  client             clients              @relation(fields: [client_id], references: [id])
-  recommendation     recommendations?     @relation(fields: [recommendation_id], references: [id])
-  subscription_items subscription_items[]
+  client               clients                @relation(fields: [client_id], references: [id])
+  recommendation       recommendations?       @relation(fields: [recommendation_id], references: [id])
+  subscription_items   subscription_items[]
+  subscription_history subscription_history[]
 }
 
 model subscription_items {
@@ -313,6 +330,17 @@ model subscription_items {
   subscription subscriptions @relation(fields: [subscription_id], references: [id])
   product      products?     @relation(fields: [product_id], references: [id])
   bundle       bundles?      @relation(fields: [bundle_id], references: [id])
+}
+
+model subscription_history {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id String    @db.Uuid
+  action          String    // 'created', 'service_added', 'service_removed', 'billing_updated', 'status_changed'
+  details         String?   // Description of changes
+  created_by      String?   @db.Uuid
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+
+  subscription subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
 }
 
 // ============ Activity & Notifications ============
@@ -445,4 +473,50 @@ model client_onboarding_responses {
   question onboarding_question_templates @relation(fields: [question_id], references: [id], onDelete: Cascade)
 
   @@unique([client_id, question_id])
+}
+
+// ============ Communications ============
+
+model client_communications {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id        String    @db.Uuid
+  // Communication type: 'email_invite', 'email_reminder', 'email_general', 'result_alert',
+  // 'chat', 'monthly_report', 'content_approval', 'task_complete', 'meeting', 'call'
+  comm_type        String
+  // Title/subject of the communication
+  title            String
+  // Optional subject line (for emails)
+  subject          String?
+  // Body content or description
+  body             String?
+  // Delivery status: 'sent', 'delivered', 'opened', 'clicked', 'failed', 'bounced'
+  status           String?   @default("sent")
+  // For result alerts - extra data like keyword position, traffic milestone
+  metadata         Json?
+  // Whether this is a highlight (success or failure)
+  highlight_type   String?   // 'success' | 'failed' | null
+  // Recipient email (for emails)
+  recipient_email  String?
+  // When the communication was opened/viewed
+  opened_at        DateTime? @db.Timestamptz(6)
+  // When a link was clicked
+  clicked_at       DateTime? @db.Timestamptz(6)
+  // When it was sent
+  sent_at          DateTime? @default(now()) @db.Timestamptz(6)
+  // Who created/sent this communication
+  created_by       String?   @db.Uuid
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+}
+
+model onboarding_video_chapters {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String?
+  video_url   String?
+  sort_order  Int       @default(0)
+  is_active   Boolean   @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
 }

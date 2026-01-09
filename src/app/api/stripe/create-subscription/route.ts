@@ -20,11 +20,12 @@ interface CartItem {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { clientId, items, couponCode, recommendationId } = body as {
+    const { clientId, items, couponCode, recommendationId, selectedTier } = body as {
       clientId: string
       items: CartItem[]
       couponCode?: string
       recommendationId?: string
+      selectedTier?: string  // 'good', 'better', 'best'
     }
 
     if (!clientId || !items || items.length === 0) {
@@ -80,10 +81,18 @@ export async function POST(request: NextRequest) {
       stripeCustomerId = customer.id
 
       // Save Stripe customer ID to database
-      await prisma.clients.update({
-        where: { id: clientId },
-        data: { stripe_customer_id: stripeCustomerId }
-      })
+      try {
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: { stripe_customer_id: stripeCustomerId }
+        })
+        console.log(`Saved Stripe customer ${stripeCustomerId} for client ${clientId}`)
+      } catch (saveError) {
+        console.error(`Failed to save Stripe customer ID for client ${clientId}:`, saveError)
+        // Continue with checkout - customer was created in Stripe
+      }
+    } else {
+      console.log(`Reusing existing Stripe customer ${stripeCustomerId} for client ${clientId}`)
     }
 
     // Get or create coupon if provided
@@ -123,6 +132,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         pyrus_client_id: clientId,
         recommendation_id: recommendationId || '',
+        selected_tier: selectedTier || '',
       },
     }
 

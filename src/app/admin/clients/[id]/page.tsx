@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
 // Helper to generate initials from name (same as Clients page)
@@ -93,6 +93,94 @@ interface OnboardingResponse {
 
 interface OnboardingSummary {
   [section: string]: OnboardingResponse[]
+}
+
+interface RecommendationItem {
+  id: string
+  tier: string | null  // 'good', 'better', 'best', or null
+  monthly_price: string | null
+  onetime_price: string | null
+  is_free: boolean | null
+  product: {
+    id: string
+    name: string
+    category: string
+    monthly_price: string | null
+    onetime_price: string | null
+    short_description: string | null
+  } | null
+  bundle: {
+    id: string
+    name: string
+    description: string | null
+    monthly_price: string | null
+    onetime_price: string | null
+  } | null
+  addon: {
+    id: string
+    name: string
+    description: string | null
+    price: string | null
+  } | null
+}
+
+interface RecommendationHistory {
+  id: string
+  action: string
+  details: string | null
+  created_at: string
+  created_by: string | null
+}
+
+interface Recommendation {
+  id: string
+  status: string
+  good_description: string | null
+  better_description: string | null
+  best_description: string | null
+  discount_applied: string | null
+  purchased_tier: string | null
+  purchased_at: string | null
+  recommendation_items: RecommendationItem[]
+  history?: RecommendationHistory[]
+}
+
+interface SubscriptionItem {
+  id: string
+  quantity: number | null
+  unit_amount: string | null
+  product: {
+    id: string
+    name: string
+    category: string
+    short_description: string | null
+    monthly_price: string | null
+  } | null
+  bundle: {
+    id: string
+    name: string
+    description: string | null
+    monthly_price: string | null
+  } | null
+}
+
+interface SubscriptionHistory {
+  id: string
+  action: string
+  details: string | null
+  created_at: string | null
+  created_by: string | null
+}
+
+interface Subscription {
+  id: string
+  status: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  monthly_amount: string | null
+  created_at: string | null
+  subscription_items: SubscriptionItem[]
+  subscription_history?: SubscriptionHistory[]
 }
 
 interface ClientData {
@@ -195,10 +283,12 @@ const clients: Record<string, ClientData> = {
 
 type GettingStartedSubtab = 'checklist' | 'onboarding-summary'
 type ResultsSubtab = 'overview' | 'pro-dashboard'
+type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'current-services'
 type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
 
 export default function ClientDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const clientId = params.id as string
 
   // Database client state
@@ -208,6 +298,7 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState<MainTab>('getting-started')
   const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('checklist')
   const [resultsSubtab, setResultsSubtab] = useState<ResultsSubtab>('overview')
+  const [recommendationsSubtab, setRecommendationsSubtab] = useState<RecommendationsSubtab>('original-plan')
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
   const [isClientView, setIsClientView] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -248,6 +339,59 @@ export default function ClientDetailPage() {
   // Onboarding summary state
   const [onboardingSummary, setOnboardingSummary] = useState<OnboardingSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
+
+  // Recommendation state
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
+  const [recommendationLoading, setRecommendationLoading] = useState(false)
+
+  // Subscription state
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
+
+  // Content state
+  const [contentStats, setContentStats] = useState<{
+    urgentReviews: number
+    pendingApproval: number
+    approved: number
+    published: number
+  } | null>(null)
+  const [contentSubtab, setContentSubtab] = useState<'review' | 'files'>('review')
+  const [showContentRequirementsModal, setShowContentRequirementsModal] = useState(false)
+
+  // Content upsell state
+  interface ContentProduct {
+    id: string
+    name: string
+    short_description: string | null
+    long_description: string | null
+    category: string
+    monthly_price: string | null
+    onetime_price: string | null
+    supports_quantity: boolean | null
+  }
+  const [availableContentProducts, setAvailableContentProducts] = useState<ContentProduct[]>([])
+  const [showProductModal, setShowProductModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<ContentProduct | null>(null)
+
+  // Communications state
+  interface Communication {
+    id: string
+    clientId: string
+    type: string  // 'email_invite', 'email_reminder', 'result_alert', 'chat', 'monthly_report', etc.
+    title: string
+    subject: string | null
+    body: string | null
+    status: string | null  // 'sent', 'delivered', 'opened', 'clicked', 'failed', 'bounced'
+    metadata: Record<string, any> | null
+    highlightType: string | null  // 'success' | 'failed' | null
+    recipientEmail: string | null
+    openedAt: string | null
+    clickedAt: string | null
+    sentAt: string | null
+    createdAt: string | null
+  }
+  const [communications, setCommunications] = useState<Communication[]>([])
+  const [communicationsLoading, setCommunicationsLoading] = useState(false)
 
   // Handle saving client changes
   const handleSaveClient = async () => {
@@ -365,6 +509,115 @@ export default function ClientDetailPage() {
     fetchOnboardingSummary()
   }, [clientId])
 
+  // Fetch recommendation data
+  useEffect(() => {
+    const fetchRecommendation = async () => {
+      setRecommendationLoading(true)
+      try {
+        const res = await fetch(`/api/admin/recommendations/client/${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setRecommendation(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommendation:', error)
+      } finally {
+        setRecommendationLoading(false)
+      }
+    }
+    fetchRecommendation()
+  }, [clientId])
+
+  // Fetch subscription data
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      setSubscriptionsLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/subscriptions`)
+        if (res.ok) {
+          const data = await res.json()
+          setSubscriptions(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscriptions:', error)
+      } finally {
+        setSubscriptionsLoading(false)
+      }
+    }
+    fetchSubscriptions()
+  }, [clientId])
+
+  // Fetch content stats
+  useEffect(() => {
+    const fetchContentStats = async () => {
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/content-stats`)
+        if (res.ok) {
+          const data = await res.json()
+          setContentStats(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch content stats:', error)
+      }
+    }
+    fetchContentStats()
+  }, [clientId])
+
+  // Fetch available content products for upsell
+  useEffect(() => {
+    const fetchContentProducts = async () => {
+      try {
+        const res = await fetch(`/api/admin/products/content?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAvailableContentProducts(data.available || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch content products:', error)
+      }
+    }
+    fetchContentProducts()
+  }, [clientId, subscriptions])
+
+  // Fetch communications
+  useEffect(() => {
+    const fetchCommunications = async () => {
+      setCommunicationsLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/communications`)
+        if (res.ok) {
+          const data = await res.json()
+          setCommunications(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch communications:', error)
+      } finally {
+        setCommunicationsLoading(false)
+      }
+    }
+    fetchCommunications()
+  }, [clientId])
+
+  // Handle adding a product to the plan
+  const handleAddProductToPlan = (product: ContentProduct) => {
+    const cartItem = {
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      description: product.short_description || '',
+      quantity: 1,
+      monthlyPrice: Number(product.monthly_price) || 0,
+      onetimePrice: Number(product.onetime_price) || 0,
+      pricingType: 'monthly' as const,
+      category: 'product',
+      supportsQuantity: product.supports_quantity || false,
+    }
+
+    // Store in sessionStorage and navigate to checkout
+    sessionStorage.setItem(`checkout_${clientId}_addon`, JSON.stringify([cartItem]))
+    router.push(`/admin/checkout/${clientId}?tier=addon`)
+  }
+
   // Toggle checklist item completion
   const handleChecklistToggle = async (itemId: string, isCompleted: boolean) => {
     try {
@@ -417,6 +670,59 @@ export default function ClientDetailPage() {
     }
   }
 
+  // Content upsell products - matched to database
+  const contentUpsellProducts = {
+    contentWriting: {
+      id: '9c1028ad-0eb0-45ad-8896-9f186a165034',
+      name: 'Content Writing',
+      description: 'SEO and AI-optimized content up to 1,000 words for your blog or website.',
+      monthlyPrice: 99,
+      onetimePrice: 0,
+      pricingType: 'monthly' as const,
+      category: 'growth',
+    },
+    aiCreativeAssets: {
+      id: '1d16c9f5-2311-4082-96e0-29c436fd1064',
+      name: 'AI Creative Assets',
+      description: 'A monthly package of custom visuals to fuel your social media, ads, and website.',
+      monthlyPrice: 299,
+      onetimePrice: 0,
+      pricingType: 'monthly' as const,
+      category: 'growth',
+    },
+    businessBranding: {
+      id: 'e1716d43-4453-4197-941c-35e412bc004a',
+      name: 'Business Branding Foundation',
+      description: 'The strategic foundation every business needs. Four essential documents that guide all your marketing efforts.',
+      monthlyPrice: 99,
+      onetimePrice: 899,
+      pricingType: 'monthly' as const,
+      category: 'root',
+    },
+  }
+
+  // Handler for adding upsell item to cart and navigating to checkout
+  const handleAddToCart = (productKey: keyof typeof contentUpsellProducts, pricingType: 'monthly' | 'onetime' = 'monthly') => {
+    const product = contentUpsellProducts[productKey]
+    const cartItem = {
+      id: product.id,
+      productId: product.id, // Required for onboarding form to find questions
+      name: product.name,
+      description: product.description,
+      quantity: 1,
+      monthlyPrice: product.monthlyPrice,
+      onetimePrice: product.onetimePrice,
+      pricingType: pricingType,
+      category: product.category,
+    }
+
+    // Store in sessionStorage for checkout page
+    sessionStorage.setItem(`checkout_${clientId}_upsell`, JSON.stringify([cartItem]))
+
+    // Navigate to checkout
+    router.push(`/admin/checkout/${clientId}?tier=upsell`)
+  }
+
   // Derived client data from database or fallback
   const isActiveClient = dbClient && dbClient.growth_stage && dbClient.growth_stage !== 'prospect'
 
@@ -425,17 +731,41 @@ export default function ClientDetailPage() {
   const hasActivityAccess = !!dbClient?.basecamp_id
   const hasWebsiteAccess = !!dbClient?.landingsite_preview_url
 
-  // Check purchased products from checklist items
-  const purchasedProductNames = Array.from(new Set(checklistItems.map(item => item.product.name.toLowerCase())))
-  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'website care plan', 'wordpress care plan']
-  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing']
+  // Check purchased products from ACTIVE subscriptions only
+  const activeSubscriptionProducts = Array.from(new Set(
+    subscriptions
+      .filter(sub => sub.status === 'active' && sub.subscription_items.length > 0)
+      .flatMap(sub => sub.subscription_items)
+      .map(item => (item.product?.name || item.bundle?.name || '').toLowerCase())
+      .filter(Boolean)
+  ))
 
-  const hasWebsiteProducts = purchasedProductNames.some(name =>
+  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'website care plan', 'wordpress care plan']
+  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation']
+
+  const hasWebsiteProducts = activeSubscriptionProducts.some(name =>
     websiteProducts.some(wp => name.includes(wp))
   )
-  const hasContentProducts = purchasedProductNames.some(name =>
+  const hasContentProducts = activeSubscriptionProducts.some(name =>
     contentProducts.some(cp => name.includes(cp))
   )
+
+  // Recommendation state - determines which template to show
+  const hasActiveSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
+  const activeSubscriptions = subscriptions.filter(s => s.status === 'active' && s.subscription_items.length > 0)
+  const firstPurchaseDate = activeSubscriptions.length > 0
+    ? activeSubscriptions.reduce((oldest, sub) =>
+        new Date(sub.created_at || '') < new Date(oldest.created_at || '') ? sub : oldest
+      ).created_at
+    : null
+  const daysSincePurchase = firstPurchaseDate
+    ? Math.floor((new Date().getTime() - new Date(firstPurchaseDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0
+  const daysUntilSmartRec = Math.max(0, 90 - daysSincePurchase)
+  // 'pending' = not purchased, 'purchased' = purchased but < 90 days, 'smart_available' = 90+ days
+  const recommendationState: 'pending' | 'purchased' | 'smart_available' =
+    !hasActiveSubscriptions ? 'pending' :
+    daysSincePurchase >= 90 ? 'smart_available' : 'purchased'
 
   // Generate website data only when preview URL is available in database
   const realWebsiteData = hasWebsiteAccess && dbClient ? {
@@ -628,9 +958,44 @@ export default function ClientDetailPage() {
               <div className="client-details">
                 <h1>
                   {client.name}
-                  <span className={`status-badge ${client.status}`}>{client.status.charAt(0).toUpperCase() + client.status.slice(1)}</span>
+                  {(() => {
+                    const hasActiveSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
+                    const displayStatus = hasActiveSubscriptions ? 'active' : 'pending'
+                    return (
+                      <span className={`status-badge ${displayStatus}`}>
+                        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+                      </span>
+                    )
+                  })()}
                 </h1>
-                <p className="client-meta">{client.email} • Client since {client.clientSince} • <Link href="#current-services" className="services-link">{client.servicesCount} services</Link></p>
+                <p className="client-meta">
+                  {client.email}
+                  {(() => {
+                    const activeSubscriptions = subscriptions.filter(s => s.status === 'active' && s.subscription_items.length > 0)
+                    if (activeSubscriptions.length > 0) {
+                      const oldestSub = activeSubscriptions.reduce((oldest, sub) =>
+                        new Date(sub.created_at) < new Date(oldest.created_at) ? sub : oldest
+                      )
+                      const date = new Date(oldestSub.created_at)
+                      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                      return ` • Client since ${monthYear}`
+                    } else if (dbClient?.created_at) {
+                      const date = new Date(dbClient.created_at)
+                      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                      return ` • Prospect since ${monthYear}`
+                    }
+                    return ''
+                  })()}
+                  {' • '}
+                  <span
+                    className="services-link"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      setActiveTab('recommendations')
+                      setRecommendationsSubtab('current-services')
+                    }}
+                  >{subscriptions.flatMap(s => s.subscription_items).length} services</span>
+                </p>
               </div>
             </div>
             <div className="header-actions">
@@ -678,11 +1043,13 @@ export default function ClientDetailPage() {
           </button>
           <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>
             Content
-            {hasContentProducts && !hasActivityAccess && <span className="tab-badge coming-soon">Coming Soon</span>}
             {!hasContentProducts && <span className="tab-badge inactive">Inactive</span>}
           </button>
+          <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>
+            Recommendations
+            {recommendationState !== 'smart_available' && <span className="tab-badge coming-soon">Coming Soon</span>}
+          </button>
           <button className={`tab-btn ${activeTab === 'communication' ? 'active' : ''}`} onClick={() => setActiveTab('communication')}>Communication</button>
-          <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>Recommendations</button>
         </div>
 
         {/* ==================== GETTING STARTED TAB ==================== */}
@@ -1850,42 +2217,221 @@ export default function ClientDetailPage() {
                 </div>
               </>
             ) : hasContentProducts && !hasActivityAccess ? (
-              /* Coming Soon - has content products but no Basecamp configured */
-              <div className="inactive-service-container">
-                <div className="inactive-service-card coming-soon">
-                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
+              /* Content Purchased - show active state with placeholder data */
+              <>
+                {/* Content Stats - matching prototype exactly */}
+                <div className="content-stats">
+                  <div className={`content-stat-card ${contentStats?.urgentReviews ? 'urgent' : ''}`}>
+                    <div className="stat-label">Urgent Reviews</div>
+                    <div className="stat-value">{contentStats?.urgentReviews ?? '--'}</div>
+                    <div className="stat-desc">Less than 24 hours</div>
                   </div>
-                  <h3>Content Coming Soon</h3>
-                  <p>Your content service is being set up. Once your Basecamp project is connected, you&apos;ll be able to review and approve content here.</p>
-                  <div className="coming-soon-checklist">
-                    <div className="checklist-item completed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                      Content service purchased
-                    </div>
-                    <div className="checklist-item pending">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                      </svg>
-                      Basecamp project setup
-                    </div>
-                    <div className="checklist-item pending">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                      </svg>
-                      Content calendar creation
-                    </div>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Pending Approval</div>
+                    <div className="stat-value">{contentStats?.pendingApproval ?? '--'}</div>
+                    <div className="stat-desc">Awaiting your review</div>
+                  </div>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Approved</div>
+                    <div className="stat-value">{contentStats?.approved ?? '--'}</div>
+                    <div className="stat-desc">Ready for publishing</div>
+                  </div>
+                  <div className="content-stat-card">
+                    <div className="stat-label">Published</div>
+                    <div className="stat-value">{contentStats?.published ?? '--'}</div>
+                    <div className="stat-desc">Live content</div>
                   </div>
                 </div>
-              </div>
+
+                {/* Content Actions Bar - matching prototype */}
+                <div className="content-actions-bar" style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary" onClick={() => setShowContentRequirementsModal(true)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                      View Content Requirements
+                    </button>
+                    <div className="content-plan-inline">
+                      <span className="plan-inline-label">Your Plan:</span>
+                      {(() => {
+                        const contentItems = subscriptions.flatMap(sub => sub.subscription_items)
+                          .filter(item => {
+                            const name = (item.product?.name || item.bundle?.name || '').toLowerCase()
+                            return contentProducts.some(cp => name.includes(cp))
+                          })
+                        // Combine items with same name and sum quantities
+                        const combinedItems: { name: string; totalQty: number }[] = []
+                        contentItems.forEach(item => {
+                          const name = item.product?.name || item.bundle?.name || ''
+                          const qty = item.quantity || 1
+                          const existing = combinedItems.find(ci => ci.name === name)
+                          if (existing) {
+                            existing.totalQty += qty
+                          } else {
+                            combinedItems.push({ name, totalQty: qty })
+                          }
+                        })
+                        return combinedItems.length > 0 ? (
+                          combinedItems.map((item, index) => {
+                            // Show quantity for Content Writing since it's configurable
+                            const displayName = item.name.toLowerCase().includes('content writing')
+                              ? `(${item.totalQty}) ${item.name}`
+                              : item.name
+                            return (
+                              <span key={item.name}>
+                                {index > 0 && <span className="plan-inline-divider">•</span>}
+                                <span className="plan-inline-item">{displayName}</span>
+                              </span>
+                            )
+                          })
+                        ) : (
+                          <span className="plan-inline-item">No content services yet</span>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  {/* Upsell buttons for products not purchased - right side */}
+                  {availableContentProducts.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {availableContentProducts.map(product => {
+                        // Determine color and icon based on product
+                        const isWriting = product.name.toLowerCase().includes('writing')
+                        const isCreative = product.name.toLowerCase().includes('creative')
+                        const isBranding = product.name.toLowerCase().includes('branding')
+
+                        const buttonStyle = isWriting
+                          ? { background: '#7C3AED', borderColor: '#7C3AED', color: 'white' }
+                          : isCreative
+                            ? { background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }
+                            : isBranding
+                              ? { background: '#0EA5E9', borderColor: '#0EA5E9', color: 'white' }
+                              : {}
+
+                        return (
+                          <button
+                            key={product.id}
+                            className="btn"
+                            style={buttonStyle}
+                            onClick={() => {
+                              setSelectedProduct(product)
+                              setShowProductModal(true)
+                            }}
+                          >
+                            {isWriting && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                              </svg>
+                            )}
+                            {isCreative && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                              </svg>
+                            )}
+                            {isBranding && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                              </svg>
+                            )}
+                            Add {product.name.replace('Business ', '').replace(' Assets', '')}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Content Tabs - matching prototype */}
+                <div className="results-subtabs">
+                  <button
+                    className={`results-subtab ${contentSubtab === 'review' ? 'active' : ''}`}
+                    onClick={() => setContentSubtab('review')}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Content Review
+                  </button>
+                  <button
+                    className={`results-subtab ${contentSubtab === 'files' ? 'active' : ''}`}
+                    onClick={() => setContentSubtab('files')}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Files
+                  </button>
+                </div>
+
+                {/* Content Review Tab */}
+                {contentSubtab === 'review' && (
+                  <>
+                    {/* Content Filters - aligned right */}
+                    <div className="content-filters" style={{ marginBottom: '1rem', justifyContent: 'flex-end' }}>
+                      <button className="btn btn-outline btn-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Search
+                      </button>
+                      <button className="btn btn-outline btn-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Sort by Date
+                      </button>
+                    </div>
+
+                    {/* Coming Soon Message */}
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
+                      <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                      </div>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>Content Coming Soon</h3>
+                      <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
+                        Your content team is getting started on your first pieces. You&apos;ll be notified when content is ready for review.
+                      </p>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#DEF7EC', color: '#03543F', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: '500' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Content service active
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Files Tab */}
+                {contentSubtab === 'files' && (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
+                    <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </div>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>No Files Yet</h3>
+                    <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
+                      Files from your content team will appear here. This includes brand assets, documents, images, and videos.
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               /* Upsell - no content products purchased */
               <div className="content-upsell-container">
@@ -2033,7 +2579,7 @@ export default function ClientDetailPage() {
                           One round of revisions
                         </li>
                       </ul>
-                      <button className="btn btn-secondary">
+                      <button className="btn btn-secondary" onClick={() => handleAddToCart('contentWriting')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2096,7 +2642,7 @@ export default function ClientDetailPage() {
                           10 curated premium stock videos
                         </li>
                       </ul>
-                      <button className="btn btn-primary">
+                      <button className="btn btn-primary" onClick={() => handleAddToCart('aiCreativeAssets')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2159,7 +2705,7 @@ export default function ClientDetailPage() {
                           Brand Color Guidelines
                         </li>
                       </ul>
-                      <button className="btn btn-secondary">
+                      <button className="btn btn-secondary" onClick={() => handleAddToCart('businessBranding')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -2178,28 +2724,42 @@ export default function ClientDetailPage() {
         {activeTab === 'communication' && (
           <div className="communication-content">
             {/* Stats Overview */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-label">Total Communications</div>
-                <div className="stat-value">11</div>
-                <div className="stat-detail">Last 30 days</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Emails Sent</div>
-                <div className="stat-value">4</div>
-                <div className="stat-detail">3 delivered, 1 failed</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Result Alerts</div>
-                <div className="stat-value purple">2</div>
-                <div className="stat-detail">Both viewed</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Email Open Rate</div>
-                <div className="stat-value success">67%</div>
-                <div className="stat-detail">2 of 3 delivered</div>
-              </div>
-            </div>
+            {(() => {
+              // Calculate stats from communications
+              const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+              const emails = communications.filter(c => emailTypes.includes(c.type))
+              const deliveredEmails = emails.filter(c => c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const failedEmails = emails.filter(c => c.status === 'failed' || c.status === 'bounced')
+              const resultAlerts = communications.filter(c => c.type === 'result_alert')
+              const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened')
+              const openedEmails = emails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              const openRate = deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0
+
+              return (
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <div className="stat-label">Total Communications</div>
+                    <div className="stat-value">{communications.length}</div>
+                    <div className="stat-detail">All time</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Emails Sent</div>
+                    <div className="stat-value">{emails.length}</div>
+                    <div className="stat-detail">{deliveredEmails.length} delivered{failedEmails.length > 0 ? `, ${failedEmails.length} failed` : ''}</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Result Alerts</div>
+                    <div className="stat-value purple">{resultAlerts.length}</div>
+                    <div className="stat-detail">{viewedAlerts.length === resultAlerts.length && resultAlerts.length > 0 ? 'All viewed' : `${viewedAlerts.length} viewed`}</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Email Open Rate</div>
+                    <div className="stat-value success">{openRate}%</div>
+                    <div className="stat-detail">{openedEmails.length} of {deliveredEmails.length} delivered</div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Communication Timeline */}
             <div className="timeline-card">
@@ -2211,65 +2771,225 @@ export default function ClientDetailPage() {
               </div>
 
               <ul className="timeline-list">
-                <li className="timeline-item highlight-success" data-type="result">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">2:45 PM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon result-alert">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                      </svg>
+                {communicationsLoading ? (
+                  <li className="timeline-item">
+                    <div className="timeline-content" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Loading communications...
                     </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>Result Alert Sent <span className="type-label result">Result Alert</span></h4>
-                          <span className="subject">Your keyword is now ranking on Page 1!</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill delivered">Delivered</span>
-                          <span className="status-pill opened">Viewed</span>
-                        </div>
-                      </div>
-                      <div className="result-highlight">
-                        <div className="result-text">
-                          <strong>&quot;precision wound care San Antonio&quot; — Now Position #7</strong>
-                          <span>Moved from position #24 to #7 (up 17 spots!)</span>
-                        </div>
-                      </div>
+                  </li>
+                ) : communications.length === 0 ? (
+                  <li className="timeline-item">
+                    <div className="timeline-content" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      No communications yet
                     </div>
-                  </div>
-                </li>
+                  </li>
+                ) : (
+                  communications.map(comm => {
+                    // Format date and time
+                    const sentDate = comm.sentAt ? new Date(comm.sentAt) : new Date()
+                    const dateStr = sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    const timeStr = sentDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' CST'
 
-                <li className="timeline-item" data-type="email">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">8:00 AM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon email-reminder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>Invitation Reminder <span className="type-label reminder">Reminder</span></h4>
-                          <span className="subject">Your Pyrus Digital portal is waiting for you</span>
+                    // Get icon class based on communication type
+                    const getIconClass = (type: string) => {
+                      switch (type) {
+                        case 'email_invite': return 'email-invite'
+                        case 'email_reminder': return 'email-reminder'
+                        case 'email_general': return 'email-invite'
+                        case 'result_alert': return 'result-alert'
+                        case 'chat': return 'chat'
+                        case 'monthly_report': return 'monthly-report'
+                        case 'content_approved':
+                        case 'content_review':
+                        case 'content_revision': return 'monthly-report' // Green, document icon
+                        default: return 'email-invite'
+                      }
+                    }
+
+                    // Get type label and CSS class
+                    const getTypeLabel = (type: string) => {
+                      switch (type) {
+                        case 'email_invite': return { label: 'Invitation', class: 'invitation' }
+                        case 'email_reminder': return { label: 'Reminder', class: 'reminder' }
+                        case 'email_general': return { label: 'Email', class: 'invitation' }
+                        case 'result_alert': return { label: 'Result Alert', class: 'result' }
+                        case 'chat': return { label: 'Chat', class: 'chat' }
+                        case 'monthly_report': return { label: 'Report', class: 'report' }
+                        case 'content_approved':
+                        case 'content_review':
+                        case 'content_revision': return { label: 'Content', class: 'report' }
+                        default: return { label: type.replace(/_/g, ' '), class: 'invitation' }
+                      }
+                    }
+
+                    // Get icon SVG content based on type
+                    const getIcon = (type: string) => {
+                      if (type === 'result_alert') {
+                        return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      }
+                      if (type === 'chat') {
+                        return <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></>
+                      }
+                      if (type === 'monthly_report' || type.startsWith('content_')) {
+                        return <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></>
+                      }
+                      if (type === 'email_reminder') {
+                        // Bell icon for reminders
+                        return <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></>
+                      }
+                      // Default email icon
+                      return <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></>
+                    }
+
+                    // Determine content-specific status
+                    const isContentType = comm.type.startsWith('content_')
+                    const contentStatus = isContentType ? comm.status : null
+
+                    const typeInfo = getTypeLabel(comm.type)
+                    const highlightClass = comm.highlightType ? `highlight-${comm.highlightType}` : ''
+
+                    return (
+                      <li key={comm.id} className={`timeline-item ${highlightClass}`} data-type={comm.type}>
+                        <div className="timeline-date">
+                          <span className="date">{dateStr}</span>
+                          <span className="time">{timeStr}</span>
                         </div>
-                        <div className="comm-status">
-                          <span className="status-pill delivered">Delivered</span>
-                          <span className="status-pill opened">Opened</span>
-                          <span className="status-pill clicked">Clicked</span>
+                        <div className="timeline-content">
+                          <div className={`comm-icon ${getIconClass(comm.type)}`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              {getIcon(comm.type)}
+                            </svg>
+                          </div>
+                          <div className="comm-details">
+                            <div className="comm-header">
+                              <div className="comm-title">
+                                <h4>{comm.title} <span className={`type-label ${typeInfo.class}`}>{typeInfo.label}</span></h4>
+                                {comm.subject && <span className="subject">{comm.subject}</span>}
+                              </div>
+                              <div className="comm-status">
+                                {/* Email delivery statuses */}
+                                {!isContentType && (comm.status === 'delivered' || comm.status === 'opened' || comm.status === 'clicked') && (
+                                  <span className="status-pill delivered">Delivered</span>
+                                )}
+                                {!isContentType && (comm.openedAt || comm.status === 'opened' || comm.status === 'clicked') && (
+                                  <span className="status-pill opened">{comm.type === 'result_alert' ? 'Viewed' : 'Opened'}</span>
+                                )}
+                                {!isContentType && (comm.clickedAt || comm.status === 'clicked') && (
+                                  <span className="status-pill clicked">Clicked</span>
+                                )}
+                                {!isContentType && comm.status === 'failed' && (
+                                  <span className="status-pill failed">Failed</span>
+                                )}
+                                {!isContentType && comm.status === 'bounced' && (
+                                  <span className="status-pill failed">Bounced</span>
+                                )}
+                                {!isContentType && comm.status === 'sent' && !comm.openedAt && !comm.clickedAt && (
+                                  <span className="status-pill sent">Sent</span>
+                                )}
+                                {/* Content-specific statuses */}
+                                {contentStatus === 'published' && (
+                                  <span className="status-pill delivered" style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Published
+                                  </span>
+                                )}
+                                {contentStatus === 'pending_review' && (
+                                  <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    Pending Review
+                                  </span>
+                                )}
+                                {contentStatus === 'needs_revision' && (
+                                  <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Needs Revision
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Body text for content descriptions */}
+                            {comm.body && !comm.type.startsWith('result_') && !comm.metadata?.feedback && (
+                              <p className="comm-body preview">{comm.body}</p>
+                            )}
+
+                            {/* Result highlight for result alerts */}
+                            {comm.type === 'result_alert' && comm.metadata && (
+                              <div className="result-highlight">
+                                <div className="result-text">
+                                  {comm.metadata.keyword && (
+                                    <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
+                                  )}
+                                  {comm.metadata.milestone && !comm.metadata.keyword && (
+                                    <strong>{comm.metadata.milestone}</strong>
+                                  )}
+                                  {comm.metadata.change && (
+                                    <span>{comm.metadata.change}</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Review Content button for content_review */}
+                            {comm.type === 'content_review' && comm.status === 'pending_review' && (
+                              <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }}>
+                                Review Content
+                              </button>
+                            )}
+
+                            {/* Feedback display for content_revision */}
+                            {comm.type === 'content_revision' && comm.metadata?.feedback && (
+                              <div style={{ marginTop: '8px' }}>
+                                <strong style={{ color: 'var(--text-primary)', fontSize: '13px' }}>Feedback:</strong>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', marginLeft: '4px' }}>{comm.metadata.feedback}</span>
+                              </div>
+                            )}
+
+                            {/* Clicked button indicator */}
+                            {comm.clickedAt && comm.metadata?.clickedButton && (
+                              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--pyrus-green-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--pyrus-green)" strokeWidth="2" width="12" height="12">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <polyline points="10 17 15 12 10 7"></polyline>
+                                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                                  </svg>
+                                </div>
+                                <span>Clicked &quot;<strong>{comm.metadata.clickedButton}</strong>&quot; button</span>
+                                {comm.metadata.clickedAt && <span style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }}>{comm.metadata.clickedAt}</span>}
+                              </div>
+                            )}
+
+                            {/* Error message for failed emails */}
+                            {comm.status === 'failed' && comm.metadata?.errorMessage && (
+                              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--error-text)', background: 'var(--error-bg)', padding: '8px 12px', borderRadius: '6px' }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <span>{comm.metadata.errorMessage}</span>
+                                {comm.metadata.resentAt && (
+                                  <a href="#" style={{ marginLeft: 'auto', color: 'var(--accent-blue)', textDecoration: 'underline' }}>
+                                    Resent {comm.metadata.resentAt}
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
+                      </li>
+                    )
+                  })
+                )}
               </ul>
             </div>
           </div>
@@ -2278,137 +2998,767 @@ export default function ClientDetailPage() {
         {/* ==================== RECOMMENDATIONS TAB ==================== */}
         {activeTab === 'recommendations' && (
           <div className="recommendations-content">
-            {/* Growth Stage Hero Section */}
-            {(() => {
-              const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
-                prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
-                seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
-                sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
-                blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
-                harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
-              }
-              const currentStage = client.growthStage || 'prospect'
-              const current = stageInfo[currentStage] || stageInfo.prospect
-              const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
+            {/* Subtabs Navigation */}
+            <div className="getting-started-subtabs">
+              <button
+                className={`getting-started-subtab ${recommendationsSubtab === 'original-plan' ? 'active' : ''}`}
+                onClick={() => setRecommendationsSubtab('original-plan')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Original Plan
+              </button>
+              <button
+                className={`getting-started-subtab ${recommendationsSubtab === 'current-services' ? 'active' : ''}`}
+                onClick={() => setRecommendationsSubtab('current-services')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Your Current Services
+              </button>
+              <button
+                className={`getting-started-subtab ${recommendationsSubtab === 'smart-recommendations' ? 'active' : ''}`}
+                onClick={() => setRecommendationsSubtab('smart-recommendations')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Smart Recommendations
+              </button>
+            </div>
 
-              return (
-                <div className="growth-stage-hero">
-                  <div className="growth-stage-main">
-                    <div className="stage-icon-large">{current.icon}</div>
-                    <div className="stage-content">
-                      <div className="stage-label">Growth Stage</div>
-                      <div className="stage-name-large">
-                        {current.name}
+            {/* Smart Recommendations Subtab */}
+            {recommendationsSubtab === 'smart-recommendations' && (
+              <>
+                {/* TEMPLATE 1: Pending State - No purchase yet */}
+                {recommendationState === 'pending' && (
+                  <div className="smart-rec-pending">
+                    <div className="pending-hero">
+                      <div className="pending-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="64" height="64">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
                       </div>
-                      <div className="stage-description-large">
-                        {current.description}
+                      <h2>Smart Recommendations Await</h2>
+                      <p className="pending-subtitle">
+                        Complete your purchase to unlock personalized growth recommendations powered by AI
+                      </p>
+                    </div>
+
+                    <div className="pending-features">
+                      <div className="feature-card">
+                        <div className="feature-icon" style={{ background: 'var(--pyrus-green-pale)', color: 'var(--pyrus-green)' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                            <path d="M12 20V10"></path>
+                            <path d="M18 20V4"></path>
+                            <path d="M6 20v-4"></path>
+                          </svg>
+                        </div>
+                        <h4>Performance Tracking</h4>
+                        <p>Monitor your keyword rankings, traffic, and leads in real-time</p>
+                      </div>
+                      <div className="feature-card">
+                        <div className="feature-icon" style={{ background: 'var(--accent-purple-bg)', color: 'var(--accent-purple)' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
+                        </div>
+                        <h4>AI-Powered Insights</h4>
+                        <p>Get personalized recommendations based on your business performance</p>
+                      </div>
+                      <div className="feature-card">
+                        <div className="feature-icon" style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                          </svg>
+                        </div>
+                        <h4>Growth Stage System</h4>
+                        <p>Track your journey from Seedling to Harvesting with milestone alerts</p>
                       </div>
                     </div>
+
+                    {recommendation && (
+                      <div className="pending-cta">
+                        <button
+                          className="btn btn-primary btn-lg"
+                          onClick={() => setRecommendationsSubtab('original-plan')}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                          View Your Recommended Plan
+                        </button>
+                        <p className="cta-note">Review the plan tailored for your business goals</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="growth-progress-section">
-                    <div className="progress-track-large">
-                      {stages.map((stage, idx) => {
-                        const info = stageInfo[stage]
-                        const currentIndex = stageInfo[currentStage]?.index || 0
-                        const isCompleted = info.index < currentIndex
-                        const isCurrent = stage === currentStage
-                        return (
-                          <div key={stage}>
-                            {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
-                            <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                              <div className="stage-icon">{info.icon}</div>
-                              <div className="progress-dot"></div>
-                              <span>{info.name}</span>
+                )}
+
+                {/* TEMPLATE 2: Purchased State - Less than 90 days */}
+                {recommendationState === 'purchased' && (
+                  <>
+                    {/* Growth Stage Hero Section */}
+                    {(() => {
+                      const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
+                        prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
+                        seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
+                        sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
+                        blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
+                        harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
+                      }
+                      const currentStage = client.growthStage || 'seedling'
+                      const current = stageInfo[currentStage] || stageInfo.seedling
+                      const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
+
+                      // Calculate the target date for smart recommendations
+                      const targetDate = firstPurchaseDate
+                        ? new Date(new Date(firstPurchaseDate).getTime() + 90 * 24 * 60 * 60 * 1000)
+                        : new Date()
+                      const targetDateStr = targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+                      return (
+                        <div className="growth-stage-hero">
+                          <div className="growth-stage-main">
+                            <div className="stage-icon-large">{current.icon}</div>
+                            <div className="stage-content">
+                              <div className="stage-label">Your Growth Stage</div>
+                              <div className="stage-name-large">
+                                {current.name}
+                              </div>
+                              <div className="stage-description-large">
+                                {current.description}
+                              </div>
                             </div>
+                            <div className="stage-stats">
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">--</span>
+                                <span className="stage-stat-label">Keywords Ranking</span>
+                              </div>
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">--</span>
+                                <span className="stage-stat-label">Leads This Month</span>
+                              </div>
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">--</span>
+                                <span className="stage-stat-label">Traffic Growth</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="growth-progress-section">
+                            <div className="progress-track-large">
+                              {stages.map((stage, idx) => {
+                                const info = stageInfo[stage]
+                                const currentIndex = stageInfo[currentStage]?.index || 0
+                                const isCompleted = info.index < currentIndex
+                                const isCurrent = stage === currentStage
+                                return (
+                                  <div key={stage}>
+                                    {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
+                                    <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
+                                      <div className="stage-icon">{info.icon}</div>
+                                      <div className="progress-dot"></div>
+                                      <span>{info.name}</span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            <div className="refresh-info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                              </svg>
+                              First recommendations available: <strong>{targetDateStr}</strong> ({daysUntilSmartRec} days)
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Coming Soon Placeholder */}
+                    <div className="smart-rec-placeholder">
+                      <div className="placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </div>
+                      <h3>Smart Recommendations Coming Soon</h3>
+                      <p>
+                        We&apos;re gathering performance data to create personalized recommendations for your business.
+                        <br />
+                        Check back in <strong>{daysUntilSmartRec} days</strong> for AI-powered growth insights.
+                      </p>
+                      <div className="coming-soon-progress">
+                        <div className="progress-bar-container">
+                          <div
+                            className="progress-bar-fill"
+                            style={{ width: `${Math.min(100, (daysSincePurchase / 90) * 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="progress-label">{daysSincePurchase} of 90 days</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* TEMPLATE 3: Smart Available State - 90+ days */}
+                {recommendationState === 'smart_available' && (
+                  <>
+                    {/* Growth Stage Hero Section */}
+                    {(() => {
+                      const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
+                        prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
+                        seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
+                        sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
+                        blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
+                        harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
+                      }
+                      const currentStage = client.growthStage || 'seedling'
+                      const current = stageInfo[currentStage] || stageInfo.seedling
+                      const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
+
+                      // Next refresh is 90 days from now
+                      const nextRefreshDate = new Date(new Date().getTime() + 90 * 24 * 60 * 60 * 1000)
+                      const nextRefreshStr = nextRefreshDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+                      return (
+                        <div className="growth-stage-hero">
+                          <div className="growth-stage-main">
+                            <div className="stage-icon-large">{current.icon}</div>
+                            <div className="stage-content">
+                              <div className="stage-label">Your Growth Stage</div>
+                              <div className="stage-name-large">
+                                {current.name}
+                              </div>
+                              <div className="stage-description-large">
+                                {current.description}
+                              </div>
+                            </div>
+                            <div className="stage-stats">
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">12</span>
+                                <span className="stage-stat-label">Keywords Ranking</span>
+                              </div>
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">8</span>
+                                <span className="stage-stat-label">Leads This Month</span>
+                              </div>
+                              <div className="stage-stat">
+                                <span className="stage-stat-value">+24%</span>
+                                <span className="stage-stat-label">Traffic Growth</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="growth-progress-section">
+                            <div className="progress-track-large">
+                              {stages.map((stage, idx) => {
+                                const info = stageInfo[stage]
+                                const currentIndex = stageInfo[currentStage]?.index || 0
+                                const isCompleted = info.index < currentIndex
+                                const isCurrent = stage === currentStage
+                                return (
+                                  <div key={stage}>
+                                    {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
+                                    <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
+                                      <div className="stage-icon">{info.icon}</div>
+                                      <div className="progress-dot"></div>
+                                      <span>{info.name}</span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            <div className="refresh-info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                              </svg>
+                              Next recommendations refresh: <strong>{nextRefreshStr}</strong> (90 days)
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Smart Recommendations Cards */}
+                    <div className="smart-recommendations-section">
+                      <div className="section-header">
+                        <h3>Recommended for Your Growth</h3>
+                        <p>Based on your performance data and business goals</p>
+                      </div>
+
+                      <div className="smart-rec-cards">
+                        {/* Example recommendation card 1 */}
+                        <div className="smart-rec-card priority-high">
+                          <div className="rec-priority">
+                            <span className="priority-badge high">High Priority</span>
+                          </div>
+                          <div className="rec-content">
+                            <h4>Add Content Writing</h4>
+                            <p>Your site is ranking for 12 keywords but lacks fresh content. Adding monthly blog posts could increase organic traffic by 40%.</p>
+                            <div className="rec-stats">
+                              <div className="rec-stat">
+                                <span className="stat-value">+40%</span>
+                                <span className="stat-label">Est. Traffic Increase</span>
+                              </div>
+                              <div className="rec-stat">
+                                <span className="stat-value">$99</span>
+                                <span className="stat-label">per month</span>
+                              </div>
+                            </div>
+                          </div>
+                          <button className="btn btn-primary btn-sm">Add to Plan</button>
+                        </div>
+
+                        {/* Example recommendation card 2 */}
+                        <div className="smart-rec-card priority-medium">
+                          <div className="rec-priority">
+                            <span className="priority-badge medium">Recommended</span>
+                          </div>
+                          <div className="rec-content">
+                            <h4>Google Ads Campaign</h4>
+                            <p>Your competitors are running ads for your target keywords. A focused campaign could capture 15+ leads per month.</p>
+                            <div className="rec-stats">
+                              <div className="rec-stat">
+                                <span className="stat-value">15+</span>
+                                <span className="stat-label">Est. Monthly Leads</span>
+                              </div>
+                              <div className="rec-stat">
+                                <span className="stat-value">$500</span>
+                                <span className="stat-label">ad spend + mgmt</span>
+                              </div>
+                            </div>
+                          </div>
+                          <button className="btn btn-secondary btn-sm">Learn More</button>
+                        </div>
+
+                        {/* Example recommendation card 3 */}
+                        <div className="smart-rec-card priority-low">
+                          <div className="rec-priority">
+                            <span className="priority-badge low">Nice to Have</span>
+                          </div>
+                          <div className="rec-content">
+                            <h4>Social Media Management</h4>
+                            <p>Build brand awareness and engage with your audience through consistent social media presence.</p>
+                            <div className="rec-stats">
+                              <div className="rec-stat">
+                                <span className="stat-value">+500</span>
+                                <span className="stat-label">Est. Followers/Month</span>
+                              </div>
+                              <div className="rec-stat">
+                                <span className="stat-value">$299</span>
+                                <span className="stat-label">per month</span>
+                              </div>
+                            </div>
+                          </div>
+                          <button className="btn btn-secondary btn-sm">Learn More</button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Original Plan Subtab */}
+            {recommendationsSubtab === 'original-plan' && (
+              <div className="original-plan-content">
+                {recommendationLoading ? (
+                  <div className="loading-placeholder">Loading recommendation data...</div>
+                ) : recommendation ? (
+                  <>
+                    {/* Good Better Best Options from recommendation data */}
+                    <div className="gbb-options-grid">
+                      {(['good', 'better', 'best'] as const).map(tierName => {
+                        const tierItems = recommendation.recommendation_items.filter(item => item.tier === tierName)
+                        const monthlyTotal = tierItems.reduce((sum, item) => {
+                          if (item.is_free) return sum
+                          return sum + Number(item.monthly_price || 0)
+                        }, 0)
+                        const onetimeTotal = tierItems.reduce((sum, item) => {
+                          return sum + Number(item.onetime_price || 0)
+                        }, 0)
+                        const freeItems = tierItems.filter(item => item.is_free)
+                        const isPurchased = recommendation.purchased_tier === tierName
+
+                        return (
+                          <div key={tierName} className={`gbb-option-card ${tierName}${isPurchased ? ' purchased' : ''}`}>
+                            {isPurchased && (
+                              <div className="gbb-purchased">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Purchased
+                              </div>
+                            )}
+                            <div className="gbb-header">
+                              <span className={`gbb-badge ${tierName}`}>
+                                {tierName.charAt(0).toUpperCase() + tierName.slice(1)}
+                              </span>
+                            </div>
+                            <ul className="gbb-features">
+                              {tierItems.map(item => {
+                                const itemName = item.product?.name || item.bundle?.name || item.addon?.name
+                                const itemPrice = Number(item.monthly_price || 0)
+                                const isFree = item.is_free
+
+                                return (
+                                  <li key={item.id} className={isFree ? 'free-item' : ''}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span className="item-name">{itemName}</span>
+                                    <span className="item-price">
+                                      {isFree ? (
+                                        <span className="free-badge">Free</span>
+                                      ) : (
+                                        `$${itemPrice}/mo`
+                                      )}
+                                    </span>
+                                  </li>
+                                )
+                              })}
+                              {tierItems.length === 0 && (
+                                <li className="no-items">No items in this tier</li>
+                              )}
+                            </ul>
+                            {(freeItems.length > 0 || Number(recommendation.discount_applied || 0) > 0) && (
+                              <div className="gbb-savings">
+                                {freeItems.length > 0 && (
+                                  <div className="savings-line">
+                                    <span>Free items included:</span>
+                                    <span className="savings-value">{freeItems.length}</span>
+                                  </div>
+                                )}
+                                {Number(recommendation.discount_applied || 0) > 0 && (
+                                  <div className="savings-line">
+                                    <span>Discount applied:</span>
+                                    <span className="savings-value">-${Number(recommendation.discount_applied).toLocaleString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="gbb-totals">
+                              <div className="total-line">
+                                <span>Monthly Total:</span>
+                                <strong>${monthlyTotal.toLocaleString()}/mo</strong>
+                              </div>
+                              {onetimeTotal > 0 && (
+                                <div className="total-line">
+                                  <span>One-time Total:</span>
+                                  <strong>${onetimeTotal.toLocaleString()}</strong>
+                                </div>
+                              )}
+                            </div>
+                            {isPurchased && recommendation.purchased_at && (
+                              <div className="gbb-purchase-date">
+                                Purchased on {new Date(recommendation.purchased_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })} at {new Date(recommendation.purchased_at).toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
                           </div>
                         )
                       })}
                     </div>
-                  </div>
-                </div>
-              )
-            })()}
 
-            {/* Current Services */}
-            <div className="current-services-list">
-              <div className="current-services-list-header">
-                <h3>Current Services</h3>
-                <span>Monthly Investment</span>
+                    {/* Recommendation History */}
+                    {recommendation.history && recommendation.history.length > 0 && (
+                      <div className="recommendation-history">
+                        <h4>Recommendation History</h4>
+                        <ul className="history-list">
+                          {recommendation.history.map((entry) => (
+                            <li key={entry.id} className="history-item">
+                              <div className="history-date">
+                                {new Date(entry.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                              <div className="history-content">
+                                <span className="history-action">{entry.action}</span>
+                                {entry.details && <span className="history-details">{entry.details}</span>}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-recommendation-message">
+                    <div className="placeholder-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                    </div>
+                    <h3>No Recommendation Found</h3>
+                    <p>Create a recommendation for this client to see their original plan options here.</p>
+                    <Link href={`/admin/recommendation-builder/${clientId}`} className="btn btn-primary" style={{ marginTop: '16px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Create Recommendation
+                    </Link>
+                  </div>
+                )}
               </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Seedling SEO Plan</div>
-                  <div className="current-service-desc">Foundational on-page SEO &amp; performance tracking</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$599</strong><br />
-                  <span>/month</span>
-                </div>
+            )}
+
+            {/* Current Services Subtab */}
+            {recommendationsSubtab === 'current-services' && (
+              <div className="current-services-content">
+                {subscriptionsLoading ? (
+                  <div className="loading-state">Loading services...</div>
+                ) : (() => {
+                  // Get all subscription items
+                  const allItems = subscriptions.flatMap(sub => sub.subscription_items)
+
+                  // If no subscriptions but has purchased tier, fall back to recommendation items
+                  const hasSubscription = allItems.length > 0
+                  const fallbackItems = !hasSubscription && recommendation?.purchased_tier
+                    ? recommendation.recommendation_items.filter(item => item.tier === recommendation.purchased_tier)
+                    : []
+
+                  const displayItems = hasSubscription ? allItems : fallbackItems
+
+                  // Calculate total
+                  const totalMonthly = hasSubscription
+                    ? allItems.reduce((sum, item) => sum + Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0), 0)
+                    : fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+
+                  // Icon helper function
+                  const getServiceIcon = (name: string) => {
+                    const lowerName = name.toLowerCase()
+                    if (lowerName.includes('seo')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                      )
+                    } else if (lowerName.includes('ads') || lowerName.includes('google ads')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                          <line x1="8" y1="21" x2="16" y2="21"></line>
+                          <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                      )
+                    } else if (lowerName.includes('business profile') || lowerName.includes('gbp') || lowerName.includes('local')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                          <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                      )
+                    } else if (lowerName.includes('analytics') || lowerName.includes('tracking')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                      )
+                    } else if (lowerName.includes('website') || lowerName.includes('site') || lowerName.includes('care')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="2" y1="12" x2="22" y2="12"></line>
+                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                      )
+                    } else if (lowerName.includes('brand')) {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                          <polyline points="2 17 12 22 22 17"></polyline>
+                          <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
+                      )
+                    } else {
+                      return (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )
+                    }
+                  }
+
+                  if (displayItems.length === 0) {
+                    return (
+                      <div className="no-services-message" style={{ textAlign: 'center', padding: '3rem', color: '#6B7280' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                          <polyline points="9 11 12 14 22 4"></polyline>
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <h3 style={{ marginBottom: '0.5rem', color: '#374151' }}>No Active Services</h3>
+                        <p>Services will appear here once a plan is purchased.</p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="current-services-list">
+                      <div className="current-services-list-header">
+                        <h3>Your Current Services</h3>
+                        <span>Monthly Investment</span>
+                      </div>
+                      {hasSubscription ? (
+                        // Show subscription items
+                        allItems.map(item => {
+                          const itemName = item.product?.name || item.bundle?.name || 'Service'
+                          const itemDesc = item.product?.short_description || item.bundle?.description || ''
+                          const monthlyPrice = Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0)
+                          const isContentWriting = itemName.toLowerCase().includes('content writing')
+                          const quantity = item.quantity || 1
+
+                          const handleAddMoreContent = () => {
+                            // Get the product details for Content Writing
+                            const product = item.product
+                            if (!product) return
+
+                            const cartItem = {
+                              id: product.id,
+                              productId: product.id,
+                              name: product.name,
+                              quantity: 1, // Adding 1 more
+                              monthlyPrice: Number(product.monthly_price || 0),
+                              onetimePrice: 0,
+                              pricingType: 'monthly' as const,
+                              category: 'content',
+                              supportsQuantity: product.supports_quantity || false,
+                            }
+
+                            // Store in sessionStorage
+                            sessionStorage.setItem(`checkout_${clientId}_addon`, JSON.stringify([cartItem]))
+                            router.push(`/admin/checkout/${clientId}?tier=addon`)
+                          }
+
+                          return (
+                            <div key={item.id} className="current-service-row">
+                              <div className="current-service-icon">
+                                {getServiceIcon(itemName)}
+                              </div>
+                              <div className="current-service-info">
+                                <div className="current-service-name">
+                                  {isContentWriting && quantity > 1 ? `(${quantity}) ` : ''}{itemName}
+                                </div>
+                                {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                              </div>
+                              {isContentWriting && (
+                                <button
+                                  className="btn btn-outline btn-sm"
+                                  onClick={handleAddMoreContent}
+                                  style={{ marginRight: '1rem', whiteSpace: 'nowrap' }}
+                                >
+                                  Add More
+                                </button>
+                              )}
+                              <div className="current-service-price">
+                                <strong>${monthlyPrice.toLocaleString()}</strong><br />
+                                <span>/month</span>
+                              </div>
+                            </div>
+                          )
+                        })
+                      ) : (
+                        // Fallback to recommendation items
+                        fallbackItems.map(item => {
+                          const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+                          const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                          const monthlyPrice = Number(item.monthly_price || 0)
+                          const isFree = item.is_free
+
+                          return (
+                            <div key={item.id} className="current-service-row">
+                              <div className="current-service-icon">
+                                {getServiceIcon(itemName)}
+                              </div>
+                              <div className="current-service-info">
+                                <div className="current-service-name">
+                                  {itemName}
+                                  {isFree && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: '#DEF7EC', color: '#03543F', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>FREE</span>}
+                                </div>
+                                {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                              </div>
+                              <div className="current-service-price">
+                                {isFree ? (
+                                  <><strong>$0</strong><br /><span>included</span></>
+                                ) : (
+                                  <><strong>${monthlyPrice.toLocaleString()}</strong><br /><span>/month</span></>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                      <div className="current-services-total">
+                        <div className="current-services-total-label">
+                          Total Monthly Investment
+                          <span>{displayItems.length} active service{displayItems.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="current-services-total-value">
+                          ${totalMonthly.toLocaleString()}<span> per month</span>
+                        </div>
+                      </div>
+
+                      {/* Subscription History */}
+                      {(() => {
+                        const allHistory = subscriptions.flatMap(sub => sub.subscription_history || [])
+                        return (
+                          <div className="recommendation-history" style={{ marginTop: '2rem' }}>
+                            <h4>Subscription History</h4>
+                            {allHistory.length === 0 ? (
+                              <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>No history yet</p>
+                            ) : (
+                              <ul className="history-list">
+                                {allHistory.map((entry) => (
+                                  <li key={entry.id} className="history-item">
+                                    <div className="history-date">
+                                      {entry.created_at ? new Date(entry.created_at).toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        timeZone: 'America/Chicago'
+                                      }) : 'Unknown date'}
+                                    </div>
+                                    <div className="history-content">
+                                      <span className="history-action">{entry.action}</span>
+                                      {entry.details && <span className="history-details">{entry.details}</span>}
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )
+                })()}
               </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Google Ads Management</div>
-                  <div className="current-service-desc">Campaign management &amp; optimization</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$499</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Google Business Profile Management</div>
-                  <div className="current-service-desc">Local search optimization &amp; posting</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$199</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Analytics &amp; Tracking Setup</div>
-                  <div className="current-service-desc">Performance monitoring &amp; reporting</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$99</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-services-total">
-                <div className="current-services-total-label">
-                  Total Monthly Investment
-                  <span>4 active services</span>
-                </div>
-                <div className="current-services-total-value">
-                  $1,396<span> per month</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
@@ -2777,6 +4127,337 @@ export default function ClientDetailPage() {
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Content Requirements Modal */}
+      {showContentRequirementsModal && (
+        <div className="modal-overlay active" onClick={() => setShowContentRequirementsModal(false)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <div className="modal-header-icon" style={{ background: '#DBEAFE', color: '#2563EB' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="modal-title">Content Requirements</h2>
+                  <p className="modal-subtitle">Guidelines for reviewing and approving content</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowContentRequirementsModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="requirements-content">
+                <div className="requirements-intro">
+                  <p>To ensure your content meets quality standards and can be published quickly, please review the following requirements and guidelines.</p>
+                </div>
+
+                <div className="requirements-section">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Review Timeline
+                  </h3>
+                  <div className="timeline-items">
+                    <div className="timeline-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      <span>Content must be reviewed within <strong>48 hours</strong> of submission</span>
+                    </div>
+                    <div className="timeline-item urgent">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <span>Urgent content (marked red) requires review within <strong>24 hours</strong></span>
+                    </div>
+                    <div className="timeline-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>After approval, content will be published within <strong>1-2 business days</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="requirements-section">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Content Types
+                  </h3>
+                  <div className="content-types-grid">
+                    <div className="content-type-item">
+                      <span className="platform-badge website">Website Content</span>
+                      <p>Blog posts, service pages, landing pages, and website copy updates</p>
+                    </div>
+                    <div className="content-type-item">
+                      <span className="platform-badge gbp">Google Business Profile</span>
+                      <p>Business updates, posts, offers, and event announcements</p>
+                    </div>
+                    <div className="content-type-item">
+                      <span className="platform-badge social">Social Posts</span>
+                      <p>Facebook, Instagram, and LinkedIn posts with captions and hashtags</p>
+                    </div>
+                    <div className="content-type-item">
+                      <span className="platform-badge ai-creative">AI Creative</span>
+                      <p>AI-generated graphics, banners, social images, and promotional visuals</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="requirements-section">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Approval Guidelines
+                  </h3>
+                  <div className="checklist-items-modal">
+                    <div className="checklist-item-modal">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Verify all facts, dates, and contact information are accurate</span>
+                    </div>
+                    <div className="checklist-item-modal">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Check that pricing and promotional details are correct</span>
+                    </div>
+                    <div className="checklist-item-modal">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Ensure brand voice and tone are consistent</span>
+                    </div>
+                    <div className="checklist-item-modal">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Review for spelling and grammatical errors</span>
+                    </div>
+                    <div className="checklist-item-modal">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Confirm all links and calls-to-action are appropriate</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="requirements-section">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Rejection Process
+                  </h3>
+                  <div className="process-items">
+                    <div className="process-item">
+                      <span className="process-number">1</span>
+                      <span>If content needs changes, click <strong>&quot;Reject&quot;</strong> and provide specific feedback</span>
+                    </div>
+                    <div className="process-item">
+                      <span className="process-number">2</span>
+                      <span>Our team will revise and resubmit within <strong>24-48 hours</strong></span>
+                    </div>
+                    <div className="process-item">
+                      <span className="process-number">3</span>
+                      <span>You&apos;ll receive a notification when revised content is ready for review</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="requirements-section">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Need Help?
+                  </h3>
+                  <p className="help-text">If you have questions about any content or need to discuss changes before approval, use the <strong>chat widget</strong> in the bottom right corner of your screen to message our team directly.</p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowContentRequirementsModal(false)}>Got It</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Detail Modal */}
+      {showProductModal && selectedProduct && (
+        <div className="modal-overlay active" onClick={() => setShowProductModal(false)}>
+          <div className="modal modal-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <div className="modal-header-icon" style={{
+                  background: selectedProduct.name.toLowerCase().includes('writing') ? '#F3E8FF'
+                    : selectedProduct.name.toLowerCase().includes('creative') ? '#FEF3C7'
+                    : selectedProduct.name.toLowerCase().includes('branding') ? '#E0F2FE'
+                    : '#F3F4F6',
+                  color: selectedProduct.name.toLowerCase().includes('writing') ? '#7C3AED'
+                    : selectedProduct.name.toLowerCase().includes('creative') ? '#F59E0B'
+                    : selectedProduct.name.toLowerCase().includes('branding') ? '#0EA5E9'
+                    : '#6B7280'
+                }}>
+                  {selectedProduct.name.toLowerCase().includes('writing') && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                  )}
+                  {selectedProduct.name.toLowerCase().includes('creative') && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  )}
+                  {selectedProduct.name.toLowerCase().includes('branding') && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                  )}
+                  {!selectedProduct.name.toLowerCase().includes('writing') && !selectedProduct.name.toLowerCase().includes('creative') && !selectedProduct.name.toLowerCase().includes('branding') && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h2 className="modal-title">{selectedProduct.name}</h2>
+                  <p className="modal-subtitle">
+                    {Number(selectedProduct.monthly_price) > 0
+                      ? `$${Number(selectedProduct.monthly_price).toLocaleString()}/month`
+                      : Number(selectedProduct.onetime_price) > 0
+                        ? `$${Number(selectedProduct.onetime_price).toLocaleString()} one-time`
+                        : 'Contact for pricing'}
+                  </p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowProductModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="product-detail-content">
+                {selectedProduct.short_description && (
+                  <p className="product-short-desc" style={{ fontSize: '1rem', color: '#374151', marginBottom: '1.5rem' }}>
+                    {selectedProduct.short_description}
+                  </p>
+                )}
+
+                {selectedProduct.long_description && (
+                  <div className="product-long-desc" style={{ color: '#4B5563', lineHeight: '1.6' }}>
+                    {selectedProduct.long_description.split('\n').map((para, i) => (
+                      <p key={i} style={{ marginBottom: '1rem' }}>{para}</p>
+                    ))}
+                  </div>
+                )}
+
+                {!selectedProduct.long_description && (
+                  <div className="product-features" style={{ marginTop: '1rem' }}>
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.75rem' }}>
+                      What&apos;s Included:
+                    </h4>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {selectedProduct.name.toLowerCase().includes('writing') && (
+                        <>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Professional blog posts and articles
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            SEO-optimized website copy
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Editing and proofreading
+                          </li>
+                        </>
+                      )}
+                      {selectedProduct.name.toLowerCase().includes('creative') && (
+                        <>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            AI-generated graphics and images
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Social media visuals and graphics
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Promotional banners and ad creatives
+                          </li>
+                        </>
+                      )}
+                      {selectedProduct.name.toLowerCase().includes('branding') && (
+                        <>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Logo design and refinement
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Brand color palette and typography
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#4B5563' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Brand guidelines document
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>Cancel</button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowProductModal(false)
+                  handleAddProductToPlan(selectedProduct)
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add to Plan
               </button>
             </div>
           </div>

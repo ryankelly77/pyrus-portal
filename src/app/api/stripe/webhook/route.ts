@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 
 // Disable body parsing, we need raw body for webhook verification
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
         // Update or create subscription record
         if (clientId) {
-          const { error } = await supabase
+          const { data: upsertedSub, error } = await supabase
             .from('subscriptions')
             .upsert({
               stripe_subscription_id: subscription.id,
@@ -82,9 +83,20 @@ export async function POST(request: NextRequest) {
             } as Record<string, unknown>, {
               onConflict: 'stripe_subscription_id',
             })
+            .select()
+            .single()
 
           if (error) {
             console.error('Failed to upsert subscription:', error)
+          } else if (upsertedSub) {
+            // Log subscription history
+            await prisma.subscription_history.create({
+              data: {
+                subscription_id: upsertedSub.id,
+                action: 'created',
+                details: 'Subscription initiated',
+              }
+            })
           }
         }
         break
@@ -117,14 +129,55 @@ export async function POST(request: NextRequest) {
           console.error('Failed to update subscription:', error)
         }
 
-        // If subscription became active, update recommendation status
+        // If subscription became active, update recommendation status and capture purchase info
         if (subscription.status === 'active') {
           const recommendationId = subscription.metadata?.recommendation_id
+          const selectedTier = subscription.metadata?.selected_tier
+          const purchasedAt = new Date()
+
+          // Get the subscription record to add history
+          const { data: subRecord } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single()
+
+          if (subRecord) {
+            // Log subscription activated
+            await prisma.subscription_history.create({
+              data: {
+                subscription_id: subRecord.id,
+                action: 'activated',
+                details: selectedTier
+                  ? `Subscription activated with ${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} plan`
+                  : 'Subscription activated',
+              }
+            })
+          }
+
           if (recommendationId) {
-            await supabase
-              .from('recommendations')
-              .update({ status: 'accepted' } as Record<string, unknown>)
-              .eq('id', recommendationId)
+            // Update recommendation with status, purchased tier and timestamp
+            await prisma.recommendations.update({
+              where: { id: recommendationId },
+              data: {
+                status: 'accepted',
+                purchased_tier: selectedTier || null,
+                purchased_at: purchasedAt,
+              }
+            })
+
+            // Add history entry for purchase
+            await prisma.recommendation_history.create({
+              data: {
+                recommendation_id: recommendationId,
+                action: 'purchased',
+                details: selectedTier
+                  ? `Client purchased the ${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} plan`
+                  : 'Client completed purchase',
+              }
+            })
+
+            console.log(`Recommendation ${recommendationId} marked as purchased (tier: ${selectedTier})`)
           }
         }
         break
@@ -135,6 +188,24 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as any
 
         console.log(`Subscription canceled:`, subscription.id)
+
+        // Get the subscription record to add history
+        const { data: canceledSub } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single()
+
+        if (canceledSub) {
+          // Log subscription canceled
+          await prisma.subscription_history.create({
+            data: {
+              subscription_id: canceledSub.id,
+              action: 'canceled',
+              details: 'Subscription canceled',
+            }
+          })
+        }
 
         const { error } = await supabase
           .from('subscriptions')

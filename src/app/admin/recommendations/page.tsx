@@ -59,6 +59,7 @@ interface DBRecommendation {
     monthly_price: string | null
     onetime_price: string | null
     notes: string | null
+    tier: string | null
     product: { id: string; name: string; category: string } | null
     bundle: { id: string; name: string } | null
     addon: { id: string; name: string } | null
@@ -403,7 +404,7 @@ export default function RecommendationsPage() {
           // Extract item names with their tiers
           const items = rec.recommendation_items.map(item => ({
             name: item.product?.name || item.bundle?.name || item.addon?.name || 'Unknown',
-            tier: item.notes || 'good',
+            tier: item.tier || 'good',
           }))
 
           // Calculate pricing per tier
@@ -414,7 +415,7 @@ export default function RecommendationsPage() {
           }
 
           rec.recommendation_items.forEach(item => {
-            const tier = (item.notes as 'good' | 'better' | 'best') || 'good'
+            const tier = (item.tier as 'good' | 'better' | 'best') || 'good'
             if (tierPricing[tier]) {
               tierPricing[tier].monthly += item.monthly_price ? parseFloat(item.monthly_price) : 0
               tierPricing[tier].onetime += item.onetime_price ? parseFloat(item.onetime_price) : 0

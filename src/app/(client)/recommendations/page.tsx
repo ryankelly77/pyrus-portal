@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { getClientByViewingAs } from '@/lib/client-data'
@@ -16,17 +16,108 @@ interface PurchaseItem {
   currentPrice?: number
 }
 
+interface RecommendationItem {
+  id: string
+  tier: string | null
+  quantity: number | null
+  monthly_price: string | null
+  onetime_price: string | null
+  is_free: boolean | null
+  product: { id: string; name: string; category: string; short_description: string | null } | null
+  bundle: { id: string; name: string; description: string | null } | null
+  addon: { id: string; name: string; description: string | null } | null
+}
+
+interface Recommendation {
+  id: string
+  status: string
+  purchased_tier: string | null
+  purchased_at: string | null
+  discount_applied: string | null
+  recommendation_items: RecommendationItem[]
+}
+
+interface DBClient {
+  id: string
+  name: string
+  contact_name: string | null
+  contact_email: string | null
+  growth_stage: string | null
+}
+
+interface SubscriptionItem {
+  id: string
+  quantity: number | null
+  unit_amount: string | null
+  product: { id: string; name: string; category: string; short_description: string | null; monthly_price: string | null } | null
+  bundle: { id: string; name: string; description: string | null; monthly_price: string | null } | null
+}
+
+interface Subscription {
+  id: string
+  status: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  monthly_amount: string | null
+  created_at: string | null
+  subscription_items: SubscriptionItem[]
+}
+
 export default function RecommendationsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const staticClient = getClientByViewingAs(viewingAs)
 
   const [activeTab, setActiveTab] = useState<TabType>('smart-recommendations')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PurchaseItem | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+
+  // Database-connected state
+  const [dbClient, setDbClient] = useState<DBClient | null>(null)
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Use static client for display, but fetch real data
+  const client = staticClient
+
+  // Fetch recommendation data from database
+  useEffect(() => {
+    async function fetchRecommendation() {
+      try {
+        // Map static client IDs to client names for database lookup
+        const clientNameMap: Record<string, string> = {
+          'tc-clinical': 'TC Clinical',
+          'raptor-vending': 'Raptor Vending',
+          'raptor-services': 'Raptor Services',
+          'gohfr': 'Gohfr',
+          'espronceda-law': 'Espronceda',
+          'ruger': 'Ruger',
+        }
+
+        const searchName = viewingAs ? clientNameMap[viewingAs] || viewingAs : staticClient.name
+
+        const res = await fetch(`/api/client/recommendation?clientName=${encodeURIComponent(searchName)}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setDbClient(data.client)
+            setRecommendation(data.recommendation)
+            setSubscriptions(data.subscriptions || [])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommendation:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchRecommendation()
+  }, [viewingAs, staticClient.name])
 
   // Client-specific data
   const isRaptorVending = client.id === 'raptor-vending'
@@ -90,15 +181,15 @@ export default function RecommendationsPage() {
               </div>
               <div className="stage-stats">
                 <div className="stage-stat">
-                  <span className="stage-stat-value">47</span>
+                  <span className="stage-stat-value">--</span>
                   <span className="stage-stat-label">Keywords Ranking</span>
                 </div>
                 <div className="stage-stat">
-                  <span className="stage-stat-value">28</span>
+                  <span className="stage-stat-value">--</span>
                   <span className="stage-stat-label">Leads This Month</span>
                 </div>
                 <div className="stage-stat">
-                  <span className="stage-stat-value">+85%</span>
+                  <span className="stage-stat-value">--</span>
                   <span className="stage-stat-label">Traffic Growth</span>
                 </div>
               </div>
@@ -134,7 +225,8 @@ export default function RecommendationsPage() {
                   <polyline points="23 4 23 10 17 10"></polyline>
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                 </svg>
-                Next recommendations refresh: <strong>February 18, 2026</strong> (47 days)
+                {/* TODO: Wire to client data - 90 days from purchase date */}
+                Next recommendations refresh: <strong>April 8, 2026</strong> (89 days)
               </div>
             </div>
           </div>
@@ -494,295 +586,346 @@ export default function RecommendationsPage() {
               </div>
             </div>
 
-            {/* Good / Better / Best Pricing Tiers */}
-            <div className="pricing-tiers">
-              {/* Good Tier */}
-              <div className="pricing-tier">
-                <div className="pricing-tier-header">
-                  <div className="pricing-tier-label">Good</div>
-                  <div className="pricing-tier-desc">Establish a professional brand identity that helps customers remember, trust, and choose your business.</div>
-                </div>
-                <div className="pricing-tier-services">
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Business Branding Foundation</div>
-                      <div className="pricing-service-desc">Logo, brand guidelines &amp; messaging foundation</div>
-                    </div>
-                    <div className="pricing-service-price">$899<br /><span>one-time</span></div>
-                  </div>
-                </div>
-                <div className="pricing-tier-footer">
-                  <div className="pricing-tier-type">One-time</div>
-                  <div className="pricing-tier-total">$899</div>
-                  <button className="pricing-tier-btn secondary">Starter Option</button>
-                </div>
+            {/* Good / Better / Best Pricing Tiers - Dynamic from Database */}
+            {isLoading ? (
+              <div className="pricing-tiers">
+                <div className="loading-placeholder">Loading your plan options...</div>
               </div>
-
-              {/* Better Tier (Selected) */}
-              <div className="pricing-tier selected">
-                <div className="pricing-tier-header">
-                  <div className="pricing-tier-label">
-                    Better
-                    <span className="selected-badge">Selected</span>
-                  </div>
-                  <div className="pricing-tier-desc">Build your online presence and start attracting qualified leads through search.</div>
-                </div>
-                <div className="pricing-tier-services">
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check included">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Seedling SEO Plan</div>
-                      <div className="pricing-service-desc">Foundational on-page SEO &amp; performance tracking</div>
-                    </div>
-                    <div className="pricing-service-price">$599<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check included">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Google Ads Management</div>
-                      <div className="pricing-service-desc">Campaign setup, management &amp; optimization</div>
-                    </div>
-                    <div className="pricing-service-price">$499<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check included">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Analytics Tracking</div>
-                      <div className="pricing-service-desc">Monitor website performance and lead generation</div>
-                    </div>
-                    <div className="pricing-service-price">$99<br /><span>/month</span></div>
-                  </div>
-                </div>
-                <div className="pricing-tier-footer">
-                  <div className="pricing-tier-type">Monthly</div>
-                  <div className="pricing-tier-total">$1,197<span>/mo</span></div>
-                  <button className="pricing-tier-btn selected">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <polyline points="20 6 9 17 4 12"></polyline>
+            ) : !recommendation ? (
+              <div className="pricing-tiers">
+                <div className="no-recommendation-message">
+                  <div className="placeholder-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
-                    Your Selected Plan
-                  </button>
+                  </div>
+                  <h3>No Recommendation Yet</h3>
+                  <p>Your personalized marketing plan is being prepared. Check back soon!</p>
                 </div>
               </div>
+            ) : (
+              <div className="pricing-tiers">
+                {(['good', 'better', 'best'] as const).map(tierName => {
+                  const tierItems = recommendation.recommendation_items.filter(item => item.tier === tierName)
+                  const isPurchased = recommendation.purchased_tier === tierName
+                  const monthlyTotal = tierItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+                  const onetimeTotal = tierItems.reduce((sum, item) => sum + Number(item.onetime_price || 0), 0)
+                  const hasMonthly = monthlyTotal > 0
+                  const hasOnetime = onetimeTotal > 0
 
-              {/* Best Tier */}
-              <div className="pricing-tier">
-                <div className="pricing-tier-header">
-                  <div className="pricing-tier-label">Best</div>
-                  <div className="pricing-tier-desc">Comprehensive marketing to dominate your local market across all channels.</div>
-                </div>
-                <div className="pricing-tier-services">
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
+                  const tierDescriptions: Record<string, string> = {
+                    good: 'Establish a professional foundation to help customers find and trust your business.',
+                    better: 'Build your online presence and start attracting qualified leads through search.',
+                    best: 'Comprehensive marketing to dominate your local market across all channels.',
+                  }
+
+                  return (
+                    <div key={tierName} className={`pricing-tier${isPurchased ? ' selected' : ''}`}>
+                      <div className="pricing-tier-header">
+                        <div className="pricing-tier-label">
+                          {tierName.charAt(0).toUpperCase() + tierName.slice(1)}
+                          {isPurchased && <span className="selected-badge">Selected</span>}
+                        </div>
+                        <div className="pricing-tier-desc">{tierDescriptions[tierName]}</div>
+                      </div>
+                      <div className="pricing-tier-services">
+                        {tierItems.length === 0 ? (
+                          <div className="pricing-service-item empty">
+                            <div className="pricing-service-info">
+                              <div className="pricing-service-name">No items in this tier</div>
+                            </div>
+                          </div>
+                        ) : (
+                          tierItems.map(item => {
+                            const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+                            const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                            const monthlyPrice = Number(item.monthly_price || 0)
+                            const onetimePrice = Number(item.onetime_price || 0)
+                            const isFree = item.is_free
+
+                            return (
+                              <div key={item.id} className={`pricing-service-item${isFree ? ' free' : ''}`}>
+                                <div className={`pricing-service-check${isPurchased ? ' included' : ''}`}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                                <div className="pricing-service-info">
+                                  <div className="pricing-service-name">
+                                    {itemName}
+                                    {isFree && <span className="free-badge">FREE</span>}
+                                  </div>
+                                  {itemDesc && <div className="pricing-service-desc">{itemDesc}</div>}
+                                </div>
+                                <div className="pricing-service-price">
+                                  {isFree ? (
+                                    <>$0<br /><span>included</span></>
+                                  ) : monthlyPrice > 0 ? (
+                                    <>${monthlyPrice.toLocaleString()}<br /><span>/month</span></>
+                                  ) : onetimePrice > 0 ? (
+                                    <>${onetimePrice.toLocaleString()}<br /><span>one-time</span></>
+                                  ) : (
+                                    <>Included</>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
+                      <div className="pricing-tier-footer">
+                        <div className="pricing-tier-type">{hasMonthly ? 'Monthly' : 'One-time'}</div>
+                        <div className="pricing-tier-total">
+                          {hasMonthly ? (
+                            <>${monthlyTotal.toLocaleString()}<span>/mo</span></>
+                          ) : (
+                            <>${onetimeTotal.toLocaleString()}</>
+                          )}
+                        </div>
+                        {isPurchased ? (
+                          <button className="pricing-tier-btn selected">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Your Selected Plan
+                          </button>
+                        ) : (
+                          <button className="pricing-tier-btn secondary">
+                            {tierName === 'good' ? 'Starter Option' : tierName === 'better' ? 'Popular Choice' : 'Premium Option'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Harvest SEO Plan</div>
-                      <div className="pricing-service-desc">Advanced SEO with content, link building &amp; authority signals</div>
-                    </div>
-                    <div className="pricing-service-price">$1,799<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Google Ads Management</div>
-                      <div className="pricing-service-desc">Campaign setup, management &amp; optimization</div>
-                    </div>
-                    <div className="pricing-service-price">$499<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Content Writing (2 articles)</div>
-                      <div className="pricing-service-desc">Monthly SEO-optimized articles</div>
-                    </div>
-                    <div className="pricing-service-price">$198<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Google Business Profile Management</div>
-                      <div className="pricing-service-desc">Local search optimization &amp; posting</div>
-                    </div>
-                    <div className="pricing-service-price">$199<br /><span>/month</span></div>
-                  </div>
-                  <div className="pricing-service-item">
-                    <div className="pricing-service-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </div>
-                    <div className="pricing-service-info">
-                      <div className="pricing-service-name">Analytics Tracking</div>
-                      <div className="pricing-service-desc">Monitor website performance and lead generation</div>
-                    </div>
-                    <div className="pricing-service-price">$99<br /><span>/month</span></div>
-                  </div>
-                </div>
-                <div className="pricing-tier-footer">
-                  <div className="pricing-tier-type">Monthly</div>
-                  <div className="pricing-tier-total">$2,794<span>/mo</span></div>
-                  <button className="pricing-tier-btn secondary">Premium Option</button>
-                </div>
+                  )
+                })}
               </div>
-            </div>
+            )}
           </div>
 
           {/* Current Services Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'current-services' ? 'active' : ''}`} id="current-services-tab">
-            {/* Your Progress Since Signup */}
-            <div className="progress-since-signup">
-              <div className="progress-since-header">
-                <div className="progress-since-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                    <polyline points="17 6 23 6 23 12"></polyline>
+            {isLoading ? (
+              <div className="loading-placeholder">Loading your services...</div>
+            ) : subscriptions.length === 0 && !recommendation?.purchased_tier ? (
+              <div className="no-services-message">
+                <div className="placeholder-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                   </svg>
                 </div>
-                <div>
-                  <div className="progress-since-title">Your Progress Since Signup</div>
-                  <div className="progress-since-subtitle">Here&apos;s how far you&apos;ve come since Sep 16, 2025</div>
-                </div>
+                <h3>No Active Services Yet</h3>
+                <p>Once you select a plan from the Original Plan tab, your services will appear here.</p>
               </div>
-              <div className="progress-since-stats">
-                <div className="progress-stat">
-                  <div className="progress-stat-value">4</div>
-                  <div className="progress-stat-label">Months Active</div>
-                </div>
-                <div className="progress-stat">
-                  <div className="progress-stat-value">4</div>
-                  <div className="progress-stat-label">Active Services</div>
-                </div>
-                <div className="progress-stat">
-                  <div className="progress-stat-value">+14.5%</div>
-                  <div className="progress-stat-label">Traffic Growth</div>
-                </div>
-                <div className="progress-stat">
-                  <div className="progress-stat-value">42</div>
-                  <div className="progress-stat-label">Monthly Leads</div>
-                </div>
-              </div>
-            </div>
+            ) : (() => {
+              // Get all subscription items from active subscriptions
+              const activeItems = subscriptions.flatMap(sub => sub.subscription_items)
 
-            {/* Your Current Services */}
-            <div className="current-services-list">
-              <div className="current-services-list-header">
-                <h3>Your Current Services</h3>
-                <span>Monthly Investment</span>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Seedling SEO Plan</div>
-                  <div className="current-service-desc">Foundational on-page SEO &amp; performance tracking</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$599</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Google Ads Management</div>
-                  <div className="current-service-desc">Campaign management &amp; optimization</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$499</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Google Business Profile Management</div>
-                  <div className="current-service-desc">Local search optimization &amp; posting</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$199</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-service-row">
-                <div className="current-service-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
-                </div>
-                <div className="current-service-info">
-                  <div className="current-service-name">Analytics &amp; Tracking Setup</div>
-                  <div className="current-service-desc">Performance monitoring &amp; reporting</div>
-                </div>
-                <div className="current-service-price">
-                  <strong>$99</strong><br />
-                  <span>/month</span>
-                </div>
-              </div>
-              <div className="current-services-total">
-                <div className="current-services-total-label">
-                  Total Monthly Investment
-                  <span>4 active services</span>
-                </div>
-                <div className="current-services-total-value">
-                  $1,396<span> per month</span>
-                </div>
-              </div>
-              <div className="ad-spend-note">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="1" x2="12" y2="23"></line>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-                <span>Plus Google Ads spend (paid directly to Google)</span>
-                <strong>$1,500/mo</strong>
-              </div>
-            </div>
+              // If no active subscriptions but has purchased tier, fall back to recommendation items
+              const hasActiveSubscription = activeItems.length > 0
+              const fallbackItems = !hasActiveSubscription && recommendation?.purchased_tier
+                ? recommendation.recommendation_items.filter(item => item.tier === recommendation.purchased_tier)
+                : []
+
+              const displayItems = hasActiveSubscription ? activeItems : fallbackItems
+
+              // Calculate total monthly from subscriptions or fallback
+              const totalMonthly = hasActiveSubscription
+                ? activeItems.reduce((sum, item) => sum + Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0), 0)
+                : fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+
+              // Get the start date from subscription or purchase
+              const startDate = subscriptions[0]?.created_at || recommendation?.purchased_at
+              const displayDate = startDate
+                ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Recently'
+
+              // Calculate months active
+              const monthsActive = startDate
+                ? Math.max(1, Math.floor((Date.now() - new Date(startDate).getTime()) / (30 * 24 * 60 * 60 * 1000)))
+                : 1
+
+              // Icon mapping based on service name
+              const getServiceIcon = (name: string) => {
+                const lowerName = name.toLowerCase()
+                if (lowerName.includes('seo')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                  )
+                } else if (lowerName.includes('ads') || lowerName.includes('google ads')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                      <line x1="8" y1="21" x2="16" y2="21"></line>
+                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                  )
+                } else if (lowerName.includes('business profile') || lowerName.includes('gbp') || lowerName.includes('local')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                  )
+                } else if (lowerName.includes('analytics') || lowerName.includes('tracking')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                  )
+                } else if (lowerName.includes('content') || lowerName.includes('writing')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                  )
+                } else if (lowerName.includes('ai') || lowerName.includes('visibility')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                      <path d="M12 2a10 10 0 0 1 10 10"></path>
+                    </svg>
+                  )
+                } else if (lowerName.includes('website') || lowerName.includes('site') || lowerName.includes('care')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                  )
+                } else if (lowerName.includes('brand')) {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                      <polyline points="2 17 12 22 22 17"></polyline>
+                      <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                  )
+                } else {
+                  return (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )
+                }
+              }
+
+              return (
+                <>
+                  {/* Your Progress Since Signup */}
+                  <div className="progress-since-signup">
+                    <div className="progress-since-header">
+                      <div className="progress-since-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                          <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="progress-since-title">Your Progress Since Signup</div>
+                        <div className="progress-since-subtitle">Here&apos;s how far you&apos;ve come since {displayDate}</div>
+                      </div>
+                    </div>
+                    <div className="progress-since-stats">
+                      <div className="progress-stat">
+                        <div className="progress-stat-value">{monthsActive}</div>
+                        <div className="progress-stat-label">Month{monthsActive !== 1 ? 's' : ''} Active</div>
+                      </div>
+                      <div className="progress-stat">
+                        <div className="progress-stat-value">{displayItems.length}</div>
+                        <div className="progress-stat-label">Active Services</div>
+                      </div>
+                      <div className="progress-stat">
+                        <div className="progress-stat-value">--</div>
+                        <div className="progress-stat-label">Traffic Growth</div>
+                      </div>
+                      <div className="progress-stat">
+                        <div className="progress-stat-value">--</div>
+                        <div className="progress-stat-label">Monthly Leads</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Your Current Services */}
+                  <div className="current-services-list">
+                    <div className="current-services-list-header">
+                      <h3>Your Current Services</h3>
+                      <span>Monthly Investment</span>
+                    </div>
+                    {hasActiveSubscription ? (
+                      // Show active subscription items
+                      activeItems.map(item => {
+                        const itemName = item.product?.name || item.bundle?.name || 'Service'
+                        const itemDesc = item.product?.short_description || item.bundle?.description || ''
+                        const monthlyPrice = Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0)
+
+                        return (
+                          <div key={item.id} className="current-service-row">
+                            <div className="current-service-icon">
+                              {getServiceIcon(itemName)}
+                            </div>
+                            <div className="current-service-info">
+                              <div className="current-service-name">{itemName}</div>
+                              {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                            </div>
+                            <div className="current-service-price">
+                              <strong>${monthlyPrice.toLocaleString()}</strong><br /><span>/month</span>
+                            </div>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      // Fall back to purchased recommendation items
+                      fallbackItems.map(item => {
+                        const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+                        const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                        const monthlyPrice = Number(item.monthly_price || 0)
+                        const isFree = item.is_free
+
+                        return (
+                          <div key={item.id} className="current-service-row">
+                            <div className="current-service-icon">
+                              {getServiceIcon(itemName)}
+                            </div>
+                            <div className="current-service-info">
+                              <div className="current-service-name">
+                                {itemName}
+                                {isFree && <span className="free-badge">FREE</span>}
+                              </div>
+                              {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                            </div>
+                            <div className="current-service-price">
+                              {isFree ? (
+                                <><strong>$0</strong><br /><span>included</span></>
+                              ) : (
+                                <><strong>${monthlyPrice.toLocaleString()}</strong><br /><span>/month</span></>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                    <div className="current-services-total">
+                      <div className="current-services-total-label">
+                        Total Monthly Investment
+                        <span>{displayItems.length} active service{displayItems.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="current-services-total-value">
+                        ${totalMonthly.toLocaleString()}<span> per month</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>

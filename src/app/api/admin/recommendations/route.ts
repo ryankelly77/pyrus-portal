@@ -96,9 +96,22 @@ export async function GET() {
 // POST /api/admin/recommendations - Create or update a recommendation
 export async function POST(request: NextRequest) {
   try {
-    // Get current user
+    // Get current user with profile info
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Get user's full name and role from profiles table
+    let userInfo: { full_name: string | null; role: string | null } | null = null
+    if (user?.id) {
+      try {
+        userInfo = await prisma.profiles.findUnique({
+          where: { id: user.id },
+          select: { full_name: true, role: true },
+        })
+      } catch {
+        // User lookup failed, continue without user info
+      }
+    }
 
     const body = await request.json()
 
@@ -108,6 +121,7 @@ export async function POST(request: NextRequest) {
       items,
       totalMonthly,
       totalOnetime,
+      discountApplied,
       notes,
     } = body
 
@@ -134,6 +148,12 @@ export async function POST(request: NextRequest) {
     let recommendation
 
     if (existingRecommendation) {
+      // Get existing items for comparison
+      const existingItems = await prisma.recommendation_items.findMany({
+        where: { recommendation_id: existingRecommendation.id },
+        include: { product: true, bundle: true, addon: true },
+      })
+
       // Update existing recommendation
       recommendation = await prisma.recommendations.update({
         where: { id: existingRecommendation.id },
@@ -141,6 +161,7 @@ export async function POST(request: NextRequest) {
           pricing_type: pricingType,
           total_monthly: totalMonthly || 0,
           total_onetime: totalOnetime || 0,
+          discount_applied: discountApplied || 0,
           notes: notes || null,
           updated_at: new Date(),
         },
@@ -150,6 +171,85 @@ export async function POST(request: NextRequest) {
       await prisma.recommendation_items.deleteMany({
         where: { recommendation_id: recommendation.id },
       })
+
+      // Build change description for history with specific item details
+      const changes: string[] = []
+
+      // Create maps of old items by tier and name for comparison
+      type ItemInfo = { name: string; price: number; tier: string }
+      const oldItemsByTier: Record<string, ItemInfo[]> = {}
+      const newItemsByTier: Record<string, ItemInfo[]> = {}
+
+      existingItems.forEach(item => {
+        const tier = item.tier || 'unassigned'
+        const name = item.product?.name || item.bundle?.name || item.addon?.name || 'Unknown'
+        const price = Number(item.monthly_price || 0)
+        if (!oldItemsByTier[tier]) oldItemsByTier[tier] = []
+        oldItemsByTier[tier].push({ name, price, tier })
+      })
+
+      if (items && items.length > 0) {
+        items.forEach((item: { tierName?: string; name?: string; monthlyPrice?: number; productId?: string; bundleId?: string; addonId?: string }) => {
+          const tier = item.tierName || 'unassigned'
+          const name = item.name || 'Unknown'
+          const price = Number(item.monthlyPrice || 0)
+          if (!newItemsByTier[tier]) newItemsByTier[tier] = []
+          newItemsByTier[tier].push({ name, price, tier })
+        })
+      }
+
+      // Compare items by tier to find additions and removals
+      const allTiers = new Set([...Object.keys(oldItemsByTier), ...Object.keys(newItemsByTier)])
+      allTiers.forEach(tier => {
+        const tierLabel = tier === 'unassigned' ? 'Unassigned' : tier.charAt(0).toUpperCase() + tier.slice(1)
+        const oldItems = oldItemsByTier[tier] || []
+        const newItems = newItemsByTier[tier] || []
+
+        // Find items in old but not in new (removed)
+        const oldNames = oldItems.map(i => i.name)
+        const newNames = newItems.map(i => i.name)
+
+        oldItems.forEach(item => {
+          if (!newNames.includes(item.name)) {
+            changes.push(`Removed "${item.name}" ($${item.price}/mo) from ${tierLabel}`)
+          }
+        })
+
+        // Find items in new but not in old (added)
+        newItems.forEach(item => {
+          if (!oldNames.includes(item.name)) {
+            changes.push(`Added "${item.name}" ($${item.price}/mo) to ${tierLabel}`)
+          }
+        })
+      })
+
+      // Check for discount changes
+      if (Number(existingRecommendation.discount_applied || 0) !== Number(discountApplied || 0)) {
+        changes.push(`Discount changed to $${discountApplied || 0}`)
+      }
+
+      // Add history entry for update with user info
+      if (changes.length > 0) {
+        const userName = userInfo?.full_name || 'Unknown User'
+        // Format role nicely (super_admin -> Super Admin, sales -> Sales)
+        const rawRole = userInfo?.role || 'user'
+        const userRole = rawRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+        const actionLabel = `Recommendation updated by ${userName} - ${userRole}`
+
+        try {
+          await prisma.recommendation_history.create({
+            data: {
+              recommendation_id: recommendation.id,
+              action: actionLabel,
+              details: changes.join('; '),
+              created_by: user?.id || null,
+            },
+          })
+        } catch (historyError) {
+          console.error('Failed to create history entry:', historyError)
+          // Don't fail the save if history creation fails
+        }
+      }
     } else {
       // Create new recommendation
       recommendation = await prisma.recommendations.create({
@@ -160,9 +260,30 @@ export async function POST(request: NextRequest) {
           pricing_type: pricingType,
           total_monthly: totalMonthly || 0,
           total_onetime: totalOnetime || 0,
+          discount_applied: discountApplied || 0,
           notes: notes || null,
         },
       })
+
+      // Add history entry for creation with user info
+      const userName = userInfo?.full_name || 'Unknown User'
+      // Format role nicely (super_admin -> Super Admin, sales -> Sales)
+      const rawRole = userInfo?.role || 'user'
+      const userRole = rawRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+
+      try {
+        await prisma.recommendation_history.create({
+          data: {
+            recommendation_id: recommendation.id,
+            action: `Recommendation created by ${userName} - ${userRole}`,
+            details: `Recommendation created with ${items?.length || 0} items`,
+            created_by: user?.id || null,
+          },
+        })
+      } catch (historyError) {
+        console.error('Failed to create history entry:', historyError)
+        // Don't fail the save if history creation fails
+      }
     }
 
     // Create recommendation items
@@ -182,11 +303,11 @@ export async function POST(request: NextRequest) {
           product_id: item.productId || null,
           bundle_id: item.bundleId || null,
           addon_id: item.addonId || null,
+          tier: item.tierName || null, // Store tier name (good/better/best)
           quantity: item.quantity || 1,
           monthly_price: item.monthlyPrice || 0,
           onetime_price: item.onetimePrice || 0,
           is_free: item.isFree || false,
-          notes: item.tierName || null, // Store tier name in notes field temporarily
         })),
       })
     }

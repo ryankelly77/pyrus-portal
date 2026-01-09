@@ -80,6 +80,19 @@ export async function POST(
           sent_at: new Date(),
         },
       })
+
+      // Add history entry for sending
+      try {
+        await prisma.recommendation_history.create({
+          data: {
+            recommendation_id: id,
+            action: 'Recommendation sent',
+            details: `Sent to ${firstName} ${lastName} (${email})`,
+          },
+        })
+      } catch {
+        // Don't fail if history creation fails
+      }
     }
 
     return NextResponse.json(invite, { status: 201 })

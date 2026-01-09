@@ -78,11 +78,12 @@ interface DBRecommendationItem {
   product_id: string | null
   bundle_id: string | null
   addon_id: string | null
+  tier: string | null  // 'good', 'better', 'best'
   quantity: number | null
   monthly_price: string | null
   onetime_price: string | null
   is_free: boolean | null
-  notes: string | null  // Used to store tier name
+  notes: string | null
   product: DBProduct | null
   bundle: DBBundle | null
   addon: DBAddon | null
@@ -368,8 +369,8 @@ export default function RecommendationBuilderPage() {
                 const monthlyPrice = item.monthly_price ? parseFloat(item.monthly_price) : 0
                 const pricingType: PricingType = monthlyPrice > 0 ? 'monthly' : 'onetime'
 
-                // Get tier name from notes field (default to 'good')
-                const tierName = (item.notes as TierName) || 'good'
+                // Get tier name from tier field (default to 'good')
+                const tierName = (item.tier as TierName) || 'good'
                 const validTier = ['good', 'better', 'best'].includes(tierName) ? tierName as TierName : 'good'
 
                 const recItem: RecommendationItem = {
@@ -459,7 +460,7 @@ export default function RecommendationBuilderPage() {
       return
     }
 
-    // Collect all items from all tiers
+    // Collect all items from all tiers with pricing details
     const allItems: {
       productId?: string
       bundleId?: string
@@ -468,33 +469,73 @@ export default function RecommendationBuilderPage() {
       monthlyPrice: number
       onetimePrice: number
       tierName: string
+      isFree: boolean
     }[] = []
 
-    let totalMonthly = 0
-    let totalOnetime = 0
+    let overallTotalMonthly = 0
+    let overallTotalOnetime = 0
+    let overallDiscountApplied = 0
 
     // Process each tier
     const tierNames: TierName[] = ['good', 'better', 'best']
     tierNames.forEach(tierName => {
       const tierItems = tiers[tierName]
+      const tierPricing = getTierPricing(tierName)
+
+      // Track free $99 slots used within this tier
+      let free99Used = 0
+
       tierItems.forEach(item => {
         const category = item.product.category
-        const monthlyPrice = item.pricingType === 'monthly' ? item.product.monthlyPrice * item.quantity : 0
-        const onetimePrice = item.pricingType === 'onetime' ? item.product.onetimePrice * item.quantity : 0
+        const isAnalytics = item.product.name.includes('Analytics Tracking')
+
+        // Analytics is always free
+        if (isAnalytics) {
+          allItems.push({
+            productId: category === 'bundle' ? undefined : (category === 'fertilizer' ? undefined : item.product.id),
+            bundleId: category === 'bundle' ? item.product.id : undefined,
+            addonId: category === 'fertilizer' ? item.product.id : undefined,
+            name: item.product.name,
+            quantity: item.quantity,
+            monthlyPrice: 0,
+            onetimePrice: 0,
+            tierName,
+            isFree: true,
+          })
+          return
+        }
+
+        // Check if this $99 product can be free
+        const is99Product = item.product.monthlyPrice === 99 && item.pricingType === 'monthly'
+        let isFree = false
+        let effectiveMonthlyPrice = item.pricingType === 'monthly' ? item.product.monthlyPrice * item.quantity : 0
+        let effectiveOnetimePrice = item.pricingType === 'onetime' ? item.product.onetimePrice * item.quantity : 0
+
+        if (is99Product && tierPricing.hasFree99Reward && free99Used === 0) {
+          // This $99 product is free
+          isFree = true
+          free99Used++
+          effectiveMonthlyPrice = item.product.monthlyPrice * Math.max(0, item.quantity - 1) // Only charge for units beyond 1
+        }
 
         allItems.push({
           productId: category === 'bundle' ? undefined : (category === 'fertilizer' ? undefined : item.product.id),
           bundleId: category === 'bundle' ? item.product.id : undefined,
           addonId: category === 'fertilizer' ? item.product.id : undefined,
+          name: item.product.name,
           quantity: item.quantity,
-          monthlyPrice,
-          onetimePrice,
+          monthlyPrice: effectiveMonthlyPrice,
+          onetimePrice: effectiveOnetimePrice,
           tierName,
+          isFree,
         })
 
-        totalMonthly += monthlyPrice
-        totalOnetime += onetimePrice
+        overallTotalMonthly += effectiveMonthlyPrice
+        overallTotalOnetime += effectiveOnetimePrice
       })
+
+      // Add discount from this tier
+      overallDiscountApplied += tierPricing.discountAmount
     })
 
     if (allItems.length === 0) {
@@ -510,8 +551,9 @@ export default function RecommendationBuilderPage() {
         body: JSON.stringify({
           clientId: selectedClient.id,
           items: allItems,
-          totalMonthly,
-          totalOnetime,
+          totalMonthly: overallTotalMonthly,
+          totalOnetime: overallTotalOnetime,
+          discountApplied: overallDiscountApplied,
         }),
       })
 

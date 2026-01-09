@@ -9,11 +9,11 @@ export async function GET(
   try {
     const { clientId } = await params
 
-    // Find the most recent recommendation for this client (draft or sent)
+    // Find the most recent recommendation for this client (draft, sent, or accepted)
     const recommendation = await prisma.recommendations.findFirst({
       where: {
         client_id: clientId,
-        status: { in: ['draft', 'sent'] },
+        status: { in: ['draft', 'sent', 'accepted'] },
       },
       include: {
         client: true,
@@ -23,6 +23,9 @@ export async function GET(
             bundle: true,
             addon: true,
           },
+        },
+        history: {
+          orderBy: { created_at: 'desc' },
         },
       },
       orderBy: { updated_at: 'desc' },

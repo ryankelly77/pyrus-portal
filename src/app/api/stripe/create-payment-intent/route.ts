@@ -58,10 +58,18 @@ export async function POST(request: NextRequest) {
       stripeCustomerId = customer.id
 
       // Save Stripe customer ID to database
-      await prisma.clients.update({
-        where: { id: clientId },
-        data: { stripe_customer_id: stripeCustomerId }
-      })
+      try {
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: { stripe_customer_id: stripeCustomerId }
+        })
+        console.log(`Saved Stripe customer ${stripeCustomerId} for client ${clientId}`)
+      } catch (saveError) {
+        console.error(`Failed to save Stripe customer ID for client ${clientId}:`, saveError)
+        // Continue with checkout - customer was created in Stripe
+      }
+    } else {
+      console.log(`Reusing existing Stripe customer ${stripeCustomerId} for client ${clientId}`)
     }
 
     // Calculate total amount (in cents)

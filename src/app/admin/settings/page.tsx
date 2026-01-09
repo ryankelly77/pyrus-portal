@@ -53,7 +53,20 @@ interface QuestionTemplate {
   product: Product
 }
 
-type Tab = 'profile' | 'checklist' | 'questions'
+type Tab = 'profile' | 'checklist' | 'questions' | 'video'
+
+// Video chapters for onboarding videos - each chapter has its own video
+const defaultVideoChapters = [
+  { id: 'welcome', title: 'Welcome & Overview', description: 'Introduction to your client portal', videoUrl: '' },
+  { id: 'dashboard', title: 'Dashboard Tour', description: 'Navigating your main dashboard', videoUrl: '' },
+  { id: 'getting-started', title: 'Getting Started', description: 'Completing your onboarding checklist', videoUrl: '' },
+  { id: 'results', title: 'Results & Analytics', description: 'Understanding your performance metrics', videoUrl: '' },
+  { id: 'website', title: 'Website Services', description: 'Managing your website and edit requests', videoUrl: '' },
+  { id: 'content', title: 'Content Services', description: 'Content review and approval workflow', videoUrl: '' },
+  { id: 'recommendations', title: 'Recommendations', description: 'Smart recommendations and growth stages', videoUrl: '' },
+  { id: 'communication', title: 'Communication', description: 'Viewing your communication history', videoUrl: '' },
+  { id: 'support', title: 'Getting Help', description: 'How to contact support', videoUrl: '' },
+]
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile')
@@ -109,6 +122,213 @@ export default function AdminSettingsPage() {
     section: '',
   })
   const [imageUploading, setImageUploading] = useState(false)
+
+  // Video state
+  const [activeChapter, setActiveChapter] = useState<string>('')
+  const [videoChapters, setVideoChapters] = useState<Array<{ id: string; title: string; description: string; videoUrl: string }>>([])
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null)
+  const [chapterForm, setChapterForm] = useState({ title: '', description: '', videoUrl: '' })
+  const [draggedChapterId, setDraggedChapterId] = useState<string | null>(null)
+  const [chaptersLoading, setChaptersLoading] = useState(false)
+
+  // Get current chapter's video URL
+  const currentChapterVideo = videoChapters.find(c => c.id === activeChapter)?.videoUrl || ''
+
+  // Fetch video chapters on mount
+  useEffect(() => {
+    async function fetchVideoChapters() {
+      setChaptersLoading(true)
+      try {
+        const res = await fetch('/api/admin/onboarding/video-chapters')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.length > 0) {
+            const chapters = data.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
+              id: c.id,
+              title: c.title,
+              description: c.description || '',
+              videoUrl: c.video_url || ''
+            }))
+            setVideoChapters(chapters)
+            setActiveChapter(chapters[0]?.id || '')
+          } else {
+            // Seed default chapters if none exist
+            const seedRes = await fetch('/api/admin/onboarding/video-chapters', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chapters: defaultVideoChapters })
+            })
+            if (seedRes.ok) {
+              // Fetch again after seeding
+              const res2 = await fetch('/api/admin/onboarding/video-chapters')
+              if (res2.ok) {
+                const data2 = await res2.json()
+                const chapters = data2.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
+                  id: c.id,
+                  title: c.title,
+                  description: c.description || '',
+                  videoUrl: c.video_url || ''
+                }))
+                setVideoChapters(chapters)
+                setActiveChapter(chapters[0]?.id || '')
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch video chapters:', error)
+        // Fall back to defaults
+        setVideoChapters(defaultVideoChapters)
+        setActiveChapter('welcome')
+      } finally {
+        setChaptersLoading(false)
+      }
+    }
+    fetchVideoChapters()
+  }, [])
+
+  // Start editing a chapter
+  const startEditChapter = (chapterId: string) => {
+    const chapter = videoChapters.find(c => c.id === chapterId)
+    if (chapter) {
+      setChapterForm({ title: chapter.title, description: chapter.description, videoUrl: chapter.videoUrl })
+      setEditingChapterId(chapterId)
+    }
+  }
+
+  // Save chapter changes
+  const saveChapter = async () => {
+    if (!editingChapterId) return
+    try {
+      const res = await fetch('/api/admin/onboarding/video-chapters', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingChapterId,
+          title: chapterForm.title,
+          description: chapterForm.description,
+          videoUrl: chapterForm.videoUrl
+        })
+      })
+      if (res.ok) {
+        setVideoChapters(prev => prev.map(c =>
+          c.id === editingChapterId
+            ? { ...c, title: chapterForm.title, description: chapterForm.description, videoUrl: chapterForm.videoUrl }
+            : c
+        ))
+        setEditingChapterId(null)
+      } else {
+        alert('Failed to save chapter')
+      }
+    } catch (error) {
+      console.error('Error saving chapter:', error)
+      alert('Failed to save chapter')
+    }
+  }
+
+  // Cancel editing
+  const cancelEditChapter = () => {
+    setEditingChapterId(null)
+    setChapterForm({ title: '', description: '', videoUrl: '' })
+  }
+
+  // Add new chapter
+  const addChapter = async () => {
+    try {
+      const res = await fetch('/api/admin/onboarding/video-chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'New Chapter',
+          description: 'Click edit to customize',
+          videoUrl: ''
+        })
+      })
+      if (res.ok) {
+        const newChapter = await res.json()
+        const chapter = {
+          id: newChapter.id,
+          title: newChapter.title,
+          description: newChapter.description || '',
+          videoUrl: newChapter.video_url || ''
+        }
+        setVideoChapters(prev => [...prev, chapter])
+        // Open edit modal for the new chapter
+        setChapterForm({ title: chapter.title, description: chapter.description, videoUrl: '' })
+        setEditingChapterId(chapter.id)
+      }
+    } catch (error) {
+      console.error('Error adding chapter:', error)
+      alert('Failed to add chapter')
+    }
+  }
+
+  // Delete chapter
+  const deleteChapter = async () => {
+    if (!editingChapterId) return
+    if (videoChapters.length <= 1) {
+      alert('You must have at least one chapter')
+      return
+    }
+    try {
+      const res = await fetch(`/api/admin/onboarding/video-chapters?id=${editingChapterId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setVideoChapters(prev => prev.filter(c => c.id !== editingChapterId))
+        if (activeChapter === editingChapterId) {
+          setActiveChapter(videoChapters[0]?.id || '')
+        }
+        setEditingChapterId(null)
+      } else {
+        alert('Failed to delete chapter')
+      }
+    } catch (error) {
+      console.error('Error deleting chapter:', error)
+      alert('Failed to delete chapter')
+    }
+  }
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, chapterId: string) => {
+    setDraggedChapterId(chapterId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = async (e: React.DragEvent, targetChapterId: string) => {
+    e.preventDefault()
+    if (!draggedChapterId || draggedChapterId === targetChapterId) return
+
+    const draggedIndex = videoChapters.findIndex(c => c.id === draggedChapterId)
+    const targetIndex = videoChapters.findIndex(c => c.id === targetChapterId)
+
+    const newChapters = [...videoChapters]
+    const [draggedChapter] = newChapters.splice(draggedIndex, 1)
+    newChapters.splice(targetIndex, 0, draggedChapter)
+
+    setVideoChapters(newChapters)
+    setDraggedChapterId(null)
+
+    // Save new order to database
+    try {
+      await fetch('/api/admin/onboarding/video-chapters', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chapters: newChapters })
+      })
+    } catch (error) {
+      console.error('Error saving chapter order:', error)
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDraggedChapterId(null)
+  }
 
   // Handle image upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -518,6 +738,12 @@ export default function AdminSettingsPage() {
               onClick={() => setActiveTab('questions')}
             >
               Onboarding Questions
+            </button>
+            <button
+              className={`tab ${activeTab === 'video' ? 'active' : ''}`}
+              onClick={() => setActiveTab('video')}
+            >
+              Onboarding Video
             </button>
           </div>
         </div>
@@ -1672,6 +1898,258 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Video Tab */}
+        {activeTab === 'video' && (
+          <div style={{ maxWidth: '1200px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '1.5rem' }}>
+              {/* Video Player Section */}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1.25rem 1.5rem', borderBottom: '1px solid #D4DCD2' }}>
+                    <div>
+                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 600 }}>
+                        {videoChapters.find(c => c.id === activeChapter)?.title || 'Onboarding Video'}
+                      </h2>
+                      <p style={{ margin: 0, fontSize: '0.813rem', color: '#5A6358' }}>
+                        {videoChapters.find(c => c.id === activeChapter)?.description || 'Select a chapter to view'}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
+                    {currentChapterVideo ? (
+                      <iframe
+                        src={currentChapterVideo}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                      />
+                    ) : (
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F5F5F4', color: '#5A6358', gap: '1rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ opacity: 0.5 }}>
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <h3 style={{ margin: 0, fontSize: '1.125rem', color: '#1A1F16' }}>No Video Set</h3>
+                        <p style={{ margin: 0, fontSize: '0.875rem', maxWidth: '300px', textAlign: 'center' }}>
+                          Click the edit button on a chapter to add a Loom video
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Instructions Card */}
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden', marginTop: '1rem' }}>
+                  <div style={{ padding: '1rem 1.5rem' }}>
+                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem' }}>How to Get Loom Embed URL</h4>
+                    <ol style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.813rem', color: '#5A6358', lineHeight: 1.6 }}>
+                      <li>Open your Loom video</li>
+                      <li>Click Share → Embed</li>
+                      <li>Copy the embed code</li>
+                      <li>Extract the URL from <code style={{ background: '#F5F5F4', padding: '0.125rem 0.375rem', borderRadius: '4px', fontSize: '0.75rem' }}>src="..."</code></li>
+                    </ol>
+                    <p style={{ margin: '0.75rem 0 0', fontSize: '0.75rem', color: '#8A928A' }}>
+                      Example: https://www.loom.com/embed/abc123def456
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chapters Section */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #D4DCD2', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 600 }}>Video Chapters</h2>
+                      <p style={{ margin: 0, fontSize: '0.813rem', color: '#5A6358' }}>Drag to reorder</p>
+                    </div>
+                    <button
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.75rem', borderRadius: '6px', fontSize: '0.813rem', fontWeight: 500, cursor: 'pointer', background: '#885430', color: 'white', border: 'none' }}
+                      onClick={addChapter}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Add
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {videoChapters.map((chapter, index) => (
+                      <div
+                        key={chapter.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, chapter.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, chapter.id)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.5rem',
+                          padding: '0.875rem 1rem',
+                          background: draggedChapterId === chapter.id ? '#F5F5F4' : activeChapter === chapter.id ? 'rgba(136, 84, 48, 0.08)' : 'none',
+                          borderBottom: index < videoChapters.length - 1 ? '1px solid #D4DCD2' : 'none',
+                          opacity: draggedChapterId === chapter.id ? 0.5 : 1,
+                          cursor: 'grab',
+                        }}
+                      >
+                        {/* Drag Handle */}
+                        <div style={{ color: '#8A928A', flexShrink: 0, cursor: 'grab', padding: '0.25rem 0' }}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <circle cx="9" cy="6" r="1.5"></circle>
+                            <circle cx="15" cy="6" r="1.5"></circle>
+                            <circle cx="9" cy="12" r="1.5"></circle>
+                            <circle cx="15" cy="12" r="1.5"></circle>
+                            <circle cx="9" cy="18" r="1.5"></circle>
+                            <circle cx="15" cy="18" r="1.5"></circle>
+                          </svg>
+                        </div>
+                        <button
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            background: 'none',
+                            border: 'none',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            flex: 1,
+                            padding: 0
+                          }}
+                          onClick={() => setActiveChapter(chapter.id)}
+                        >
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: chapter.videoUrl ? '#22C55E' : activeChapter === chapter.id ? '#885430' : '#F5F5F4',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: chapter.videoUrl || activeChapter === chapter.id ? 'white' : '#5A6358',
+                            flexShrink: 0
+                          }}>
+                            {chapter.videoUrl ? (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            ) : index + 1}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#1A1F16', marginBottom: '0.25rem' }}>{chapter.title}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#8A928A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {chapter.description}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          style={{ background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#5A6358', flexShrink: 0 }}
+                          onClick={() => startEditChapter(chapter.id)}
+                          title="Edit chapter"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Chapter Modal */}
+            {editingChapterId && (
+              <div
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+                onClick={cancelEditChapter}
+              >
+                <div
+                  style={{ background: '#FFFFFF', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid #D4DCD2' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.125rem' }}>Edit Chapter</h2>
+                    <button
+                      style={{ background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#5A6358' }}
+                      onClick={cancelEditChapter}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div style={{ padding: '1.5rem' }}>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Title</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="Chapter title"
+                        value={chapterForm.title}
+                        onChange={(e) => setChapterForm(prev => ({ ...prev, title: e.target.value }))}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Description</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="Brief description"
+                        value={chapterForm.description}
+                        onChange={(e) => setChapterForm(prev => ({ ...prev, description: e.target.value }))}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Loom Embed URL</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="https://www.loom.com/embed/abc123..."
+                        value={chapterForm.videoUrl}
+                        onChange={(e) => setChapterForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                      />
+                      <span style={{ display: 'block', fontSize: '0.75rem', color: '#5A6358', marginTop: '0.25rem' }}>
+                        Paste the embed URL from Loom (Share → Embed → extract src URL)
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 1.5rem', borderTop: '1px solid #D4DCD2' }}>
+                    <button
+                      style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#FEE2E2', color: '#991B1B', border: 'none' }}
+                      onClick={() => {
+                        if (confirm('Delete this chapter?')) {
+                          deleteChapter()
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <button
+                        style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#F5F5F4', color: '#1A1F16', border: '1px solid #D4DCD2' }}
+                        onClick={cancelEditChapter}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#885430', color: 'white', border: 'none' }}
+                        onClick={saveChapter}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx>{`
@@ -1799,6 +2277,17 @@ export default function AdminSettingsPage() {
         }
         .btn-secondary:hover {
           background: var(--bg-primary);
+        }
+        .btn-sm {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.813rem;
+        }
+        .btn-outline {
+          background: transparent;
+          border: 1px solid var(--border-color);
+        }
+        .btn-outline:hover {
+          background: var(--bg-tertiary);
         }
         .btn-icon {
           padding: 0.5rem;
@@ -2106,6 +2595,142 @@ export default function AdminSettingsPage() {
           font-size: 0.75rem;
           color: var(--text-secondary);
           margin-top: 0.25rem;
+        }
+
+        /* Video Tab Styles */
+        .video-tab-content {
+          max-width: 1200px;
+        }
+        .video-layout {
+          display: grid;
+          grid-template-columns: 1fr 350px;
+          gap: 1.5rem;
+        }
+        @media (max-width: 900px) {
+          .video-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+        .video-player-section {
+          min-width: 0;
+        }
+        .chapters-section {
+          display: flex;
+          flex-direction: column;
+        }
+        .video-player-container {
+          position: relative;
+          padding-top: 56.25%; /* 16:9 aspect ratio */
+          background: #000;
+        }
+        .video-iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+        .video-placeholder {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-tertiary);
+          color: var(--text-secondary);
+          gap: 1rem;
+        }
+        .video-placeholder svg {
+          opacity: 0.5;
+        }
+        .video-placeholder h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          color: var(--text-primary);
+        }
+        .video-placeholder p {
+          margin: 0;
+          font-size: 0.875rem;
+          max-width: 300px;
+          text-align: center;
+        }
+        .chapters-list {
+          display: flex;
+          flex-direction: column;
+        }
+        .chapter-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding: 0.875rem 1rem;
+          background: none;
+          border: none;
+          border-bottom: 1px solid var(--border-color);
+          text-align: left;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .chapter-item:last-child {
+          border-bottom: none;
+        }
+        .chapter-item:hover {
+          background: var(--bg-tertiary);
+        }
+        .chapter-item.active {
+          background: var(--primary-light, rgba(136, 84, 48, 0.08));
+        }
+        .chapter-number {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: var(--bg-tertiary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          flex-shrink: 0;
+        }
+        .chapter-item.active .chapter-number {
+          background: var(--primary);
+          color: white;
+        }
+        .chapter-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .chapter-title {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--text-primary);
+          margin-bottom: 0.25rem;
+        }
+        .chapter-meta {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+        }
+        .chapter-duration {
+          background: var(--bg-tertiary);
+          padding: 0.125rem 0.375rem;
+          border-radius: 4px;
+        }
+        .chapter-desc {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .chapter-playing {
+          color: var(--primary);
+          flex-shrink: 0;
         }
       `}</style>
     </>
