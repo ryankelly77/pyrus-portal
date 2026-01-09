@@ -19231,6 +19231,16 @@ input[type="date"].form-control {
     color: white;
 }
 
+.tab-btn .tab-badge.coming-soon {
+    background: linear-gradient(135deg, #0B7277 0%, #14B8A6 100%);
+    color: white;
+}
+
+.tab-btn.active .tab-badge.coming-soon {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
 /* ======================= */
 /* INACTIVE SERVICE STATES */
 /* ======================= */
@@ -19333,6 +19343,38 @@ input[type="date"].form-control {
     .inactive-service-container {
         grid-template-columns: 1fr;
     }
+}
+
+/* Coming Soon Checklist */
+.coming-soon-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+    text-align: left;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.coming-soon-checklist .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.coming-soon-checklist .checklist-item.completed {
+    color: var(--success);
+}
+
+.coming-soon-checklist .checklist-item.completed svg {
+    color: var(--success);
+}
+
+.coming-soon-checklist .checklist-item.pending svg {
+    color: var(--text-muted);
 }
 
 /* ======================= */

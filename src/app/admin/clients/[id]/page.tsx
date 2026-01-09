@@ -663,19 +663,23 @@ export default function ClientDetailPage() {
           <button className={`tab-btn ${activeTab === 'getting-started' ? 'active' : ''}`} onClick={() => setActiveTab('getting-started')}>Getting Started</button>
           <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>
             Results
-            {!hasResultsAccess && <span className="tab-badge inactive">Inactive</span>}
+            {!hasResultsAccess && isActiveClient && <span className="tab-badge coming-soon">Coming Soon</span>}
+            {!isActiveClient && <span className="tab-badge inactive">Inactive</span>}
           </button>
           <button className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
             Activity
-            {!hasActivityAccess && <span className="tab-badge inactive">Inactive</span>}
+            {!hasActivityAccess && isActiveClient && <span className="tab-badge coming-soon">Coming Soon</span>}
+            {!isActiveClient && <span className="tab-badge inactive">Inactive</span>}
           </button>
           <button className={`tab-btn ${activeTab === 'website' ? 'active' : ''}`} onClick={() => setActiveTab('website')}>
             Website
-            {!client.hasWebsite && <span className="tab-badge inactive">Inactive</span>}
+            {hasWebsiteProducts && !hasWebsiteAccess && <span className="tab-badge coming-soon">Coming Soon</span>}
+            {!hasWebsiteProducts && <span className="tab-badge inactive">Inactive</span>}
           </button>
           <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>
             Content
-            {!client.hasContent && <span className="tab-badge inactive">Inactive</span>}
+            {hasContentProducts && !hasActivityAccess && <span className="tab-badge coming-soon">Coming Soon</span>}
+            {!hasContentProducts && <span className="tab-badge inactive">Inactive</span>}
           </button>
           <button className={`tab-btn ${activeTab === 'communication' ? 'active' : ''}`} onClick={() => setActiveTab('communication')}>Communication</button>
           <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>Recommendations</button>
@@ -1632,7 +1636,8 @@ export default function ClientDetailPage() {
         {/* ==================== CONTENT TAB ==================== */}
         {activeTab === 'content' && (
           <div className="content-manager-tab">
-            {client.hasContent ? (
+            {hasContentProducts && hasActivityAccess ? (
+              /* Active Content - has content products AND Basecamp configured */
               <>
                 {/* Content Stats */}
                 <div className="content-stats">
@@ -1713,8 +1718,45 @@ export default function ClientDetailPage() {
                   </div>
                 </div>
               </>
+            ) : hasContentProducts && !hasActivityAccess ? (
+              /* Coming Soon - has content products but no Basecamp configured */
+              <div className="inactive-service-container">
+                <div className="inactive-service-card coming-soon">
+                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                  </div>
+                  <h3>Content Coming Soon</h3>
+                  <p>Your content service is being set up. Once your Basecamp project is connected, you&apos;ll be able to review and approve content here.</p>
+                  <div className="coming-soon-checklist">
+                    <div className="checklist-item completed">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Content service purchased
+                    </div>
+                    <div className="checklist-item pending">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                      </svg>
+                      Basecamp project setup
+                    </div>
+                    <div className="checklist-item pending">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                      </svg>
+                      Content calendar creation
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              /* Inactive Content State */
+              /* Upsell - no content products purchased */
               <div className="inactive-service-container">
                 <div className="inactive-service-card">
                   <div className="inactive-service-icon">
