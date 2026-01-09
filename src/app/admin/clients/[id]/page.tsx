@@ -281,6 +281,14 @@ const clients: Record<string, ClientData> = {
   },
 }
 
+// Video chapter interface
+interface VideoChapter {
+  id: string
+  title: string
+  description: string
+  videoUrl: string
+}
+
 type GettingStartedSubtab = 'checklist' | 'onboarding-summary'
 type ResultsSubtab = 'overview' | 'pro-dashboard'
 type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'current-services'
@@ -335,6 +343,10 @@ export default function ClientDetailPage() {
   const [checklistLoading, setChecklistLoading] = useState(false)
   const [syncingChecklist, setSyncingChecklist] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
+
+  // Video chapters state
+  const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
+  const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
 
   // Onboarding summary state
   const [onboardingSummary, setOnboardingSummary] = useState<OnboardingSummary | null>(null)
@@ -489,6 +501,31 @@ export default function ClientDetailPage() {
     }
     fetchChecklist()
   }, [clientId])
+
+  // Fetch video chapters
+  useEffect(() => {
+    const fetchVideoChapters = async () => {
+      try {
+        const res = await fetch('/api/admin/onboarding/video-chapters')
+        if (res.ok) {
+          const data = await res.json()
+          const chapters = data.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
+            id: c.id,
+            title: c.title,
+            description: c.description || '',
+            videoUrl: c.video_url || ''
+          })).filter((c: VideoChapter) => c.videoUrl)
+          setVideoChapters(chapters)
+          if (chapters.length > 0) {
+            setActiveVideoChapter(chapters[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch video chapters:', error)
+      }
+    }
+    fetchVideoChapters()
+  }, [])
 
   // Fetch onboarding summary
   useEffect(() => {
@@ -1175,25 +1212,85 @@ export default function ClientDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="sidebar-card">
+                  <div className="sidebar-card video-sidebar">
                     <h4>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polygon points="23 7 16 12 23 17 23 7"></polygon>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                       </svg>
-                      Getting Started Video
+                      Getting Started Videos
                     </h4>
-                    <div className="video-container">
-                      <div className="video-placeholder">
-                        <div className="video-play-btn">
-                          <svg viewBox="0 0 24 24" fill="currentColor">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                          </svg>
+                    {videoChapters.length > 0 ? (
+                      <>
+                        <div className="video-player-wrapper" style={{ position: 'relative', paddingTop: '56.25%', background: '#000', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem' }}>
+                          {(() => {
+                            const activeChapter = videoChapters.find(c => c.id === activeVideoChapter)
+                            return activeChapter?.videoUrl ? (
+                              <iframe
+                                src={activeChapter.videoUrl}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                allowFullScreen
+                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: '8px' }}
+                              />
+                            ) : null
+                          })()}
                         </div>
-                        <span className="video-duration">2:45</span>
+                        <div className="video-chapter-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {videoChapters.map((chapter, index) => (
+                            <button
+                              key={chapter.id}
+                              onClick={() => setActiveVideoChapter(chapter.id)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '0.75rem',
+                                padding: '0.75rem',
+                                background: activeVideoChapter === chapter.id ? 'rgba(136, 84, 48, 0.08)' : 'transparent',
+                                border: activeVideoChapter === chapter.id ? '1px solid rgba(136, 84, 48, 0.2)' : '1px solid transparent',
+                                borderRadius: '8px',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                width: '100%',
+                              }}
+                            >
+                              <span style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                background: activeVideoChapter === chapter.id ? '#885430' : '#E8EDEA',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: activeVideoChapter === chapter.id ? 'white' : '#5A6358',
+                                flexShrink: 0,
+                              }}>{index + 1}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#1A1F16', marginBottom: '0.125rem' }}>{chapter.title}</span>
+                                <span style={{ display: 'block', fontSize: '0.75rem', color: '#5A6358', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chapter.description}</span>
+                              </div>
+                              {activeVideoChapter === chapter.id && (
+                                <svg viewBox="0 0 24 24" fill="#885430" width="14" height="14" style={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="video-container">
+                        <div className="video-placeholder">
+                          <div className="video-play-btn">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                          </div>
+                        </div>
+                        <p className="video-caption">Videos coming soon! Learn how to navigate your portal and get the most from your marketing partnership.</p>
                       </div>
-                      <p className="video-caption">Learn how to navigate your portal, track results, and get the most from your marketing partnership.</p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

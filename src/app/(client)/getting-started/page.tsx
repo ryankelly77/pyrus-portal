@@ -93,7 +93,7 @@ export default function GettingStartedPage() {
             title: c.title,
             description: c.description || '',
             videoUrl: c.video_url || ''
-          })).filter((c: VideoChapter) => c.videoUrl) // Only show chapters with videos
+          })).filter((c: VideoChapter) => c.videoUrl)
           setVideoChapters(chapters)
           if (chapters.length > 0) {
             setActiveVideoChapter(chapters[0].id)
