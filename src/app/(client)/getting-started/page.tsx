@@ -1,16 +1,124 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { getClientByViewingAs } from '@/lib/client-data'
 
+interface ChecklistItem {
+  id: string
+  title: string
+  description: string | null
+  actionType: string | null
+  actionUrl: string | null
+  actionLabel: string | null
+  isCompleted: boolean
+  completedAt: string | null
+  notes: string | null
+  product: {
+    id: string
+    name: string
+    category: string
+  }
+}
+
+interface OnboardingResponse {
+  id: string
+  question: string
+  answer: string | string[] | null
+  questionType: string
+  product: {
+    id: string
+    name: string
+    category: string
+  }
+}
+
+interface OnboardingData {
+  client: {
+    id: string
+    name: string
+    contactName: string | null
+    contactEmail: string | null
+    startDate: string | null
+  }
+  checklist: {
+    items: ChecklistItem[]
+    progress: {
+      completed: number
+      total: number
+      percent: number
+    }
+  }
+  onboardingSummary: Record<string, OnboardingResponse[]>
+}
+
+// Check if a string looks like a UUID
+function isUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)
+}
+
 export default function GettingStartedPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const mockClient = getClientByViewingAs(viewingAs)
 
   const [activeSubtab, setActiveSubtab] = useState('checklist')
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [clientDisplay, setClientDisplay] = useState<{ name: string; initials: string; primaryContact: string }>({
+    name: mockClient.name,
+    initials: mockClient.initials,
+    primaryContact: mockClient.primaryContact,
+  })
+
+  // Fetch onboarding data
+  useEffect(() => {
+    async function fetchData() {
+      if (!viewingAs) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        // Use viewingAs directly - it could be a mock ID or a real database UUID
+        const res = await fetch(`/api/client/onboarding?clientId=${viewingAs}`)
+        if (res.ok) {
+          const data = await res.json()
+          setOnboardingData(data)
+          // Update display info from API response if available
+          if (data.client) {
+            const initials = data.client.name
+              .split(' ')
+              .map((n: string) => n[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2)
+            setClientDisplay({
+              name: data.client.name,
+              initials,
+              primaryContact: data.client.contactName || data.client.name,
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [viewingAs])
+
+  const checklist = onboardingData?.checklist
+  const summary = onboardingData?.onboardingSummary || {}
+
+  // Format answer for display
+  const formatAnswer = (answer: string | string[] | null): string => {
+    if (!answer) return ''
+    if (Array.isArray(answer)) return answer.join(', ')
+    return answer
+  }
 
   return (
     <>
@@ -29,9 +137,9 @@ export default function GettingStartedPage() {
           </Link>
           <Link href="/settings" className="user-menu-link">
             <div className="user-avatar-small">
-              <span>{client.initials}</span>
+              <span>{clientDisplay.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{clientDisplay.primaryContact}</span>
           </Link>
         </div>
       </div>
@@ -74,103 +182,59 @@ export default function GettingStartedPage() {
                 <div className="progress-bar-container">
                   <div className="progress-bar-label">
                     <span>Progress</span>
-                    <span>{client.hasWebsite ? '5 of 6' : '1 of 4'} completed</span>
+                    <span>
+                      {loading ? '...' : checklist ? `${checklist.progress.completed} of ${checklist.progress.total} completed` : '0 of 0 completed'}
+                    </span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: client.hasWebsite ? '83%' : '25%' }}></div>
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${checklist?.progress.percent || 0}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
               <div className="checklist-items">
-                <div className="checklist-item completed">
-                  <div className="checklist-checkbox completed">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">Create your portal account</div>
-                    <div className="checklist-item-desc">Completed {client.clientSince}</div>
-                  </div>
-                </div>
-                {client.hasWebsite ? (
-                  <div className="checklist-item completed">
-                    <div className="checklist-checkbox completed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
+                {loading ? (
+                  <div className="checklist-loading">Loading checklist...</div>
+                ) : checklist && checklist.items.length > 0 ? (
+                  checklist.items.map((item) => (
+                    <div key={item.id} className={`checklist-item ${item.isCompleted ? 'completed' : ''}`}>
+                      <div className={`checklist-checkbox ${item.isCompleted ? 'completed' : ''}`}>
+                        {item.isCompleted && (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="checklist-item-content">
+                        <div className="checklist-item-title">{item.title}</div>
+                        <div className="checklist-item-desc">
+                          {item.isCompleted && item.completedAt
+                            ? `Completed ${new Date(item.completedAt).toLocaleDateString()}`
+                            : item.description || `Related to ${item.product.name}`}
+                        </div>
+                      </div>
+                      {!item.isCompleted && item.actionType && item.actionUrl && (
+                        <div className="checklist-item-action">
+                          {item.actionType === 'link' ? (
+                            <a href={item.actionUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                              {item.actionLabel || 'View'}
+                            </a>
+                          ) : (
+                            <button className="btn btn-secondary">
+                              {item.actionLabel || 'Complete'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="checklist-item-content">
-                      <div className="checklist-item-title">Website launched</div>
-                      <div className="checklist-item-desc">{client.websiteData?.domain} is live • {client.websiteData?.launchDate}</div>
-                    </div>
-                  </div>
+                  ))
                 ) : (
-                  <div className="checklist-item">
-                    <div className="checklist-checkbox"></div>
-                    <div className="checklist-item-content">
-                      <div className="checklist-item-title">Get a professional website</div>
-                      <div className="checklist-item-desc">Establish your online presence with a custom website</div>
-                    </div>
-                    <div className="checklist-item-action">
-                      <Link href={viewingAs ? `/website?viewingAs=${viewingAs}` : '/website'} className="btn btn-secondary">Learn More</Link>
-                    </div>
+                  <div className="checklist-empty">
+                    <p>No checklist items yet. Complete your onboarding form to see your personalized checklist.</p>
                   </div>
                 )}
-                <div className={`checklist-item ${client.hasWebsite ? 'completed' : ''}`}>
-                  <div className={`checklist-checkbox ${client.hasWebsite ? 'completed' : ''}`}>
-                    {client.hasWebsite && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
-                  </div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">Google Business Profile claimed</div>
-                    <div className="checklist-item-desc">{client.hasWebsite ? 'Your business is verified on Google' : 'Verify your business on Google'}</div>
-                  </div>
-                  {!client.hasWebsite && (
-                    <div className="checklist-item-action">
-                      <button className="btn btn-secondary">Claim Profile</button>
-                    </div>
-                  )}
-                </div>
-                {client.hasWebsite && (
-                  <>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">SEO campaign activated</div>
-                        <div className="checklist-item-desc">47 keywords now being tracked</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Google Ads campaign launched</div>
-                        <div className="checklist-item-desc">Generating 28 leads per month</div>
-                      </div>
-                    </div>
-                  </>
-                )}
-                <div className="checklist-item">
-                  <div className="checklist-checkbox"></div>
-                  <div className="checklist-item-content">
-                    <div className="checklist-item-title">Connect social media accounts</div>
-                    <div className="checklist-item-desc">Link Facebook and LinkedIn for enhanced tracking</div>
-                  </div>
-                  <div className="checklist-item-action">
-                    <button className="btn btn-secondary">Connect</button>
-                  </div>
-                </div>
               </div>
             </div>
             <div>
@@ -201,171 +265,104 @@ export default function GettingStartedPage() {
         {/* Onboarding Summary Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`} id="onboarding-summary">
           <div className="onboarding-summary">
-            {/* Client Info */}
-            <div className="summary-section">
-              <h3 className="summary-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                Client Info
-              </h3>
-              <div className="summary-grid">
-                <div className="summary-field">
-                  <label>Name</label>
-                  <span>{client.primaryContact}</span>
+            {loading ? (
+              <div className="summary-loading">Loading onboarding summary...</div>
+            ) : Object.keys(summary).length > 0 ? (
+              Object.entries(summary).map(([section, responses]) => (
+                <div key={section} className="summary-section">
+                  <h3 className="summary-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    {section}
+                  </h3>
+                  <div className="summary-content">
+                    {responses.map((r) => (
+                      <div key={r.id} className="summary-field full-width">
+                        <label>{r.question}</label>
+                        {r.answer ? (
+                          r.questionType === 'url' ? (
+                            <a href={formatAnswer(r.answer)} target="_blank" rel="noopener noreferrer">
+                              {formatAnswer(r.answer)}
+                            </a>
+                          ) : (
+                            <span>{formatAnswer(r.answer)}</span>
+                          )
+                        ) : (
+                          <span className="empty">Not provided</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="summary-field">
-                  <label>Company</label>
-                  <span>{client.name}</span>
+              ))
+            ) : (
+              <div className="summary-empty">
+                <div className="summary-empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  </svg>
                 </div>
-                <div className="summary-field">
-                  <label>Email</label>
-                  <span>{client.email}</span>
-                </div>
-                <div className="summary-field">
-                  <label>Phone</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field">
-                  <label>Mobile Phone</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field">
-                  <label>Website</label>
-                  {client.websiteData?.domain ? (
-                    <a href={`https://${client.websiteData.domain}`} target="_blank" rel="noopener noreferrer">https://{client.websiteData.domain}</a>
-                  ) : (
-                    <span className="empty">Not provided</span>
-                  )}
-                </div>
+                <h3>No Onboarding Data Yet</h3>
+                <p>Complete your onboarding form to see your responses here.</p>
               </div>
-            </div>
-
-            {/* Location Info */}
-            <div className="summary-section">
-              <h3 className="summary-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                Location Info
-              </h3>
-              <div className="summary-content">
-                <div className="summary-field full-width">
-                  <label>Address and phone number for each location</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Social media account links</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field">
-                  <label>Do you have Google Business Profiles?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Google Business Profile link</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field">
-                  <label>Pyrus added as Manager users?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Analytics */}
-            <div className="summary-section">
-              <h3 className="summary-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <line x1="18" y1="20" x2="18" y2="10"></line>
-                  <line x1="12" y1="20" x2="12" y2="4"></line>
-                  <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                Analytics
-              </h3>
-              <div className="summary-content">
-                <div className="summary-field">
-                  <label>Running Google Analytics 4?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-                <div className="summary-field">
-                  <label>Measurement ID</label>
-                  <span className="empty">Not provided</span>
-                </div>
-                <div className="summary-field">
-                  <label>Pyrus added as Admin users?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-                <div className="summary-field">
-                  <label>Google Tag Manager installed?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-                <div className="summary-field">
-                  <label>GTM - Pyrus added as Admin?</label>
-                  <span className="empty">Not specified</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Content Writing */}
-            <div className="summary-section">
-              <h3 className="summary-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <path d="M12 20h9"></path>
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-                Content Writing
-              </h3>
-              <div className="summary-content">
-                <div className="summary-field full-width">
-                  <label>Content creation focus</label>
-                  <span>Updates on advanced wound care and gait deficit rehab</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Content posting process</label>
-                  <span>Client needs to approve every piece of content before it gets posted</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Website Design & Development */}
-            <div className="summary-section">
-              <h3 className="summary-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                Website Design &amp; Development
-              </h3>
-              <div className="summary-content">
-                <div className="summary-field full-width">
-                  <label>Primary website goal</label>
-                  <span>Generate leads</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Ideal customer description</label>
-                  <span>Medicare patients needing wound care and gait deficit disease patients over the age of 25</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Required pages/sections</label>
-                  <span>Home, Products, Contact, Company Story</span>
-                </div>
-                <div className="summary-field">
-                  <label>Existing content available?</label>
-                  <span>Has some content but needs help with the rest</span>
-                </div>
-                <div className="summary-field full-width">
-                  <label>Reference websites</label>
-                  <a href="https://woundsmart.com" target="_blank" rel="noopener noreferrer">woundsmart.com</a>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .checklist-loading,
+        .summary-loading {
+          padding: 2rem;
+          text-align: center;
+          color: #6b7280;
+        }
+
+        .checklist-empty,
+        .summary-empty {
+          padding: 2rem;
+          text-align: center;
+          color: #6b7280;
+        }
+
+        .summary-empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          padding: 3rem;
+        }
+
+        .summary-empty-icon {
+          color: #d1d5db;
+        }
+
+        .summary-empty h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .summary-empty p {
+          margin: 0;
+          color: #6b7280;
+        }
+
+        .summary-content {
+          display: grid;
+          gap: 1rem;
+        }
+
+        .summary-field.full-width {
+          grid-column: 1 / -1;
+        }
+      `}</style>
     </>
   )
 }

@@ -85,10 +85,33 @@ export async function POST(
       return NextResponse.json({ created: 0 })
     }
 
+    // Get all onboarding responses for this client to check for auto-completion
+    const responses = await prisma.client_onboarding_responses.findMany({
+      where: { client_id: clientId },
+    })
+    const responseMap = new Map(responses.map(r => [r.question_id, r]))
+
     // Create checklist items for each template (skip if already exists)
     const results = await Promise.all(
       templates.map(async (template) => {
         try {
+          // Check if this item should be auto-completed based on a linked question response
+          let shouldAutoComplete = false
+          if (template.auto_complete_question_id && template.auto_complete_values) {
+            const response = responseMap.get(template.auto_complete_question_id)
+            if (response) {
+              const autoCompleteValues = template.auto_complete_values as string[]
+              const responseValue = response.response_text || ''
+              const responseOptions = (response.response_options as string[]) || []
+
+              // Check if response matches any auto-complete value
+              shouldAutoComplete = autoCompleteValues.some(val =>
+                responseValue.toLowerCase() === val.toLowerCase() ||
+                responseOptions.some(opt => opt.toLowerCase() === val.toLowerCase())
+              )
+            }
+          }
+
           return await prisma.client_checklist_items.upsert({
             where: {
               client_id_template_id: {
@@ -96,10 +119,17 @@ export async function POST(
                 template_id: template.id,
               },
             },
-            update: {}, // Don't update if exists
+            update: shouldAutoComplete ? {
+              is_completed: true,
+              completed_at: new Date(),
+              notes: 'Auto-completed based on onboarding form response',
+            } : {},
             create: {
               client_id: clientId,
               template_id: template.id,
+              is_completed: shouldAutoComplete,
+              completed_at: shouldAutoComplete ? new Date() : null,
+              notes: shouldAutoComplete ? 'Auto-completed based on onboarding form response' : null,
             },
           })
         } catch {

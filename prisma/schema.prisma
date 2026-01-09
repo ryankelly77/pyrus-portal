@@ -372,20 +372,23 @@ model settings {
 // ============ Onboarding ============
 
 model onboarding_checklist_templates {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  product_id   String    @db.Uuid
-  title        String
-  description  String?
-  action_type  String?   // 'link' | 'button' | 'auto'
-  action_url   String?
-  action_label String?
-  sort_order   Int       @default(0)
-  is_active    Boolean   @default(true)
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id                String    @db.Uuid
+  title                     String
+  description               String?
+  action_type               String?   // 'link' | 'button' | 'auto'
+  action_url                String?
+  action_label              String?
+  sort_order                Int       @default(0)
+  is_active                 Boolean   @default(true)
+  auto_complete_question_id String?   @db.Uuid  // Link to question that can auto-complete this item
+  auto_complete_values      Json?     // Array of response values that trigger auto-complete (e.g., ["Yes", "yes"])
+  created_at                DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime? @default(now()) @db.Timestamptz(6)
 
-  product            products               @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  client_completions client_checklist_items[]
+  product              products                       @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  auto_complete_question onboarding_question_templates? @relation(fields: [auto_complete_question_id], references: [id], onDelete: SetNull)
+  client_completions   client_checklist_items[]
 }
 
 model client_checklist_items {
@@ -421,8 +424,9 @@ model onboarding_question_templates {
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
 
-  product   products                      @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  responses client_onboarding_responses[]
+  product             products                         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  responses           client_onboarding_responses[]
+  linked_checklists   onboarding_checklist_templates[]
 }
 
 model client_onboarding_responses {
