@@ -56,6 +56,24 @@ interface EditRequest {
   date: string
 }
 
+interface ChecklistItem {
+  id: string
+  templateId: string
+  title: string
+  description: string | null
+  actionType: string | null
+  actionUrl: string | null
+  actionLabel: string | null
+  isCompleted: boolean
+  completedAt: string | null
+  notes: string | null
+  product: {
+    id: string
+    name: string
+    category: string
+  }
+}
+
 interface ClientData {
   id: string
   name: string
@@ -195,6 +213,10 @@ export default function ClientDetailPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
 
+  // Checklist state
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [checklistLoading, setChecklistLoading] = useState(false)
+
   // Handle saving client changes
   const handleSaveClient = async () => {
     if (!dbClient) return
@@ -262,6 +284,44 @@ export default function ClientDetailPage() {
     }
     fetchClient()
   }, [clientId])
+
+  // Fetch checklist items
+  useEffect(() => {
+    const fetchChecklist = async () => {
+      setChecklistLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/checklist`)
+        if (res.ok) {
+          const data: ChecklistItem[] = await res.json()
+          setChecklistItems(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch checklist:', error)
+      } finally {
+        setChecklistLoading(false)
+      }
+    }
+    fetchChecklist()
+  }, [clientId])
+
+  // Toggle checklist item completion
+  const handleChecklistToggle = async (itemId: string, isCompleted: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/checklist/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: !isCompleted }),
+      })
+      if (res.ok) {
+        const updated: ChecklistItem = await res.json()
+        setChecklistItems(items =>
+          items.map(item => item.id === itemId ? updated : item)
+        )
+      }
+    } catch (error) {
+      console.error('Failed to toggle checklist item:', error)
+    }
+  }
 
   // Derived client data from database or fallback
   const isActiveClient = dbClient && dbClient.growth_stage && dbClient.growth_stage !== 'prospect'
@@ -541,82 +601,71 @@ export default function ClientDetailPage() {
                   <div className="checklist-header">
                     <h3>Onboarding Checklist</h3>
                     <p>Complete these steps to get the most from your marketing</p>
-                    <div className="progress-bar-container">
-                      <div className="progress-bar-label">
-                        <span>Progress</span>
-                        <span>5 of 6 completed</span>
+                    {checklistItems.length > 0 && (
+                      <div className="progress-bar-container">
+                        <div className="progress-bar-label">
+                          <span>Progress</span>
+                          <span>{checklistItems.filter(i => i.isCompleted).length} of {checklistItems.length} completed</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${checklistItems.length > 0
+                                ? (checklistItems.filter(i => i.isCompleted).length / checklistItems.length) * 100
+                                : 0}%`
+                            }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="progress-bar">
-                        <div className="progress-bar-fill" style={{ width: '83%' }}></div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   <div className="checklist-items">
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+                    {checklistLoading ? (
+                      <div className="checklist-loading">Loading checklist...</div>
+                    ) : checklistItems.length === 0 ? (
+                      <div className="checklist-empty">
+                        <p>No checklist items yet. Items will appear here after purchase.</p>
                       </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Create your portal account</div>
-                        <div className="checklist-item-desc">Completed Jan 2, 2026</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Website launched</div>
-                        <div className="checklist-item-desc">tc-clinicalservices.com is live • Completed Dec 30, 2025</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Google Business Profile claimed</div>
-                        <div className="checklist-item-desc">Your business is verified on Google</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">SEO campaign activated</div>
-                        <div className="checklist-item-desc">47 keywords now being tracked</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item completed">
-                      <div className="checklist-checkbox completed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Google Ads campaign launched</div>
-                        <div className="checklist-item-desc">Generating 28 leads per month</div>
-                      </div>
-                    </div>
-                    <div className="checklist-item">
-                      <div className="checklist-checkbox"></div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">Connect social media accounts</div>
-                        <div className="checklist-item-desc">Link Facebook and LinkedIn for enhanced tracking</div>
-                      </div>
-                      <div className="checklist-item-action">
-                        <button className="btn btn-secondary">Connect</button>
-                      </div>
-                    </div>
+                    ) : (
+                      checklistItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className={`checklist-item ${item.isCompleted ? 'completed' : ''}`}
+                          onClick={() => handleChecklistToggle(item.id, item.isCompleted)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className={`checklist-checkbox ${item.isCompleted ? 'completed' : ''}`}>
+                            {item.isCompleted && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            )}
+                          </div>
+                          <div className="checklist-item-content">
+                            <div className="checklist-item-title">{item.title}</div>
+                            <div className="checklist-item-desc">
+                              {item.isCompleted && item.completedAt
+                                ? `Completed ${new Date(item.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                : item.description || `From ${item.product.name}`
+                              }
+                            </div>
+                          </div>
+                          {item.actionType === 'link' && item.actionUrl && !item.isCompleted && (
+                            <div className="checklist-item-action" onClick={(e) => e.stopPropagation()}>
+                              <a href={item.actionUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                                {item.actionLabel || 'Open'}
+                              </a>
+                            </div>
+                          )}
+                          {item.actionType === 'button' && !item.isCompleted && (
+                            <div className="checklist-item-action" onClick={(e) => e.stopPropagation()}>
+                              <button className="btn btn-secondary">{item.actionLabel || 'Action'}</button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
                 <div>

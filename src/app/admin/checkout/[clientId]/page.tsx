@@ -264,8 +264,8 @@ export default function CheckoutPage() {
   }, [isCardFormExpanded, clientSecret, finalDueToday, client])
 
   const handlePaymentSuccess = async () => {
-    // Clear cart from sessionStorage
-    sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+    // Note: Don't clear cart from sessionStorage yet - onboarding page needs it
+    // sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
 
     // Update client's growth stage to "seedling"
     try {
@@ -278,8 +278,8 @@ export default function CheckoutPage() {
       console.error('Failed to update client stage:', error)
     }
 
-    // Redirect to success page
-    router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${finalDueToday}`)
+    // Redirect to onboarding form (which will redirect to success after completion)
+    router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
   }
 
   const handlePaymentError = (error: string) => {
@@ -291,8 +291,8 @@ export default function CheckoutPage() {
     setIsProcessing(true)
     try {
       await new Promise(resolve => setTimeout(resolve, 2000))
-      sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
-      router.push(`/admin/checkout/${clientId}/success?tier=${tier}&amount=${finalDueToday}`)
+      // Don't clear sessionStorage yet - onboarding needs it
+      router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
     } catch (error) {
       console.error('Payment failed:', error)
       setPaymentError('Payment failed. Please try again.')

@@ -26,12 +26,14 @@ model clients {
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
-  profiles          profiles[]
-  activity_log      activity_log[]
-  content           content[]
-  recommendations   recommendations[]
-  revenue_records   revenue_records[]
-  subscriptions     subscriptions[]
+  profiles             profiles[]
+  activity_log         activity_log[]
+  content              content[]
+  recommendations      recommendations[]
+  revenue_records      revenue_records[]
+  subscriptions        subscriptions[]
+  checklist_items      client_checklist_items[]
+  onboarding_responses client_onboarding_responses[]
 }
 
 model profiles {
@@ -80,6 +82,8 @@ model products {
   required_by          product_dependencies[] @relation("requires")
   recommendation_items recommendation_items[]
   subscription_items   subscription_items[]
+  checklist_templates  onboarding_checklist_templates[]
+  question_templates   onboarding_question_templates[]
 }
 
 model bundles {
@@ -363,4 +367,75 @@ model settings {
   value      Json?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+// ============ Onboarding ============
+
+model onboarding_checklist_templates {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id   String    @db.Uuid
+  title        String
+  description  String?
+  action_type  String?   // 'link' | 'button' | 'auto'
+  action_url   String?
+  action_label String?
+  sort_order   Int       @default(0)
+  is_active    Boolean   @default(true)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  product            products               @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  client_completions client_checklist_items[]
+}
+
+model client_checklist_items {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id    String    @db.Uuid
+  template_id  String    @db.Uuid
+  is_completed Boolean   @default(false)
+  completed_at DateTime? @db.Timestamptz(6)
+  completed_by String?   @db.Uuid
+  notes        String?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  client   clients                        @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  template onboarding_checklist_templates @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@unique([client_id, template_id])
+}
+
+model onboarding_question_templates {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id    String    @db.Uuid
+  question_text String
+  question_type String    // 'text' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'checkbox' | 'url' | 'email' | 'phone'
+  options       Json?     // For select/multiselect/radio
+  placeholder   String?
+  help_text     String?
+  video_url     String?   // Optional help video embed URL (Loom, YouTube, Vimeo, etc.)
+  image_url     String?   // Optional help image URL
+  is_required   Boolean   @default(false)
+  section       String?   // Grouping: "Business Info", "Website Design", etc.
+  sort_order    Int       @default(0)
+  is_active     Boolean   @default(true)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  product   products                      @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  responses client_onboarding_responses[]
+}
+
+model client_onboarding_responses {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id        String    @db.Uuid
+  question_id      String    @db.Uuid
+  response_text    String?
+  response_options Json?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  client   clients                       @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  question onboarding_question_templates @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([client_id, question_id])
 }
