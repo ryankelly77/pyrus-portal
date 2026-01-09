@@ -19232,8 +19232,8 @@ input[type="date"].form-control {
 }
 
 .tab-btn .tab-badge.coming-soon {
-    background: linear-gradient(135deg, #0B7277 0%, #14B8A6 100%);
-    color: white;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .tab-btn.active .tab-badge.coming-soon {
