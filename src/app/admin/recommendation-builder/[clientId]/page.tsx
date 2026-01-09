@@ -664,6 +664,7 @@ export default function RecommendationBuilderPage() {
               if (isAnalytics) {
                 return {
                   id: item.id,
+                  productId: item.product.id,
                   name: item.product.name,
                   description: item.product.description || '',
                   quantity: item.quantity,
@@ -687,6 +688,7 @@ export default function RecommendationBuilderPage() {
 
               return {
                 id: item.id,
+                productId: item.product.id,
                 name: item.product.name,
                 description: item.product.description || '',
                 quantity: item.quantity,

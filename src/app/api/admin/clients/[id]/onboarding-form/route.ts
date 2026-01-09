@@ -21,6 +21,7 @@ export async function GET(
     }
 
     // Get all active question templates (optionally filtered by products)
+    // Order by sort_order first so admins can control section order in Settings
     const questions = await prisma.onboarding_question_templates.findMany({
       where: whereClause,
       include: {
@@ -33,9 +34,8 @@ export async function GET(
         },
       },
       orderBy: [
-        { product_id: 'asc' },
-        { section: 'asc' },
         { sort_order: 'asc' },
+        { section: 'asc' },
       ],
     })
 
