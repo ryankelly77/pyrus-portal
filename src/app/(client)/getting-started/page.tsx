@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type ClientStatus = 'pending' | 'active' | 'inactive' | 'churned'
 
@@ -72,6 +73,7 @@ export default function GettingStartedPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading: clientLoading } = useClientData(viewingAs)
+  usePageView({ page: '/getting-started', pageName: 'Getting Started' })
 
   const [activeSubtab, setActiveSubtab] = useState('checklist')
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)

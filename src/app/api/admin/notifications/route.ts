@@ -146,6 +146,77 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch page view events from activity_log
+    if (!type || type === 'all' || type === 'page_view') {
+      const pageViewsResult = await dbPool.query(
+        `SELECT
+          al.id,
+          al.description,
+          al.metadata,
+          al.created_at,
+          c.id as client_id,
+          c.name as client_name,
+          p.full_name as user_name,
+          p.email as user_email
+        FROM activity_log al
+        LEFT JOIN clients c ON c.id = al.client_id
+        LEFT JOIN profiles p ON p.id = al.user_id
+        WHERE al.activity_type = 'page_view'
+        ORDER BY al.created_at DESC
+        LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
+
+      for (const view of pageViewsResult.rows) {
+        const metadata = view.metadata || {}
+        notifications.push({
+          id: view.id,
+          type: 'page_view',
+          title: 'Page View',
+          description: `${view.user_name || view.user_email || 'User'} viewed ${metadata.pageName || metadata.page || 'a page'}`,
+          clientName: view.client_name || 'N/A',
+          clientId: view.client_id || '',
+          metadata: view.metadata,
+          timestamp: view.created_at,
+        })
+      }
+    }
+
+    // Fetch registration events from activity_log
+    if (!type || type === 'all' || type === 'registration') {
+      const registrationsResult = await dbPool.query(
+        `SELECT
+          al.id,
+          al.description,
+          al.metadata,
+          al.created_at,
+          c.id as client_id,
+          c.name as client_name,
+          p.full_name as user_name,
+          p.email as user_email
+        FROM activity_log al
+        LEFT JOIN clients c ON c.id = al.client_id
+        LEFT JOIN profiles p ON p.id = al.user_id
+        WHERE al.activity_type = 'registration'
+        ORDER BY al.created_at DESC
+        LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
+
+      for (const reg of registrationsResult.rows) {
+        notifications.push({
+          id: reg.id,
+          type: 'registration',
+          title: 'New Registration',
+          description: `${reg.user_name || reg.user_email || 'User'} created an account`,
+          clientName: reg.client_name || 'N/A',
+          clientId: reg.client_id || '',
+          metadata: reg.metadata,
+          timestamp: reg.created_at,
+        })
+      }
+    }
+
     // Sort all notifications by timestamp (newest first)
     notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
@@ -158,7 +229,8 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*) FROM client_communications WHERE comm_type LIKE 'email%' AND status = 'opened') as opened_emails,
         (SELECT COUNT(*) FROM recommendation_invites WHERE viewed_at IS NOT NULL) as proposals_viewed,
         (SELECT COUNT(*) FROM recommendation_invites WHERE sent_at IS NOT NULL) as proposals_sent,
-        (SELECT COUNT(*) FROM activity_log WHERE activity_type IN ('login', 'client_login', 'prospect_login')) as total_logins
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type IN ('login', 'client_login', 'prospect_login')) as total_logins,
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'page_view') as total_page_views
     `)
 
     const counts = countsResult.rows[0]
@@ -173,6 +245,7 @@ export async function GET(request: NextRequest) {
         proposalsViewed: parseInt(counts.proposals_viewed) || 0,
         proposalsSent: parseInt(counts.proposals_sent) || 0,
         totalLogins: parseInt(counts.total_logins) || 0,
+        totalPageViews: parseInt(counts.total_page_views) || 0,
       },
     })
   } catch (error) {

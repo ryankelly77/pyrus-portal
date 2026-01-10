@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type FilterType = 'all' | 'email' | 'result' | 'chat' | 'content'
 
@@ -11,6 +12,7 @@ export default function CommunicationPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
+  usePageView({ page: '/communication', pageName: 'Communication' })
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
 

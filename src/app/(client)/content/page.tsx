@@ -4,12 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 export default function ContentPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
+  usePageView({ page: '/content', pageName: 'Content' })
   const [hasContent, setHasContent] = useState(true) // TODO: Check client subscriptions
 
   // Check if client is pending (prospect only)

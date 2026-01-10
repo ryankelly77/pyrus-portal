@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type ActivityType = 'all' | 'task' | 'update' | 'alert' | 'content'
 
@@ -293,6 +294,7 @@ export default function ActivityPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
+  usePageView({ page: '/activity', pageName: 'Activity' })
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
 

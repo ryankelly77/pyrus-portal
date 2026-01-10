@@ -4,11 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
+  usePageView({ page: '/results', pageName: 'Results' })
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -122,6 +123,7 @@ export default function CheckoutPage() {
   const tier = searchParams.get('tier') // 'good', 'better', or 'best'
   const urlCoupon = searchParams.get('coupon')
   const { client } = useClientData(viewingAs)
+  usePageView({ page: '/checkout', pageName: 'Checkout' })
 
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedTier, setSelectedTier] = useState<string | null>(tier)

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
 
@@ -43,6 +44,7 @@ export default function WebsitePage() {
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
+  usePageView({ page: '/website', pageName: 'Website' })
   const [hasWebsite, setHasWebsite] = useState(true) // Will be determined by client's subscriptions
 
   // Check if client is pending (prospect only)

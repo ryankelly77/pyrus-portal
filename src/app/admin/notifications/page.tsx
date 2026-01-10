@@ -30,6 +30,7 @@ export default function AdminNotificationsPage() {
   const [summary, setSummary] = useState<NotificationSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -153,6 +154,25 @@ export default function AdminNotificationsPage() {
             <line x1="15" y1="12" x2="3" y2="12"></line>
           </svg>
         )
+      case 'page_view':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        )
+      case 'registration':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+        )
       default:
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -233,6 +253,36 @@ export default function AdminNotificationsPage() {
         </span>
       )
     }
+    if (type === 'page_view') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#FEF3C7',
+          color: '#92400E',
+        }}>
+          page view
+        </span>
+      )
+    }
+    if (type === 'registration') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#D1FAE5',
+          color: '#065F46',
+        }}>
+          new signup
+        </span>
+      )
+    }
     return null
   }
 
@@ -263,6 +313,8 @@ export default function AdminNotificationsPage() {
       case 'proposal_view': return 'view'
       case 'proposal_sent': return 'action'
       case 'login': return 'login'
+      case 'page_view': return 'page-view'
+      case 'registration': return 'registration'
       default: return 'action'
     }
   }
@@ -295,7 +347,15 @@ export default function AdminNotificationsPage() {
     return groups
   }
 
-  const groupedNotifications = groupByDate(notifications)
+  // Filter notifications by search query
+  const filteredNotifications = searchQuery.trim()
+    ? notifications.filter(n =>
+        n.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : notifications
+
+  const groupedNotifications = groupByDate(filteredNotifications)
 
   return (
     <>
@@ -353,6 +413,30 @@ export default function AdminNotificationsPage() {
               </svg>
               Logins
             </button>
+            <button
+              className={`filter-tab ${filter === 'page_view' ? 'active' : ''}`}
+              onClick={() => setFilter('page_view')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              Page Views
+            </button>
+          </div>
+          <div className="filter-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by client name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="filter-actions">
             <button className="btn btn-secondary btn-sm" onClick={fetchNotifications}>

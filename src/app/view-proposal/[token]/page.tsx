@@ -33,8 +33,8 @@ export default function ViewProposalPage() {
           localStorage.setItem('pyrus_invite_token', token)
         }
 
-        // Redirect immediately to register page
-        router.push('/register?redirect=/recommendations')
+        // Redirect immediately to register page (use replace to prevent back button issues)
+        router.replace('/register?redirect=/recommendations')
       } catch (err) {
         console.error('Failed to validate proposal:', err)
         setError('Failed to load proposal')

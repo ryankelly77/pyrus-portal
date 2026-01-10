@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 
@@ -11,6 +12,7 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
+  usePageView({ page: '/settings', pageName: 'Settings' })
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
 

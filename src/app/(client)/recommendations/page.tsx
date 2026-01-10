@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { usePageView } from '@/hooks/usePageView'
 
 type TabType = 'smart-recommendations' | 'original-plan' | 'current-services'
 
@@ -78,6 +79,7 @@ export default function RecommendationsPage() {
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading: clientLoading } = useClientData(viewingAs)
+  usePageView({ page: '/recommendations', pageName: 'Recommendations' })
 
   const [activeTab, setActiveTab] = useState<TabType>('original-plan')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
