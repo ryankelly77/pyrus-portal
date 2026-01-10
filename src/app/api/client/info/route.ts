@@ -26,16 +26,18 @@ export async function GET(request: NextRequest) {
 
       let profileClientId = profileResult.rows[0]?.client_id
 
-      // If no client_id, try to auto-associate based on email matching a recommendation invite
+      // If no client_id, try to auto-associate based on email OR name matching a recommendation invite
       if (!profileClientId && user.email) {
+        const userName = user.user_metadata?.full_name || ''
         const inviteResult = await dbPool.query(
           `SELECT r.client_id
            FROM recommendation_invites ri
            JOIN recommendations r ON r.id = ri.recommendation_id
            WHERE LOWER(ri.email) = LOWER($1)
+              OR (LOWER(ri.first_name) || ' ' || LOWER(ri.last_name)) = LOWER($2)
            ORDER BY ri.created_at DESC
            LIMIT 1`,
-          [user.email]
+          [user.email, userName]
         )
 
         if (inviteResult.rows.length > 0) {
