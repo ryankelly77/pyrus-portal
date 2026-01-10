@@ -211,9 +211,43 @@ export async function POST(request: NextRequest) {
 
         // If subscription became active, update recommendation status and capture purchase info
         if (subscription.status === 'active') {
+          const clientId = subscription.metadata?.pyrus_client_id
           const recommendationId = subscription.metadata?.recommendation_id
           const selectedTier = subscription.metadata?.selected_tier
           const purchasedAt = new Date()
+
+          // Get subscription amount and discount info
+          let amount = 0
+          let couponCode: string | null = null
+          let discountAmount = 0
+
+          // Get the latest invoice for this subscription to get accurate totals
+          try {
+            const invoices = await stripe.invoices.list({
+              subscription: subscription.id,
+              limit: 1,
+            })
+            if (invoices.data.length > 0) {
+              const invoice = invoices.data[0]
+              amount = invoice.total / 100 // Convert from cents
+
+              // Check for discount/coupon
+              if (invoice.discount?.coupon) {
+                couponCode = invoice.discount.coupon.name || invoice.discount.coupon.id
+                if (invoice.discount.coupon.percent_off) {
+                  discountAmount = invoice.discount.coupon.percent_off
+                }
+              }
+            }
+          } catch (invoiceError) {
+            console.error('Failed to fetch invoice details:', invoiceError)
+            // Fallback to subscription items total
+            if (subscription.items?.data) {
+              for (const item of subscription.items.data) {
+                amount += (item.price?.unit_amount || 0) * (item.quantity || 1) / 100
+              }
+            }
+          }
 
           // Get the subscription record to add history
           const { data: subRecord } = await supabase
@@ -233,6 +267,36 @@ export async function POST(request: NextRequest) {
                   : 'Subscription activated',
               }
             })
+          }
+
+          // Create purchase activity log entry for notifications
+          if (clientId) {
+            const tierDisplay = selectedTier
+              ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)
+              : 'Custom'
+
+            let description = `Purchased ${tierDisplay} plan - $${amount.toFixed(2)}/mo`
+            if (couponCode) {
+              description += ` (${discountAmount}% off with ${couponCode})`
+            }
+
+            await prisma.activity_log.create({
+              data: {
+                client_id: clientId,
+                activity_type: 'purchase',
+                description,
+                metadata: {
+                  tier: selectedTier,
+                  amount,
+                  couponCode,
+                  discountPercent: discountAmount,
+                  subscriptionId: subscription.id,
+                  recommendationId,
+                },
+              }
+            })
+
+            console.log(`Purchase activity logged for client ${clientId}: ${description}`)
           }
 
           if (recommendationId) {

@@ -220,6 +220,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch purchase events from activity_log
+    if (!type || type === 'all' || type === 'purchase') {
+      const purchasesResult = await dbPool.query(
+        `SELECT
+          al.id,
+          al.description,
+          al.metadata,
+          al.created_at,
+          c.id as client_id,
+          c.name as client_name,
+          c.contact_name
+        FROM activity_log al
+        JOIN clients c ON c.id = al.client_id
+        WHERE al.activity_type = 'purchase'
+        ORDER BY al.created_at DESC
+        LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
+
+      for (const purchase of purchasesResult.rows) {
+        const metadata = purchase.metadata || {}
+        notifications.push({
+          id: purchase.id,
+          type: 'purchase',
+          title: 'New Purchase',
+          description: purchase.description || `${purchase.contact_name || 'Client'} made a purchase`,
+          clientName: purchase.client_name,
+          clientId: purchase.client_id,
+          metadata: purchase.metadata,
+          status: 'completed',
+          timestamp: purchase.created_at,
+        })
+      }
+    }
+
     // Sort all notifications by timestamp (newest first)
     notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
@@ -233,7 +268,8 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*) FROM recommendation_invites WHERE viewed_at IS NOT NULL) as proposals_viewed,
         (SELECT COUNT(*) FROM recommendation_invites WHERE sent_at IS NOT NULL) as proposals_sent,
         (SELECT COUNT(*) FROM activity_log WHERE activity_type IN ('login', 'client_login', 'prospect_login')) as total_logins,
-        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'page_view') as total_page_views
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'page_view') as total_page_views,
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'purchase') as total_purchases
     `)
 
     const counts = countsResult.rows[0]
@@ -249,6 +285,7 @@ export async function GET(request: NextRequest) {
         proposalsSent: parseInt(counts.proposals_sent) || 0,
         totalLogins: parseInt(counts.total_logins) || 0,
         totalPageViews: parseInt(counts.total_page_views) || 0,
+        totalPurchases: parseInt(counts.total_purchases) || 0,
       },
     })
   } catch (error) {
