@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch proposal views from recommendation_invites
+    // Note: We only track views here since email sends are tracked in client_communications
     if (!type || type === 'all' || type === 'proposal') {
       const proposalViewsResult = await dbPool.query(
         `SELECT
@@ -84,44 +85,28 @@ export async function GET(request: NextRequest) {
           ri.email,
           ri.status,
           ri.viewed_at,
-          ri.sent_at,
-          ri.created_at,
           c.id as client_id,
           c.name as client_name
         FROM recommendation_invites ri
         JOIN recommendations r ON r.id = ri.recommendation_id
         JOIN clients c ON c.id = r.client_id
-        WHERE ri.viewed_at IS NOT NULL OR ri.sent_at IS NOT NULL
-        ORDER BY COALESCE(ri.viewed_at, ri.sent_at) DESC
+        WHERE ri.viewed_at IS NOT NULL
+        ORDER BY ri.viewed_at DESC
         LIMIT $1 OFFSET $2`,
         [limit, offset]
       )
 
       for (const view of proposalViewsResult.rows) {
-        if (view.viewed_at) {
-          notifications.push({
-            id: `view-${view.id}`,
-            type: 'proposal_view',
-            title: 'Proposal Viewed',
-            description: `${view.first_name} ${view.last_name} viewed the proposal`,
-            clientName: view.client_name,
-            clientId: view.client_id,
-            status: 'viewed',
-            timestamp: view.viewed_at,
-          })
-        }
-        if (view.sent_at) {
-          notifications.push({
-            id: `sent-${view.id}`,
-            type: 'proposal_sent',
-            title: 'Proposal Sent',
-            description: `Invitation sent to ${view.email}`,
-            clientName: view.client_name,
-            clientId: view.client_id,
-            status: 'sent',
-            timestamp: view.sent_at,
-          })
-        }
+        notifications.push({
+          id: `view-${view.id}`,
+          type: 'proposal_view',
+          title: 'Proposal Viewed',
+          description: `${view.first_name} ${view.last_name} viewed the proposal`,
+          clientName: view.client_name,
+          clientId: view.client_id,
+          status: 'viewed',
+          timestamp: view.viewed_at,
+        })
       }
     }
 

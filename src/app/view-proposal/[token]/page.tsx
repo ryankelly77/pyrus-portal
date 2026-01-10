@@ -33,10 +33,10 @@ export default function ViewProposalPage() {
           localStorage.setItem('pyrus_invite_token', token)
         }
 
-        // Redirect to login page with redirect to recommendations
+        // Redirect to register page with redirect to recommendations
         // Small delay to show the loading state
         setTimeout(() => {
-          router.push('/login?redirect=/recommendations')
+          router.push('/register?redirect=/recommendations')
         }, 1500)
       } catch (err) {
         console.error('Failed to validate proposal:', err)
@@ -133,10 +133,10 @@ export default function ViewProposalPage() {
         {clientName && <p className="client-name">Proposal for <strong>{clientName}</strong></p>}
         <div className="loading-indicator">
           <div className="spinner"></div>
-          <p>Redirecting you to sign in...</p>
+          <p>Redirecting you to create an account...</p>
         </div>
         <p className="info-text">
-          Create an account or sign in to view your personalized marketing recommendations.
+          Create an account to view your personalized marketing recommendations.
         </p>
       </div>
 

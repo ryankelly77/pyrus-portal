@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
@@ -115,9 +116,16 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Forgot password link */}
+          {/* Footer links */}
           <div className="login-footer">
             <a href="/forgot-password">Forgot your password?</a>
+          </div>
+
+          <div className="login-register">
+            <span>New to Pyrus? </span>
+            <Link href={`/register${redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
+              Create an account
+            </Link>
           </div>
         </div>
       </div>
@@ -235,6 +243,25 @@ function LoginForm() {
         }
 
         .login-footer a:hover {
+          text-decoration: underline;
+        }
+
+        .login-register {
+          text-align: center;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--border-light);
+          font-size: 14px;
+          color: var(--text-secondary);
+        }
+
+        .login-register a {
+          color: var(--pyrus-brown);
+          text-decoration: none;
+          font-weight: 500;
+        }
+
+        .login-register a:hover {
           text-decoration: underline;
         }
       `}</style>
