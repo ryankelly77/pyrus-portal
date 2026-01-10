@@ -24,9 +24,9 @@ interface RecommendationItem {
   monthly_price: string | null
   onetime_price: string | null
   is_free: boolean | null
-  product: { id: string; name: string; category: string; short_description: string | null } | null
-  bundle: { id: string; name: string; description: string | null } | null
-  addon: { id: string; name: string; description: string | null } | null
+  product: { id: string; name: string; category: string; short_description: string | null; monthly_price: string | null; onetime_price: string | null } | null
+  bundle: { id: string; name: string; description: string | null; monthly_price: string | null; onetime_price: string | null } | null
+  addon: { id: string; name: string; description: string | null; monthly_price: string | null; onetime_price: string | null } | null
 }
 
 interface Recommendation {
@@ -62,6 +62,15 @@ interface Subscription {
   monthly_amount: string | null
   created_at: string | null
   subscription_items: SubscriptionItem[]
+}
+
+// Format price - show cents only when there's a fractional part
+const formatPrice = (amount: number): string => {
+  const hasCents = amount % 1 !== 0
+  if (hasCents) {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  return Math.round(amount).toLocaleString('en-US')
 }
 
 export default function RecommendationsPage() {
@@ -652,10 +661,84 @@ export default function RecommendationsPage() {
                 {(['good', 'better', 'best'] as const).map(tierName => {
                   const tierItems = recommendation.recommendation_items.filter(item => item.tier === tierName)
                   const isPurchased = recommendation.purchased_tier === tierName
-                  const monthlyTotal = tierItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
-                  const onetimeTotal = tierItems.reduce((sum, item) => sum + Number(item.onetime_price || 0), 0)
-                  const hasMonthly = monthlyTotal > 0
-                  const hasOnetime = onetimeTotal > 0
+
+                  // Growth Rewards tier thresholds
+                  const REWARD_TIERS = [
+                    { threshold: 0, discount: 0, coupon: null },
+                    { threshold: 1000, discount: 5, coupon: 'HARVEST5X' },
+                    { threshold: 1500, discount: 5, coupon: 'HARVEST5X' },
+                    { threshold: 2000, discount: 10, coupon: 'CULTIVATE10' },
+                  ]
+
+                  // Calculate full pricing breakdown
+                  // Full Price = what would be charged if nothing was free
+                  // For free items, use the product catalog price to show the value
+                  // For non-free items, use the item price (what's in this recommendation)
+                  let fullPriceMonthly = 0
+                  let fullPriceOnetime = 0
+                  let freeItemsValueMonthly = 0
+                  let freeItemsValueOnetime = 0
+                  let yourPriceMonthlyRaw = 0
+                  let yourPriceOnetimeRaw = 0
+                  let baseTotalForRewards = 0 // Excludes always-free items like Analytics
+
+                  tierItems.forEach(item => {
+                    const qty = item.quantity || 1
+                    const itemMonthly = Number(item.monthly_price || 0)
+                    const itemOnetime = Number(item.onetime_price || 0)
+                    const itemName = item.product?.name || item.bundle?.name || item.addon?.name || ''
+                    const isAnalytics = itemName.includes('Analytics Tracking')
+
+                    if (item.is_free) {
+                      // For free items, use product price to show the value they're getting
+                      const productMonthly = Number(item.product?.monthly_price || item.bundle?.monthly_price || item.addon?.monthly_price || 0)
+                      const productOnetime = Number(item.product?.onetime_price || item.bundle?.onetime_price || item.addon?.onetime_price || 0)
+                      fullPriceMonthly += productMonthly * qty
+                      fullPriceOnetime += productOnetime * qty
+                      freeItemsValueMonthly += productMonthly * qty
+                      freeItemsValueOnetime += productOnetime * qty
+                    } else {
+                      // For non-free items, use item prices (what's in this recommendation)
+                      fullPriceMonthly += itemMonthly * qty
+                      fullPriceOnetime += itemOnetime * qty
+                      // Add to base total for reward calculation (exclude Analytics)
+                      if (!isAnalytics) {
+                        baseTotalForRewards += itemMonthly * qty
+                      }
+                    }
+
+                    // Your price = what they actually pay
+                    yourPriceMonthlyRaw += itemMonthly * qty
+                    yourPriceOnetimeRaw += itemOnetime * qty
+                  })
+
+                  // Determine reward tier based on base total
+                  let rewardTierIndex = 0
+                  for (let i = REWARD_TIERS.length - 1; i >= 0; i--) {
+                    if (baseTotalForRewards >= REWARD_TIERS[i].threshold) {
+                      rewardTierIndex = i
+                      break
+                    }
+                  }
+                  const currentRewardTier = REWARD_TIERS[rewardTierIndex]
+
+                  // After free items
+                  const afterFreeMonthly = fullPriceMonthly - freeItemsValueMonthly
+                  const afterFreeOnetime = fullPriceOnetime - freeItemsValueOnetime
+
+                  // Apply discount based on reward tier (not stored value)
+                  const discountPercent = currentRewardTier.discount
+                  const couponCode = currentRewardTier.coupon
+                  const discountAmount = Math.round(yourPriceMonthlyRaw * (discountPercent / 100) * 100) / 100
+                  const yourPriceMonthly = yourPriceMonthlyRaw - discountAmount
+                  const yourPriceOnetime = yourPriceOnetimeRaw
+
+                  // Total savings = Full Price - Your Price (includes free items + discount)
+                  const totalSavings = (fullPriceMonthly - yourPriceMonthly) + (fullPriceOnetime - yourPriceOnetime)
+                  const hasFreeItems = freeItemsValueMonthly > 0 || freeItemsValueOnetime > 0
+
+                  const hasMonthly = yourPriceMonthly > 0
+                  const hasOnetime = yourPriceOnetime > 0
 
                   const tierDescriptions: Record<string, string> = {
                     good: 'Establish a professional foundation to help customers find and trust your business.',
@@ -718,12 +801,62 @@ export default function RecommendationsPage() {
                         )}
                       </div>
                       <div className="pricing-tier-footer">
-                        <div className="pricing-tier-type">{hasMonthly ? 'Monthly' : 'One-time'}</div>
-                        <div className="pricing-tier-total">
-                          {hasMonthly ? (
-                            <>${monthlyTotal.toLocaleString()}<span>/mo</span></>
-                          ) : (
-                            <>${onetimeTotal.toLocaleString()}</>
+                        {/* Full pricing breakdown */}
+                        <div className="pricing-breakdown">
+                          {/* Full Price - only show if there are savings */}
+                          {totalSavings > 0 && (
+                            <div className="pricing-line strikethrough">
+                              <span className="pricing-line-label">Full Price</span>
+                              <span className="pricing-line-value">
+                                {fullPriceOnetime > 0
+                                  ? `$${formatPrice(fullPriceOnetime + fullPriceMonthly)} today, then $${formatPrice(fullPriceMonthly)}/mo`
+                                  : `$${formatPrice(fullPriceMonthly)}/mo`
+                                }
+                              </span>
+                            </div>
+                          )}
+
+                          {/* After Free Items - only if there are free items */}
+                          {hasFreeItems && (
+                            <div className="pricing-line">
+                              <span className="pricing-line-label">After Free Items</span>
+                              <span className="pricing-line-value">
+                                {afterFreeOnetime > 0
+                                  ? `$${formatPrice(afterFreeOnetime + afterFreeMonthly)} today, then $${formatPrice(afterFreeMonthly)}/mo`
+                                  : `$${formatPrice(afterFreeMonthly)}/mo`
+                                }
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Your Price */}
+                          <div className="pricing-line highlight">
+                            <span className="pricing-line-label">{totalSavings > 0 ? 'Your Price' : 'Total'}</span>
+                            <span className="pricing-line-value highlight">
+                              {yourPriceOnetime > 0
+                                ? `$${formatPrice(yourPriceOnetime + yourPriceMonthly)} today, then $${formatPrice(yourPriceMonthly)}/mo`
+                                : `$${formatPrice(yourPriceMonthly)}/mo`
+                              }
+                            </span>
+                          </div>
+
+                          {/* Total Savings */}
+                          {totalSavings > 0 && (
+                            <div className="pricing-line savings">
+                              <span className="pricing-line-label">You Save</span>
+                              <span className="pricing-line-value savings">
+                                ${formatPrice(totalSavings)}/mo
+                                {discountPercent > 0 && ` (includes ${discountPercent}% discount)`}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Coupon Code */}
+                          {couponCode && (
+                            <div className="coupon-display">
+                              <span className="coupon-label">Use code at checkout:</span>
+                              <span className="coupon-code">{couponCode}</span>
+                            </div>
                           )}
                         </div>
                         {isPurchased ? (
@@ -736,7 +869,7 @@ export default function RecommendationsPage() {
                         ) : (
                           <button
                             className="pricing-tier-btn primary"
-                            onClick={() => router.push(`/checkout?tier=${tierName}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`)}
+                            onClick={() => router.push(`/checkout?tier=${tierName}${viewingAs ? `&viewingAs=${viewingAs}` : ''}${couponCode ? `&coupon=${couponCode}` : ''}`)}
                           >
                             {tierName === 'good' ? 'Select the Starter Option' : tierName === 'better' ? 'Select the Popular Choice' : 'Select the Premium Option'}
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">

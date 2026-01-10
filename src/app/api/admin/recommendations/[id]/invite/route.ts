@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
+import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
+import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
 
 // GET /api/admin/recommendations/[id]/invite - Get all invites for a recommendation
 export async function GET(
@@ -43,9 +45,18 @@ export async function POST(
       )
     }
 
-    // Check if recommendation exists
+    // Check if recommendation exists and get client info
     const recommendation = await prisma.recommendations.findUnique({
       where: { id },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            contact_name: true,
+          },
+        },
+      },
     })
 
     if (!recommendation) {
@@ -95,7 +106,63 @@ export async function POST(
       }
     }
 
-    return NextResponse.json(invite, { status: 201 })
+    // Send the invite email
+    let emailSent = false
+    let emailError: string | undefined
+
+    if (isEmailConfigured()) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const inviteUrl = `${appUrl}/view-proposal/${inviteToken}`
+
+      const emailContent = getRecommendationInviteEmail({
+        firstName,
+        clientName: recommendation.client.name,
+        inviteUrl,
+      })
+
+      const emailResult = await sendEmail({
+        to: email,
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text,
+      })
+
+      emailSent = emailResult.success
+      emailError = emailResult.error
+    } else {
+      console.warn('Email not configured - invite created but email not sent')
+    }
+
+    // Log the communication
+    try {
+      await prisma.client_communications.create({
+        data: {
+          client_id: recommendation.client.id,
+          comm_type: 'email_invite',
+          title: 'Proposal Invitation Sent',
+          subject: `Your Personalized Marketing Proposal for ${recommendation.client.name}`,
+          body: `Invitation sent to ${firstName} ${lastName} at ${email}`,
+          status: emailSent ? 'sent' : 'failed',
+          recipient_email: email,
+          sent_at: new Date(),
+          metadata: {
+            recommendation_id: id,
+            invite_id: invite.id,
+            email_configured: isEmailConfigured(),
+            email_error: emailError,
+          },
+        },
+      })
+    } catch (commError) {
+      console.error('Failed to log communication:', commError)
+      // Don't fail the request if communication logging fails
+    }
+
+    return NextResponse.json({
+      ...invite,
+      emailSent,
+      emailError,
+    }, { status: 201 })
   } catch (error) {
     console.error('Failed to create invite:', error)
     return NextResponse.json(

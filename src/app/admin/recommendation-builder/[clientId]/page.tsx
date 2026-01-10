@@ -170,6 +170,7 @@ export default function RecommendationBuilderPage() {
     updateItemPricingType,
     clearAllTiers,
     setTierItems,
+    reorderItems,
     getTierPricing,
     getTierRewards,
     getTierClaimHints,
@@ -676,6 +677,7 @@ export default function RecommendationBuilderPage() {
             onQuantityChange={(itemId, quantity) => updateItemQuantity(tier, itemId, quantity)}
             onPricingTypeChange={(itemId, pricingType) => updateItemPricingType(tier, itemId, pricingType)}
             onInfoClick={openInfoModal}
+            onReorder={(fromIndex, toIndex) => reorderItems(tier, fromIndex, toIndex)}
             free99SlotUsed={pricing.free99SlotUsed}
             hasFree99Reward={pricing.hasFree99Reward}
           />

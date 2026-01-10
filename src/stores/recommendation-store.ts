@@ -33,6 +33,7 @@ interface RecommendationState {
   clearTier: (tier: TierName) => void
   clearAllTiers: () => void
   setTierItems: (tier: TierName, items: RecommendationItem[]) => void
+  reorderItems: (tier: TierName, fromIndex: number, toIndex: number) => void
   openInfoModal: (product: Product) => void
   closeInfoModal: () => void
 
@@ -133,6 +134,20 @@ export const useRecommendationStore = create<RecommendationState>((set, get) => 
         [tier]: items,
       },
     }))
+  },
+
+  reorderItems: (tier, fromIndex, toIndex) => {
+    set((state) => {
+      const items = [...state.tiers[tier]]
+      const [removed] = items.splice(fromIndex, 1)
+      items.splice(toIndex, 0, removed)
+      return {
+        tiers: {
+          ...state.tiers,
+          [tier]: items,
+        },
+      }
+    })
   },
 
   openInfoModal: (product) => set({ infoModalOpen: true, infoModalProduct: product }),

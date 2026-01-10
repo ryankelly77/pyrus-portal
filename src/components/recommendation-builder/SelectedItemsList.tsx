@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { RecommendationItem, TierName, PricingType, Product } from '@/types/recommendation'
 
 interface SelectedItemsListProps {
@@ -10,6 +11,7 @@ interface SelectedItemsListProps {
   onQuantityChange: (itemId: string, quantity: number) => void
   onPricingTypeChange: (itemId: string, pricingType: PricingType) => void
   onInfoClick: (product: Product) => void
+  onReorder: (fromIndex: number, toIndex: number) => void
   free99SlotUsed: boolean
   hasFree99Reward: boolean
 }
@@ -22,9 +24,12 @@ export function SelectedItemsList({
   onQuantityChange,
   onPricingTypeChange,
   onInfoClick,
+  onReorder,
   free99SlotUsed,
   hasFree99Reward,
 }: SelectedItemsListProps) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   // Track how many free $99 slots have been used as we render
   let currentFree99Used = 0
 
@@ -76,24 +81,66 @@ export function SelectedItemsList({
     )
   }
 
+  // Drag handlers for reordering
+  const handleItemDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', index.toString())
+  }
+
+  const handleItemDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleItemDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleItemDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedIndex !== null && draggedIndex !== toIndex) {
+      onReorder(draggedIndex, toIndex)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleItemDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
   // Reset counter for display calculation
   currentFree99Used = 0
 
   return (
     <>
-      {items.map((item) => {
+      {items.map((item, index) => {
         const priceDisplay = getItemPriceDisplay(item)
         const unmetRequirement = unmetRequirements.get(item.id)
         const hasBothPricing = item.product.monthlyPrice > 0 && item.product.onetimePrice > 0
         const uniqueId = `pricing-${tier}-${item.id}`
         const isBundle = item.product.category === 'bundle' && item.product.bundleProducts && item.product.bundleProducts.length > 0
         const bundleProducts = item.product.bundleProducts || []
+        const isDragging = draggedIndex === index
+        const isDragOver = dragOverIndex === index
 
         return (
           <div
             key={item.id}
-            className={`service-item dropped${item.product.requires ? ' has-requirement' : ''}${isBundle ? ' is-bundle' : ''}`}
+            className={`service-item dropped${item.product.requires ? ' has-requirement' : ''}${isBundle ? ' is-bundle' : ''}${isDragging ? ' dragging' : ''}${isDragOver ? ' drag-over' : ''}`}
             data-category={item.product.category}
+            draggable
+            onDragStart={(e) => handleItemDragStart(e, index)}
+            onDragOver={(e) => handleItemDragOver(e, index)}
+            onDragLeave={handleItemDragLeave}
+            onDrop={(e) => handleItemDrop(e, index)}
+            onDragEnd={handleItemDragEnd}
           >
             <div className="service-item-header">
               <span className="service-item-title">{item.product.name}</span>

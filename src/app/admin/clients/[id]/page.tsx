@@ -405,6 +405,10 @@ export default function ClientDetailPage() {
   const [communications, setCommunications] = useState<Communication[]>([])
   const [communicationsLoading, setCommunicationsLoading] = useState(false)
 
+  // Resend invitation state
+  const [isResendingInvite, setIsResendingInvite] = useState(false)
+  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
   // Handle saving client changes
   const handleSaveClient = async () => {
     if (!dbClient) return
@@ -704,6 +708,56 @@ export default function ClientDetailPage() {
       setTimeout(() => setSyncMessage(null), 3000)
     } finally {
       setSyncingChecklist(false)
+    }
+  }
+
+  // Handle resending invitation email
+  const handleResendInvitation = async () => {
+    if (!dbClient) return
+
+    setIsResendingInvite(true)
+    setResendMessage(null)
+
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/resend-invite`, {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend invitation')
+      }
+
+      if (data.emailSent) {
+        setResendMessage({
+          type: 'success',
+          text: `Invitation sent to ${data.recipientEmail}`,
+        })
+      } else {
+        setResendMessage({
+          type: 'error',
+          text: data.emailError || 'Invitation created but email not sent',
+        })
+      }
+
+      // Refresh communications
+      const commsRes = await fetch(`/api/admin/clients/${clientId}/communications`)
+      if (commsRes.ok) {
+        setCommunications(await commsRes.json())
+      }
+
+      // Clear message after 5 seconds
+      setTimeout(() => setResendMessage(null), 5000)
+    } catch (error) {
+      console.error('Failed to resend invitation:', error)
+      setResendMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to resend invitation',
+      })
+      setTimeout(() => setResendMessage(null), 5000)
+    } finally {
+      setIsResendingInvite(false)
     }
   }
 
@@ -1126,20 +1180,48 @@ export default function ClientDetailPage() {
                 </button>
               </div>
               {activeSubtab === 'checklist' && (
-                <button
-                  onClick={handleSyncChecklist}
-                  disabled={syncingChecklist || !!syncMessage}
-                  className="getting-started-subtab"
-                  title="Re-sync checklist with onboarding responses"
-                  style={{ opacity: syncingChecklist ? 0.6 : 1 }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
-                  {syncMessage || (syncingChecklist ? 'Syncing...' : 'Sync')}
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {resendMessage && (
+                    <span style={{
+                      fontSize: '13px',
+                      color: resendMessage.type === 'success' ? '#059669' : '#DC2626',
+                      padding: '4px 8px',
+                      background: resendMessage.type === 'success' ? '#E8F5E9' : '#FEE2E2',
+                      borderRadius: '4px',
+                    }}>
+                      {resendMessage.text}
+                    </span>
+                  )}
+                  {recommendation && (
+                    <button
+                      onClick={handleResendInvitation}
+                      disabled={isResendingInvite || !dbClient?.contact_email}
+                      className="getting-started-subtab"
+                      title={!dbClient?.contact_email ? 'No contact email on file' : 'Resend proposal invitation email'}
+                      style={{ opacity: isResendingInvite || !dbClient?.contact_email ? 0.6 : 1 }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                      {isResendingInvite ? 'Sending...' : 'Resend Invitation'}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSyncChecklist}
+                    disabled={syncingChecklist || !!syncMessage}
+                    className="getting-started-subtab"
+                    title="Re-sync checklist with onboarding responses"
+                    style={{ opacity: syncingChecklist ? 0.6 : 1 }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    {syncMessage || (syncingChecklist ? 'Syncing...' : 'Sync')}
+                  </button>
+                </div>
               )}
             </div>
 

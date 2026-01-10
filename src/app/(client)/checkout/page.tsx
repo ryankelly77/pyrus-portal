@@ -10,6 +10,7 @@ interface CartItem {
   name: string
   description: string
   price: number
+  originalPrice?: number // Used for free items to show their value
   billingPeriod: 'monthly' | 'one-time'
   category: string
   isFree?: boolean
@@ -22,9 +23,9 @@ interface RecommendationItem {
   monthly_price: string | null
   onetime_price: string | null
   is_free: boolean | null
-  product: { id: string; name: string; category: string; short_description: string | null } | null
-  bundle: { id: string; name: string; description: string | null } | null
-  addon: { id: string; name: string; description: string | null } | null
+  product: { id: string; name: string; category: string; short_description: string | null; monthly_price: string | null; onetime_price: string | null } | null
+  bundle: { id: string; name: string; description: string | null; monthly_price: string | null } | null
+  addon: { id: string; name: string; description: string | null; monthly_price: string | null } | null
 }
 
 // Product catalog
@@ -103,11 +104,18 @@ const productCatalog: Record<string, CartItem> = {
   }
 }
 
+// Growth Rewards coupon configuration
+const VALID_COUPONS: Record<string, { discount: number; minSpend: number }> = {
+  'HARVEST5X': { discount: 5, minSpend: 1000 },
+  'CULTIVATE10': { discount: 10, minSpend: 2000 },
+}
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const itemId = searchParams.get('item')
   const tier = searchParams.get('tier') // 'good', 'better', or 'best'
+  const urlCoupon = searchParams.get('coupon')
   const { client } = useClientData(viewingAs)
 
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -118,6 +126,9 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(!!tier)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [couponInput, setCouponInput] = useState('')
 
   // Fetch recommendation items when tier is provided
   useEffect(() => {
@@ -150,13 +161,21 @@ export default function CheckoutPage() {
               const monthlyPrice = Number(item.monthly_price || 0)
               const onetimePrice = Number(item.onetime_price || 0)
               const isFree = item.is_free || false
+              const actualPrice = monthlyPrice > 0 ? monthlyPrice : onetimePrice
+
+              // For free items, get original price from product/bundle/addon
+              const productOriginalPrice = Number(item.product?.monthly_price || item.product?.onetime_price || 0)
+              const bundleOriginalPrice = Number(item.bundle?.monthly_price || 0)
+              const addonOriginalPrice = Number(item.addon?.monthly_price || 0)
+              const originalPrice = isFree ? (productOriginalPrice || bundleOriginalPrice || addonOriginalPrice) : undefined
 
               return {
                 id: item.id,
                 name,
                 description,
-                price: isFree ? 0 : (monthlyPrice > 0 ? monthlyPrice : onetimePrice),
-                billingPeriod: monthlyPrice > 0 ? 'monthly' : 'one-time',
+                price: isFree ? 0 : actualPrice,
+                originalPrice, // Track original value for free items
+                billingPeriod: monthlyPrice > 0 || item.product?.monthly_price || item.bundle?.monthly_price || item.addon?.monthly_price ? 'monthly' : 'one-time',
                 category: item.product?.category || 'service',
                 isFree
               } as CartItem
@@ -175,13 +194,77 @@ export default function CheckoutPage() {
     fetchRecommendationItems()
   }, [tier, viewingAs, client.id, itemId])
 
+  // Calculate base monthly total (excluding Analytics which is always free)
+  const baseMonthlyTotal = cartItems.reduce((sum, item) => {
+    if (item.billingPeriod === 'monthly' && !item.name.includes('Analytics Tracking')) {
+      return sum + item.price
+    }
+    return sum
+  }, 0)
+
   const monthlyTotal = cartItems.reduce((sum, item) =>
     item.billingPeriod === 'monthly' ? sum + item.price : sum, 0
   )
   const onetimeTotal = cartItems.reduce((sum, item) =>
     item.billingPeriod === 'one-time' ? sum + item.price : sum, 0
   )
-  const annualTotal = monthlyTotal * 12 * 0.9 // 10% discount for annual
+
+  // Calculate free items value (for showing as discount)
+  const freeItemsValue = cartItems.reduce((sum, item) =>
+    item.isFree && item.originalPrice ? sum + item.originalPrice : sum, 0
+  )
+  const freeItemsCount = cartItems.filter(item => item.isFree).length
+
+  // Validate and apply coupon
+  const validateCoupon = (code: string): { valid: boolean; error?: string } => {
+    const coupon = VALID_COUPONS[code.toUpperCase()]
+    if (!coupon) {
+      return { valid: false, error: 'Invalid coupon code' }
+    }
+    if (baseMonthlyTotal < coupon.minSpend) {
+      return { valid: false, error: `This coupon requires a minimum of $${coupon.minSpend}/mo (current: $${baseMonthlyTotal}/mo)` }
+    }
+    return { valid: true }
+  }
+
+  const handleApplyCoupon = () => {
+    const code = couponInput.toUpperCase().trim()
+    if (!code) return
+
+    const result = validateCoupon(code)
+    if (result.valid) {
+      setAppliedCoupon(code)
+      setCouponError(null)
+      setCouponInput('')
+    } else {
+      setCouponError(result.error || 'Invalid coupon')
+      setAppliedCoupon(null)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponError(null)
+  }
+
+  // Auto-apply coupon from URL when cart is loaded
+  useEffect(() => {
+    if (urlCoupon && cartItems.length > 0 && !appliedCoupon) {
+      const result = validateCoupon(urlCoupon)
+      if (result.valid) {
+        setAppliedCoupon(urlCoupon.toUpperCase())
+      } else {
+        setCouponError(result.error || 'Coupon not valid for this order')
+      }
+    }
+  }, [urlCoupon, cartItems.length, appliedCoupon, baseMonthlyTotal])
+
+  // Calculate discount
+  const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
+    ? Math.round(monthlyTotal * (VALID_COUPONS[appliedCoupon].discount / 100) * 100) / 100
+    : 0
+  const discountedMonthlyTotal = monthlyTotal - couponDiscount
+  const annualTotal = discountedMonthlyTotal * 12 * 0.9 // 10% discount for annual
 
   const handleCheckout = async () => {
     setIsProcessing(true)
@@ -374,7 +457,7 @@ export default function CheckoutPage() {
                   />
                   <div className="billing-option-content">
                     <span className="billing-option-label">Monthly</span>
-                    <span className="billing-option-price">${monthlyTotal}/mo</span>
+                    <span className="billing-option-price">${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
                   </div>
                 </label>
                 <label className={`billing-option ${billingCycle === 'annual' ? 'selected' : ''}`}>
@@ -390,8 +473,8 @@ export default function CheckoutPage() {
                       <span className="billing-option-label">Annual</span>
                       <span className="billing-option-badge">Save 10%</span>
                     </div>
-                    <span className="billing-option-price">${Math.round(annualTotal / 12)}/mo</span>
-                    <span className="billing-option-detail">Billed ${annualTotal.toLocaleString()} annually</span>
+                    <span className="billing-option-price">${(annualTotal / 12).toLocaleString(undefined, { minimumFractionDigits: (annualTotal / 12) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
+                    <span className="billing-option-detail">Billed ${annualTotal.toLocaleString(undefined, { minimumFractionDigits: annualTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} annually</span>
                   </div>
                 </label>
               </div>
@@ -407,43 +490,73 @@ export default function CheckoutPage() {
                 Payment Method
               </h2>
 
-              <div className="payment-form">
-                <div className="stripe-placeholder">
-                  <div className="stripe-placeholder-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
+              {billingCycle === 'annual' ? (
+                <>
+                  <div className="payment-form">
+                    <div className="stripe-placeholder ach-only">
+                      <div className="stripe-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                          <rect x="1" y="3" width="22" height="18" rx="2" ry="2"></rect>
+                          <line x1="1" y1="9" x2="23" y2="9"></line>
+                          <line x1="1" y1="15" x2="23" y2="15"></line>
+                        </svg>
+                      </div>
+                      <p>Bank account (ACH) details will appear here</p>
+                      <span className="stripe-placeholder-note">Routing number, account number</span>
+                    </div>
                   </div>
-                  <p>Stripe payment form will appear here</p>
-                  <span className="stripe-placeholder-note">Card number, expiry, CVC</span>
-                </div>
-              </div>
-
-              <div className="payment-methods-accepted">
-                <span>We accept:</span>
-                <div className="payment-icons">
-                  <div className="payment-icon" title="Visa">
-                    <svg viewBox="0 0 50 50" width="32" height="20">
-                      <rect width="50" height="50" rx="5" fill="#1A1F71"/>
-                      <text x="25" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">VISA</text>
-                    </svg>
+                  <div className="payment-methods-accepted">
+                    <span>Annual billing requires:</span>
+                    <div className="payment-icons">
+                      <div className="payment-icon" title="Bank Transfer (ACH)">
+                        <svg viewBox="0 0 50 50" width="32" height="20">
+                          <rect width="50" height="50" rx="5" fill="#324438"/>
+                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">ACH</text>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                  <div className="payment-icon" title="Mastercard">
-                    <svg viewBox="0 0 50 50" width="32" height="20">
-                      <rect width="50" height="50" rx="5" fill="#EB001B"/>
-                      <circle cx="20" cy="25" r="12" fill="#EB001B"/>
-                      <circle cx="30" cy="25" r="12" fill="#F79E1B"/>
-                    </svg>
+                </>
+              ) : (
+                <>
+                  <div className="payment-form">
+                    <div className="stripe-placeholder">
+                      <div className="stripe-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                      </div>
+                      <p>Stripe payment form will appear here</p>
+                      <span className="stripe-placeholder-note">Card number, expiry, CVC</span>
+                    </div>
                   </div>
-                  <div className="payment-icon" title="American Express">
-                    <svg viewBox="0 0 50 50" width="32" height="20">
-                      <rect width="50" height="50" rx="5" fill="#006FCF"/>
-                      <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">AMEX</text>
-                    </svg>
+                  <div className="payment-methods-accepted">
+                    <span>We accept:</span>
+                    <div className="payment-icons">
+                      <div className="payment-icon" title="Visa">
+                        <svg viewBox="0 0 50 50" width="32" height="20">
+                          <rect width="50" height="50" rx="5" fill="#1A1F71"/>
+                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">VISA</text>
+                        </svg>
+                      </div>
+                      <div className="payment-icon" title="Mastercard">
+                        <svg viewBox="0 0 50 50" width="32" height="20">
+                          <rect width="50" height="50" rx="5" fill="#EB001B"/>
+                          <circle cx="20" cy="25" r="12" fill="#EB001B"/>
+                          <circle cx="30" cy="25" r="12" fill="#F79E1B"/>
+                        </svg>
+                      </div>
+                      <div className="payment-icon" title="American Express">
+                        <svg viewBox="0 0 50 50" width="32" height="20">
+                          <rect width="50" height="50" rx="5" fill="#006FCF"/>
+                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">AMEX</text>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             {/* Billing Info */}
@@ -504,40 +617,82 @@ export default function CheckoutPage() {
                 {tierLabel ? `${tierLabel} Plan Summary` : 'Order Summary'}
               </h3>
 
-              <div className="order-summary-items">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="order-summary-item">
-                    <span className="item-name">
-                      {item.name}
-                      {item.isFree && <span style={{ fontSize: 10, color: '#324438', marginLeft: 4 }}>(FREE)</span>}
-                    </span>
-                    <span className="item-price">
-                      {item.isFree ? '$0' : `$${item.price.toLocaleString()}${item.billingPeriod === 'monthly' ? '/mo' : ''}`}
-                    </span>
-                  </div>
-                ))}
+              {/* Item count summary - show full price including free items' value */}
+              <div className="order-summary-row">
+                <span>{cartItems.length} service{cartItems.length !== 1 ? 's' : ''}</span>
+                <span>${(monthlyTotal + freeItemsValue).toLocaleString()}/mo</span>
               </div>
 
-              <div className="order-summary-divider"></div>
-
-              {monthlyTotal > 0 && (
-                <div className="order-summary-row">
-                  <span>Monthly Services</span>
-                  <span>${monthlyTotal.toLocaleString()}/mo</span>
+              {/* Free items discount */}
+              {freeItemsCount > 0 && freeItemsValue > 0 && (
+                <div className="order-summary-row discount">
+                  <span>Free item{freeItemsCount !== 1 ? 's' : ''} ({freeItemsCount})</span>
+                  <span>-${freeItemsValue.toLocaleString()}/mo</span>
                 </div>
               )}
 
               {onetimeTotal > 0 && (
                 <div className="order-summary-row">
-                  <span>One-time Services</span>
+                  <span>One-time fees</span>
                   <span>${onetimeTotal.toLocaleString()}</span>
                 </div>
               )}
 
-              {billingCycle === 'annual' && monthlyTotal > 0 && (
+              <div className="order-summary-divider"></div>
+
+              {/* Coupon Section */}
+              <div className="coupon-section">
+                {appliedCoupon ? (
+                  <div className="applied-coupon">
+                    <div className="applied-coupon-info">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                      </svg>
+                      <span className="coupon-code">{appliedCoupon}</span>
+                      <span className="coupon-discount">({VALID_COUPONS[appliedCoupon].discount}% off)</span>
+                    </div>
+                    <button type="button" className="remove-coupon" onClick={handleRemoveCoupon}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="coupon-input-row">
+                    <input
+                      type="text"
+                      placeholder="Coupon code"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      className="coupon-input"
+                    />
+                    <button type="button" className="btn btn-sm coupon-apply-btn" onClick={handleApplyCoupon}>
+                      Apply
+                    </button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="coupon-error">{couponError}</p>
+                )}
+              </div>
+
+              <div className="order-summary-divider"></div>
+
+              {/* Discounts */}
+              {appliedCoupon && couponDiscount > 0 && (
+                <div className="order-summary-row discount">
+                  <span>Coupon ({appliedCoupon})</span>
+                  <span>-${couponDiscount.toLocaleString(undefined, { minimumFractionDigits: couponDiscount % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
+                </div>
+              )}
+
+              {billingCycle === 'annual' && discountedMonthlyTotal > 0 && (
                 <div className="order-summary-row discount">
                   <span>Annual discount (10%)</span>
-                  <span>-${Math.round(monthlyTotal * 12 * 0.1).toLocaleString()}</span>
+                  <span>-${(discountedMonthlyTotal * 12 * 0.1).toLocaleString(undefined, { minimumFractionDigits: (discountedMonthlyTotal * 12 * 0.1) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
 
@@ -547,21 +702,39 @@ export default function CheckoutPage() {
                 <span>Total Due Today</span>
                 <div className="total-amount">
                   <span className="amount">
-                    ${(billingCycle === 'monthly' ? monthlyTotal + onetimeTotal : Math.round(annualTotal / 12) + onetimeTotal).toLocaleString()}
+                    ${(billingCycle === 'monthly'
+                      ? discountedMonthlyTotal + onetimeTotal
+                      : annualTotal + onetimeTotal
+                    ).toLocaleString(undefined, {
+                      minimumFractionDigits: (billingCycle === 'monthly' ? discountedMonthlyTotal + onetimeTotal : annualTotal + onetimeTotal) % 1 !== 0 ? 2 : 0,
+                      maximumFractionDigits: 2
+                    })}
                   </span>
-                  {monthlyTotal > 0 && <span className="period">{onetimeTotal > 0 ? '' : '/mo'}</span>}
+                  {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && <span className="period">{onetimeTotal > 0 ? '' : '/mo'}</span>}
                 </div>
               </div>
 
-              {billingCycle === 'annual' && monthlyTotal > 0 && (
+              {billingCycle === 'annual' && discountedMonthlyTotal > 0 && (
                 <p className="order-summary-note">
                   You&apos;ll be charged ${(annualTotal + onetimeTotal).toLocaleString()} today for 12 months of service{onetimeTotal > 0 ? ' plus one-time fees' : ''}.
                 </p>
               )}
 
-              {billingCycle === 'monthly' && monthlyTotal > 0 && (
+              {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && (
                 <p className="order-summary-note">
-                  You&apos;ll be charged ${(monthlyTotal + onetimeTotal).toLocaleString()} today, then ${monthlyTotal.toLocaleString()}/mo going forward.
+                  {onetimeTotal > 0 ? (
+                    <>You&apos;ll be charged ${(discountedMonthlyTotal + onetimeTotal).toLocaleString(undefined, { minimumFractionDigits: (discountedMonthlyTotal + onetimeTotal) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} today, then ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {(() => {
+                      const day = new Date().getDate()
+                      const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
+                      return `${day}${suffix}`
+                    })()} of each month.</>
+                  ) : (
+                    <>then, ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {(() => {
+                      const day = new Date().getDate()
+                      const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
+                      return `${day}${suffix}`
+                    })()} of each month.</>
+                  )}
                 </p>
               )}
 
