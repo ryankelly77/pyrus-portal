@@ -35,7 +35,7 @@ function LoginForm() {
 
     // Log the login activity
     try {
-      await fetch('/api/activity/log', {
+      const logRes = await fetch('/api/activity/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -43,6 +43,10 @@ function LoginForm() {
           description: 'Logged into the portal',
         }),
       })
+      if (!logRes.ok) {
+        const logData = await logRes.json()
+        console.error('Failed to log login activity:', logData)
+      }
     } catch (e) {
       // Don't block login if activity logging fails
       console.error('Failed to log login activity:', e)

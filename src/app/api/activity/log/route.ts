@@ -8,11 +8,19 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError) {
+      console.error('Activity log auth error:', authError)
+      return NextResponse.json({ error: 'Authentication error', details: authError.message }, { status: 401 })
+    }
 
     if (!user) {
+      console.log('Activity log: No user found in session')
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    console.log('Activity log: User authenticated:', user.id)
 
     const { activity_type, description, metadata } = await request.json()
 
@@ -47,13 +55,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert activity log
-    await dbPool.query(
+    const insertResult = await dbPool.query(
       `INSERT INTO activity_log (client_id, user_id, activity_type, description, metadata)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
       [clientId, userId, finalActivityType, description || null, metadata ? JSON.stringify(metadata) : null]
     )
 
-    return NextResponse.json({ success: true })
+    console.log('Activity log: Inserted entry', insertResult.rows[0]?.id, 'type:', finalActivityType)
+
+    return NextResponse.json({ success: true, id: insertResult.rows[0]?.id })
   } catch (error) {
     console.error('Error logging activity:', error)
     return NextResponse.json({ error: 'Failed to log activity' }, { status: 500 })

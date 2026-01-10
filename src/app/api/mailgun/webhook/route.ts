@@ -21,48 +21,81 @@ function verifyWebhookSignature(
 // POST /api/mailgun/webhook - Handle Mailgun webhook events
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
+    const contentType = request.headers.get('content-type') || ''
+    let eventData: Record<string, unknown> | null = null
+    let eventType: string | undefined
+    let recipient: string | undefined
+    let timestamp: number | undefined
 
-    // Extract webhook data
-    const eventData = formData.get('event-data')
-    let event: Record<string, unknown>
+    // Handle different content types from Mailgun
+    if (contentType.includes('application/json')) {
+      // New webhook format - JSON body
+      const body = await request.json()
+      console.log('Mailgun webhook (JSON):', JSON.stringify(body, null, 2))
 
-    if (eventData && typeof eventData === 'string') {
-      // New webhook format (JSON in event-data field)
-      event = JSON.parse(eventData)
+      // New format has event-data at the top level
+      eventData = body['event-data'] || body
+      eventType = eventData?.event as string
+      recipient = eventData?.recipient as string
+      timestamp = eventData?.timestamp as number
+
+      // Verify signature if configured
+      const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY
+      if (signingKey && body.signature) {
+        const sig = body.signature
+        if (sig.timestamp && sig.token && sig.signature) {
+          const isValid = verifyWebhookSignature(
+            signingKey,
+            String(sig.timestamp),
+            sig.token,
+            sig.signature
+          )
+          if (!isValid) {
+            console.error('Invalid Mailgun webhook signature')
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+          }
+        }
+      }
     } else {
-      // Legacy webhook format (form fields)
-      event = Object.fromEntries(formData.entries()) as Record<string, unknown>
-    }
+      // Legacy webhook format - form data
+      const formData = await request.formData()
+      const formEntries = Object.fromEntries(formData.entries())
+      console.log('Mailgun webhook (form):', JSON.stringify(formEntries, null, 2))
 
-    // Verify signature if webhook signing key is configured
-    const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY
-    if (signingKey) {
-      const signature = event.signature as { timestamp?: string; token?: string; signature?: string } | undefined
-      if (signature?.timestamp && signature?.token && signature?.signature) {
-        const isValid = verifyWebhookSignature(
-          signingKey,
-          signature.timestamp,
-          signature.token,
-          signature.signature
-        )
-        if (!isValid) {
-          console.error('Invalid Mailgun webhook signature')
-          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      // Check for event-data field (might contain JSON)
+      const eventDataField = formData.get('event-data')
+      if (eventDataField && typeof eventDataField === 'string') {
+        eventData = JSON.parse(eventDataField)
+        eventType = eventData?.event as string
+        recipient = eventData?.recipient as string
+        timestamp = eventData?.timestamp as number
+      } else {
+        // Legacy format with direct form fields
+        eventType = formEntries.event as string
+        recipient = formEntries.recipient as string
+        timestamp = formEntries.timestamp ? Number(formEntries.timestamp) : undefined
+      }
+
+      // Verify signature for legacy format
+      const signingKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY
+      if (signingKey) {
+        const sigTimestamp = formEntries.timestamp as string
+        const sigToken = formEntries.token as string
+        const signature = formEntries.signature as string
+        if (sigTimestamp && sigToken && signature) {
+          const isValid = verifyWebhookSignature(signingKey, sigTimestamp, sigToken, signature)
+          if (!isValid) {
+            console.error('Invalid Mailgun webhook signature')
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+          }
         }
       }
     }
 
-    // Extract event details
-    const eventType = (event.event as string) || (event['event-data'] as Record<string, unknown>)?.event as string
-    const recipient = (event.recipient as string) ||
-      ((event['event-data'] as Record<string, unknown>)?.recipient as string)
-    const timestamp = event.timestamp ||
-      ((event['event-data'] as Record<string, unknown>)?.timestamp)
+    console.log(`Mailgun webhook: event=${eventType}, recipient=${recipient}`)
 
-    console.log(`Mailgun webhook: ${eventType} for ${recipient}`)
-
-    if (!recipient) {
+    if (!recipient || !eventType) {
+      console.log('Missing recipient or eventType, skipping')
       return NextResponse.json({ received: true })
     }
 
@@ -79,41 +112,56 @@ export async function POST(request: NextRequest) {
 
     const newStatus = statusMap[eventType]
     if (!newStatus) {
-      // Event type we don't track
+      console.log(`Unknown event type: ${eventType}, skipping`)
       return NextResponse.json({ received: true })
     }
 
-    // Update the most recent communication for this recipient
-    const updateQuery = `
-      UPDATE client_communications
-      SET
-        status = $1,
-        ${eventType === 'opened' ? 'opened_at = $2,' : ''}
-        ${eventType === 'clicked' ? 'clicked_at = $2,' : ''}
-        metadata = COALESCE(metadata, '{}'::jsonb) || $3::jsonb
-      WHERE id = (
-        SELECT id FROM client_communications
-        WHERE recipient_email = $4
-        AND comm_type LIKE 'email%'
-        ORDER BY sent_at DESC
-        LIMIT 1
-      )
-    `
+    // Build dynamic update query based on event type
+    const setClauses = ['status = $1']
+    const params: (string | Date)[] = [newStatus]
+    let paramIndex = 2
 
-    const eventTimestamp = timestamp ? new Date(Number(timestamp) * 1000) : new Date()
+    const eventTimestamp = timestamp ? new Date(timestamp * 1000) : new Date()
+
+    if (eventType === 'opened') {
+      setClauses.push(`opened_at = $${paramIndex}`)
+      params.push(eventTimestamp)
+      paramIndex++
+    } else if (eventType === 'clicked') {
+      setClauses.push(`clicked_at = $${paramIndex}`)
+      params.push(eventTimestamp)
+      paramIndex++
+    }
+
     const metadataUpdate = JSON.stringify({
       [`${eventType}_at`]: eventTimestamp.toISOString(),
       [`${eventType}_event`]: true,
     })
+    setClauses.push(`metadata = COALESCE(metadata, '{}'::jsonb) || $${paramIndex}::jsonb`)
+    params.push(metadataUpdate)
+    paramIndex++
 
-    await dbPool.query(updateQuery, [
-      newStatus,
-      eventTimestamp,
-      metadataUpdate,
-      recipient.toLowerCase(),
-    ])
+    // Add recipient as the last parameter
+    const recipientLower = recipient.toLowerCase()
+    params.push(recipientLower)
 
-    return NextResponse.json({ received: true })
+    const updateQuery = `
+      UPDATE client_communications
+      SET ${setClauses.join(', ')}
+      WHERE id = (
+        SELECT id FROM client_communications
+        WHERE LOWER(recipient_email) = $${paramIndex}
+        AND comm_type LIKE 'email%'
+        ORDER BY COALESCE(sent_at, created_at) DESC
+        LIMIT 1
+      )
+    `
+
+    console.log('Executing update query for recipient:', recipientLower)
+    const result = await dbPool.query(updateQuery, params)
+    console.log(`Updated ${result.rowCount} rows for ${eventType} event`)
+
+    return NextResponse.json({ received: true, updated: result.rowCount })
   } catch (error) {
     console.error('Mailgun webhook error:', error)
     // Return 200 to prevent Mailgun from retrying

@@ -51,6 +51,40 @@ export default function AdminNotificationsPage() {
     }
   }
 
+  function handleExportActivity() {
+    // Generate CSV from notifications
+    const headers = ['Date', 'Type', 'Title', 'Description', 'Client', 'Status']
+    const rows = notifications.map(n => [
+      new Date(n.timestamp).toLocaleString(),
+      n.type,
+      n.title,
+      n.description,
+      n.clientName,
+      n.status || ''
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `activity-export-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleMarkAllRead() {
+    // For now, just clear the notifications display
+    // In a full implementation, this would call an API to mark notifications as read
+    setNotifications([])
+  }
+
   function getTypeIcon(type: string) {
     switch (type) {
       case 'email':
@@ -348,6 +382,26 @@ export default function AdminNotificationsPage() {
                 <line x1="15" y1="12" x2="3" y2="12"></line>
               </svg>
               Logins
+            </button>
+          </div>
+          <div className="filter-actions">
+            <button className="btn btn-secondary btn-sm" onClick={handleExportActivity}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export Activity
+            </button>
+            <button className="btn btn-secondary btn-sm mark-read-btn" onClick={handleMarkAllRead}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              Mark All Read
+              {notifications.length > 0 && (
+                <span className="unread-badge">{notifications.length}</span>
+              )}
             </button>
           </div>
         </div>
