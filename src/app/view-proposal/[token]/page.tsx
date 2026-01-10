@@ -33,11 +33,8 @@ export default function ViewProposalPage() {
           localStorage.setItem('pyrus_invite_token', token)
         }
 
-        // Redirect to register page with redirect to recommendations
-        // Small delay to show the loading state
-        setTimeout(() => {
-          router.push('/register?redirect=/recommendations')
-        }, 1500)
+        // Redirect immediately to register page
+        router.push('/register?redirect=/recommendations')
       } catch (err) {
         console.error('Failed to validate proposal:', err)
         setError('Failed to load proposal')
