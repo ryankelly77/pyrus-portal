@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 interface ChecklistItem {
   id: string
@@ -68,15 +68,15 @@ function isUUID(str: string): boolean {
 export default function GettingStartedPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const mockClient = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
 
   const [activeSubtab, setActiveSubtab] = useState('checklist')
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [clientDisplay, setClientDisplay] = useState<{ name: string; initials: string; primaryContact: string }>({
-    name: mockClient.name,
-    initials: mockClient.initials,
-    primaryContact: mockClient.primaryContact,
+  const [clientDisplay, setClientDisplay] = useState<{ name: string; initials: string; contactName: string }>({
+    name: client.name,
+    initials: client.initials,
+    contactName: client.contactName,
   })
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
@@ -131,7 +131,7 @@ export default function GettingStartedPage() {
             setClientDisplay({
               name: data.client.name,
               initials,
-              primaryContact: data.client.contactName || data.client.name,
+              contactName: data.client.contactName || data.client.name,
             })
           }
         }
@@ -173,7 +173,7 @@ export default function GettingStartedPage() {
             <div className="user-avatar-small">
               <span>{clientDisplay.initials}</span>
             </div>
-            <span className="user-name">{clientDisplay.primaryContact}</span>
+            <span className="user-name">{clientDisplay.contactName}</span>
           </Link>
         </div>
       </div>

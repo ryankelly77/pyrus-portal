@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 type TabType = 'smart-recommendations' | 'original-plan' | 'current-services'
 
@@ -67,7 +67,7 @@ export default function RecommendationsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
-  const staticClient = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
 
   const [activeTab, setActiveTab] = useState<TabType>('smart-recommendations')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -80,9 +80,6 @@ export default function RecommendationsPage() {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  // Use static client for display, but fetch real data
-  const client = staticClient
 
   // Fetch recommendation data from database
   useEffect(() => {
@@ -98,7 +95,11 @@ export default function RecommendationsPage() {
           'ruger': 'Ruger',
         }
 
-        const searchName = viewingAs ? clientNameMap[viewingAs] || viewingAs : staticClient.name
+        // If viewingAs is a UUID, client.name will have the actual name from API
+        // Otherwise try the clientNameMap or use the viewingAs value directly
+        const searchName = viewingAs
+          ? (clientNameMap[viewingAs] || client.name || viewingAs)
+          : client.name
 
         const res = await fetch(`/api/client/recommendation?clientName=${encodeURIComponent(searchName)}`)
         if (res.ok) {
@@ -117,7 +118,7 @@ export default function RecommendationsPage() {
     }
 
     fetchRecommendation()
-  }, [viewingAs, staticClient.name])
+  }, [viewingAs, client.name])
 
   // Client-specific data
   const isRaptorVending = client.id === 'raptor-vending'
@@ -157,7 +158,7 @@ export default function RecommendationsPage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>
@@ -1055,7 +1056,7 @@ export default function RecommendationsPage() {
                 </div>
               </div>
               <p className="success-note">
-                A confirmation email has been sent to {client.email || 'your email address'}.
+                A confirmation email has been sent to {client.contactEmail || 'your email address'}.
               </p>
               <button className="btn btn-primary" onClick={() => setShowSuccessModal(false)}>
                 Done

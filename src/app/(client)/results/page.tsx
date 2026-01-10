@@ -3,27 +3,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const { client, loading } = useClientData(viewingAs)
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
 
-  // Client-specific data
-  const isRaptorVending = client.id === 'raptor-vending'
-  const kpiData = isRaptorVending ? {
-    visitors: '847',
-    visitorsChange: '+18%',
-    keywords: '12',
-    keywordsChange: '+5',
-    leads: '8',
-    leadsChange: '+3',
-    calls: '11',
-    callsChange: '+4'
-  } : {
+  // KPI data - will be replaced with real data from API in the future
+  const kpiData = {
     visitors: '2,847',
     visitorsChange: '+32%',
     keywords: '47',
@@ -53,7 +43,7 @@ export default function ResultsPage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>

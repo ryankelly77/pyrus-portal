@@ -1,16 +1,15 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 export function PreviewBanner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
+  const { client, loading } = useClientData(viewingAs)
 
   if (!viewingAs) return null
-
-  const client = getClientByViewingAs(viewingAs)
 
   const handleExitPreview = () => {
     router.push('/dashboard')

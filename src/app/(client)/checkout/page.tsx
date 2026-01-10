@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 interface CartItem {
   id: string
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const itemId = searchParams.get('item')
-  const client = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
 
   // Build cart from URL parameter
   const initialCartItems: CartItem[] = itemId && productCatalog[itemId]
@@ -350,16 +350,16 @@ export default function CheckoutPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="firstName">First Name</label>
-                    <input type="text" id="firstName" defaultValue={client.primaryContact.split(' ')[0] || ''} />
+                    <input type="text" id="firstName" defaultValue={client.contactName.split(' ')[0] || ''} />
                   </div>
                   <div className="form-group">
                     <label htmlFor="lastName">Last Name</label>
-                    <input type="text" id="lastName" defaultValue={client.primaryContact.split(' ').slice(1).join(' ') || ''} />
+                    <input type="text" id="lastName" defaultValue={client.contactName.split(' ').slice(1).join(' ') || ''} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label htmlFor="email">Email</label>
-                  <input type="email" id="email" defaultValue={client.email} />
+                  <input type="email" id="email" defaultValue={client.contactEmail || ''} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="company">Company Name</label>

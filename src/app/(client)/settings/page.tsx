@@ -3,19 +3,19 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
 
-  // Parse first and last name from primaryContact
-  const nameParts = client.primaryContact.split(' ')
+  // Parse first and last name from contactName
+  const nameParts = client.contactName.split(' ')
   const firstName = nameParts[0] || ''
   const lastName = nameParts.slice(1).join(' ') || ''
 
@@ -38,7 +38,7 @@ export default function SettingsPage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Email Address</label>
-                  <input type="email" className="form-input" defaultValue={client.email} />
+                  <input type="email" className="form-input" defaultValue={client.contactEmail || ''} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
@@ -162,9 +162,9 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="subscription-overview">
                   <div className="subscription-plan">
-                    <span className="plan-badge">{client.id === 'raptor-vending' ? 'Starter Plan' : 'Growth Plan'}</span>
+                    <span className="plan-badge">Growth Plan</span>
                     <div className="plan-price">
-                      <span className="price-amount">{client.id === 'raptor-vending' ? '$698' : '$1,597'}</span>
+                      <span className="price-amount">$1,597</span>
                       <span className="price-period">/month</span>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="meta-item">
                       <span className="meta-label">Client Since</span>
-                      <span className="meta-value">{client.clientSince}</span>
+                      <span className="meta-value">{client.clientSince || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="form-group">
                   <label className="form-label">Billing Email</label>
-                  <input type="email" className="form-input" defaultValue={`billing@${client.id === 'raptor-vending' ? 'raptorvending.com' : 'tc-clinicalservices.com'}`} />
+                  <input type="email" className="form-input" defaultValue={client.contactEmail || ''} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>

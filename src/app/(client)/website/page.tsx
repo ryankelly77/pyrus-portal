@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
 
@@ -41,8 +41,9 @@ const editRequests: EditRequest[] = [
 export default function WebsitePage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
   const router = useRouter()
+  const [hasWebsite, setHasWebsite] = useState(true) // Will be determined by client's subscriptions
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
@@ -89,10 +90,15 @@ export default function WebsitePage() {
   }
 
   // Use client-specific website data if available, otherwise fall back to default
-  const clientWebsiteData = client.websiteData || websiteData
+  // TODO: Fetch real website data from API based on client subscriptions
+  const clientWebsiteData = client.landingsitePreviewUrl ? {
+    ...websiteData,
+    previewUrl: client.landingsitePreviewUrl,
+  } : websiteData
 
   // If client doesn't have website service, show upsell
-  if (!client.hasWebsite) {
+  // TODO: Check actual subscriptions to determine if client has website
+  if (!hasWebsite) {
     return (
       <>
         {/* Top Header Bar */}
@@ -112,7 +118,7 @@ export default function WebsitePage() {
               <div className="user-avatar-small">
                 <span>{client.initials}</span>
               </div>
-              <span className="user-name">{client.primaryContact}</span>
+              <span className="user-name">{client.contactName}</span>
             </Link>
           </div>
         </div>
@@ -379,7 +385,7 @@ export default function WebsitePage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>

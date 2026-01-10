@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 type ActivityType = 'all' | 'task' | 'update' | 'alert' | 'content'
 
@@ -292,12 +292,12 @@ function getActivityIcon(type: string, iconStyle?: { background: string; color: 
 export default function ActivityPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
 
-  // Use client-specific activities
-  const activities = client.id === 'raptor-vending' ? raptorVendingActivities : tcClinicalActivities
+  // Activity data - will be replaced with real data from API in the future
+  const activities = tcClinicalActivities
 
   const filteredActivities = activities.filter(
     activity => activeFilter === 'all' || activity.type === activeFilter
@@ -322,7 +322,7 @@ export default function ActivityPage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>

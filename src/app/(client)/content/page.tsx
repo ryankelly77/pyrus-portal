@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getClientByViewingAs } from '@/lib/client-data'
+import { useClientData } from '@/hooks/useClientData'
 
 export default function ContentPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const client = getClientByViewingAs(viewingAs)
+  const { client } = useClientData(viewingAs)
   const router = useRouter()
+  const [hasContent, setHasContent] = useState(true) // TODO: Check client subscriptions
 
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
@@ -36,7 +37,8 @@ export default function ContentPage() {
   }
 
   // If client doesn't have content service, show upsell
-  if (!client.hasContent) {
+  // TODO: Check actual subscriptions to determine if client has content
+  if (!hasContent) {
     return (
       <>
         {/* Top Header Bar */}
@@ -56,7 +58,7 @@ export default function ContentPage() {
               <div className="user-avatar-small">
                 <span>{client.initials}</span>
               </div>
-              <span className="user-name">{client.primaryContact}</span>
+              <span className="user-name">{client.contactName}</span>
             </Link>
           </div>
         </div>
@@ -409,7 +411,7 @@ export default function ContentPage() {
             <div className="user-avatar-small">
               <span>{client.initials}</span>
             </div>
-            <span className="user-name">{client.primaryContact}</span>
+            <span className="user-name">{client.contactName}</span>
           </Link>
         </div>
       </div>
