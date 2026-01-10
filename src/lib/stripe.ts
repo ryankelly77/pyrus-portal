@@ -19,30 +19,36 @@ export const COUPON_CODES: Record<string, number> = {
 // Helper to get coupon/promotion code from Stripe
 export async function getOrCreateCoupon(code: string): Promise<string | null> {
   const upperCode = code.toUpperCase()
+  const lowerCode = code.toLowerCase()
 
-  // First, try to find as a Stripe Promotion Code
-  try {
-    const promoCodes = await stripe.promotionCodes.list({
-      code: code, // Stripe promotion codes are case-sensitive, try original
-      active: true,
-      limit: 1,
-      expand: ['data.coupon'],
-    })
+  // Try multiple case variations for Stripe Promotion Code lookup
+  const codesToTry = [code, lowerCode, upperCode]
 
-    if (promoCodes.data.length > 0) {
-      // Return the coupon ID associated with this promotion code
-      const promoCode = promoCodes.data[0] as unknown as { coupon: { id: string } }
-      console.log(`Found Stripe promotion code: ${code} -> coupon ${promoCode.coupon.id}`)
-      return promoCode.coupon.id
+  for (const tryCode of codesToTry) {
+    try {
+      console.log(`Trying promotion code lookup: "${tryCode}"`)
+      const promoCodes = await stripe.promotionCodes.list({
+        code: tryCode,
+        active: true,
+        limit: 1,
+        expand: ['data.coupon'],
+      })
+
+      if (promoCodes.data.length > 0) {
+        // Return the coupon ID associated with this promotion code
+        const promoCode = promoCodes.data[0] as unknown as { coupon: { id: string } }
+        console.log(`Found Stripe promotion code: ${tryCode} -> coupon ${promoCode.coupon.id}`)
+        return promoCode.coupon.id
+      }
+    } catch (err) {
+      console.log(`Promotion code lookup failed for "${tryCode}":`, err)
     }
-  } catch (err) {
-    console.log('Promotion code lookup failed:', err)
   }
 
   // Fall back to hardcoded coupon codes
   const discountPercent = COUPON_CODES[upperCode]
   if (!discountPercent) {
-    console.log(`Coupon code not found: ${code}`)
+    console.log(`Coupon code not found in Stripe or hardcoded list: ${code}`)
     return null
   }
 

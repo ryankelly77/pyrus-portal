@@ -114,6 +114,7 @@ const productCatalog: Record<string, CartItem> = {
 const VALID_COUPONS: Record<string, { discount: number; minSpend: number; stripePromoId: string }> = {
   'HARVEST5X': { discount: 5, minSpend: 1000, stripePromoId: 'promo_1So64eG6lmzQA2EMJxCe2Ad0' },
   'CULTIVATE10': { discount: 10, minSpend: 2000, stripePromoId: 'promo_1So65IG6lmzQA2EM3OJ2MVpO' },
+  'TEST2': { discount: 100, minSpend: 0, stripePromoId: 'promo_1R3gHLG6lmzQA2EMFa3v79yi' },
 }
 
 export default function CheckoutPage() {
