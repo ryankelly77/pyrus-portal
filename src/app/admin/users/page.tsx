@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
-type AdminRole = 'super_admin' | 'production_team' | 'sales'
+type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
 type UserStatus = 'registered' | 'invited'
 
 interface AdminUser {
@@ -23,152 +23,17 @@ interface ClientUser {
   name: string
   initials: string
   avatarColor: string
-  client: string
+  clientId: string
+  clientName: string
   phone: string
   email: string
   status: UserStatus
-  recommendationType: 'smart' | 'original'
 }
 
-const adminUsers: AdminUser[] = [
-  {
-    id: 'a1',
-    name: 'Ryan Kelly',
-    initials: 'RK',
-    avatarColor: 'linear-gradient(135deg, var(--pyrus-green) 0%, var(--pyrus-green-light) 100%)',
-    role: 'super_admin',
-    email: 'ryan@pyrusdigital.com',
-    status: 'registered',
-    isOwner: true,
-  },
-  {
-    id: 'a2',
-    name: 'Sarah Mitchell',
-    initials: 'SM',
-    avatarColor: '#3B82F6',
-    role: 'production_team',
-    email: 'sarah@pyrusdigital.com',
-    status: 'registered',
-  },
-  {
-    id: 'a3',
-    name: 'James Davis',
-    initials: 'JD',
-    avatarColor: '#6B7280',
-    role: 'production_team',
-    email: 'james@pyrusdigital.com',
-    status: 'invited',
-  },
-  {
-    id: 'a4',
-    name: 'Emily Chen',
-    initials: 'EC',
-    avatarColor: '#8B5CF6',
-    role: 'sales',
-    email: 'emily@pyrusdigital.com',
-    status: 'registered',
-  },
-]
-
-const clientUsers: ClientUser[] = [
-  {
-    id: 'c1',
-    name: 'Jon De La Garza',
-    initials: 'TC',
-    avatarColor: 'linear-gradient(135deg, #B57841 0%, #C4895A 100%)',
-    client: 'TC Clinical Services',
-    phone: '(555) 123-4567',
-    email: 'dlg.mdservices@gmail.com',
-    status: 'registered',
-    recommendationType: 'smart',
-  },
-  {
-    id: 'c2',
-    name: 'Mike Johnson',
-    initials: 'MJ',
-    avatarColor: '#2563EB',
-    client: 'Raptor Vending',
-    phone: '(555) 234-5678',
-    email: 'mike@raptorvending.com',
-    status: 'registered',
-    recommendationType: 'smart',
-  },
-  {
-    id: 'c3',
-    name: 'Sarah Martinez',
-    initials: 'SM',
-    avatarColor: '#7C3AED',
-    client: 'Raptor Services',
-    phone: '(555) 345-6789',
-    email: 'sarah@raptorservices.com',
-    status: 'registered',
-    recommendationType: 'smart',
-  },
-  {
-    id: 'c4',
-    name: 'Maria Espronceda',
-    initials: 'ME',
-    avatarColor: '#DC2626',
-    client: 'Espronceda Law',
-    phone: '(555) 456-7890',
-    email: 'maria@espronceda.law',
-    status: 'registered',
-    recommendationType: 'smart',
-  },
-  {
-    id: 'c5',
-    name: 'James Wilson',
-    initials: 'JW',
-    avatarColor: '#3B82F6',
-    client: 'Summit Dental',
-    phone: '(555) 567-8901',
-    email: 'james@summitdental.com',
-    status: 'invited',
-    recommendationType: 'original',
-  },
-  {
-    id: 'c6',
-    name: 'Lisa Brown',
-    initials: 'LB',
-    avatarColor: '#059669',
-    client: 'Coastal Properties',
-    phone: '(555) 678-9012',
-    email: 'lisa@coastalproperties.com',
-    status: 'invited',
-    recommendationType: 'original',
-  },
-  {
-    id: 'c7',
-    name: 'Rachel Davis',
-    initials: 'RD',
-    avatarColor: '#3B82F6',
-    client: 'Summit Dental',
-    phone: '(555) 789-0123',
-    email: 'rachel@summitdental.com',
-    status: 'registered',
-    recommendationType: 'smart',
-  },
-  {
-    id: 'c8',
-    name: 'Kevin Thompson',
-    initials: 'KT',
-    avatarColor: 'linear-gradient(135deg, #B57841 0%, #C4895A 100%)',
-    client: 'TC Clinical Services',
-    phone: '(555) 890-1234',
-    email: 'kevin@tc-clinicalservices.com',
-    status: 'invited',
-    recommendationType: 'original',
-  },
-]
-
-const clients = [
-  'TC Clinical Services',
-  'Raptor Vending',
-  'Raptor Services',
-  'Espronceda Law',
-  'Summit Dental',
-  'Coastal Properties',
-]
+interface ClientOption {
+  id: string
+  name: string
+}
 
 export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'invited'>('all')
@@ -176,6 +41,11 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showInviteUserModal, setShowInviteUserModal] = useState(false)
   const [showInviteAdminModal, setShowInviteAdminModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [clientUsers, setClientUsers] = useState<ClientUser[]>([])
+  const [clients, setClients] = useState<ClientOption[]>([])
 
   // Invite user form state
   const [inviteUserForm, setInviteUserForm] = useState({
@@ -192,6 +62,26 @@ export default function AdminUsersPage() {
     role: 'production_team' as AdminRole,
   })
 
+  // Fetch users on mount
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await fetch('/api/admin/users')
+        if (res.ok) {
+          const data = await res.json()
+          setAdminUsers(data.adminUsers || [])
+          setClientUsers(data.clientUsers || [])
+          setClients(data.clients || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchUsers()
+  }, [])
+
   const filteredAdminUsers = useMemo(() => {
     return adminUsers.filter((user) => {
       if (statusFilter !== 'all' && user.status !== statusFilter) return false
@@ -206,26 +96,26 @@ export default function AdminUsersPage() {
       }
       return true
     })
-  }, [statusFilter, searchQuery])
+  }, [adminUsers, statusFilter, searchQuery])
 
   const filteredClientUsers = useMemo(() => {
     return clientUsers.filter((user) => {
       if (statusFilter !== 'all' && user.status !== statusFilter) return false
-      if (clientFilter !== 'all' && user.client !== clientFilter) return false
+      if (clientFilter !== 'all' && user.clientId !== clientFilter) return false
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         if (
           !user.name.toLowerCase().includes(query) &&
           !user.email.toLowerCase().includes(query) &&
-          !user.client.toLowerCase().includes(query) &&
-          !user.phone.includes(query)
+          !user.clientName.toLowerCase().includes(query) &&
+          !(user.phone && user.phone.includes(query))
         ) {
           return false
         }
       }
       return true
     })
-  }, [statusFilter, clientFilter, searchQuery])
+  }, [clientUsers, statusFilter, clientFilter, searchQuery])
 
   const getRoleBadgeContent = (role: AdminRole) => {
     switch (role) {
@@ -237,6 +127,16 @@ export default function AdminUsersPage() {
             </svg>
           ),
           label: 'Super Admin',
+          className: 'super-admin',
+        }
+      case 'admin':
+        return {
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          ),
+          label: 'Admin',
           className: 'super-admin',
         }
       case 'production_team':
@@ -259,6 +159,12 @@ export default function AdminUsersPage() {
           ),
           label: 'Sales',
           className: 'sales',
+        }
+      default:
+        return {
+          icon: null,
+          label: role || 'User',
+          className: '',
         }
     }
   }
@@ -293,6 +199,23 @@ export default function AdminUsersPage() {
   }
 
   const totalUsers = filteredAdminUsers.length + filteredClientUsers.length
+
+  if (isLoading) {
+    return (
+      <>
+        <AdminHeader
+          title="Users"
+          user={{ name: 'Loading...', initials: '...' }}
+          hasNotifications={false}
+        />
+        <div className="admin-content">
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            Loading users...
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -358,8 +281,8 @@ export default function AdminUsersPage() {
           >
             <option value="all">All Clients</option>
             {clients.map((client) => (
-              <option key={client} value={client}>
-                {client}
+              <option key={client.id} value={client.id}>
+                {client.name}
               </option>
             ))}
           </select>
@@ -371,7 +294,7 @@ export default function AdminUsersPage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            Admin Users
+            Admin Users ({filteredAdminUsers.length})
           </h3>
           <div className="users-table-container">
             <table className="users-table">
@@ -385,50 +308,58 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredAdminUsers.map((user) => {
-                  const roleContent = getRoleBadgeContent(user.role)
-                  return (
-                    <tr key={user.id}>
-                      <td className="user-name">
-                        <div className="user-avatar" style={{ background: user.avatarColor }}>
-                          {user.initials}
-                        </div>
-                        <span>{user.name}</span>
-                      </td>
-                      <td>
-                        <span className={`role-badge ${roleContent.className}`}>
-                          {roleContent.icon}
-                          {roleContent.label}
-                        </span>
-                      </td>
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status === 'registered' ? 'Active' : 'Invited'}
-                        </span>
-                      </td>
-                      <td>
-                        {user.isOwner ? (
-                          <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
-                        ) : user.status === 'invited' ? (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleResendAdmin(user.id)}
-                          >
-                            Resend
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleEditAdmin(user.id)}
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {filteredAdminUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      No admin users found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAdminUsers.map((user) => {
+                    const roleContent = getRoleBadgeContent(user.role)
+                    return (
+                      <tr key={user.id}>
+                        <td className="user-name">
+                          <div className="user-avatar" style={{ background: user.avatarColor }}>
+                            {user.initials}
+                          </div>
+                          <span>{user.name}</span>
+                        </td>
+                        <td>
+                          <span className={`role-badge ${roleContent.className}`}>
+                            {roleContent.icon}
+                            {roleContent.label}
+                          </span>
+                        </td>
+                        <td>{user.email}</td>
+                        <td>
+                          <span className={`status-badge status-${user.status}`}>
+                            {user.status === 'registered' ? 'Active' : 'Invited'}
+                          </span>
+                        </td>
+                        <td>
+                          {user.isOwner ? (
+                            <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
+                          ) : user.status === 'invited' ? (
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleResendAdmin(user.id)}
+                            >
+                              Resend
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleEditAdmin(user.id)}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -450,7 +381,7 @@ export default function AdminUsersPage() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            Client Users
+            Client Users ({filteredClientUsers.length})
           </h3>
           <div className="users-table-container">
             <table className="users-table">
@@ -461,48 +392,48 @@ export default function AdminUsersPage() {
                   <th>Phone</th>
                   <th>Email</th>
                   <th>Status</th>
-                  <th>Recommendation</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredClientUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="user-name">
-                      <div className="user-avatar" style={{ background: user.avatarColor }}>
-                        {user.initials}
-                      </div>
-                      <span>{user.name}</span>
-                    </td>
-                    <td>{user.client}</td>
-                    <td>{user.phone}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`status-badge status-${user.status}`}>
-                        {user.status === 'registered' ? 'Registered' : 'Invited'}
-                      </span>
-                    </td>
-                    <td>
-                      {user.recommendationType === 'smart' ? (
-                        <Link href="/client/recommendations?tab=smart" className="recommendation-link">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                          </svg>
-                          Smart Recommendation
-                        </Link>
-                      ) : (
-                        <Link href="/client/recommendations?tab=original" className="recommendation-link original">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                          </svg>
-                          Original Plan
-                        </Link>
-                      )}
+                {filteredClientUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      No client users found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredClientUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td className="user-name">
+                        <div className="user-avatar" style={{ background: user.avatarColor }}>
+                          {user.initials}
+                        </div>
+                        <span>{user.name}</span>
+                      </td>
+                      <td>
+                        <Link href={`/admin/clients/${user.clientId}`} style={{ color: 'var(--pyrus-brown)', textDecoration: 'none' }}>
+                          {user.clientName}
+                        </Link>
+                      </td>
+                      <td>{user.phone || '-'}</td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className={`status-badge status-${user.status}`}>
+                          {user.status === 'registered' ? 'Registered' : 'Invited'}
+                        </span>
+                      </td>
+                      <td>
+                        <Link
+                          href={`/admin/clients/${user.clientId}`}
+                          className="btn btn-sm btn-outline"
+                        >
+                          View Client
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -510,13 +441,7 @@ export default function AdminUsersPage() {
 
         {/* Pagination */}
         <div className="table-pagination">
-          <span className="pagination-info">Showing 1-{totalUsers} of {totalUsers} users</span>
-          <div className="pagination-buttons">
-            <button className="btn btn-sm btn-secondary" disabled>
-              Previous
-            </button>
-            <button className="btn btn-sm btn-secondary">Next</button>
-          </div>
+          <span className="pagination-info">Showing {totalUsers} user{totalUsers !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
@@ -574,8 +499,8 @@ export default function AdminUsersPage() {
                 >
                   <option value="">Select a client</option>
                   {clients.map((client) => (
-                    <option key={client} value={client}>
-                      {client}
+                    <option key={client.id} value={client.id}>
+                      {client.name}
                     </option>
                   ))}
                 </select>
