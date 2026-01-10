@@ -9966,6 +9966,11 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        .nav-badge.locked {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
         /* ========================================
            Recommendations List Styles
            ======================================== */

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 
+type ClientStatus = 'pending' | 'active' | 'inactive' | 'churned'
+
 interface ChecklistItem {
   id: string
   title: string
@@ -80,8 +82,9 @@ export default function GettingStartedPage() {
   })
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
+  const [clientStatus, setClientStatus] = useState<ClientStatus>('active')
 
-  // Update client display when hook data loads
+  // Update client display and status when hook data loads
   useEffect(() => {
     if (client.id) {
       setClientDisplay({
@@ -89,6 +92,7 @@ export default function GettingStartedPage() {
         initials: client.initials,
         contactName: client.contactName,
       })
+      setClientStatus(client.status as ClientStatus)
     }
   }, [client])
 
@@ -190,34 +194,185 @@ export default function GettingStartedPage() {
       </div>
 
       <div className="client-content">
-        {/* Getting Started Sub-tabs */}
-        <div className="getting-started-subtabs">
-          <button
-            className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
-            onClick={() => setActiveSubtab('checklist')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            Checklist
-          </button>
-          <button
-            className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
-            onClick={() => setActiveSubtab('onboarding-summary')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            Onboarding Summary
-          </button>
-        </div>
+        {/* Pending Client View - Show welcome and recommendation prompt */}
+        {clientStatus === 'pending' ? (
+          <div className="pending-client-view">
+            {/* Welcome Section */}
+            <div className="welcome-hero">
+              <div className="welcome-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+              </div>
+              <h2>Welcome to Pyrus, {clientDisplay.contactName}!</h2>
+              <p>We&apos;ve prepared a personalized marketing proposal for {clientDisplay.name}. Review your options and choose the plan that best fits your growth goals.</p>
+            </div>
 
-        {/* Checklist Tab Content */}
+            {/* Action Cards */}
+            <div className="pending-action-grid">
+              {/* View Recommendation Card */}
+              <div className="pending-action-card primary">
+                <div className="action-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+                <h3>View Your Proposal</h3>
+                <p>We&apos;ve analyzed your business and prepared tailored marketing recommendations with transparent pricing.</p>
+                <Link
+                  href={viewingAs ? `/recommendations?viewingAs=${viewingAs}` : '/recommendations'}
+                  className="btn btn-primary"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                  Review Recommendations
+                </Link>
+              </div>
+
+              {/* What to Expect Card */}
+              <div className="pending-action-card">
+                <div className="action-card-icon secondary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <h3>What Happens Next?</h3>
+                <div className="next-steps-list">
+                  <div className="next-step">
+                    <span className="step-num">1</span>
+                    <span>Review your personalized proposal</span>
+                  </div>
+                  <div className="next-step">
+                    <span className="step-num">2</span>
+                    <span>Select a plan that fits your goals</span>
+                  </div>
+                  <div className="next-step">
+                    <span className="step-num">3</span>
+                    <span>Complete quick onboarding questions</span>
+                  </div>
+                  <div className="next-step">
+                    <span className="step-num">4</span>
+                    <span>We get to work growing your business!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Video Section */}
+            <div className="pending-video-section">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                Learn About Pyrus
+              </h3>
+              {videoChapters.length > 0 ? (
+                <div className="pending-video-grid">
+                  <div className="video-player-wrapper">
+                    {(() => {
+                      const activeChapter = videoChapters.find(c => c.id === activeVideoChapter)
+                      return activeChapter?.videoUrl ? (
+                        <iframe
+                          src={activeChapter.videoUrl}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: '8px' }}
+                        />
+                      ) : null
+                    })()}
+                  </div>
+                  <div className="video-chapter-list">
+                    {videoChapters.map((chapter, index) => (
+                      <button
+                        key={chapter.id}
+                        className={`video-chapter-btn ${activeVideoChapter === chapter.id ? 'active' : ''}`}
+                        onClick={() => setActiveVideoChapter(chapter.id)}
+                      >
+                        <span className="chapter-num">{index + 1}</span>
+                        <div className="chapter-info">
+                          <span className="chapter-title">{chapter.title}</span>
+                          <span className="chapter-desc">{chapter.description}</span>
+                        </div>
+                        {activeVideoChapter === chapter.id && (
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" className="chapter-playing">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="video-placeholder-card">
+                  <div className="video-play-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                  <p>Introduction videos coming soon!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Questions Section */}
+            <div className="pending-questions-section">
+              <div className="questions-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div className="questions-content">
+                <h4>Have Questions?</h4>
+                <p>We&apos;re here to help! If you have any questions about your proposal or our services, don&apos;t hesitate to reach out.</p>
+              </div>
+              <a href="mailto:hello@pyrusdigital.com" className="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                Contact Us
+              </a>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Active Client View - Show checklist and onboarding */}
+            {/* Getting Started Sub-tabs */}
+            <div className="getting-started-subtabs">
+              <button
+                className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
+                onClick={() => setActiveSubtab('checklist')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Checklist
+              </button>
+              <button
+                className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
+                onClick={() => setActiveSubtab('onboarding-summary')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Onboarding Summary
+              </button>
+            </div>
+
+            {/* Checklist Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'checklist' ? 'active' : ''}`} id="checklist">
           <div className="onboarding-grid">
             <div className="checklist-card">
@@ -395,6 +550,8 @@ export default function GettingStartedPage() {
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
 
       <style jsx>{`
@@ -533,6 +690,225 @@ export default function GettingStartedPage() {
           color: #324438;
           flex-shrink: 0;
           margin-top: 0.25rem;
+        }
+
+        /* Pending Client View Styles */
+        .pending-client-view {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+
+        .welcome-hero {
+          text-align: center;
+          padding: 2.5rem 2rem;
+          background: linear-gradient(135deg, rgba(50, 68, 56, 0.05) 0%, rgba(50, 68, 56, 0.02) 100%);
+          border-radius: 16px;
+          border: 1px solid rgba(50, 68, 56, 0.1);
+        }
+
+        .welcome-icon {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 1.5rem;
+          background: linear-gradient(135deg, #324438 0%, #4a6352 100%);
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+        }
+
+        .welcome-hero h2 {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: #1A1F16;
+          margin: 0 0 0.75rem;
+        }
+
+        .welcome-hero p {
+          font-size: 1rem;
+          color: #5A6358;
+          margin: 0;
+          max-width: 500px;
+          margin-left: auto;
+          margin-right: auto;
+          line-height: 1.6;
+        }
+
+        .pending-action-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 1.5rem;
+        }
+
+        .pending-action-card {
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #E5E7EB;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .pending-action-card.primary {
+          border-color: rgba(50, 68, 56, 0.3);
+          box-shadow: 0 4px 12px rgba(50, 68, 56, 0.1);
+        }
+
+        .action-card-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #324438 0%, #4a6352 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+        }
+
+        .action-card-icon svg {
+          width: 24px;
+          height: 24px;
+        }
+
+        .action-card-icon.secondary {
+          background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+        }
+
+        .pending-action-card h3 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #1A1F16;
+          margin: 0;
+        }
+
+        .pending-action-card p {
+          font-size: 0.875rem;
+          color: #5A6358;
+          margin: 0;
+          line-height: 1.5;
+        }
+
+        .pending-action-card .btn {
+          margin-top: auto;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+
+        .next-steps-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .next-step {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 0.875rem;
+          color: #374151;
+        }
+
+        .step-num {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #E8EDEA;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #5A6358;
+          flex-shrink: 0;
+        }
+
+        .pending-video-section {
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #E5E7EB;
+          padding: 1.5rem;
+        }
+
+        .pending-video-section h3 {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #1A1F16;
+          margin: 0 0 1rem;
+        }
+
+        .pending-video-grid {
+          display: grid;
+          grid-template-columns: 1fr 280px;
+          gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+          .pending-video-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .video-placeholder-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 3rem;
+          background: #F5F7F6;
+          border-radius: 8px;
+          gap: 1rem;
+          color: #5A6358;
+        }
+
+        .pending-questions-section {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #E5E7EB;
+          padding: 1.5rem;
+        }
+
+        .questions-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: #F5F7F6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #5A6358;
+          flex-shrink: 0;
+        }
+
+        .questions-content {
+          flex: 1;
+        }
+
+        .questions-content h4 {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #1A1F16;
+          margin: 0 0 0.25rem;
+        }
+
+        .questions-content p {
+          font-size: 0.875rem;
+          color: #5A6358;
+          margin: 0;
+        }
+
+        .pending-questions-section .btn {
+          flex-shrink: 0;
         }
       `}</style>
     </>
