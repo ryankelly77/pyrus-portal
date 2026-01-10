@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 interface CartItem {
   id: string
@@ -105,9 +110,9 @@ const productCatalog: Record<string, CartItem> = {
 }
 
 // Growth Rewards coupon configuration
-const VALID_COUPONS: Record<string, { discount: number; minSpend: number }> = {
-  'HARVEST5X': { discount: 5, minSpend: 1000 },
-  'CULTIVATE10': { discount: 10, minSpend: 2000 },
+const VALID_COUPONS: Record<string, { discount: number; minSpend: number; stripePromoId: string }> = {
+  'HARVEST5X': { discount: 5, minSpend: 1000, stripePromoId: 'promo_1So64eG6lmzQA2EMJxCe2Ad0' },
+  'CULTIVATE10': { discount: 10, minSpend: 2000, stripePromoId: 'promo_1So65IG6lmzQA2EM3OJ2MVpO' },
 }
 
 export default function CheckoutPage() {
@@ -129,6 +134,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [couponInput, setCouponInput] = useState('')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [stripeError, setStripeError] = useState<string | null>(null)
 
   // Fetch recommendation items when tier is provided
   useEffect(() => {
@@ -258,6 +265,36 @@ export default function CheckoutPage() {
       }
     }
   }, [urlCoupon, cartItems.length, appliedCoupon, baseMonthlyTotal])
+
+  // Fetch SetupIntent client secret for Stripe Elements
+  useEffect(() => {
+    if (cartItems.length === 0 || !client.id) return
+
+    async function createSetupIntent() {
+      try {
+        const res = await fetch('/api/stripe/setup-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: viewingAs || client.id,
+            email: client.contactEmail,
+            name: client.name,
+          }),
+        })
+        const data = await res.json()
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret)
+        } else if (data.error) {
+          setStripeError(data.error)
+        }
+      } catch (error) {
+        console.error('Failed to create SetupIntent:', error)
+        setStripeError('Failed to initialize payment form')
+      }
+    }
+
+    createSetupIntent()
+  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs])
 
   // Calculate discount
   const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
@@ -490,72 +527,77 @@ export default function CheckoutPage() {
                 Payment Method
               </h2>
 
+              <div className="payment-form">
+                {stripeError ? (
+                  <div className="stripe-error">
+                    <p>{stripeError}</p>
+                  </div>
+                ) : !clientSecret ? (
+                  <div className="stripe-loading">
+                    <div className="spinner" style={{ width: 24, height: 24 }}></div>
+                    <p>Loading payment form...</p>
+                  </div>
+                ) : (
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#324438',
+                          fontFamily: 'Inter, system-ui, sans-serif',
+                        },
+                      },
+                    }}
+                  >
+                    <PaymentElement
+                      options={{
+                        layout: 'tabs',
+                        paymentMethodOrder: billingCycle === 'annual' ? ['us_bank_account'] : ['card', 'us_bank_account'],
+                      }}
+                    />
+                  </Elements>
+                )}
+              </div>
+
               {billingCycle === 'annual' ? (
-                <>
-                  <div className="payment-form">
-                    <div className="stripe-placeholder ach-only">
-                      <div className="stripe-placeholder-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
-                          <rect x="1" y="3" width="22" height="18" rx="2" ry="2"></rect>
-                          <line x1="1" y1="9" x2="23" y2="9"></line>
-                          <line x1="1" y1="15" x2="23" y2="15"></line>
-                        </svg>
-                      </div>
-                      <p>Bank account (ACH) details will appear here</p>
-                      <span className="stripe-placeholder-note">Routing number, account number</span>
+                <div className="payment-methods-accepted">
+                  <span>Annual billing requires:</span>
+                  <div className="payment-icons">
+                    <div className="payment-icon" title="Bank Transfer (ACH)">
+                      <svg viewBox="0 0 50 50" width="32" height="20">
+                        <rect width="50" height="50" rx="5" fill="#324438"/>
+                        <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">ACH</text>
+                      </svg>
                     </div>
                   </div>
-                  <div className="payment-methods-accepted">
-                    <span>Annual billing requires:</span>
-                    <div className="payment-icons">
-                      <div className="payment-icon" title="Bank Transfer (ACH)">
-                        <svg viewBox="0 0 50 50" width="32" height="20">
-                          <rect width="50" height="50" rx="5" fill="#324438"/>
-                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">ACH</text>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                </div>
               ) : (
-                <>
-                  <div className="payment-form">
-                    <div className="stripe-placeholder">
-                      <div className="stripe-placeholder-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
-                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                          <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                      </div>
-                      <p>Stripe payment form will appear here</p>
-                      <span className="stripe-placeholder-note">Card number, expiry, CVC</span>
+                <div className="payment-methods-accepted">
+                  <span>We accept:</span>
+                  <div className="payment-icons">
+                    <div className="payment-icon" title="Visa">
+                      <svg viewBox="0 0 50 50" width="32" height="20">
+                        <rect width="50" height="50" rx="5" fill="#1A1F71"/>
+                        <text x="25" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">VISA</text>
+                      </svg>
+                    </div>
+                    <div className="payment-icon" title="Mastercard">
+                      <svg viewBox="0 0 50 50" width="32" height="20">
+                        <rect width="50" height="50" rx="5" fill="#EB001B"/>
+                        <circle cx="20" cy="25" r="12" fill="#EB001B"/>
+                        <circle cx="30" cy="25" r="12" fill="#F79E1B"/>
+                      </svg>
+                    </div>
+                    <div className="payment-icon" title="American Express">
+                      <svg viewBox="0 0 50 50" width="32" height="20">
+                        <rect width="50" height="50" rx="5" fill="#006FCF"/>
+                        <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">AMEX</text>
+                      </svg>
                     </div>
                   </div>
-                  <div className="payment-methods-accepted">
-                    <span>We accept:</span>
-                    <div className="payment-icons">
-                      <div className="payment-icon" title="Visa">
-                        <svg viewBox="0 0 50 50" width="32" height="20">
-                          <rect width="50" height="50" rx="5" fill="#1A1F71"/>
-                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">VISA</text>
-                        </svg>
-                      </div>
-                      <div className="payment-icon" title="Mastercard">
-                        <svg viewBox="0 0 50 50" width="32" height="20">
-                          <rect width="50" height="50" rx="5" fill="#EB001B"/>
-                          <circle cx="20" cy="25" r="12" fill="#EB001B"/>
-                          <circle cx="30" cy="25" r="12" fill="#F79E1B"/>
-                        </svg>
-                      </div>
-                      <div className="payment-icon" title="American Express">
-                        <svg viewBox="0 0 50 50" width="32" height="20">
-                          <rect width="50" height="50" rx="5" fill="#006FCF"/>
-                          <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">AMEX</text>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
 

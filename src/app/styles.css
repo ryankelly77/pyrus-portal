@@ -26596,3 +26596,33 @@ input[type="date"].form-control {
 .order-summary-row.discount span:last-child {
     font-weight: 500;
 }
+
+/* Stripe Elements Styles */
+.stripe-loading,
+.stripe-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background: #F9FAFB;
+    border: 1px dashed #D1D9D1;
+    border-radius: 8px;
+    gap: 12px;
+}
+
+.stripe-loading p,
+.stripe-error p {
+    margin: 0;
+    font-size: 14px;
+    color: #5A6358;
+}
+
+.stripe-error {
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.stripe-error p {
+    color: #DC2626;
+}
