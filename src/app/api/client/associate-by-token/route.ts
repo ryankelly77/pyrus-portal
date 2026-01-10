@@ -11,19 +11,23 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    console.log('associate-by-token called, user:', user?.email)
+
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const { token } = await request.json()
+    console.log('Token received:', token)
 
     if (!token) {
       return NextResponse.json({ error: 'Token is required' }, { status: 400 })
     }
 
     // Look up the client from the recommendation_invites table using the token
+    console.log('Looking up invite with token:', token)
     const inviteResult = await dbPool.query(
-      `SELECT ri.id as invite_id, ri.email as invite_email, r.client_id, c.name as client_name, c.contact_email
+      `SELECT ri.id as invite_id, ri.email as invite_email, ri.token, r.client_id, c.name as client_name, c.contact_email
        FROM recommendation_invites ri
        JOIN recommendations r ON r.id = ri.recommendation_id
        JOIN clients c ON c.id = r.client_id
@@ -31,8 +35,14 @@ export async function POST(request: NextRequest) {
        LIMIT 1`,
       [token]
     )
+    console.log('Invite lookup result:', inviteResult.rows.length, 'rows')
 
     if (inviteResult.rows.length === 0) {
+      // Debug: check if token exists at all
+      const debugResult = await dbPool.query(
+        `SELECT token, email FROM recommendation_invites ORDER BY created_at DESC LIMIT 5`
+      )
+      console.log('Recent invite tokens:', debugResult.rows)
       return NextResponse.json({ error: 'Invalid or expired invite token' }, { status: 404 })
     }
 

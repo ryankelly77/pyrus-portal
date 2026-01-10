@@ -77,14 +77,22 @@ function RegisterForm() {
       const pendingClientId = localStorage.getItem('pyrus_pending_client_id')
       const inviteToken = urlInviteToken || localStorage.getItem('pyrus_invite_token')
 
+      console.log('Association check:', { urlInviteToken, pendingClientId, inviteToken })
+
       if (inviteToken) {
         try {
           // Use token-only association - the API will find the client from the token
-          await fetch('/api/client/associate-by-token', {
+          console.log('Calling associate-by-token with:', inviteToken)
+          const res = await fetch('/api/client/associate-by-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: inviteToken }),
           })
+          const result = await res.json()
+          console.log('Association result:', result)
+          if (!res.ok) {
+            console.error('Association failed:', result.error)
+          }
           // Clear the pending data
           localStorage.removeItem('pyrus_pending_client_id')
           localStorage.removeItem('pyrus_invite_token')
