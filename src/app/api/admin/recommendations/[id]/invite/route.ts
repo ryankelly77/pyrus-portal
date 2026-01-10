@@ -4,6 +4,8 @@ import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/recommendations/[id]/invite - Get all invites for a recommendation
 export async function GET(
   request: NextRequest,

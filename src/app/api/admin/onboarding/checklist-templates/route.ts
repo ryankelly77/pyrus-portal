@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/onboarding/checklist-templates - List all checklist templates
 export async function GET(request: NextRequest) {
   try {

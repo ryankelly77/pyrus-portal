@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 // DELETE /api/admin/recommendations?id=xxx - Delete a recommendation
 export async function DELETE(request: NextRequest) {
   try {

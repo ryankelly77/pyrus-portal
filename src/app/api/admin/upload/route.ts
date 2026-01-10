@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/admin/upload - Upload a file to Supabase Storage
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/client/recommendation?clientName=xxx - Get recommendation for client by name
 export async function GET(request: NextRequest) {
   try {

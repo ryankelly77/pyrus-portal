@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // Communication types
 const COMM_TYPES = {
   EMAIL_INVITE: 'email_invite',

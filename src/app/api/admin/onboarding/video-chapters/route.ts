@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Fetch all video chapters
 export async function GET() {
   try {
