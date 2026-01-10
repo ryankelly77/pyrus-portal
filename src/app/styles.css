@@ -9971,6 +9971,53 @@
             color: #a78bfa;
         }
 
+        /* Locked Page Placeholder for Pending Clients */
+        .locked-page-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            min-height: 400px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(139, 92, 246, 0.01) 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .locked-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8b5cf6;
+            margin-bottom: 1.5rem;
+        }
+
+        .locked-page-placeholder h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1A1F16;
+            margin: 0 0 0.75rem;
+        }
+
+        .locked-page-placeholder p {
+            font-size: 1rem;
+            color: #5A6358;
+            margin: 0 0 1.5rem;
+            max-width: 450px;
+            line-height: 1.6;
+        }
+
+        .locked-page-placeholder .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         /* ========================================
            Recommendations List Styles
            ======================================== */

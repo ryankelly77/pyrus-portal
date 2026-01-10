@@ -12,6 +12,9 @@ export default function ResultsPage() {
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
 
+  // Check if client is pending (prospect only)
+  const isPending = client.status === 'pending'
+
   // KPI data - will be replaced with real data from API in the future
   const kpiData = {
     visitors: '2,847',
@@ -49,6 +52,26 @@ export default function ResultsPage() {
       </div>
 
       <div className="client-content">
+        {/* Pending client placeholder */}
+        {isPending ? (
+          <div className="locked-page-placeholder">
+            <div className="locked-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h2>Results Available After Purchase</h2>
+            <p>Once you select a plan and become an active client, you&apos;ll see your marketing performance metrics, keyword rankings, lead tracking, and more here.</p>
+            <Link href={viewingAs ? `/recommendations?viewingAs=${viewingAs}` : '/recommendations'} className="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              View Your Proposal
+            </Link>
+          </div>
+        ) : (
+          <>
         {/* Results Sub-tabs */}
         <div className="results-subtabs">
           <button
@@ -432,6 +455,8 @@ export default function ResultsPage() {
             ></iframe>
           </div>
         </div>
+          </>
+        )}
       </div>
     </>
   )
