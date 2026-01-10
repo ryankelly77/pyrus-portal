@@ -26,11 +26,12 @@ export async function getOrCreateCoupon(code: string): Promise<string | null> {
       code: code, // Stripe promotion codes are case-sensitive, try original
       active: true,
       limit: 1,
+      expand: ['data.coupon'],
     })
 
     if (promoCodes.data.length > 0) {
       // Return the coupon ID associated with this promotion code
-      const promoCode = promoCodes.data[0]
+      const promoCode = promoCodes.data[0] as unknown as { coupon: { id: string } }
       console.log(`Found Stripe promotion code: ${code} -> coupon ${promoCode.coupon.id}`)
       return promoCode.coupon.id
     }
