@@ -26,8 +26,8 @@ export function getRecommendationInviteEmail(data: RecommendationInviteData): { 
 
           <!-- Header with Logo -->
           <tr>
-            <td style="padding: 40px 40px 30px; text-align: center; background-color: #324438; border-radius: 12px 12px 0 0;">
-              <img src="https://pyrusdigitalmedia.com/wp-content/uploads/2024/11/pyrus-logo-white.png" alt="Pyrus Digital Media" style="height: 40px; width: auto;" />
+            <td style="padding: 32px 40px 24px; text-align: center; background-color: #ffffff; border-radius: 12px 12px 0 0; border-bottom: 1px solid #e5e7eb;">
+              <img src="https://portal.pyrusdigitalmedia.com/pyrus-logo.png" alt="Pyrus Digital Media" style="height: 36px; width: auto; max-width: 160px;" />
             </td>
           </tr>
 
