@@ -69,7 +69,7 @@ export default function RecommendationsPage() {
   const viewingAs = searchParams.get('viewingAs')
   const { client } = useClientData(viewingAs)
 
-  const [activeTab, setActiveTab] = useState<TabType>('smart-recommendations')
+  const [activeTab, setActiveTab] = useState<TabType>('original-plan')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PurchaseItem | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -85,23 +85,21 @@ export default function RecommendationsPage() {
   useEffect(() => {
     async function fetchRecommendation() {
       try {
-        // Map static client IDs to client names for database lookup
-        const clientNameMap: Record<string, string> = {
-          'tc-clinical': 'TC Clinical',
-          'raptor-vending': 'Raptor Vending',
-          'raptor-services': 'Raptor Services',
-          'gohfr': 'Gohfr',
-          'espronceda-law': 'Espronceda',
-          'ruger': 'Ruger',
+        // Check if viewingAs is a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        const isUUID = viewingAs && uuidRegex.test(viewingAs)
+
+        // Use clientId if we have a UUID, otherwise use clientName
+        let apiUrl: string
+        if (isUUID) {
+          apiUrl = `/api/client/recommendation?clientId=${viewingAs}`
+        } else if (client.id) {
+          apiUrl = `/api/client/recommendation?clientId=${client.id}`
+        } else {
+          apiUrl = `/api/client/recommendation?clientName=${encodeURIComponent(client.name)}`
         }
 
-        // If viewingAs is a UUID, client.name will have the actual name from API
-        // Otherwise try the clientNameMap or use the viewingAs value directly
-        const searchName = viewingAs
-          ? (clientNameMap[viewingAs] || client.name || viewingAs)
-          : client.name
-
-        const res = await fetch(`/api/client/recommendation?clientName=${encodeURIComponent(searchName)}`)
+        const res = await fetch(apiUrl)
         if (res.ok) {
           const data = await res.json()
           if (data) {
@@ -118,10 +116,7 @@ export default function RecommendationsPage() {
     }
 
     fetchRecommendation()
-  }, [viewingAs, client.name])
-
-  // Client-specific data
-  const isRaptorVending = client.id === 'raptor-vending'
+  }, [viewingAs, client.id, client.name])
 
   // Handle purchase button click
   const handlePurchaseClick = (item: PurchaseItem) => {
@@ -235,16 +230,6 @@ export default function RecommendationsPage() {
           {/* Main Recommendations Tabs */}
           <div className="recommendations-tabs">
             <button
-              className={`recommendations-tab ${activeTab === 'smart-recommendations' ? 'active' : ''}`}
-              onClick={() => setActiveTab('smart-recommendations')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-              Smart Recommendations
-              <span className="tab-count">4</span>
-            </button>
-            <button
               className={`recommendations-tab ${activeTab === 'original-plan' ? 'active' : ''}`}
               onClick={() => setActiveTab('original-plan')}
             >
@@ -265,6 +250,16 @@ export default function RecommendationsPage() {
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Your Current Services
+            </button>
+            <button
+              className={`recommendations-tab ${activeTab === 'smart-recommendations' ? 'active' : ''}`}
+              onClick={() => setActiveTab('smart-recommendations')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              Smart Recommendations
+              <span className="tab-count">4</span>
             </button>
           </div>
 
