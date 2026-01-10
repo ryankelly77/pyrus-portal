@@ -19,17 +19,43 @@ export async function GET(request: NextRequest) {
       }
 
       // Get profile with client_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('client_id')
-        .eq('id', user.id)
-        .single<{ client_id: string | null }>()
+      const profileResult = await dbPool.query(
+        `SELECT client_id FROM profiles WHERE id = $1`,
+        [user.id]
+      )
 
-      if (!profile?.client_id) {
+      let profileClientId = profileResult.rows[0]?.client_id
+
+      // If no client_id, try to auto-associate based on email matching a recommendation invite
+      if (!profileClientId && user.email) {
+        const inviteResult = await dbPool.query(
+          `SELECT r.client_id
+           FROM recommendation_invites ri
+           JOIN recommendations r ON r.id = ri.recommendation_id
+           WHERE LOWER(ri.email) = LOWER($1)
+           ORDER BY ri.created_at DESC
+           LIMIT 1`,
+          [user.email]
+        )
+
+        if (inviteResult.rows.length > 0) {
+          const foundClientId = inviteResult.rows[0].client_id
+          // Auto-associate the user with this client
+          await dbPool.query(
+            `INSERT INTO profiles (id, client_id, email, full_name)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (id) DO UPDATE SET client_id = $2`,
+            [user.id, foundClientId, user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'User']
+          )
+          profileClientId = foundClientId
+        }
+      }
+
+      if (!profileClientId) {
         return NextResponse.json({ error: 'No client associated with user' }, { status: 404 })
       }
 
-      clientId = profile.client_id
+      clientId = profileClientId
     }
 
     // Validate UUID format
