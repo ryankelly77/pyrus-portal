@@ -22803,8 +22803,9 @@ input[type="date"].form-control {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
+    margin-top: 16px;
 }
 
 .payment-icons {
@@ -22813,7 +22814,9 @@ input[type="date"].form-control {
 }
 
 .payment-icon {
-    border-radius: 4px;
+    width: 52px;
+    height: 34px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
@@ -25859,20 +25862,21 @@ input[type="date"].form-control {
 .payment-methods-accepted {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-size: 0.8125rem;
+    gap: 12px;
+    font-size: 14px;
     color: #5A6358;
+    margin-top: 16px;
 }
 
 .payment-icons {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .payment-icon {
-    width: 40px;
-    height: 26px;
-    border-radius: 4px;
+    width: 52px;
+    height: 34px;
+    border-radius: 6px;
     overflow: hidden;
 }
 

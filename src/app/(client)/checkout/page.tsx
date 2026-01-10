@@ -594,20 +594,20 @@ export default function CheckoutPage() {
                   <span>We accept:</span>
                   <div className="payment-icons">
                     <div className="payment-icon" title="Visa">
-                      <svg viewBox="0 0 50 50" width="32" height="20">
+                      <svg viewBox="0 0 50 50" width="52" height="34">
                         <rect width="50" height="50" rx="5" fill="#1A1F71"/>
                         <text x="25" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">VISA</text>
                       </svg>
                     </div>
                     <div className="payment-icon" title="Mastercard">
-                      <svg viewBox="0 0 50 50" width="32" height="20">
+                      <svg viewBox="0 0 50 50" width="52" height="34">
                         <rect width="50" height="50" rx="5" fill="#EB001B"/>
                         <circle cx="20" cy="25" r="12" fill="#EB001B"/>
                         <circle cx="30" cy="25" r="12" fill="#F79E1B"/>
                       </svg>
                     </div>
                     <div className="payment-icon" title="American Express">
-                      <svg viewBox="0 0 50 50" width="32" height="20">
+                      <svg viewBox="0 0 50 50" width="52" height="34">
                         <rect width="50" height="50" rx="5" fill="#006FCF"/>
                         <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">AMEX</text>
                       </svg>
