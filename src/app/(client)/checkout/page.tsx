@@ -571,15 +571,22 @@ export default function CheckoutPage() {
               </div>
 
               {billingCycle === 'annual' ? (
-                <div className="payment-methods-accepted">
-                  <span>Annual billing requires:</span>
-                  <div className="payment-icons">
-                    <div className="payment-icon" title="Bank Transfer (ACH)">
-                      <svg viewBox="0 0 50 50" width="32" height="20">
-                        <rect width="50" height="50" rx="5" fill="#324438"/>
-                        <text x="25" y="32" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">ACH</text>
-                      </svg>
-                    </div>
+                <div className="ach-notice">
+                  <div className="ach-notice-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                      <path d="M3 21h18"></path>
+                      <path d="M3 10h18"></path>
+                      <path d="M5 6l7-3 7 3"></path>
+                      <path d="M4 10v11"></path>
+                      <path d="M20 10v11"></path>
+                      <path d="M8 14v3"></path>
+                      <path d="M12 14v3"></path>
+                      <path d="M16 14v3"></path>
+                    </svg>
+                  </div>
+                  <div className="ach-notice-content">
+                    <strong>Bank Transfer (ACH) Required</strong>
+                    <p>Annual billing over $10,000 requires payment via ACH bank transfer for security.</p>
                   </div>
                 </div>
               ) : (

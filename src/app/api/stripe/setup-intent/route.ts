@@ -42,25 +42,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
-    // Annual billing uses ACH-only config (no Link), monthly uses default
-    const ACH_ONLY_CONFIG = 'pmc_1R2CzeG6lmzQA2EM724da0Gs'
-
+    // Annual billing uses ACH-only, monthly allows multiple methods
     const setupIntentParams: Stripe.SetupIntentCreateParams = {
       customer: stripeCustomerId,
       metadata: {
         clientId: clientId,
+        billingCycle: billingCycle || 'monthly',
       },
     }
 
     if (billingCycle === 'annual') {
-      // Use ACH-only configuration (Link disabled)
-      setupIntentParams.payment_method_configuration = ACH_ONLY_CONFIG
+      // Annual: ACH only (bank transfer for large amounts)
+      setupIntentParams.payment_method_types = ['us_bank_account']
     } else {
       // Monthly: allow card, link, and ACH
       setupIntentParams.payment_method_types = ['card', 'link', 'us_bank_account']
     }
 
+    console.log('Creating SetupIntent with params:', JSON.stringify(setupIntentParams, null, 2))
     const setupIntent = await stripe.setupIntents.create(setupIntentParams)
+    console.log('SetupIntent created:', setupIntent.id)
 
     return NextResponse.json({
       clientSecret: setupIntent.client_secret,

@@ -26626,3 +26626,51 @@ input[type="date"].form-control {
 .stripe-error p {
     color: #DC2626;
 }
+
+/* ACH Notice for Annual Billing */
+.ach-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #E8EDEA 0%, #F5F7F6 100%);
+    border: 1px solid #324438;
+    border-radius: 10px;
+    margin-top: 16px;
+}
+
+.ach-notice-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: #324438;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ach-notice-icon svg {
+    color: white;
+    width: 24px;
+    height: 24px;
+}
+
+.ach-notice-content {
+    flex: 1;
+}
+
+.ach-notice-content strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #324438;
+    margin-bottom: 4px;
+}
+
+.ach-notice-content p {
+    margin: 0;
+    font-size: 13px;
+    color: #5A6358;
+    line-height: 1.5;
+}
