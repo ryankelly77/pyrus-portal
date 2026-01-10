@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       `SELECT ri.id, ri.recommendation_id, r.client_id
        FROM recommendation_invites ri
        JOIN recommendations r ON r.id = ri.recommendation_id
-       WHERE ri.token = $1 AND r.client_id = $2`,
+       WHERE ri.invite_token = $1 AND r.client_id = $2`,
       [token, clientId]
     )
 

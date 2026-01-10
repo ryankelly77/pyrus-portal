@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
     // Look up the client from the recommendation_invites table using the token
     console.log('Looking up invite with token:', token)
     const inviteResult = await dbPool.query(
-      `SELECT ri.id as invite_id, ri.email as invite_email, ri.token, r.client_id, c.name as client_name, c.contact_email
+      `SELECT ri.id as invite_id, ri.email as invite_email, ri.invite_token, r.client_id, c.name as client_name, c.contact_email
        FROM recommendation_invites ri
        JOIN recommendations r ON r.id = ri.recommendation_id
        JOIN clients c ON c.id = r.client_id
-       WHERE ri.token = $1
+       WHERE ri.invite_token = $1
        LIMIT 1`,
       [token]
     )
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (inviteResult.rows.length === 0) {
       // Debug: check if token exists at all
       const debugResult = await dbPool.query(
-        `SELECT token, email FROM recommendation_invites ORDER BY created_at DESC LIMIT 5`
+        `SELECT invite_token, email FROM recommendation_invites ORDER BY created_at DESC LIMIT 5`
       )
       console.log('Recent invite tokens:', debugResult.rows)
       return NextResponse.json({ error: 'Invalid or expired invite token' }, { status: 404 })
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Mark the invite as viewed
     await dbPool.query(
-      `UPDATE recommendation_invites SET viewed_at = NOW(), status = 'viewed' WHERE token = $1`,
+      `UPDATE recommendation_invites SET viewed_at = NOW(), status = 'viewed' WHERE invite_token = $1`,
       [token]
     )
 
