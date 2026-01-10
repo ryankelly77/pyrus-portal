@@ -76,8 +76,12 @@ export async function GET(request: NextRequest) {
 
     const activeProducts = subscriptionResult.rows.map((r: { name: string }) => r.name.toLowerCase())
 
+    // A client is "pending" (prospect) if they have no active subscriptions
+    const hasActiveSubscriptions = activeProducts.length > 0
+    const clientStatus = hasActiveSubscriptions ? (client.status || 'active') : 'pending'
+
     // Determine access flags
-    const isActiveClient = client.status === 'active'
+    const isActiveClient = hasActiveSubscriptions
     const hasResultsAccess = !!client.agency_dashboard_share_key
     const hasActivityAccess = !!client.basecamp_id
     const hasWebsiteAccess = !!client.landingsite_preview_url
@@ -110,7 +114,7 @@ export async function GET(request: NextRequest) {
       contactName: client.contact_name || client.name,
       contactEmail: client.contact_email,
       contactPhone: null, // Column doesn't exist in database yet
-      status: client.status || 'active',
+      status: clientStatus,
       growthStage: client.growth_stage,
       clientSince: startDate,
       agencyDashboardKey: client.agency_dashboard_share_key,
