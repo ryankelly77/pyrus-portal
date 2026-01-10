@@ -8507,14 +8507,15 @@
         .client-nav-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
+            gap: 10px;
+            padding: 10px 14px;
             color: rgba(255, 255, 255, 0.75);
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             border-radius: var(--radius-md);
             transition: all 0.15s ease;
+            flex-wrap: nowrap;
         }
 
         .client-nav-item:hover {
@@ -8533,6 +8534,10 @@
             flex-shrink: 0;
         }
 
+        .client-nav-item span {
+            white-space: nowrap;
+        }
+
         .nav-spacer {
             flex: 1;
         }
@@ -8544,24 +8549,26 @@
         }
 
         /* Navigation Badges */
-        .nav-badge {
-            font-size: 9px;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
+        .client-nav-item .nav-badge {
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 3px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             margin-left: auto;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
-        .nav-badge.coming-soon {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
+        .client-nav-item .nav-badge.coming-soon {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffca2c;
         }
 
-        .nav-badge.inactive {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.5);
+        .client-nav-item .nav-badge.inactive {
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.6);
         }
 
         /* Client Portal Layout */
