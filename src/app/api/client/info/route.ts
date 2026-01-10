@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
     }
 
-    const result = await dbPool.query(
+    // Fetch client data
+    const clientResult = await dbPool.query(
       `SELECT
         id,
         name,
@@ -28,17 +29,42 @@ export async function GET(request: NextRequest) {
         growth_stage,
         start_date,
         agency_dashboard_share_key,
-        landingsite_preview_url
+        landingsite_preview_url,
+        basecamp_id
       FROM clients
       WHERE id = $1`,
       [clientId]
     )
 
-    if (result.rows.length === 0) {
+    if (clientResult.rows.length === 0) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    const client = result.rows[0]
+    const client = clientResult.rows[0]
+
+    // Fetch active subscription products to determine access
+    const subscriptionResult = await dbPool.query(
+      `SELECT DISTINCT p.name, p.category
+       FROM subscriptions s
+       JOIN subscription_items si ON si.subscription_id = s.id
+       JOIN products p ON p.id = si.product_id
+       WHERE s.client_id = $1 AND s.status = 'active'`,
+      [clientId]
+    )
+
+    const activeProducts = subscriptionResult.rows.map((r: { name: string }) => r.name.toLowerCase())
+
+    // Determine access flags
+    const isActiveClient = client.status === 'active'
+    const hasResultsAccess = !!client.agency_dashboard_share_key
+    const hasActivityAccess = !!client.basecamp_id
+    const hasWebsiteAccess = !!client.landingsite_preview_url
+    const hasWebsiteProducts = activeProducts.some((name: string) =>
+      name.includes('site') || name.includes('website') || name.includes('care plan')
+    )
+    const hasContentProducts = activeProducts.some((name: string) =>
+      name.includes('content') || name.includes('ai creative') || name.includes('branding')
+    )
 
     // Generate initials from name
     const initials = client.name
@@ -66,6 +92,15 @@ export async function GET(request: NextRequest) {
       clientSince: startDate,
       agencyDashboardKey: client.agency_dashboard_share_key,
       landingsitePreviewUrl: client.landingsite_preview_url,
+      // Access flags for sidebar badges
+      access: {
+        isActive: isActiveClient,
+        hasResults: hasResultsAccess,
+        hasActivity: hasActivityAccess,
+        hasWebsite: hasWebsiteAccess,
+        hasWebsiteProducts,
+        hasContent: hasContentProducts,
+      }
     })
   } catch (error) {
     console.error('Error fetching client info:', error)

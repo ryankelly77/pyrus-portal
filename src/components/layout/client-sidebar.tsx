@@ -3,11 +3,16 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { useClientData } from '@/hooks/useClientData'
 
 export function ClientSidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const { client } = useClientData(viewingAs)
+
+  // Access flags
+  const { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent } = client.access
 
   // Helper to build href with viewingAs param preserved
   const buildHref = (path: string) => {
@@ -16,6 +21,13 @@ export function ClientSidebar() {
     }
     return path
   }
+
+  // Badge component
+  const Badge = ({ type }: { type: 'coming-soon' | 'inactive' }) => (
+    <span className={`nav-badge ${type}`}>
+      {type === 'coming-soon' ? 'Coming Soon' : 'Inactive'}
+    </span>
+  )
 
   return (
     <aside className="client-sidebar">
@@ -49,6 +61,8 @@ export function ClientSidebar() {
             <polyline points="17 6 23 6 23 12"></polyline>
           </svg>
           <span>Results</span>
+          {!hasResults && isActive && <Badge type="coming-soon" />}
+          {!isActive && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/activity')}
@@ -58,6 +72,8 @@ export function ClientSidebar() {
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <span>Activity</span>
+          {!hasActivity && isActive && <Badge type="coming-soon" />}
+          {!isActive && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/website')}
@@ -69,6 +85,8 @@ export function ClientSidebar() {
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
           <span>Website</span>
+          {hasWebsiteProducts && !hasWebsite && <Badge type="coming-soon" />}
+          {!hasWebsiteProducts && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/content')}
@@ -82,6 +100,7 @@ export function ClientSidebar() {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
           <span>Content</span>
+          {!hasContent && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/recommendations')}

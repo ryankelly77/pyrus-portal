@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from 'react'
 
+export interface ClientAccess {
+  isActive: boolean
+  hasResults: boolean
+  hasActivity: boolean
+  hasWebsite: boolean
+  hasWebsiteProducts: boolean
+  hasContent: boolean
+}
+
 export interface ClientInfo {
   id: string
   name: string
@@ -15,6 +24,7 @@ export interface ClientInfo {
   clientSince: string | null
   agencyDashboardKey: string | null
   landingsitePreviewUrl: string | null
+  access: ClientAccess
 }
 
 // Default fallback for when no client is found
@@ -31,6 +41,14 @@ const defaultClient: ClientInfo = {
   clientSince: null,
   agencyDashboardKey: null,
   landingsitePreviewUrl: null,
+  access: {
+    isActive: true,
+    hasResults: false,
+    hasActivity: false,
+    hasWebsite: false,
+    hasWebsiteProducts: false,
+    hasContent: false,
+  },
 }
 
 export function useClientData(viewingAs: string | null) {
