@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
+import PaymentForm from './PaymentForm'
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -130,7 +131,6 @@ export default function CheckoutPage() {
   const [selectedTier, setSelectedTier] = useState<string | null>(tier)
   const [recommendationId, setRecommendationId] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
-  const [isProcessing, setIsProcessing] = useState(false)
   const [isLoading, setIsLoading] = useState(!!tier)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
@@ -311,32 +311,6 @@ export default function CheckoutPage() {
   const discountedMonthlyTotal = monthlyTotal - couponDiscount
   const annualTotal = discountedMonthlyTotal * 12 * 0.9 // 10% discount for annual
 
-  const handleCheckout = async () => {
-    setIsProcessing(true)
-    // TODO: Integrate with Stripe API
-    // For now, mark the recommendation as purchased with the selected tier
-    try {
-      if (recommendationId && selectedTier) {
-        await fetch(`/api/admin/recommendations/${recommendationId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status: 'purchased',
-            purchased_tier: selectedTier,
-            purchased_at: new Date().toISOString()
-          })
-        })
-      }
-    } catch (error) {
-      console.error('Failed to update recommendation:', error)
-    }
-
-    setTimeout(() => {
-      setIsProcessing(false)
-      alert('Thank you! Your purchase has been recorded. Stripe payment integration coming soon!')
-      window.location.href = `/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`
-    }, 1500)
-  }
 
   // Loading state when fetching recommendation items
   if (isLoading) {
@@ -559,15 +533,15 @@ export default function CheckoutPage() {
                       },
                     }}
                   >
-                    <PaymentElement
-                      options={{
-                        layout: 'tabs',
-                        paymentMethodOrder: billingCycle === 'annual' ? ['us_bank_account'] : ['card', 'us_bank_account'],
-                        wallets: {
-                          applePay: billingCycle === 'annual' ? 'never' : 'auto',
-                          googlePay: billingCycle === 'annual' ? 'never' : 'auto',
-                        },
-                      }}
+                    <PaymentForm
+                      clientId={viewingAs || client.id}
+                      recommendationId={recommendationId}
+                      selectedTier={selectedTier}
+                      cartItems={cartItems}
+                      couponCode={appliedCoupon}
+                      billingCycle={billingCycle}
+                      viewingAs={viewingAs}
+                      onError={(error) => setStripeError(error)}
                     />
                   </Elements>
                 )}
@@ -773,27 +747,6 @@ export default function CheckoutPage() {
                   )}
                 </p>
               )}
-
-              <button
-                className={`btn btn-primary btn-lg checkout-btn ${isProcessing ? 'processing' : ''}`}
-                onClick={handleCheckout}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <span className="spinner"></span>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    Complete Purchase
-                  </>
-                )}
-              </button>
 
               <div className="checkout-guarantee">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
