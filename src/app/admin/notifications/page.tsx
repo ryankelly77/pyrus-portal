@@ -274,16 +274,6 @@ export default function AdminNotificationsPage() {
           <div className="page-header-content">
             <p>Email activity, proposal views, and client logins</p>
           </div>
-          <div className="header-actions">
-            <button className="btn btn-secondary" onClick={fetchNotifications}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              Refresh
-            </button>
-          </div>
         </div>
 
         {/* Filters */}
@@ -328,6 +318,14 @@ export default function AdminNotificationsPage() {
             </button>
           </div>
           <div className="filter-actions">
+            <button className="btn btn-secondary btn-sm" onClick={fetchNotifications}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Refresh
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={handleExportActivity}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
