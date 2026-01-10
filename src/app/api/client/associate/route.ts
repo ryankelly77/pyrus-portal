@@ -33,10 +33,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token or client' }, { status: 400 })
     }
 
-    // Update the user's profile to associate with this client
+    // Update or insert the user's profile to associate with this client
+    // Use UPSERT in case the profile hasn't been created yet by the trigger
     await dbPool.query(
-      `UPDATE profiles SET client_id = $1 WHERE id = $2`,
-      [clientId, user.id]
+      `INSERT INTO profiles (id, client_id, email, full_name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET client_id = $2`,
+      [user.id, clientId, user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'User']
     )
 
     // Also update the client's primary contact email if not set

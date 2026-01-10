@@ -20,9 +20,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'page is required' }, { status: 400 })
     }
 
-    // Get client ID for this user (if they have one)
+    // Get client ID for this user via their profile
     const clientResult = await dbPool.query(
-      `SELECT id, name FROM clients WHERE user_id = $1`,
+      `SELECT c.id, c.name FROM clients c
+       JOIN profiles p ON p.client_id = c.id
+       WHERE p.id = $1`,
       [user.id]
     )
     const client = clientResult.rows[0]
