@@ -45,14 +45,94 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
+      // SetupIntent events (for saving payment methods)
+      case 'setup_intent.succeeded': {
+        const setupIntent = event.data.object as Stripe.SetupIntent
+        const clientId = setupIntent.metadata?.clientId || setupIntent.metadata?.pyrus_client_id
+        console.log('SetupIntent succeeded:', setupIntent.id)
+
+        if (clientId) {
+          await prisma.activity_log.create({
+            data: {
+              client_id: clientId,
+              type: 'payment',
+              description: 'Payment method saved successfully',
+            },
+          })
+        }
+        break
+      }
+
+      case 'setup_intent.setup_failed': {
+        const setupIntent = event.data.object as Stripe.SetupIntent
+        const clientId = setupIntent.metadata?.clientId || setupIntent.metadata?.pyrus_client_id
+        const errorMsg = setupIntent.last_setup_error?.message || 'Unknown error'
+        console.error('SetupIntent failed:', setupIntent.id, errorMsg)
+
+        if (clientId) {
+          await prisma.activity_log.create({
+            data: {
+              client_id: clientId,
+              type: 'payment',
+              description: `Payment setup failed: ${errorMsg}`,
+            },
+          })
+        }
+        break
+      }
+
+      // ACH-specific: payment is being processed (takes 4-5 business days)
+      case 'payment_intent.processing': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const clientId = paymentIntent.metadata?.clientId || paymentIntent.metadata?.pyrus_client_id
+        console.log('Payment processing (ACH):', paymentIntent.id)
+
+        if (clientId) {
+          await prisma.activity_log.create({
+            data: {
+              client_id: clientId,
+              type: 'payment',
+              description: 'ACH payment processing - funds will be available in 4-5 business days',
+            },
+          })
+        }
+        break
+      }
+
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        const clientId = paymentIntent.metadata?.pyrus_client_id
+        const clientId = paymentIntent.metadata?.clientId || paymentIntent.metadata?.pyrus_client_id
 
         console.log(`Payment succeeded for client ${clientId}:`, paymentIntent.id)
 
-        // Record payment in database if needed
-        // This is for one-time payments not associated with subscriptions
+        // Log the confirmed payment
+        if (clientId) {
+          await prisma.activity_log.create({
+            data: {
+              client_id: clientId,
+              type: 'payment',
+              description: `Payment confirmed: $${(paymentIntent.amount / 100).toFixed(2)}`,
+            },
+          })
+        }
+        break
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const clientId = paymentIntent.metadata?.clientId || paymentIntent.metadata?.pyrus_client_id
+        const errorMsg = paymentIntent.last_payment_error?.message || 'Unknown error'
+        console.error('Payment failed:', paymentIntent.id, errorMsg)
+
+        if (clientId) {
+          await prisma.activity_log.create({
+            data: {
+              client_id: clientId,
+              type: 'payment',
+              description: `Payment failed: ${errorMsg}`,
+            },
+          })
+        }
         break
       }
 
