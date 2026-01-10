@@ -560,6 +560,10 @@ export default function CheckoutPage() {
                       options={{
                         layout: 'tabs',
                         paymentMethodOrder: billingCycle === 'annual' ? ['us_bank_account'] : ['card', 'us_bank_account'],
+                        wallets: {
+                          applePay: billingCycle === 'annual' ? 'never' : 'auto',
+                          googlePay: billingCycle === 'annual' ? 'never' : 'auto',
+                        },
                       }}
                     />
                   </Elements>
