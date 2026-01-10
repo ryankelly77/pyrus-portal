@@ -267,8 +267,12 @@ export default function CheckoutPage() {
   }, [urlCoupon, cartItems.length, appliedCoupon, baseMonthlyTotal])
 
   // Fetch SetupIntent client secret for Stripe Elements
+  // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
   useEffect(() => {
     if (cartItems.length === 0 || !client.id) return
+
+    // Reset client secret when billing cycle changes
+    setClientSecret(null)
 
     async function createSetupIntent() {
       try {
@@ -279,6 +283,7 @@ export default function CheckoutPage() {
             clientId: viewingAs || client.id,
             email: client.contactEmail,
             name: client.name,
+            billingCycle,
           }),
         })
         const data = await res.json()
@@ -294,7 +299,7 @@ export default function CheckoutPage() {
     }
 
     createSetupIntent()
-  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs])
+  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs, billingCycle])
 
   // Calculate discount
   const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]

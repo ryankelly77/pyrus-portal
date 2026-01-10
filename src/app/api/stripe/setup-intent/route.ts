@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
-    const { clientId, email, name } = await request.json()
+    const { clientId, email, name, billingCycle } = await request.json()
 
     if (!clientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 })
@@ -42,9 +42,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
+    // Annual billing requires ACH only (for large amounts)
+    const paymentMethodTypes = billingCycle === 'annual'
+      ? ['us_bank_account']
+      : ['card', 'link', 'us_bank_account']
+
     const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card', 'us_bank_account'],
+      payment_method_types: paymentMethodTypes,
       metadata: {
         clientId: clientId,
       },
