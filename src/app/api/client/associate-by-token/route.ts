@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Look up the client from the recommendation_invites table using the token
     const inviteResult = await dbPool.query(
-      `SELECT ri.id as invite_id, r.client_id, c.name as client_name
+      `SELECT ri.id as invite_id, ri.email as invite_email, r.client_id, c.name as client_name, c.contact_email
        FROM recommendation_invites ri
        JOIN recommendations r ON r.id = ri.recommendation_id
        JOIN clients c ON c.id = r.client_id
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired invite token' }, { status: 404 })
     }
 
-    const { client_id: clientId, client_name: clientName } = inviteResult.rows[0]
+    const { client_id: clientId, client_name: clientName, invite_email: inviteEmail, contact_email: currentContactEmail } = inviteResult.rows[0]
 
     // Associate the user with this client using UPSERT
     await dbPool.query(
@@ -45,6 +45,20 @@ export async function POST(request: NextRequest) {
        ON CONFLICT (id) DO UPDATE SET client_id = $2`,
       [user.id, clientId, user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'User']
     )
+
+    // Update client contact_email if user registered with a different email
+    // Only update if the current contact_email matches the invite email (was their personal email)
+    // or if there's no contact_email set
+    if (user.email && user.email.toLowerCase() !== inviteEmail?.toLowerCase()) {
+      const shouldUpdateEmail = !currentContactEmail || currentContactEmail.toLowerCase() === inviteEmail?.toLowerCase()
+      if (shouldUpdateEmail) {
+        await dbPool.query(
+          `UPDATE clients SET contact_email = $1 WHERE id = $2`,
+          [user.email, clientId]
+        )
+        console.log(`Updated client contact_email from ${currentContactEmail || 'null'} to ${user.email}`)
+      }
+    }
 
     // Mark the invite as viewed
     await dbPool.query(
