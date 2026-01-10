@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 interface PageViewOptions {
   page: string
@@ -8,12 +8,11 @@ interface PageViewOptions {
 }
 
 export function usePageView({ page, pageName }: PageViewOptions) {
-  const logged = useRef(false)
-
   useEffect(() => {
-    // Only log once per page mount
-    if (logged.current) return
-    logged.current = true
+    // Only log once per session per page
+    const sessionKey = `pyrus_page_view_${page}`
+    if (sessionStorage.getItem(sessionKey)) return
+    sessionStorage.setItem(sessionKey, 'true')
 
     async function logPageView() {
       try {
