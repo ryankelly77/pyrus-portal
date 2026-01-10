@@ -29,6 +29,21 @@ export default function LoginPage() {
       return
     }
 
+    // Log the login activity
+    try {
+      await fetch('/api/activity/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activity_type: 'login',
+          description: 'Logged into the portal',
+        }),
+      })
+    } catch (e) {
+      // Don't block login if activity logging fails
+      console.error('Failed to log login activity:', e)
+    }
+
     router.push('/dashboard')
     router.refresh()
   }

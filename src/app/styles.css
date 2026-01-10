@@ -26861,3 +26861,140 @@ input[type="date"].form-control {
     background: #283830;
     border-color: #283830;
 }
+
+/* ==================== NOTIFICATION SUMMARY GRID ==================== */
+.notification-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .notification-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    border: 1px solid #E5E7EB;
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.summary-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.summary-icon.email {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.summary-icon.proposal {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.summary-icon.login {
+    background: #E0E7FF;
+    color: #3730A3;
+}
+
+.summary-content {
+    flex: 1;
+    min-width: 80px;
+}
+
+.summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1A1F16;
+    line-height: 1.2;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-top: 0.25rem;
+}
+
+.summary-breakdown {
+    width: 100%;
+    display: flex;
+    gap: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #F3F4F6;
+    margin-top: 0.5rem;
+}
+
+.breakdown-item {
+    font-size: 0.8125rem;
+    color: #6B7280;
+}
+
+.breakdown-item.delivered {
+    color: #1E40AF;
+}
+
+.breakdown-item.opened {
+    color: #065F46;
+}
+
+.breakdown-item.viewed {
+    color: #065F46;
+}
+
+.breakdown-item.rate {
+    color: #5A6358;
+}
+
+/* Activity item email icon */
+.activity-icon.email {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #1A1F16;
+    margin-right: 0.5rem;
+}
+
+.activity-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.activity-meta {
+    margin-top: 0.25rem;
+}
+
+.activity-client {
+    font-size: 0.8125rem;
+    color: #6B7280;
+    text-decoration: none;
+}
+
+.activity-client:hover {
+    color: #324438;
+    text-decoration: underline;
+}

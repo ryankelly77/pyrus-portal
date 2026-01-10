@@ -1,431 +1,402 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
-type ActivityType = 'logins' | 'views' | 'actions'
-
-interface Activity {
+interface NotificationItem {
   id: string
-  type: ActivityType
-  user: string
-  company: string
+  type: string
+  title: string
   description: string
-  highlight?: string
-  time: string
-  date: 'today' | 'yesterday' | 'jan1'
-  isRead: boolean
+  clientName: string
+  clientId: string
+  status?: string
+  timestamp: string
 }
 
-const initialActivities: Activity[] = [
-  // Today
-  {
-    id: '1',
-    type: 'logins',
-    user: 'Jon De La Garza',
-    company: 'TC Clinical Services',
-    description: 'Logged into the portal',
-    time: '2 minutes ago',
-    date: 'today',
-    isRead: false,
-  },
-  {
-    id: '2',
-    type: 'views',
-    user: 'Jon De La Garza',
-    company: 'TC Clinical Services',
-    description: 'Viewed',
-    highlight: 'Results',
-    time: '2 minutes ago',
-    date: 'today',
-    isRead: false,
-  },
-  {
-    id: '3',
-    type: 'actions',
-    user: 'Jon De La Garza',
-    company: 'TC Clinical Services',
-    description: 'Downloaded',
-    highlight: 'Monthly Report - December 2025',
-    time: '5 minutes ago',
-    date: 'today',
-    isRead: false,
-  },
-  {
-    id: '4',
-    type: 'views',
-    user: 'Mike Johnson',
-    company: 'Raptor Vending',
-    description: 'Viewed',
-    highlight: 'Recommendations',
-    time: '23 minutes ago',
-    date: 'today',
-    isRead: false,
-  },
-  {
-    id: '5',
-    type: 'actions',
-    user: 'Mike Johnson',
-    company: 'Raptor Vending',
-    description: 'Approved',
-    highlight: 'SEO Content Package',
-    time: '25 minutes ago',
-    date: 'today',
-    isRead: false,
-  },
-  {
-    id: '6',
-    type: 'logins',
-    user: 'Mike Johnson',
-    company: 'Raptor Vending',
-    description: 'Logged into the portal',
-    time: '28 minutes ago',
-    date: 'today',
-    isRead: true,
-  },
-  {
-    id: '7',
-    type: 'views',
-    user: 'Maria Espronceda',
-    company: 'Espronceda Law',
-    description: 'Viewed',
-    highlight: 'Getting Started',
-    time: '1 hour ago',
-    date: 'today',
-    isRead: true,
-  },
-  {
-    id: '8',
-    type: 'logins',
-    user: 'Maria Espronceda',
-    company: 'Espronceda Law',
-    description: 'Logged into the portal',
-    time: '1 hour ago',
-    date: 'today',
-    isRead: true,
-  },
-  // Yesterday
-  {
-    id: '9',
-    type: 'views',
-    user: 'Sarah Martinez',
-    company: 'Raptor Services',
-    description: 'Viewed',
-    highlight: 'Results',
-    time: 'Yesterday at 4:32 PM',
-    date: 'yesterday',
-    isRead: true,
-  },
-  {
-    id: '10',
-    type: 'actions',
-    user: 'Sarah Martinez',
-    company: 'Raptor Services',
-    description: 'Clicked',
-    highlight: 'Pro Dashboard',
-    time: 'Yesterday at 4:35 PM',
-    date: 'yesterday',
-    isRead: true,
-  },
-  {
-    id: '11',
-    type: 'logins',
-    user: 'Sarah Martinez',
-    company: 'Raptor Services',
-    description: 'Logged into the portal',
-    time: 'Yesterday at 4:30 PM',
-    date: 'yesterday',
-    isRead: true,
-  },
-  {
-    id: '12',
-    type: 'views',
-    user: 'Jon De La Garza',
-    company: 'TC Clinical Services',
-    description: 'Viewed',
-    highlight: 'Recommendations',
-    time: 'Yesterday at 11:15 AM',
-    date: 'yesterday',
-    isRead: true,
-  },
-  {
-    id: '13',
-    type: 'logins',
-    user: 'Jon De La Garza',
-    company: 'TC Clinical Services',
-    description: 'Logged into the portal',
-    time: 'Yesterday at 11:14 AM',
-    date: 'yesterday',
-    isRead: true,
-  },
-  // January 1, 2026
-  {
-    id: '14',
-    type: 'actions',
-    user: 'System',
-    company: 'Automated',
-    description: 'Monthly reports generated for all active clients',
-    time: 'Jan 1 at 12:00 AM',
-    date: 'jan1',
-    isRead: true,
-  },
-]
-
-const clients = [
-  'TC Clinical Services',
-  'Raptor Vending',
-  'Raptor Services',
-  'Gohfr',
-  'Espronceda Law',
-  'American Fence & Deck',
-]
+interface NotificationSummary {
+  totalEmails: number
+  sentEmails: number
+  deliveredEmails: number
+  openedEmails: number
+  proposalsViewed: number
+  proposalsSent: number
+  totalLogins: number
+}
 
 export default function AdminNotificationsPage() {
-  const [typeFilter, setTypeFilter] = useState<'all' | ActivityType>('all')
-  const [clientFilter, setClientFilter] = useState('All Clients')
-  const [activities, setActivities] = useState<Activity[]>(initialActivities)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [summary, setSummary] = useState<NotificationSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<string>('all')
 
-  const filteredActivities = useMemo(() => {
-    return activities.filter((activity) => {
-      if (typeFilter !== 'all' && activity.type !== typeFilter) return false
-      if (clientFilter !== 'All Clients' && activity.company !== clientFilter) return false
-      return true
+  useEffect(() => {
+    fetchNotifications()
+  }, [filter])
+
+  async function fetchNotifications() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/notifications?type=${filter}&limit=100`)
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications)
+        setSummary(data.summary)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function getTypeIcon(type: string) {
+    switch (type) {
+      case 'email':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+        )
+      case 'proposal_view':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        )
+      case 'proposal_sent':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        )
+      case 'login':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+        )
+      default:
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        )
+    }
+  }
+
+  function getStatusBadge(type: string, status?: string) {
+    if (type === 'email') {
+      const statusColors: Record<string, { bg: string; text: string }> = {
+        sent: { bg: '#FEF3C7', text: '#92400E' },
+        delivered: { bg: '#DBEAFE', text: '#1E40AF' },
+        opened: { bg: '#D1FAE5', text: '#065F46' },
+        clicked: { bg: '#C7D2FE', text: '#3730A3' },
+        failed: { bg: '#FEE2E2', text: '#991B1B' },
+        bounced: { bg: '#FEE2E2', text: '#991B1B' },
+      }
+      const colors = statusColors[status || 'sent'] || statusColors.sent
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: colors.bg,
+          color: colors.text,
+        }}>
+          {status || 'sent'}
+        </span>
+      )
+    }
+    if (type === 'proposal_view') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#D1FAE5',
+          color: '#065F46',
+        }}>
+          viewed
+        </span>
+      )
+    }
+    if (type === 'proposal_sent') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#DBEAFE',
+          color: '#1E40AF',
+        }}>
+          sent
+        </span>
+      )
+    }
+    if (type === 'login') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#E0E7FF',
+          color: '#3730A3',
+        }}>
+          login
+        </span>
+      )
+    }
+    return null
+  }
+
+  function formatTimestamp(timestamp: string) {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     })
-  }, [typeFilter, clientFilter, activities])
-
-  const unreadCount = activities.filter((a) => !a.isRead).length
-
-  const markAllRead = () => {
-    setActivities(activities.map((a) => ({ ...a, isRead: true })))
   }
 
-  const markAsRead = (id: string) => {
-    setActivities(activities.map((a) => (a.id === id ? { ...a, isRead: true } : a)))
+  function getIconClass(type: string) {
+    switch (type) {
+      case 'email': return 'email'
+      case 'proposal_view': return 'view'
+      case 'proposal_sent': return 'action'
+      case 'login': return 'login'
+      default: return 'action'
+    }
   }
 
-  const todayActivities = filteredActivities.filter((a) => a.date === 'today')
-  const yesterdayActivities = filteredActivities.filter((a) => a.date === 'yesterday')
-  const jan1Activities = filteredActivities.filter((a) => a.date === 'jan1')
+  // Group notifications by date
+  function groupByDate(items: NotificationItem[]) {
+    const groups: { [key: string]: NotificationItem[] } = {}
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
 
-  const getActivityIcon = (type: ActivityType, description: string) => {
-    if (type === 'logins') {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-          <polyline points="10 17 15 12 10 7"></polyline>
-          <line x1="15" y1="12" x2="3" y2="12"></line>
-        </svg>
-      )
-    }
-    if (type === 'views') {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-      )
-    }
-    // Actions - different icons based on description
-    if (description.includes('Downloaded')) {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-        </svg>
-      )
-    }
-    if (description.includes('Approved')) {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      )
-    }
-    if (description.includes('Clicked')) {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="7 17 17 7"></polyline>
-          <polyline points="7 7 17 7 17 17"></polyline>
-        </svg>
-      )
-    }
-    if (description.includes('Monthly reports')) {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-      )
-    }
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-      </svg>
-    )
+    items.forEach(item => {
+      const itemDate = new Date(item.timestamp)
+      itemDate.setHours(0, 0, 0, 0)
+
+      let key: string
+      if (itemDate.getTime() === today.getTime()) {
+        key = 'Today'
+      } else if (itemDate.getTime() === yesterday.getTime()) {
+        key = 'Yesterday'
+      } else {
+        key = itemDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      }
+
+      if (!groups[key]) groups[key] = []
+      groups[key].push(item)
+    })
+
+    return groups
   }
 
-  const getIconClass = (type: ActivityType, description: string) => {
-    if (type === 'logins') return 'login'
-    if (type === 'views') return 'view'
-    if (description.includes('Approved') || description.includes('Clicked')) return 'click'
-    return 'action'
-  }
-
-  const renderActivityItem = (activity: Activity) => (
-    <div
-      key={activity.id}
-      className={`activity-item ${!activity.isRead ? 'unread' : ''}`}
-      onClick={() => markAsRead(activity.id)}
-    >
-      {!activity.isRead && <span className="unread-indicator" />}
-      <div className={`activity-icon ${getIconClass(activity.type, activity.description)}`}>
-        {getActivityIcon(activity.type, activity.description)}
-      </div>
-      <div className="activity-content">
-        <div className="activity-header">
-          <span className="activity-user">{activity.user}</span>
-          <span className="activity-company">{activity.company}</span>
-        </div>
-        <p className="activity-description">
-          {activity.highlight ? (
-            <>
-              {activity.description} <strong>{activity.highlight}</strong>
-              {activity.description === 'Viewed' ? ' page' : activity.description === 'Approved' ? ' recommendation' : activity.description === 'Clicked' ? ' link' : ''}
-            </>
-          ) : (
-            activity.description
-          )}
-        </p>
-      </div>
-      <div className="activity-time">{activity.time}</div>
-    </div>
-  )
+  const groupedNotifications = groupByDate(notifications)
 
   return (
     <>
       <AdminHeader
         title="Notifications"
         user={{ name: 'Ryan Kelly', initials: 'RK' }}
-        hasNotifications={true}
+        hasNotifications={notifications.length > 0}
       />
 
       <div className="admin-content">
         {/* Page Header */}
         <div className="page-header">
           <div className="page-header-content">
-            <p>Activity feed showing client portal interactions</p>
+            <p>Email activity, proposal views, and client logins</p>
           </div>
           <div className="header-actions">
-            <button className="btn btn-secondary">
+            <button className="btn btn-secondary" onClick={fetchNotifications}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
               </svg>
-              Export Activity
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={markAllRead}
-              disabled={unreadCount === 0}
-            >
-              Mark All Read
-              {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
+              Refresh
             </button>
           </div>
         </div>
+
+        {/* Summary Cards */}
+        {summary && (
+          <div className="notification-summary-grid">
+            <div className="summary-card">
+              <div className="summary-icon email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <div className="summary-value">{summary.totalEmails}</div>
+                <div className="summary-label">Total Emails</div>
+              </div>
+              <div className="summary-breakdown">
+                <span className="breakdown-item delivered">{summary.deliveredEmails} delivered</span>
+                <span className="breakdown-item opened">{summary.openedEmails} opened</span>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <div className="summary-icon proposal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <div className="summary-value">{summary.proposalsSent}</div>
+                <div className="summary-label">Proposals Sent</div>
+              </div>
+              <div className="summary-breakdown">
+                <span className="breakdown-item viewed">{summary.proposalsViewed} viewed</span>
+                <span className="breakdown-item rate">
+                  {summary.proposalsSent > 0
+                    ? Math.round((summary.proposalsViewed / summary.proposalsSent) * 100)
+                    : 0}% view rate
+                </span>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <div className="summary-icon login">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <div className="summary-value">{summary.totalLogins}</div>
+                <div className="summary-label">Client Logins</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="notifications-filters">
           <div className="filter-tabs">
             <button
-              className={`filter-tab ${typeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setTypeFilter('all')}
+              className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
             >
               All Activity
             </button>
             <button
-              className={`filter-tab ${typeFilter === 'logins' ? 'active' : ''}`}
-              onClick={() => setTypeFilter('logins')}
+              className={`filter-tab ${filter === 'email' ? 'active' : ''}`}
+              onClick={() => setFilter('email')}
             >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Emails
+            </button>
+            <button
+              className={`filter-tab ${filter === 'proposal' ? 'active' : ''}`}
+              onClick={() => setFilter('proposal')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              Proposals
+            </button>
+            <button
+              className={`filter-tab ${filter === 'login' ? 'active' : ''}`}
+              onClick={() => setFilter('login')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
               Logins
             </button>
-            <button
-              className={`filter-tab ${typeFilter === 'views' ? 'active' : ''}`}
-              onClick={() => setTypeFilter('views')}
-            >
-              Page Views
-            </button>
-            <button
-              className={`filter-tab ${typeFilter === 'actions' ? 'active' : ''}`}
-              onClick={() => setTypeFilter('actions')}
-            >
-              Actions
-            </button>
-          </div>
-          <div className="filter-group">
-            <select
-              className="filter-select"
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-            >
-              <option>All Clients</option>
-              {clients.map((client) => (
-                <option key={client} value={client}>
-                  {client}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
         {/* Activity Feed */}
         <div className="activity-feed">
-          {/* Today */}
-          {todayActivities.length > 0 && (
-            <div className="activity-date-group">
-              <div className="activity-date-header">Today</div>
-              {todayActivities.map(renderActivityItem)}
+          {loading ? (
+            <div className="loading-state" style={{ padding: '3rem', textAlign: 'center' }}>
+              <p>Loading activity...</p>
             </div>
-          )}
-
-          {/* Yesterday */}
-          {yesterdayActivities.length > 0 && (
-            <div className="activity-date-group">
-              <div className="activity-date-header">Yesterday</div>
-              {yesterdayActivities.map(renderActivityItem)}
-            </div>
-          )}
-
-          {/* January 1, 2026 */}
-          {jan1Activities.length > 0 && (
-            <div className="activity-date-group">
-              <div className="activity-date-header">January 1, 2026</div>
-              {jan1Activities.map(renderActivityItem)}
-            </div>
-          )}
-
-          {/* Empty State */}
-          {filteredActivities.length === 0 && (
+          ) : notifications.length === 0 ? (
             <div className="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              <h3>No activity found</h3>
-              <p>No matching activity for your filters</p>
+              <h3>No activity yet</h3>
+              <p>Activity will appear here when emails are sent, proposals are viewed, or clients log in.</p>
             </div>
-          )}
-
-          {/* Load More */}
-          {filteredActivities.length > 0 && (
-            <div className="activity-load-more">
-              <button className="btn btn-secondary">Load More Activity</button>
-            </div>
+          ) : (
+            Object.entries(groupedNotifications).map(([date, items]) => (
+              <div key={date} className="activity-date-group">
+                <div className="activity-date-header">{date}</div>
+                {items.map((notification) => (
+                  <div key={notification.id} className="activity-item">
+                    <div className={`activity-icon ${getIconClass(notification.type)}`}>
+                      {getTypeIcon(notification.type)}
+                    </div>
+                    <div className="activity-content">
+                      <div className="activity-header">
+                        <span className="activity-title">{notification.title}</span>
+                        {getStatusBadge(notification.type, notification.status)}
+                      </div>
+                      <p className="activity-description">{notification.description}</p>
+                      <div className="activity-meta">
+                        {notification.clientId ? (
+                          <Link href={`/admin/clients/${notification.clientId}`} className="activity-client">
+                            {notification.clientName}
+                          </Link>
+                        ) : (
+                          <span className="activity-client">{notification.clientName}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="activity-time">{formatTimestamp(notification.timestamp)}</div>
+                  </div>
+                ))}
+              </div>
+            ))
           )}
         </div>
       </div>
