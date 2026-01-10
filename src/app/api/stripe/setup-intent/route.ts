@@ -42,17 +42,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
-    // Use Stripe payment method configurations for proper method control
-    const MONTHLY_CONFIG = 'pmc_1O2G0cG6lmzQA2EMCaHUAxlP'  // Card, Link, ACH
-    const ANNUAL_CONFIG = 'pmc_1R2CzeG6lmzQA2EM724da0Gs'   // ACH only (Link disabled)
-
+    // For annual billing, prefer ACH; for monthly, prefer card
     const setupIntentParams: Stripe.SetupIntentCreateParams = {
       customer: stripeCustomerId,
       metadata: {
         clientId: clientId,
         billingCycle: billingCycle || 'monthly',
       },
-      payment_method_configuration: billingCycle === 'annual' ? ANNUAL_CONFIG : MONTHLY_CONFIG,
+      // Use automatic payment methods - Stripe will show methods enabled in dashboard
+      automatic_payment_methods: {
+        enabled: true,
+      },
     }
 
     console.log('Creating SetupIntent with params:', JSON.stringify(setupIntentParams, null, 2))
