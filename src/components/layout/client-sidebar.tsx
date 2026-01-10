@@ -9,7 +9,34 @@ export function ClientSidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading } = useClientData(viewingAs)
+
+  // Show minimal skeleton while loading to prevent flash
+  if (loading) {
+    return (
+      <aside className="client-sidebar">
+        <div className="client-logo">
+          <Image
+            src="/pyrus-logo-icon.png"
+            alt="Pyrus"
+            width={28}
+            height={28}
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
+          <span>Pyrus Portal</span>
+        </div>
+        <nav className="client-nav">
+          {/* Loading skeleton for nav items */}
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div key={i} className="client-nav-item" style={{ opacity: 0.3, pointerEvents: 'none' }}>
+              <div style={{ width: 20, height: 20, background: 'rgba(255,255,255,0.2)', borderRadius: 4 }}></div>
+              <div style={{ width: 80, height: 14, background: 'rgba(255,255,255,0.2)', borderRadius: 4 }}></div>
+            </div>
+          ))}
+        </nav>
+      </aside>
+    )
+  }
 
   // Check if client is pending (prospect with recommendation only)
   const isPending = client.status === 'pending'
