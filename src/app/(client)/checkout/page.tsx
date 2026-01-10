@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
@@ -11,7 +11,20 @@ interface CartItem {
   description: string
   price: number
   billingPeriod: 'monthly' | 'one-time'
-  category: 'website' | 'content' | 'care'
+  category: string
+  isFree?: boolean
+}
+
+interface RecommendationItem {
+  id: string
+  tier: string | null
+  quantity: number | null
+  monthly_price: string | null
+  onetime_price: string | null
+  is_free: boolean | null
+  product: { id: string; name: string; category: string; short_description: string | null } | null
+  bundle: { id: string; name: string; description: string | null } | null
+  addon: { id: string; name: string; description: string | null } | null
 }
 
 // Product catalog
@@ -94,27 +107,134 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const itemId = searchParams.get('item')
+  const tier = searchParams.get('tier') // 'good', 'better', or 'best'
   const { client } = useClientData(viewingAs)
 
-  // Build cart from URL parameter
-  const initialCartItems: CartItem[] = itemId && productCatalog[itemId]
-    ? [productCatalog[itemId]]
-    : []
-
-  const [cartItems] = useState<CartItem[]>(initialCartItems)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [selectedTier, setSelectedTier] = useState<string | null>(tier)
+  const [recommendationId, setRecommendationId] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isLoading, setIsLoading] = useState(!!tier)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
-  const monthlyTotal = cartItems.reduce((sum, item) => sum + item.price, 0)
+  // Fetch recommendation items when tier is provided
+  useEffect(() => {
+    if (!tier) {
+      // Build cart from product catalog for individual items
+      if (itemId && productCatalog[itemId]) {
+        setCartItems([productCatalog[itemId]])
+      }
+      return
+    }
+
+    async function fetchRecommendationItems() {
+      try {
+        const clientId = viewingAs || client.id
+        if (!clientId) return
+
+        const res = await fetch(`/api/client/recommendation?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.recommendation) {
+            setRecommendationId(data.recommendation.id)
+            const tierItems = data.recommendation.recommendation_items.filter(
+              (item: RecommendationItem) => item.tier === tier
+            )
+
+            // Convert recommendation items to cart items
+            const items: CartItem[] = tierItems.map((item: RecommendationItem) => {
+              const name = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+              const description = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+              const monthlyPrice = Number(item.monthly_price || 0)
+              const onetimePrice = Number(item.onetime_price || 0)
+              const isFree = item.is_free || false
+
+              return {
+                id: item.id,
+                name,
+                description,
+                price: isFree ? 0 : (monthlyPrice > 0 ? monthlyPrice : onetimePrice),
+                billingPeriod: monthlyPrice > 0 ? 'monthly' : 'one-time',
+                category: item.product?.category || 'service',
+                isFree
+              } as CartItem
+            })
+
+            setCartItems(items)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommendation:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchRecommendationItems()
+  }, [tier, viewingAs, client.id, itemId])
+
+  const monthlyTotal = cartItems.reduce((sum, item) =>
+    item.billingPeriod === 'monthly' ? sum + item.price : sum, 0
+  )
+  const onetimeTotal = cartItems.reduce((sum, item) =>
+    item.billingPeriod === 'one-time' ? sum + item.price : sum, 0
+  )
   const annualTotal = monthlyTotal * 12 * 0.9 // 10% discount for annual
 
   const handleCheckout = async () => {
     setIsProcessing(true)
     // TODO: Integrate with Stripe API
+    // For now, mark the recommendation as purchased with the selected tier
+    try {
+      if (recommendationId && selectedTier) {
+        await fetch(`/api/admin/recommendations/${recommendationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'purchased',
+            purchased_tier: selectedTier,
+            purchased_at: new Date().toISOString()
+          })
+        })
+      }
+    } catch (error) {
+      console.error('Failed to update recommendation:', error)
+    }
+
     setTimeout(() => {
       setIsProcessing(false)
-      alert('Stripe integration coming soon!')
+      alert('Thank you! Your purchase has been recorded. Stripe payment integration coming soon!')
+      window.location.href = `/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`
     }, 1500)
+  }
+
+  // Loading state when fetching recommendation items
+  if (isLoading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M19 12H5"></path>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              Back
+            </Link>
+            <h1>Checkout</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div className="checkout-empty">
+            <div className="spinner" style={{ width: 48, height: 48 }}></div>
+            <h2>Loading your plan...</h2>
+            <p>Please wait while we prepare your order.</p>
+          </div>
+        </div>
+      </>
+    )
   }
 
   // Empty cart state
@@ -123,7 +243,7 @@ export default function CheckoutPage() {
       <>
         <div className="client-top-header">
           <div className="client-top-header-left">
-            <Link href={`/website${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+            <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <path d="M19 12H5"></path>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -142,8 +262,8 @@ export default function CheckoutPage() {
             </svg>
             <h2>Your cart is empty</h2>
             <p>Browse our services and add something to get started.</p>
-            <Link href={`/website${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="btn btn-primary">
-              Browse Services
+            <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="btn btn-primary">
+              View Recommendations
             </Link>
           </div>
         </div>
@@ -151,12 +271,19 @@ export default function CheckoutPage() {
     )
   }
 
+  // Get tier label for display
+  const tierLabel = selectedTier ? {
+    good: 'Good',
+    better: 'Better',
+    best: 'Best'
+  }[selectedTier] : null
+
   return (
     <>
       {/* Top Header Bar */}
       <div className="client-top-header">
         <div className="client-top-header-left">
-          <Link href={`/website${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+          <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <path d="M19 12H5"></path>
               <polyline points="12 19 5 12 12 5"></polyline>
@@ -188,57 +315,40 @@ export default function CheckoutPage() {
                   <circle cx="20" cy="21" r="1"></circle>
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
-                Your Order
+                {tierLabel ? `Your ${tierLabel} Plan` : 'Your Order'}
               </h2>
 
               <div className="checkout-items">
                 {cartItems.map((item) => (
                   <div key={item.id} className="checkout-item">
-                    <div className="checkout-item-icon">
-                      {item.category === 'website' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <line x1="2" y1="12" x2="22" y2="12"></line>
-                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                      )}
-                      {item.category === 'content' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                      )}
-                      {item.category === 'care' && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-                        </svg>
-                      )}
+                    <div className="checkout-item-check">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
                     </div>
                     <div className="checkout-item-details">
-                      <h4>{item.name}</h4>
+                      <h4>
+                        {item.name}
+                        {item.isFree && <span className="checkout-free-badge">FREE</span>}
+                      </h4>
                       <p>{item.description}</p>
                     </div>
                     <div className="checkout-item-price">
-                      <span className="price">${item.price}</span>
-                      <span className="period">/{item.billingPeriod === 'monthly' ? 'mo' : ''}</span>
+                      {item.isFree ? (
+                        <>
+                          <span className="price included">Included</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="price">${item.price.toLocaleString()}</span>
+                          <span className="period">{item.billingPeriod === 'monthly' ? '/mo' : ''}</span>
+                        </>
+                      )}
                     </div>
-                    <button className="checkout-item-remove" title="Remove item">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
-                    </button>
                   </div>
                 ))}
               </div>
 
-              <Link href={`/website${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-add-more">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add more services
-              </Link>
             </div>
 
             {/* Billing Cycle */}
@@ -390,46 +500,68 @@ export default function CheckoutPage() {
           {/* Order Summary Sidebar */}
           <div className="checkout-sidebar">
             <div className="order-summary">
-              <h3 className="order-summary-title">Order Summary</h3>
+              <h3 className="order-summary-title">
+                {tierLabel ? `${tierLabel} Plan Summary` : 'Order Summary'}
+              </h3>
 
               <div className="order-summary-items">
                 {cartItems.map((item) => (
                   <div key={item.id} className="order-summary-item">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-price">${item.price}/mo</span>
+                    <span className="item-name">
+                      {item.name}
+                      {item.isFree && <span style={{ fontSize: 10, color: '#324438', marginLeft: 4 }}>(FREE)</span>}
+                    </span>
+                    <span className="item-price">
+                      {item.isFree ? '$0' : `$${item.price.toLocaleString()}${item.billingPeriod === 'monthly' ? '/mo' : ''}`}
+                    </span>
                   </div>
                 ))}
               </div>
 
               <div className="order-summary-divider"></div>
 
-              <div className="order-summary-row">
-                <span>Subtotal</span>
-                <span>${monthlyTotal}/mo</span>
-              </div>
+              {monthlyTotal > 0 && (
+                <div className="order-summary-row">
+                  <span>Monthly Services</span>
+                  <span>${monthlyTotal.toLocaleString()}/mo</span>
+                </div>
+              )}
 
-              {billingCycle === 'annual' && (
+              {onetimeTotal > 0 && (
+                <div className="order-summary-row">
+                  <span>One-time Services</span>
+                  <span>${onetimeTotal.toLocaleString()}</span>
+                </div>
+              )}
+
+              {billingCycle === 'annual' && monthlyTotal > 0 && (
                 <div className="order-summary-row discount">
                   <span>Annual discount (10%)</span>
-                  <span>-${Math.round(monthlyTotal * 12 * 0.1)}</span>
+                  <span>-${Math.round(monthlyTotal * 12 * 0.1).toLocaleString()}</span>
                 </div>
               )}
 
               <div className="order-summary-divider"></div>
 
               <div className="order-summary-total">
-                <span>Total</span>
+                <span>Total Due Today</span>
                 <div className="total-amount">
                   <span className="amount">
-                    ${billingCycle === 'monthly' ? monthlyTotal : Math.round(annualTotal / 12)}
+                    ${(billingCycle === 'monthly' ? monthlyTotal + onetimeTotal : Math.round(annualTotal / 12) + onetimeTotal).toLocaleString()}
                   </span>
-                  <span className="period">/mo</span>
+                  {monthlyTotal > 0 && <span className="period">{onetimeTotal > 0 ? '' : '/mo'}</span>}
                 </div>
               </div>
 
-              {billingCycle === 'annual' && (
+              {billingCycle === 'annual' && monthlyTotal > 0 && (
                 <p className="order-summary-note">
-                  You&apos;ll be charged ${annualTotal.toLocaleString()} today for 12 months of service.
+                  You&apos;ll be charged ${(annualTotal + onetimeTotal).toLocaleString()} today for 12 months of service{onetimeTotal > 0 ? ' plus one-time fees' : ''}.
+                </p>
+              )}
+
+              {billingCycle === 'monthly' && monthlyTotal > 0 && (
+                <p className="order-summary-note">
+                  You&apos;ll be charged ${(monthlyTotal + onetimeTotal).toLocaleString()} today, then ${monthlyTotal.toLocaleString()}/mo going forward.
                 </p>
               )}
 
@@ -464,13 +596,169 @@ export default function CheckoutPage() {
 
               <p className="checkout-terms">
                 By completing this purchase, you agree to our{' '}
-                <a href="/terms">Terms of Service</a> and{' '}
-                <a href="/privacy">Privacy Policy</a>.
+                <button type="button" className="checkout-terms-link" onClick={() => setShowTermsModal(true)}>Terms of Service</button> and{' '}
+                <button type="button" className="checkout-terms-link" onClick={() => setShowPrivacyModal(true)}>Privacy Policy</button>.
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="privacy-modal-overlay" onClick={() => setShowPrivacyModal(false)}>
+          <div className="privacy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="privacy-modal-header">
+              <h2>Privacy Policy</h2>
+              <button className="privacy-modal-close" onClick={() => setShowPrivacyModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="privacy-modal-content">
+              <section className="privacy-section">
+                <h3>Who we are</h3>
+                <p>Our website address is: https://pyrusdigitalmedia.com.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Comments</h3>
+                <p>When visitors leave comments on the site we collect the data shown in the comments form, and also the visitor&apos;s IP address and browser user agent string to help spam detection.</p>
+                <p>An anonymized string created from your email address (also called a hash) may be provided to the Gravatar service to see if you are using it. The Gravatar service privacy policy is available here: https://automattic.com/privacy/. After approval of your comment, your profile picture is visible to the public in the context of your comment.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Media</h3>
+                <p>If you upload images to the website, you should avoid uploading images with embedded location data (EXIF GPS) included. Visitors to the website can download and extract any location data from images on the website.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Cookies</h3>
+                <p>If you leave a comment on our site you may opt-in to saving your name, email address and website in cookies. These are for your convenience so that you do not have to fill in your details again when you leave another comment. These cookies will last for one year.</p>
+                <p>If you visit our login page, we will set a temporary cookie to determine if your browser accepts cookies. This cookie contains no personal data and is discarded when you close your browser.</p>
+                <p>When you log in, we will also set up several cookies to save your login information and your screen display choices. Login cookies last for two days, and screen options cookies last for a year. If you select &quot;Remember Me&quot;, your login will persist for two weeks. If you log out of your account, the login cookies will be removed.</p>
+                <p>If you edit or publish an article, an additional cookie will be saved in your browser. This cookie includes no personal data and simply indicates the post ID of the article you just edited. It expires after 1 day.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Embedded content from other websites</h3>
+                <p>Articles on this site may include embedded content (e.g. videos, images, articles, etc.). Embedded content from other websites behaves in the exact same way as if the visitor has visited the other website.</p>
+                <p>These websites may collect data about you, use cookies, embed additional third-party tracking, and monitor your interaction with that embedded content, including tracking your interaction with the embedded content if you have an account and are logged in to that website.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Who we share your data with</h3>
+                <p>If you request a password reset, your IP address will be included in the reset email.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>How long we retain your data</h3>
+                <p>If you leave a comment, the comment and its metadata are retained indefinitely. This is so we can recognize and approve any follow-up comments automatically instead of holding them in a moderation queue.</p>
+                <p>For users that register on our website (if any), we also store the personal information they provide in their user profile. All users can see, edit, or delete their personal information at any time (except they cannot change their username). Website administrators can also see and edit that information.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>What rights you have over your data</h3>
+                <p>If you have an account on this site, or have left comments, you can request to receive an exported file of the personal data we hold about you, including any data you have provided to us. You can also request that we erase any personal data we hold about you. This does not include any data we are obliged to keep for administrative, legal, or security purposes.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>Where we send your data</h3>
+                <p>Visitor comments may be checked through an automated spam detection service.</p>
+              </section>
+            </div>
+            <div className="privacy-modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowPrivacyModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Terms of Service Modal */}
+      {showTermsModal && (
+        <div className="privacy-modal-overlay" onClick={() => setShowTermsModal(false)}>
+          <div className="privacy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="privacy-modal-header">
+              <h2>Terms of Service</h2>
+              <button className="privacy-modal-close" onClick={() => setShowTermsModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="privacy-modal-content">
+              <section className="privacy-section">
+                <h3>1. Agreement to Terms</h3>
+                <p>By accessing or using the services provided by Pyrus Digital Media (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>2. Services</h3>
+                <p>Pyrus Digital Media provides digital marketing services including but not limited to website design and development, search engine optimization (SEO), paid advertising management, content creation, and related consulting services.</p>
+                <p>We reserve the right to modify, suspend, or discontinue any aspect of our services at any time without prior notice.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>3. Client Responsibilities</h3>
+                <p>You agree to provide accurate, complete, and current information as required for us to deliver our services. You are responsible for maintaining the confidentiality of any account credentials and for all activities that occur under your account.</p>
+                <p>You agree to promptly review and respond to requests for content approval, feedback, or information necessary to complete your project.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>4. Payment Terms</h3>
+                <p>Payment is due according to the terms specified in your service agreement or invoice. For recurring services, you authorize us to charge your payment method on a recurring basis until you cancel.</p>
+                <p><strong>30-Day Money-Back Guarantee:</strong> We offer a 30-day money-back guarantee on our services. If you are not satisfied with our services within the first 30 days of your subscription, you may request a full refund by contacting us in writing. This guarantee applies to the first billing cycle only and excludes any third-party costs or fees already incurred on your behalf.</p>
+                <p>After the 30-day guarantee period, fees are non-refundable unless otherwise specified in writing or required by applicable law. We reserve the right to suspend services for accounts with overdue balances.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>5. Intellectual Property</h3>
+                <p>Upon full payment, you will own the final deliverables created specifically for you, unless otherwise agreed. We retain ownership of any pre-existing materials, templates, frameworks, or tools used in creating your deliverables.</p>
+                <p>We reserve the right to showcase completed work in our portfolio unless you request otherwise in writing.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>6. Confidentiality</h3>
+                <p>We will maintain the confidentiality of your proprietary information and will not disclose it to third parties except as necessary to provide our services or as required by law.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>7. Limitation of Liability</h3>
+                <p>To the maximum extent permitted by law, Pyrus Digital Media shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly.</p>
+                <p>Our total liability for any claim arising from these terms or our services shall not exceed the amount paid by you for the services in the twelve (12) months preceding the claim.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>8. Termination</h3>
+                <p>Either party may terminate services with 30 days written notice. Upon termination, you are responsible for payment of all services rendered up to the termination date.</p>
+                <p>We may terminate or suspend services immediately if you breach these terms or fail to make timely payments.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>9. Dispute Resolution</h3>
+                <p>Any disputes arising from these terms or our services shall be resolved through good-faith negotiation. If negotiation fails, disputes shall be resolved through binding arbitration in accordance with applicable laws.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>10. Changes to Terms</h3>
+                <p>We may update these Terms of Service from time to time. We will notify you of any material changes by posting the new terms on our website or through direct communication. Your continued use of our services after such changes constitutes acceptance of the updated terms.</p>
+              </section>
+
+              <section className="privacy-section">
+                <h3>11. Contact Information</h3>
+                <p>If you have any questions about these Terms of Service, please contact us at:</p>
+                <p>Pyrus Digital Media<br />702 Houston St, Fort Worth, TX 76102<br />Email: support@pyrusdigitalmedia.com<br />Website: https://pyrusdigitalmedia.com</p>
+              </section>
+            </div>
+            <div className="privacy-modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowTermsModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

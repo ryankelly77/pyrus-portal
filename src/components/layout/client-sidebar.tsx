@@ -25,11 +25,19 @@ export function ClientSidebar() {
     return path
   }
 
-  // Badge component
-  const Badge = ({ type }: { type: 'coming-soon' | 'inactive' | 'locked' }) => (
+  // Badge component for text badges
+  const Badge = ({ type }: { type: 'coming-soon' | 'inactive' }) => (
     <span className={`nav-badge ${type}`}>
-      {type === 'coming-soon' ? 'Coming Soon' : type === 'locked' ? 'After Purchase' : 'Inactive'}
+      {type === 'coming-soon' ? 'Coming Soon' : 'Inactive'}
     </span>
+  )
+
+  // Lock icon for pending clients
+  const LockIcon = () => (
+    <svg className="nav-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>
   )
 
   return (
@@ -53,7 +61,7 @@ export function ClientSidebar() {
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
           </svg>
-          <span>Getting Started</span>
+          <span>{isPending ? 'Welcome' : 'Getting Started'}</span>
         </Link>
         <Link
           href={buildHref('/results')}
@@ -64,7 +72,7 @@ export function ClientSidebar() {
             <polyline points="17 6 23 6 23 12"></polyline>
           </svg>
           <span>Results</span>
-          {isPending && <Badge type="locked" />}
+          {isPending && <LockIcon />}
           {!isPending && !hasResults && isActive && <Badge type="coming-soon" />}
           {!isPending && !isActive && <Badge type="inactive" />}
         </Link>
@@ -76,7 +84,7 @@ export function ClientSidebar() {
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <span>Activity</span>
-          {isPending && <Badge type="locked" />}
+          {isPending && <LockIcon />}
           {!isPending && !hasActivity && isActive && <Badge type="coming-soon" />}
           {!isPending && !isActive && <Badge type="inactive" />}
         </Link>
@@ -90,7 +98,7 @@ export function ClientSidebar() {
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
           <span>Website</span>
-          {isPending && <Badge type="locked" />}
+          {isPending && <LockIcon />}
           {!isPending && hasWebsiteProducts && !hasWebsite && <Badge type="coming-soon" />}
           {!isPending && !hasWebsiteProducts && <Badge type="inactive" />}
         </Link>
@@ -106,7 +114,7 @@ export function ClientSidebar() {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
           <span>Content</span>
-          {isPending && <Badge type="locked" />}
+          {isPending && <LockIcon />}
           {!isPending && !hasContent && <Badge type="inactive" />}
         </Link>
         <Link
@@ -126,7 +134,7 @@ export function ClientSidebar() {
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
           <span>Communication</span>
-          {isPending && <Badge type="locked" />}
+          {isPending && <LockIcon />}
         </Link>
         <Link
           href={buildHref('/settings')}

@@ -27,6 +27,24 @@ export default function ResultsPage() {
     callsChange: '+12'
   }
 
+  // Show loading state while client data is being fetched
+  if (loading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Results</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       {/* Top Header Bar */}

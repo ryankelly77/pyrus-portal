@@ -41,9 +41,12 @@ const editRequests: EditRequest[] = [
 export default function WebsitePage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   const [hasWebsite, setHasWebsite] = useState(true) // Will be determined by client's subscriptions
+
+  // Check if client is pending (prospect only)
+  const isPending = client.status === 'pending'
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
@@ -95,6 +98,24 @@ export default function WebsitePage() {
     ...websiteData,
     previewUrl: client.landingsitePreviewUrl,
   } : websiteData
+
+  // Show loading state while fetching client data
+  if (loading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Website</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   // If client doesn't have website service, show upsell
   // TODO: Check actual subscriptions to determine if client has website
@@ -391,6 +412,26 @@ export default function WebsitePage() {
       </div>
 
       <div className="client-content">
+        {/* Pending client placeholder */}
+        {isPending ? (
+          <div className="locked-page-placeholder">
+            <div className="locked-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h2>Website Available After Purchase</h2>
+            <p>Once you select a plan that includes website services, you&apos;ll be able to preview your site, request edits, and manage your web presence here.</p>
+            <Link href={viewingAs ? `/recommendations?viewingAs=${viewingAs}` : '/recommendations'} className="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              View Your Proposal
+            </Link>
+          </div>
+        ) : (
+          <>
         {/* Website Preview and Info Grid */}
         <div className="website-hero-grid">
           {/* Website Preview */}
@@ -565,6 +606,8 @@ export default function WebsitePage() {
             </form>
           </div>
         </div>
+          </>
+        )}
       </div>
     </>
   )

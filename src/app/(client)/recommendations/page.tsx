@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 
@@ -67,7 +68,7 @@ export default function RecommendationsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading: clientLoading } = useClientData(viewingAs)
 
   const [activeTab, setActiveTab] = useState<TabType>('original-plan')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -134,6 +135,24 @@ export default function RecommendationsPage() {
     setShowSuccessModal(true)
   }
 
+  // Show loading state while client data is being fetched
+  if (clientLoading || isLoading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Recommendations</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       {/* Top Header Bar */}
@@ -161,7 +180,8 @@ export default function RecommendationsPage() {
       <div className="client-content">
         {/* Recommendations Content */}
         <div className="recommendations-content">
-          {/* Growth Stage Hero Section */}
+          {/* Growth Stage Hero Section - Hide for prospects */}
+          {client.status !== 'pending' && (
           <div className="growth-stage-hero">
             <div className="growth-stage-main">
               <div className="stage-icon-large">🌿</div>
@@ -226,6 +246,7 @@ export default function RecommendationsPage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Main Recommendations Tabs */}
           <div className="recommendations-tabs">
@@ -250,6 +271,12 @@ export default function RecommendationsPage() {
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Your Current Services
+              {client.status === 'pending' && (
+                <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              )}
             </button>
             <button
               className={`recommendations-tab ${activeTab === 'smart-recommendations' ? 'active' : ''}`}
@@ -259,12 +286,31 @@ export default function RecommendationsPage() {
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
               Smart Recommendations
-              <span className="tab-count">4</span>
+              {client.status === 'pending' ? (
+                <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              ) : (
+                <span className="tab-count">4</span>
+              )}
             </button>
           </div>
 
           {/* Smart Recommendations Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'smart-recommendations' ? 'active' : ''}`} id="smart-recommendations-tab">
+            {client.status === 'pending' ? (
+              <div className="locked-placeholder">
+                <div className="locked-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <h3>Smart Recommendations</h3>
+                <p>Once you&apos;re an active client, we&apos;ll analyze your marketing data to provide AI-powered recommendations tailored to your growth goals.</p>
+              </div>
+            ) : (
             <div className="rec-cards-grid">
               {/* Featured Recommendation: Scale Ads */}
               <div className="rec-card featured">
@@ -561,6 +607,7 @@ export default function RecommendationsPage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
 
           {/* Original Plan Tab Content */}
@@ -687,8 +734,15 @@ export default function RecommendationsPage() {
                             Your Selected Plan
                           </button>
                         ) : (
-                          <button className="pricing-tier-btn secondary">
-                            {tierName === 'good' ? 'Starter Option' : tierName === 'better' ? 'Popular Choice' : 'Premium Option'}
+                          <button
+                            className="pricing-tier-btn primary"
+                            onClick={() => router.push(`/checkout?tier=${tierName}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`)}
+                          >
+                            {tierName === 'good' ? 'Select the Starter Option' : tierName === 'better' ? 'Select the Popular Choice' : 'Select the Premium Option'}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                              <path d="M5 12h14"></path>
+                              <path d="M12 5l7 7-7 7"></path>
+                            </svg>
                           </button>
                         )}
                       </div>
@@ -701,7 +755,18 @@ export default function RecommendationsPage() {
 
           {/* Current Services Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'current-services' ? 'active' : ''}`} id="current-services-tab">
-            {isLoading ? (
+            {client.status === 'pending' ? (
+              <div className="locked-placeholder">
+                <div className="locked-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <h3>Your Current Services</h3>
+                <p>After you choose a plan and complete checkout, your active services will appear here with progress tracking and growth metrics.</p>
+              </div>
+            ) : isLoading ? (
               <div className="loading-placeholder">Loading your services...</div>
             ) : subscriptions.length === 0 && !recommendation?.purchased_tier ? (
               <div className="no-services-message">
@@ -1059,6 +1124,16 @@ export default function RecommendationsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* LeadConnector Chatbot - Only for prospects */}
+      {client.status === 'pending' && (
+        <Script
+          src="https://widgets.leadconnectorhq.com/loader.js"
+          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+          data-widget-id="6879420133ee4bc0c5428d6b"
+          strategy="lazyOnload"
+        />
       )}
     </>
   )

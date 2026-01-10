@@ -122,7 +122,8 @@ export default function ClientsPage() {
           displayStatus = 'inactive'
         } else if (c.status === 'paused') {
           displayStatus = 'paused'
-        } else if (isProspect) {
+        } else if (c.status === 'pending' || isProspect) {
+          // 'pending' in database means prospect (pre-purchase)
           displayStatus = 'prospect'
         }
 

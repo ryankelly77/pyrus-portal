@@ -10,7 +10,7 @@ type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading } = useClientData(viewingAs)
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
 
@@ -18,6 +18,24 @@ export default function SettingsPage() {
   const nameParts = client.contactName.split(' ')
   const firstName = nameParts[0] || ''
   const lastName = nameParts.slice(1).join(' ') || ''
+
+  // Show loading state while fetching client data
+  if (loading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Settings</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -53,16 +71,32 @@ export default function SettingsPage() {
             Profile
           </button>
           <button
-            className={`settings-tab ${activeTab === 'subscription' ? 'active' : ''}`}
-            onClick={() => setActiveTab('subscription')}
+            className={`settings-tab ${activeTab === 'subscription' ? 'active' : ''} ${client.status === 'pending' ? 'locked' : ''}`}
+            onClick={() => client.status !== 'pending' && setActiveTab('subscription')}
+            disabled={client.status === 'pending'}
+            title={client.status === 'pending' ? 'Available after subscription' : ''}
           >
             Subscription &amp; Services
+            {client.status === 'pending' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginLeft: '0.25rem', opacity: 0.5 }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            )}
           </button>
           <button
-            className={`settings-tab ${activeTab === 'billing' ? 'active' : ''}`}
-            onClick={() => setActiveTab('billing')}
+            className={`settings-tab ${activeTab === 'billing' ? 'active' : ''} ${client.status === 'pending' ? 'locked' : ''}`}
+            onClick={() => client.status !== 'pending' && setActiveTab('billing')}
+            disabled={client.status === 'pending'}
+            title={client.status === 'pending' ? 'Available after subscription' : ''}
           >
             Payment &amp; Billing
+            {client.status === 'pending' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginLeft: '0.25rem', opacity: 0.5 }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            )}
           </button>
           <button
             className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`}
@@ -97,7 +131,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
-                  <input type="tel" className="form-input" defaultValue="(210) 555-1234" />
+                  <input type="tel" className="form-input" defaultValue={client.contactPhone || ''} placeholder="(555) 555-5555" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
@@ -161,21 +195,10 @@ export default function SettingsPage() {
               </div>
               <div className="settings-card-body">
                 <div className="subscription-overview">
-                  <div className="subscription-plan">
-                    <span className="plan-badge">Growth Plan</span>
-                    <div className="plan-price">
-                      <span className="price-amount">$1,597</span>
-                      <span className="price-period">/month</span>
-                    </div>
-                  </div>
                   <div className="subscription-meta">
                     <div className="meta-item">
-                      <span className="meta-label">Next Billing Date</span>
-                      <span className="meta-value">January 15, 2026</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Billing Cycle</span>
-                      <span className="meta-value">Monthly</span>
+                      <span className="meta-label">Status</span>
+                      <span className="meta-value" style={{ textTransform: 'capitalize' }}>{client.status || 'N/A'}</span>
                     </div>
                     <div className="meta-item">
                       <span className="meta-label">Client Since</span>
@@ -183,6 +206,9 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+                <p style={{ fontSize: '0.875rem', color: '#5A6358', marginTop: '1rem' }}>
+                  Subscription details will be available once your services are activated.
+                </p>
               </div>
             </div>
 
@@ -192,93 +218,17 @@ export default function SettingsPage() {
                 <p>Services included in your subscription</p>
               </div>
               <div className="settings-card-body">
-                <div className="services-list-settings">
-                  <div className="service-row">
-                    <div className="service-info">
-                      <div className="service-icon" style={{ background: '#FFF2D9', color: '#D4A72C' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <line x1="2" y1="12" x2="22" y2="12"></line>
-                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4>Website Starter</h4>
-                        <p>Root Service</p>
-                      </div>
-                    </div>
-                    <span className="service-price">$199/mo</span>
-                  </div>
-                  <div className="service-row">
-                    <div className="service-info">
-                      <div className="service-icon" style={{ background: '#E6F2D9', color: '#7A9C3A' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                          <circle cx="11" cy="11" r="8"></circle>
-                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4>Seedling SEO Plan</h4>
-                        <p>Growth Service</p>
-                      </div>
-                    </div>
-                    <span className="service-price">$599/mo</span>
-                  </div>
-                  <div className="service-row">
-                    <div className="service-info">
-                      <div className="service-icon" style={{ background: '#E6F2D9', color: '#7A9C3A' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                          <line x1="8" y1="21" x2="16" y2="21"></line>
-                          <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4>Google Search Ads</h4>
-                        <p>Growth Service</p>
-                      </div>
-                    </div>
-                    <span className="service-price">$599/mo</span>
-                  </div>
-                  <div className="service-row">
-                    <div className="service-info">
-                      <div className="service-icon" style={{ background: '#FFE8D4', color: '#E07830' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="9" cy="7" r="4"></circle>
-                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4>CRM &amp; Lead Tracking</h4>
-                        <p>Cultivation Tool</p>
-                      </div>
-                    </div>
-                    <span className="service-price">$99/mo</span>
-                  </div>
-                  <div className="service-row">
-                    <div className="service-info">
-                      <div className="service-icon" style={{ background: '#FFE8D4', color: '#E07830' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4>Web Chat</h4>
-                        <p>Cultivation Tool</p>
-                      </div>
-                    </div>
-                    <span className="service-price">$99/mo</span>
-                  </div>
-                </div>
-                <div className="services-total">
-                  <span>Monthly Total</span>
-                  <span className="total-amount">$1,597/mo</span>
+                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                  <p>Your active services will appear here once your subscription is set up.</p>
                 </div>
               </div>
               <div className="settings-card-footer">
-                <p className="footer-note">Want to add or change services? <Link href="/recommendations">View recommendations</Link> or contact your account manager.</p>
+                <p className="footer-note">Want to add or change services? <Link href={viewingAs ? `/recommendations?viewingAs=${viewingAs}` : '/recommendations'}>View recommendations</Link> or contact your account manager.</p>
               </div>
             </div>
           </div>
@@ -293,18 +243,12 @@ export default function SettingsPage() {
                 <p>Your card on file for recurring payments</p>
               </div>
               <div className="settings-card-body">
-                <div className="payment-card-display">
-                  <div className="card-brand">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                      <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
-                  </div>
-                  <div className="card-details">
-                    <span className="card-number">Visa ending in 4242</span>
-                    <span className="card-expiry">Expires 08/2027</span>
-                  </div>
-                  <span className="card-badge default">Default</span>
+                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                  <p>No payment method on file yet.</p>
                 </div>
               </div>
               <div className="settings-card-footer">
@@ -313,7 +257,7 @@ export default function SettingsPage() {
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                     <line x1="1" y1="10" x2="23" y2="10"></line>
                   </svg>
-                  Update Payment Method
+                  Add Payment Method
                 </button>
               </div>
             </div>
@@ -330,24 +274,24 @@ export default function SettingsPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-input" defaultValue={client.name + ' LLC'} />
+                  <input type="text" className="form-input" defaultValue={client.name} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Billing Address</label>
-                  <input type="text" className="form-input" defaultValue="1234 Medical Center Dr, Suite 100" />
+                  <input type="text" className="form-input" placeholder="Street address" />
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">City</label>
-                    <input type="text" className="form-input" defaultValue="San Antonio" />
+                    <input type="text" className="form-input" placeholder="City" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">State</label>
-                    <input type="text" className="form-input" defaultValue="TX" />
+                    <input type="text" className="form-input" placeholder="TX" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">ZIP Code</label>
-                    <input type="text" className="form-input" defaultValue="78229" />
+                    <input type="text" className="form-input" placeholder="ZIP" />
                   </div>
                 </div>
               </div>
@@ -362,86 +306,15 @@ export default function SettingsPage() {
                 <p>View and download past invoices</p>
               </div>
               <div className="settings-card-body">
-                <table className="invoices-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="invoice-id">INV-2025-0012</td>
-                      <td>Dec 15, 2025</td>
-                      <td>$1,597.00</td>
-                      <td><span className="invoice-status paid">Paid</span></td>
-                      <td>
-                        <button className="btn-text">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                          </svg>
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="invoice-id">INV-2025-0011</td>
-                      <td>Nov 15, 2025</td>
-                      <td>$1,597.00</td>
-                      <td><span className="invoice-status paid">Paid</span></td>
-                      <td>
-                        <button className="btn-text">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                          </svg>
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="invoice-id">INV-2025-0010</td>
-                      <td>Oct 15, 2025</td>
-                      <td>$1,597.00</td>
-                      <td><span className="invoice-status paid">Paid</span></td>
-                      <td>
-                        <button className="btn-text">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                          </svg>
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="invoice-id">INV-2025-0009</td>
-                      <td>Sep 15, 2025</td>
-                      <td>$1,597.00</td>
-                      <td><span className="invoice-status paid">Paid</span></td>
-                      <td>
-                        <button className="btn-text">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                          </svg>
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="settings-card-footer">
-                <button className="btn btn-secondary">View All Invoices</button>
+                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                  <p>No invoices yet. Your billing history will appear here.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -532,24 +405,11 @@ export default function SettingsPage() {
                       <line x1="12" y1="17" x2="12" y2="21"></line>
                     </svg>
                     <div>
-                      <h4>Chrome on macOS</h4>
-                      <p>San Antonio, TX - Current session</p>
+                      <h4>Current Browser</h4>
+                      <p>Active now</p>
                     </div>
                   </div>
                   <span className="session-badge current">This device</span>
-                </div>
-                <div className="session-row">
-                  <div className="session-info">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                      <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                    </svg>
-                    <div>
-                      <h4>Safari on iPhone</h4>
-                      <p>San Antonio, TX - Last active 2 hours ago</p>
-                    </div>
-                  </div>
-                  <button className="btn-text danger">Sign out</button>
                 </div>
               </div>
               <div className="settings-card-footer">

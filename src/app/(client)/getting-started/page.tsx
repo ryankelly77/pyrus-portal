@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 
@@ -70,7 +71,7 @@ function isUUID(str: string): boolean {
 export default function GettingStartedPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading: clientLoading } = useClientData(viewingAs)
 
   const [activeSubtab, setActiveSubtab] = useState('checklist')
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
@@ -82,7 +83,7 @@ export default function GettingStartedPage() {
   })
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
-  const [clientStatus, setClientStatus] = useState<ClientStatus>('active')
+  const [clientStatus, setClientStatus] = useState<ClientStatus | null>(null)
 
   // Update client display and status when hook data loads
   useEffect(() => {
@@ -169,12 +170,30 @@ export default function GettingStartedPage() {
     return answer
   }
 
+  // Show loading state while client data is being fetched
+  if (clientLoading || clientStatus === null) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Loading...</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       {/* Top Header Bar */}
       <div className="client-top-header">
         <div className="client-top-header-left">
-          <h1>Getting Started</h1>
+          <h1>{clientStatus === 'pending' ? 'Welcome' : 'Getting Started'}</h1>
         </div>
         <div className="client-top-header-right">
           <Link href="/notifications" className="btn-icon has-notification">
@@ -201,17 +220,15 @@ export default function GettingStartedPage() {
             <div className="welcome-hero">
               <div className="welcome-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5"></path>
-                  <path d="M2 12l10 5 10-5"></path>
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
               </div>
               <h2>Welcome to Pyrus, {clientDisplay.contactName}!</h2>
-              <p>We&apos;ve prepared a personalized marketing proposal for {clientDisplay.name}. Review your options and choose the plan that best fits your growth goals.</p>
+              <p>We&apos;ve prepared a personalized marketing proposal for {clientDisplay.name}. Review your options and choose the plan that fits your goals.</p>
             </div>
 
-            {/* Action Cards */}
-            <div className="pending-action-grid">
+            {/* Three Column Action Cards */}
+            <div className="pending-action-grid three-col">
               {/* View Recommendation Card */}
               <div className="pending-action-card primary">
                 <div className="action-card-icon">
@@ -233,7 +250,44 @@ export default function GettingStartedPage() {
                 </Link>
               </div>
 
-              {/* What to Expect Card */}
+              {/* Why Choose Pyrus Card */}
+              <div className="pending-action-card">
+                <div className="action-card-icon secondary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h3>Why Choose Pyrus?</h3>
+                <div className="benefits-list">
+                  <div className="benefit-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>30-day money-back guarantee</span>
+                  </div>
+                  <div className="benefit-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Month-to-month, no contracts</span>
+                  </div>
+                  <div className="benefit-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>AI-powered marketing tools</span>
+                  </div>
+                  <div className="benefit-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Local business expertise</span>
+                  </div>
+                </div>
+                <div className="tagline-small">Simple. Scalable. Results-driven.</div>
+              </div>
+
+              {/* What Happens Next Card */}
               <div className="pending-action-card">
                 <div className="action-card-icon secondary">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -263,84 +317,6 @@ export default function GettingStartedPage() {
               </div>
             </div>
 
-            {/* Video Section */}
-            <div className="pending-video-section">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                </svg>
-                Learn About Pyrus
-              </h3>
-              {videoChapters.length > 0 ? (
-                <div className="pending-video-grid">
-                  <div className="video-player-wrapper">
-                    {(() => {
-                      const activeChapter = videoChapters.find(c => c.id === activeVideoChapter)
-                      return activeChapter?.videoUrl ? (
-                        <iframe
-                          src={activeChapter.videoUrl}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                          allowFullScreen
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: '8px' }}
-                        />
-                      ) : null
-                    })()}
-                  </div>
-                  <div className="video-chapter-list">
-                    {videoChapters.map((chapter, index) => (
-                      <button
-                        key={chapter.id}
-                        className={`video-chapter-btn ${activeVideoChapter === chapter.id ? 'active' : ''}`}
-                        onClick={() => setActiveVideoChapter(chapter.id)}
-                      >
-                        <span className="chapter-num">{index + 1}</span>
-                        <div className="chapter-info">
-                          <span className="chapter-title">{chapter.title}</span>
-                          <span className="chapter-desc">{chapter.description}</span>
-                        </div>
-                        {activeVideoChapter === chapter.id && (
-                          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" className="chapter-playing">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="video-placeholder-card">
-                  <div className="video-play-btn">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                  </div>
-                  <p>Introduction videos coming soon!</p>
-                </div>
-              )}
-            </div>
-
-            {/* Questions Section */}
-            <div className="pending-questions-section">
-              <div className="questions-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-              </div>
-              <div className="questions-content">
-                <h4>Have Questions?</h4>
-                <p>We&apos;re here to help! If you have any questions about your proposal or our services, don&apos;t hesitate to reach out.</p>
-              </div>
-              <a href="mailto:hello@pyrusdigital.com" className="btn btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                Contact Us
-              </a>
-            </div>
           </div>
         ) : (
           <>
@@ -742,6 +718,16 @@ export default function GettingStartedPage() {
           gap: 1.5rem;
         }
 
+        .pending-action-grid.three-col {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        @media (max-width: 900px) {
+          .pending-action-grid.three-col {
+            grid-template-columns: 1fr;
+          }
+        }
+
         .pending-action-card {
           background: white;
           border-radius: 12px;
@@ -805,6 +791,33 @@ export default function GettingStartedPage() {
           gap: 0.75rem;
         }
 
+        .benefits-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.625rem;
+        }
+
+        .benefit-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #374151;
+        }
+
+        .benefit-row svg {
+          color: #324438;
+          flex-shrink: 0;
+        }
+
+        .tagline-small {
+          margin-top: auto;
+          padding-top: 0.75rem;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: #324438;
+        }
+
         .next-step {
           display: flex;
           align-items: center;
@@ -827,90 +840,17 @@ export default function GettingStartedPage() {
           flex-shrink: 0;
         }
 
-        .pending-video-section {
-          background: white;
-          border-radius: 12px;
-          border: 1px solid #E5E7EB;
-          padding: 1.5rem;
-        }
-
-        .pending-video-section h3 {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 1rem;
-          font-weight: 600;
-          color: #1A1F16;
-          margin: 0 0 1rem;
-        }
-
-        .pending-video-grid {
-          display: grid;
-          grid-template-columns: 1fr 280px;
-          gap: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-          .pending-video-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .video-placeholder-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 3rem;
-          background: #F5F7F6;
-          border-radius: 8px;
-          gap: 1rem;
-          color: #5A6358;
-        }
-
-        .pending-questions-section {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          background: white;
-          border-radius: 12px;
-          border: 1px solid #E5E7EB;
-          padding: 1.5rem;
-        }
-
-        .questions-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          background: #F5F7F6;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #5A6358;
-          flex-shrink: 0;
-        }
-
-        .questions-content {
-          flex: 1;
-        }
-
-        .questions-content h4 {
-          font-size: 1rem;
-          font-weight: 600;
-          color: #1A1F16;
-          margin: 0 0 0.25rem;
-        }
-
-        .questions-content p {
-          font-size: 0.875rem;
-          color: #5A6358;
-          margin: 0;
-        }
-
-        .pending-questions-section .btn {
-          flex-shrink: 0;
-        }
       `}</style>
+
+      {/* LeadConnector Chatbot - Only for prospects on Welcome page */}
+      {clientStatus === 'pending' && (
+        <Script
+          src="https://widgets.leadconnectorhq.com/loader.js"
+          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+          data-widget-id="6879420133ee4bc0c5428d6b"
+          strategy="lazyOnload"
+        />
+      )}
     </>
   )
 }

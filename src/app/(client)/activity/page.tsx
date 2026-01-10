@@ -292,7 +292,7 @@ function getActivityIcon(type: string, iconStyle?: { background: string; color: 
 export default function ActivityPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const { client } = useClientData(viewingAs)
+  const { client, loading } = useClientData(viewingAs)
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
 
@@ -305,6 +305,24 @@ export default function ActivityPage() {
   const filteredActivities = activities.filter(
     activity => activeFilter === 'all' || activity.type === activeFilter
   )
+
+  // Show loading state while fetching client data
+  if (loading) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Activity</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>

@@ -1,13 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const clientId = searchParams.get('clientId')
+    let clientId = searchParams.get('clientId')
 
+    // If no clientId provided, get the current user's client
     if (!clientId) {
-      return NextResponse.json({ error: 'Client ID required' }, { status: 400 })
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+
+      // Get profile with client_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .eq('id', user.id)
+        .single<{ client_id: string | null }>()
+
+      if (!profile?.client_id) {
+        return NextResponse.json({ error: 'No client associated with user' }, { status: 404 })
+      }
+
+      clientId = profile.client_id
     }
 
     // Validate UUID format
@@ -87,6 +107,7 @@ export async function GET(request: NextRequest) {
       avatarColor: client.avatar_color || '#324438',
       contactName: client.contact_name || client.name,
       contactEmail: client.contact_email,
+      contactPhone: null, // Column doesn't exist in database yet
       status: client.status || 'active',
       growthStage: client.growth_stage,
       clientSince: startDate,

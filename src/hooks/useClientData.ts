@@ -19,6 +19,7 @@ export interface ClientInfo {
   avatarColor: string
   contactName: string
   contactEmail: string | null
+  contactPhone: string | null
   status: string
   growthStage: string | null
   clientSince: string | null
@@ -36,6 +37,7 @@ const defaultClient: ClientInfo = {
   avatarColor: '#324438',
   contactName: 'Client User',
   contactEmail: null,
+  contactPhone: null,
   status: 'active',
   growthStage: null,
   clientSince: null,
@@ -58,20 +60,20 @@ export function useClientData(viewingAs: string | null) {
 
   useEffect(() => {
     async function fetchClient() {
-      if (!viewingAs) {
-        setLoading(false)
-        return
-      }
-
-      // Check if it's a valid UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(viewingAs)) {
-        setLoading(false)
-        return
-      }
-
       try {
-        const res = await fetch(`/api/client/info?clientId=${viewingAs}`)
+        // Build URL - if viewingAs is provided, use it; otherwise API will use current user's client
+        let url = '/api/client/info'
+        if (viewingAs) {
+          // Check if it's a valid UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+          if (!uuidRegex.test(viewingAs)) {
+            setLoading(false)
+            return
+          }
+          url = `/api/client/info?clientId=${viewingAs}`
+        }
+
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           setClient(data)
