@@ -27112,6 +27112,7 @@ input[type="date"].form-control {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-light);
     transition: background 0.15s ease;
+    position: relative;
 }
 
 .activity-item:last-child {
@@ -27120,6 +27121,21 @@ input[type="date"].form-control {
 
 .activity-item:hover {
     background: var(--bg-tertiary);
+}
+
+.activity-item.unread {
+    background: rgba(136, 84, 48, 0.03);
+}
+
+.unread-dot {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--pyrus-brown);
+    border-radius: 50%;
 }
 
 .activity-icon {

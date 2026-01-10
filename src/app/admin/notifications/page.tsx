@@ -30,9 +30,11 @@ export default function AdminNotificationsPage() {
   const [summary, setSummary] = useState<NotificationSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [readIds, setReadIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchNotifications()
+    fetchReadStatus()
   }, [filter])
 
   async function fetchNotifications() {
@@ -49,6 +51,26 @@ export default function AdminNotificationsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchReadStatus() {
+    try {
+      const res = await fetch('/api/admin/notifications/read')
+      if (res.ok) {
+        const data = await res.json()
+        setReadIds(new Set(data.readIds))
+      }
+    } catch (error) {
+      console.error('Error fetching read status:', error)
+    }
+  }
+
+  function isUnread(notification: NotificationItem) {
+    return !readIds.has(`${notification.type}:${notification.id}`)
+  }
+
+  function getUnreadCount() {
+    return notifications.filter(n => isUnread(n)).length
   }
 
   function handleExportActivity() {
@@ -79,10 +101,25 @@ export default function AdminNotificationsPage() {
     URL.revokeObjectURL(url)
   }
 
-  function handleMarkAllRead() {
-    // For now, just clear the notifications display
-    // In a full implementation, this would call an API to mark notifications as read
-    setNotifications([])
+  async function handleMarkAllRead() {
+    const unreadNotifications = notifications.filter(n => isUnread(n))
+    if (unreadNotifications.length === 0) return
+
+    try {
+      await fetch('/api/admin/notifications/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notifications: unreadNotifications.map(n => ({ type: n.type, id: n.id }))
+        })
+      })
+      // Update local state
+      const newReadIds = new Set(readIds)
+      unreadNotifications.forEach(n => newReadIds.add(`${n.type}:${n.id}`))
+      setReadIds(newReadIds)
+    } catch (error) {
+      console.error('Error marking notifications as read:', error)
+    }
   }
 
   function getTypeIcon(type: string) {
@@ -265,7 +302,7 @@ export default function AdminNotificationsPage() {
       <AdminHeader
         title="Notifications"
         user={{ name: 'Ryan Kelly', initials: 'RK' }}
-        hasNotifications={notifications.length > 0}
+        hasNotifications={getUnreadCount() > 0}
       />
 
       <div className="admin-content">
@@ -340,8 +377,8 @@ export default function AdminNotificationsPage() {
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Mark All Read
-              {notifications.length > 0 && (
-                <span className="unread-badge">{notifications.length}</span>
+              {getUnreadCount() > 0 && (
+                <span className="unread-badge">{getUnreadCount()}</span>
               )}
             </button>
           </div>
@@ -367,7 +404,8 @@ export default function AdminNotificationsPage() {
               <div key={date} className="activity-date-group">
                 <div className="activity-date-header">{date}</div>
                 {items.map((notification) => (
-                  <div key={notification.id} className="activity-item">
+                  <div key={notification.id} className={`activity-item ${isUnread(notification) ? 'unread' : ''}`}>
+                    {isUnread(notification) && <span className="unread-dot"></span>}
                     <div className={`activity-icon ${getIconClass(notification.type)}`}>
                       {getTypeIcon(notification.type)}
                     </div>
