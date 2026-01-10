@@ -26678,3 +26678,175 @@ input[type="date"].form-control {
     color: #5A6358;
     line-height: 1.5;
 }
+
+/* ==================== PENDING CLIENT VIEW STYLES ==================== */
+.pending-client-view {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.welcome-hero {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(50, 68, 56, 0.05) 0%, rgba(50, 68, 56, 0.02) 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(50, 68, 56, 0.1);
+}
+
+.welcome-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #324438 0%, #4a6352 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.welcome-hero h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1A1F16;
+    margin: 0 0 0.75rem;
+}
+
+.welcome-hero p {
+    font-size: 1rem;
+    color: #5A6358;
+    margin: 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.pending-action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.pending-action-grid.three-col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 900px) {
+    .pending-action-grid.three-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pending-action-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pending-action-card.primary {
+    border-color: rgba(50, 68, 56, 0.3);
+    box-shadow: 0 4px 12px rgba(50, 68, 56, 0.1);
+}
+
+.action-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #324438 0%, #4a6352 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.action-card-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.action-card-icon.secondary {
+    background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+}
+
+.pending-action-card h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1A1F16;
+    margin: 0;
+}
+
+.pending-action-card p {
+    font-size: 0.875rem;
+    color: #5A6358;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.pending-action-card .btn {
+    margin-top: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.next-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.benefits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.benefit-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.benefit-row svg {
+    color: #324438;
+    flex-shrink: 0;
+}
+
+.tagline-small {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #324438;
+}
+
+.next-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #E8EDEA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #5A6358;
+    flex-shrink: 0;
+}

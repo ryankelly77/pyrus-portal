@@ -1152,6 +1152,142 @@ export default function ClientDetailPage() {
         {/* ==================== GETTING STARTED TAB ==================== */}
         {activeTab === 'getting-started' && (
           <>
+            {!hasActiveSubscriptions ? (
+              /* Pending Client Welcome View */
+              <div className="pending-client-view">
+                {/* Welcome Section */}
+                <div className="welcome-hero">
+                  <div className="welcome-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </div>
+                  <h2>Welcome to Pyrus, {dbClient?.contact_name || dbClient?.name || 'Client'}!</h2>
+                  <p>We&apos;ve prepared a personalized marketing proposal for {dbClient?.name}. Review your options and choose the plan that fits your goals.</p>
+                </div>
+
+                {/* Three Column Action Cards */}
+                <div className="pending-action-grid three-col">
+                  {/* View Recommendation Card */}
+                  <div className="pending-action-card primary">
+                    <div className="action-card-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </div>
+                    <h3>View Your Proposal</h3>
+                    <p>We&apos;ve analyzed your business and prepared tailored marketing recommendations with transparent pricing.</p>
+                    <Link
+                      href={`/recommendations?viewingAs=${clientId}`}
+                      className="btn btn-primary"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      Review Recommendations
+                    </Link>
+                  </div>
+
+                  {/* Why Choose Pyrus Card */}
+                  <div className="pending-action-card">
+                    <div className="action-card-icon secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <h3>Why Choose Pyrus?</h3>
+                    <div className="benefits-list">
+                      <div className="benefit-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>30-day money-back guarantee</span>
+                      </div>
+                      <div className="benefit-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Month-to-month, no contracts</span>
+                      </div>
+                      <div className="benefit-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>AI-powered marketing tools</span>
+                      </div>
+                      <div className="benefit-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Local business expertise</span>
+                      </div>
+                    </div>
+                    <div className="tagline-small">Simple. Scalable. Results-driven.</div>
+                  </div>
+
+                  {/* What Happens Next Card */}
+                  <div className="pending-action-card">
+                    <div className="action-card-icon secondary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                    </div>
+                    <h3>What Happens Next?</h3>
+                    <div className="next-steps-list">
+                      <div className="next-step">
+                        <span className="step-num">1</span>
+                        <span>Review your personalized proposal</span>
+                      </div>
+                      <div className="next-step">
+                        <span className="step-num">2</span>
+                        <span>Select a plan that fits your goals</span>
+                      </div>
+                      <div className="next-step">
+                        <span className="step-num">3</span>
+                        <span>Complete quick onboarding questions</span>
+                      </div>
+                      <div className="next-step">
+                        <span className="step-num">4</span>
+                        <span>We get to work growing your business!</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resend Invitation Button */}
+                {recommendation && (
+                  <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                    {resendMessage && (
+                      <span style={{
+                        fontSize: '13px',
+                        color: resendMessage.type === 'success' ? '#059669' : '#DC2626',
+                        padding: '6px 12px',
+                        background: resendMessage.type === 'success' ? '#E8F5E9' : '#FEE2E2',
+                        borderRadius: '6px',
+                      }}>
+                        {resendMessage.text}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleResendInvitation}
+                      disabled={isResendingInvite || !dbClient?.contact_email}
+                      className="btn btn-secondary"
+                      title={!dbClient?.contact_email ? 'No contact email on file' : 'Resend proposal invitation email'}
+                      style={{ opacity: isResendingInvite || !dbClient?.contact_email ? 0.6 : 1 }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                      {isResendingInvite ? 'Sending...' : 'Resend Invitation'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
             {/* Getting Started Sub-tabs */}
             <div className="getting-started-subtabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1446,6 +1582,8 @@ export default function ClientDetailPage() {
                 )}
               </div>
             </div>
+              </>
+            )}
           </>
         )}
 
