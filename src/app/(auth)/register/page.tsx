@@ -25,6 +25,8 @@ function RegisterForm() {
     e.preventDefault()
     setError(null)
 
+    console.log('Registration form submitted:', { email, fullName })
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -40,6 +42,7 @@ function RegisterForm() {
     setLoading(true)
 
     // Sign up with Supabase
+    console.log('Calling Supabase signUp...')
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -49,6 +52,8 @@ function RegisterForm() {
         },
       },
     })
+
+    console.log('Supabase signUp response:', { data, error: signUpError })
 
     if (signUpError) {
       setError(signUpError.message)

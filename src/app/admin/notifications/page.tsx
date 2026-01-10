@@ -286,63 +286,6 @@ export default function AdminNotificationsPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        {summary && (
-          <div className="notification-summary-grid">
-            <div className="summary-card">
-              <div className="summary-icon email">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-              </div>
-              <div className="summary-content">
-                <div className="summary-value">{summary.totalEmails}</div>
-                <div className="summary-label">Total Emails</div>
-              </div>
-              <div className="summary-breakdown">
-                <span className="breakdown-item delivered">{summary.deliveredEmails} delivered</span>
-                <span className="breakdown-item opened">{summary.openedEmails} opened</span>
-              </div>
-            </div>
-
-            <div className="summary-card">
-              <div className="summary-icon proposal">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-              </div>
-              <div className="summary-content">
-                <div className="summary-value">{summary.proposalsSent}</div>
-                <div className="summary-label">Proposals Sent</div>
-              </div>
-              <div className="summary-breakdown">
-                <span className="breakdown-item viewed">{summary.proposalsViewed} viewed</span>
-                <span className="breakdown-item rate">
-                  {summary.proposalsSent > 0
-                    ? Math.round((summary.proposalsViewed / summary.proposalsSent) * 100)
-                    : 0}% view rate
-                </span>
-              </div>
-            </div>
-
-            <div className="summary-card">
-              <div className="summary-icon login">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                  <polyline points="10 17 15 12 10 7"></polyline>
-                  <line x1="15" y1="12" x2="3" y2="12"></line>
-                </svg>
-              </div>
-              <div className="summary-content">
-                <div className="summary-value">{summary.totalLogins}</div>
-                <div className="summary-label">Client Logins</div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Filters */}
         <div className="notifications-filters">
           <div className="filter-tabs">
