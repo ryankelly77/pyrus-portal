@@ -84,15 +84,6 @@ export function ClientSidebar() {
           <span>Content</span>
         </Link>
         <Link
-          href={buildHref('/communication')}
-          className={`client-nav-item ${pathname === '/communication' ? 'active' : ''}`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span>Communication</span>
-        </Link>
-        <Link
           href={buildHref('/recommendations')}
           className={`client-nav-item ${pathname === '/recommendations' ? 'active' : ''}`}
         >
@@ -100,6 +91,15 @@ export function ClientSidebar() {
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
           <span>Recommendations</span>
+        </Link>
+        <Link
+          href={buildHref('/communication')}
+          className={`client-nav-item ${pathname === '/communication' ? 'active' : ''}`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Communication</span>
         </Link>
         <Link
           href={buildHref('/settings')}
