@@ -1090,18 +1090,36 @@ export default function ClientDetailPage() {
               </div>
             </div>
             <div className="header-actions">
+              {resendMessage && (
+                <span style={{
+                  fontSize: '13px',
+                  color: resendMessage.type === 'success' ? '#059669' : '#DC2626',
+                  padding: '6px 12px',
+                  background: resendMessage.type === 'success' ? '#E8F5E9' : '#FEE2E2',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}>
+                  {resendMessage.text}
+                </span>
+              )}
               <button className="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
                 Send Result Alert
               </button>
-              <button className="btn btn-secondary">
+              <button
+                className="btn btn-secondary"
+                onClick={handleResendInvitation}
+                disabled={isResendingInvite || !recommendation || !dbClient?.contact_email}
+                title={!dbClient?.contact_email ? 'No contact email on file' : !recommendation ? 'No recommendation to send' : 'Resend proposal invitation email'}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                Resend Invitation
+                {isResendingInvite ? 'Sending...' : 'Resend Invitation'}
               </button>
               <button className="btn btn-primary" onClick={() => setShowEditModal(true)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1255,36 +1273,6 @@ export default function ClientDetailPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Resend Invitation Button */}
-                {recommendation && (
-                  <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
-                    {resendMessage && (
-                      <span style={{
-                        fontSize: '13px',
-                        color: resendMessage.type === 'success' ? '#059669' : '#DC2626',
-                        padding: '6px 12px',
-                        background: resendMessage.type === 'success' ? '#E8F5E9' : '#FEE2E2',
-                        borderRadius: '6px',
-                      }}>
-                        {resendMessage.text}
-                      </span>
-                    )}
-                    <button
-                      onClick={handleResendInvitation}
-                      disabled={isResendingInvite || !dbClient?.contact_email}
-                      className="btn btn-secondary"
-                      title={!dbClient?.contact_email ? 'No contact email on file' : 'Resend proposal invitation email'}
-                      style={{ opacity: isResendingInvite || !dbClient?.contact_email ? 0.6 : 1 }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                      </svg>
-                      {isResendingInvite ? 'Sending...' : 'Resend Invitation'}
-                    </button>
-                  </div>
-                )}
               </div>
             ) : (
               <>

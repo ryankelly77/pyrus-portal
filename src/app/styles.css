@@ -26850,3 +26850,14 @@ input[type="date"].form-control {
     color: #5A6358;
     flex-shrink: 0;
 }
+
+/* Admin pending view - use green primary buttons */
+.pending-action-card .btn-primary {
+    background: #324438;
+    border-color: #324438;
+}
+
+.pending-action-card .btn-primary:hover {
+    background: #283830;
+    border-color: #283830;
+}
