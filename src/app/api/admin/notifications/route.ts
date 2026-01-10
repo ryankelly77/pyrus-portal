@@ -119,13 +119,14 @@ export async function GET(request: NextRequest) {
           al.description,
           al.metadata,
           al.created_at,
-          c.id as client_id,
-          c.name as client_name,
+          COALESCE(c.id, pc.id) as client_id,
+          COALESCE(c.name, pc.name) as client_name,
           p.full_name as user_name,
           p.email as user_email
         FROM activity_log al
         LEFT JOIN clients c ON c.id = al.client_id
         LEFT JOIN profiles p ON p.id = al.user_id
+        LEFT JOIN clients pc ON pc.id = p.client_id
         WHERE al.activity_type IN ('login', 'client_login', 'prospect_login', 'admin_login')
         ORDER BY al.created_at DESC
         LIMIT $1 OFFSET $2`,
@@ -154,13 +155,14 @@ export async function GET(request: NextRequest) {
           al.description,
           al.metadata,
           al.created_at,
-          c.id as client_id,
-          c.name as client_name,
+          COALESCE(c.id, pc.id) as client_id,
+          COALESCE(c.name, pc.name) as client_name,
           p.full_name as user_name,
           p.email as user_email
         FROM activity_log al
         LEFT JOIN clients c ON c.id = al.client_id
         LEFT JOIN profiles p ON p.id = al.user_id
+        LEFT JOIN clients pc ON pc.id = p.client_id
         WHERE al.activity_type = 'page_view'
         ORDER BY al.created_at DESC
         LIMIT $1 OFFSET $2`,
@@ -190,13 +192,14 @@ export async function GET(request: NextRequest) {
           al.description,
           al.metadata,
           al.created_at,
-          c.id as client_id,
-          c.name as client_name,
+          COALESCE(c.id, pc.id) as client_id,
+          COALESCE(c.name, pc.name) as client_name,
           p.full_name as user_name,
           p.email as user_email
         FROM activity_log al
         LEFT JOIN clients c ON c.id = al.client_id
         LEFT JOIN profiles p ON p.id = al.user_id
+        LEFT JOIN clients pc ON pc.id = p.client_id
         WHERE al.activity_type = 'registration'
         ORDER BY al.created_at DESC
         LIMIT $1 OFFSET $2`,
