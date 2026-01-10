@@ -74,12 +74,23 @@ export default function GettingStartedPage() {
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [clientDisplay, setClientDisplay] = useState<{ name: string; initials: string; contactName: string }>({
-    name: client.name,
-    initials: client.initials,
-    contactName: client.contactName,
+    name: 'Client',
+    initials: 'CL',
+    contactName: 'Client User',
   })
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
+
+  // Update client display when hook data loads
+  useEffect(() => {
+    if (client.id) {
+      setClientDisplay({
+        name: client.name,
+        initials: client.initials,
+        contactName: client.contactName,
+      })
+    }
+  }, [client])
 
   // Fetch video chapters
   useEffect(() => {

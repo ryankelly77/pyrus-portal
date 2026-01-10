@@ -12,7 +12,8 @@ export function PreviewBanner() {
   if (!viewingAs) return null
 
   const handleExitPreview = () => {
-    router.push('/dashboard')
+    // Redirect back to the admin client detail page
+    router.push(`/admin/clients/${viewingAs}`)
   }
 
   return (
