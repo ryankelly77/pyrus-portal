@@ -27,14 +27,14 @@ export default function ViewProposalPage() {
         // Store client info for the redirect
         setClientName(data.client?.name || '')
 
-        // Store the client ID in localStorage so we can associate it after login/registration
+        // Store the client ID in localStorage AND pass token via URL for redundancy
         if (data.client?.id) {
           localStorage.setItem('pyrus_pending_client_id', data.client.id)
           localStorage.setItem('pyrus_invite_token', token)
         }
 
-        // Redirect immediately to register page (use replace to prevent back button issues)
-        router.replace('/register?redirect=/recommendations')
+        // Redirect to register with token in URL (more reliable than localStorage alone)
+        router.replace(`/register?redirect=/recommendations&invite=${token}`)
       } catch (err) {
         console.error('Failed to validate proposal:', err)
         setError('Failed to load proposal')

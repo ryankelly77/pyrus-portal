@@ -72,20 +72,36 @@ function RegisterForm() {
     // If we have a session, the user is logged in
     if (data.session) {
       // Associate with pending client if available
+      // Check URL param first (more reliable), then localStorage
+      const urlInviteToken = searchParams.get('invite')
       const pendingClientId = localStorage.getItem('pyrus_pending_client_id')
-      const inviteToken = localStorage.getItem('pyrus_invite_token')
+      const inviteToken = urlInviteToken || localStorage.getItem('pyrus_invite_token')
 
-      if (pendingClientId && inviteToken) {
+      if (inviteToken) {
+        try {
+          // Use token-only association - the API will find the client from the token
+          await fetch('/api/client/associate-by-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: inviteToken }),
+          })
+          // Clear the pending data
+          localStorage.removeItem('pyrus_pending_client_id')
+          localStorage.removeItem('pyrus_invite_token')
+        } catch (e) {
+          console.error('Failed to associate client:', e)
+        }
+      } else if (pendingClientId) {
+        // Fallback to old method if we have clientId but no token
         try {
           await fetch('/api/client/associate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               clientId: pendingClientId,
-              token: inviteToken,
+              token: localStorage.getItem('pyrus_invite_token'),
             }),
           })
-          // Clear the pending data
           localStorage.removeItem('pyrus_pending_client_id')
           localStorage.removeItem('pyrus_invite_token')
         } catch (e) {
