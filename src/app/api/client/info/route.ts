@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(clientId)) {
+    if (!clientId || !uuidRegex.test(clientId)) {
       return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
     }
 
