@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { stripe, getOrCreateCoupon } from '@/lib/stripe'
 
 interface CartItem {
   name: string
@@ -53,6 +54,34 @@ export async function POST(request: NextRequest) {
     console.log('[FreeOrder] Processing $0 order for client:', client.name)
     console.log('[FreeOrder] Coupon:', couponCode, 'Tier:', selectedTier, 'Items:', cartItems.length)
 
+    // Get or create Stripe customer
+    let stripeCustomerId = client.stripe_customer_id
+
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        name: client.name,
+        email: client.contact_email || undefined,
+        metadata: { pyrus_client_id: client.id },
+      })
+      stripeCustomerId = customer.id
+
+      await prisma.clients.update({
+        where: { id: clientId },
+        data: { stripe_customer_id: stripeCustomerId },
+      })
+      console.log('[FreeOrder] Created Stripe customer:', stripeCustomerId)
+    }
+
+    // Get or create coupon in Stripe
+    const couponId = await getOrCreateCoupon(couponCode)
+    if (!couponId) {
+      return NextResponse.json(
+        { error: 'Invalid coupon code' },
+        { status: 400 }
+      )
+    }
+    console.log('[FreeOrder] Using Stripe coupon:', couponId)
+
     // Get recommendation items for the selected tier to create subscription items
     let recommendationItems: Array<{
       product_id: string | null
@@ -80,22 +109,60 @@ export async function POST(request: NextRequest) {
       console.log('[FreeOrder] Found', items.length, 'recommendation items for tier:', selectedTier)
     }
 
-    // Create a subscription record without Stripe (for $0 orders)
+    // Calculate totals from cart items (original price before discount)
+    const monthlyItems = cartItems.filter(item => item.billingPeriod === 'monthly' && item.price > 0)
+    const monthlyTotal = monthlyItems.reduce((sum, item) => sum + item.price, 0)
+    const onetimeItems = cartItems.filter(item => item.billingPeriod === 'one-time' && item.price > 0)
+    const onetimeTotal = onetimeItems.reduce((sum, item) => sum + item.price, 0)
+
+    // Create Stripe subscription with 100% coupon
+    // Even though it's $0, we create a real subscription for tracking
+    const subscriptionParams: any = {
+      customer: stripeCustomerId,
+      items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: selectedTier ? `${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} Plan` : 'Monthly Plan',
+            metadata: {
+              pyrus_client_id: clientId,
+              tier: selectedTier || '',
+            },
+          },
+          unit_amount: Math.round(monthlyTotal * 100), // Original price in cents
+          recurring: {
+            interval: billingCycle === 'annual' ? 'year' : 'month',
+          },
+        },
+      }],
+      coupon: couponId,
+      metadata: {
+        pyrus_client_id: clientId,
+        recommendation_id: recommendationId || '',
+        selected_tier: selectedTier || '',
+        is_free_order: 'true',
+      },
+    }
+
+    const stripeSubscription = await stripe.subscriptions.create(subscriptionParams) as any
+
+    console.log('[FreeOrder] Created Stripe subscription:', stripeSubscription.id)
+
+    // Create local subscription record
     const subscription = await prisma.subscriptions.create({
       data: {
         client_id: clientId,
         recommendation_id: recommendationId || null,
-        stripe_subscription_id: `free_${Date.now()}`, // Placeholder for free orders
-        stripe_customer_id: client.stripe_customer_id || null,
+        stripe_subscription_id: stripeSubscription.id,
+        stripe_customer_id: stripeCustomerId,
         status: 'active',
-        current_period_start: new Date(),
-        current_period_end: billingCycle === 'annual'
-          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        monthly_amount: 0, // $0 after coupon
+        current_period_start: new Date(stripeSubscription.current_period_start * 1000),
+        current_period_end: new Date(stripeSubscription.current_period_end * 1000),
       },
     })
 
-    console.log('[FreeOrder] Created subscription:', subscription.id)
+    console.log('[FreeOrder] Created local subscription:', subscription.id)
 
     // Create subscription items to link products to the subscription
     // This is required for the client to be detected as "active"
@@ -141,12 +208,6 @@ export async function POST(request: NextRequest) {
       },
     })
     console.log('[FreeOrder] Updated client status to active, growth_stage to seedling')
-
-    // Calculate totals from cart items (before coupon discount)
-    const monthlyItems = cartItems.filter(item => item.billingPeriod === 'monthly' && item.price > 0)
-    const monthlyTotal = monthlyItems.reduce((sum, item) => sum + item.price, 0)
-    const onetimeItems = cartItems.filter(item => item.billingPeriod === 'one-time' && item.price > 0)
-    const onetimeTotal = onetimeItems.reduce((sum, item) => sum + item.price, 0)
 
     // Log purchase activity for notifications
     const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''
