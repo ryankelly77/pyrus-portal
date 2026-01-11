@@ -63,6 +63,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       text: options.text || stripHtml(options.html),
       'h:Reply-To': options.replyTo || 'support@pyrusdigitalmedia.com',
       'o:tag': options.tags || ['transactional'],
+      'o:tracking': 'yes',
+      'o:tracking-clicks': 'htmlonly',
+      'o:tracking-opens': 'yes',
     })
 
     console.log(`Email sent to ${options.to}: ${result.id}`)
