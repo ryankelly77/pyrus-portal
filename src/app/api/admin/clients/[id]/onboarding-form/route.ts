@@ -14,6 +14,18 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const productIds = searchParams.get('productIds')?.split(',').filter(Boolean)
 
+    // Verify client exists
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    })
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      )
+    }
+
     // Build the where clause for question templates
     const whereClause: { is_active: boolean; product_id?: { in: string[] } } = {
       is_active: true,
@@ -106,6 +118,18 @@ export async function POST(
     const { id: clientId } = await params
     const body = await request.json()
     const { responses } = body
+
+    // Verify client exists
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    })
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      )
+    }
 
     if (!responses || !Array.isArray(responses)) {
       return NextResponse.json(

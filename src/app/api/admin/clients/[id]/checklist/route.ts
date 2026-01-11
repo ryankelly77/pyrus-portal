@@ -9,6 +9,18 @@ export async function GET(
   try {
     const { id: clientId } = await params
 
+    // Verify client exists
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    })
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      )
+    }
+
     // Get all checklist items for this client with template info
     const checklistItems = await prisma.client_checklist_items.findMany({
       where: { client_id: clientId },
@@ -65,6 +77,18 @@ export async function POST(
     const { id: clientId } = await params
     const body = await request.json()
     const { productIds } = body
+
+    // Verify client exists
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    })
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Client not found' },
+        { status: 404 }
+      )
+    }
 
     if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
       return NextResponse.json(
@@ -132,8 +156,8 @@ export async function POST(
               notes: shouldAutoComplete ? 'Auto-completed based on onboarding form response' : null,
             },
           })
-        } catch {
-          // Skip if constraint violation (already exists)
+        } catch (upsertError) {
+          console.warn(`Failed to upsert checklist item for template ${template.id}:`, upsertError)
           return null
         }
       })

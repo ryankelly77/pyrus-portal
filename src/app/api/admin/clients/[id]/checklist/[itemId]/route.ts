@@ -7,9 +7,21 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const { itemId } = await params
+    const { id: clientId, itemId } = await params
     const body = await request.json()
     const { isCompleted, notes } = body
+
+    // Verify the item exists and belongs to this client
+    const existingItem = await prisma.client_checklist_items.findFirst({
+      where: { id: itemId, client_id: clientId },
+      select: { id: true },
+    })
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: 'Checklist item not found' },
+        { status: 404 }
+      )
+    }
 
     const updateData: {
       is_completed?: boolean
@@ -72,7 +84,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
-    const { itemId } = await params
+    const { id: clientId, itemId } = await params
+
+    // Verify the item exists and belongs to this client
+    const existingItem = await prisma.client_checklist_items.findFirst({
+      where: { id: itemId, client_id: clientId },
+      select: { id: true },
+    })
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: 'Checklist item not found' },
+        { status: 404 }
+      )
+    }
 
     await prisma.client_checklist_items.delete({
       where: { id: itemId },

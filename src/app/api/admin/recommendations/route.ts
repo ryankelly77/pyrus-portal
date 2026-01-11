@@ -22,8 +22,8 @@ export async function DELETE(request: NextRequest) {
       await prisma.recommendation_invites.deleteMany({
         where: { recommendation_id: id },
       })
-    } catch {
-      // Table may not exist yet, continue
+    } catch (inviteError) {
+      console.warn('Could not delete recommendation invites (table may not exist):', inviteError)
     }
 
     // Delete recommendation items (foreign key constraint)
@@ -79,7 +79,8 @@ export async function GET() {
             orderBy: { created_at: 'desc' },
           })
           return { ...rec, recommendation_invites: invites }
-        } catch {
+        } catch (inviteError) {
+          console.warn(`Could not fetch invites for recommendation ${rec.id}:`, inviteError)
           return { ...rec, recommendation_invites: [] }
         }
       })
@@ -110,8 +111,8 @@ export async function POST(request: NextRequest) {
           where: { id: user.id },
           select: { full_name: true, role: true },
         })
-      } catch {
-        // User lookup failed, continue without user info
+      } catch (profileError) {
+        console.warn('Could not fetch user profile:', profileError)
       }
     }
 

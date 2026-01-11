@@ -47,6 +47,15 @@ export async function POST(
       )
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
     // Check if recommendation exists and get client info
     const recommendation = await prisma.recommendations.findUnique({
       where: { id },
@@ -103,8 +112,8 @@ export async function POST(
             details: `Sent to ${firstName} ${lastName} (${email})`,
           },
         })
-      } catch {
-        // Don't fail if history creation fails
+      } catch (historyError) {
+        console.error('Failed to create recommendation history entry:', historyError)
       }
     }
 

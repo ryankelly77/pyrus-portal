@@ -174,8 +174,8 @@ export async function POST(
           details: `Resent to ${recipientName} (${recipientEmail})`,
         },
       })
-    } catch {
-      // Don't fail if history creation fails
+    } catch (historyError) {
+      console.error('Failed to create recommendation history entry:', historyError)
     }
 
     return NextResponse.json({

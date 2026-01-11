@@ -111,8 +111,8 @@ export async function DELETE(
         await prisma.recommendation_invites.deleteMany({
           where: { recommendation_id: rec.id },
         })
-      } catch {
-        // Table may not exist
+      } catch (inviteError) {
+        console.warn('Could not delete recommendation invites (table may not exist):', inviteError)
       }
     }
 

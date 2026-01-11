@@ -33,6 +33,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate items array
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: 'items must be a non-empty array' },
+        { status: 400 }
+      )
+    }
+
+    // Validate each cart item
+    for (const item of items as CartItem[]) {
+      if (!item.name || typeof item.name !== 'string') {
+        return NextResponse.json(
+          { error: 'Each item must have a valid name' },
+          { status: 400 }
+        )
+      }
+      if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+        return NextResponse.json(
+          { error: `Invalid quantity for item "${item.name}": must be a positive number` },
+          { status: 400 }
+        )
+      }
+      if (typeof item.monthlyPrice !== 'number' || item.monthlyPrice < 0) {
+        return NextResponse.json(
+          { error: `Invalid monthlyPrice for item "${item.name}": must be a non-negative number` },
+          { status: 400 }
+        )
+      }
+      if (typeof item.onetimePrice !== 'number' || item.onetimePrice < 0) {
+        return NextResponse.json(
+          { error: `Invalid onetimePrice for item "${item.name}": must be a non-negative number` },
+          { status: 400 }
+        )
+      }
+    }
+
     const validPlanTiers = ['good', 'better', 'best']
     const isAddonPurchase = !validPlanTiers.includes(tier)
 
