@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     const { clientId, email, name, billingCycle } = await request.json()
     console.log('[SetupIntent] Request:', { clientId, email, name, billingCycle })
+    console.log('[SetupIntent] Payment methods for', billingCycle, ':', billingCycle === 'annual' ? 'ACH only' : 'card + ACH')
 
     if (!clientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 })

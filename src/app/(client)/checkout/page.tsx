@@ -565,6 +565,7 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <Elements
+                    key={`${clientSecret}-${billingCycle}`}
                     stripe={stripePromise}
                     options={{
                       clientSecret,
