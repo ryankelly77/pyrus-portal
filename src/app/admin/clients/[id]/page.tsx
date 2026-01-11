@@ -398,6 +398,12 @@ export default function ClientDetailPage() {
   const [showProductModal, setShowProductModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ContentProduct | null>(null)
 
+  // Result Alert modal state
+  const [showResultAlertModal, setShowResultAlertModal] = useState(false)
+  const [resultAlertSubject, setResultAlertSubject] = useState('')
+  const [resultAlertMessage, setResultAlertMessage] = useState('')
+  const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
+
   // Communications state
   interface Communication {
     id: string
@@ -778,6 +784,61 @@ export default function ClientDetailPage() {
     }
   }
 
+  // Handle sending result alert
+  const handleSendResultAlert = async () => {
+    if (!dbClient || !resultAlertSubject.trim() || !resultAlertMessage.trim()) return
+
+    setIsSendingResultAlert(true)
+
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/communications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'result_alert',
+          title: resultAlertSubject,
+          subject: resultAlertSubject,
+          body: resultAlertMessage,
+          recipientEmail: dbClient.contact_email,
+          highlightType: 'success',
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send result alert')
+      }
+
+      // Close modal and reset fields
+      setShowResultAlertModal(false)
+      setResultAlertSubject('')
+      setResultAlertMessage('')
+
+      // Show success message
+      setResendMessage({
+        type: 'success',
+        text: `Result alert sent to ${dbClient.contact_email}`,
+      })
+      setTimeout(() => setResendMessage(null), 5000)
+
+      // Refresh communications
+      const commsRes = await fetch(`/api/admin/clients/${clientId}/communications`)
+      if (commsRes.ok) {
+        setCommunications(await commsRes.json())
+      }
+    } catch (error) {
+      console.error('Failed to send result alert:', error)
+      setResendMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to send result alert',
+      })
+      setTimeout(() => setResendMessage(null), 5000)
+    } finally {
+      setIsSendingResultAlert(false)
+    }
+  }
+
   // Content upsell products - matched to database
   const contentUpsellProducts = {
     contentWriting: {
@@ -1121,7 +1182,12 @@ export default function ClientDetailPage() {
                 </span>
               )}
               {hasActiveSubscriptions && (
-                <button className="btn btn-secondary">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowResultAlertModal(true)}
+                  disabled={!dbClient?.contact_email}
+                  title={!dbClient?.contact_email ? 'No contact email on file' : 'Send a result alert email to this client'}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                   </svg>
@@ -4965,6 +5031,103 @@ export default function ClientDetailPage() {
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 Add to Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Result Alert Modal */}
+      {showResultAlertModal && (
+        <div className="modal-overlay active" onClick={() => setShowResultAlertModal(false)}>
+          <div className="modal modal-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <div className="modal-header-icon" style={{ background: '#FEF3C7', color: '#F59E0B' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="modal-title">Send Result Alert</h2>
+                  <p className="modal-subtitle">Notify {dbClient?.name || 'the client'} about new marketing results</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowResultAlertModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Recipient</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={dbClient?.contact_email || ''}
+                  disabled
+                  style={{ background: '#f9fafb' }}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Subject</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g., Your January Marketing Results Are In!"
+                  value={resultAlertSubject}
+                  onChange={(e) => setResultAlertSubject(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Message</label>
+                <textarea
+                  className="form-textarea"
+                  placeholder="Write a brief message highlighting key results or metrics..."
+                  rows={5}
+                  value={resultAlertMessage}
+                  onChange={(e) => setResultAlertMessage(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+              <div className="info-box" style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '8px', padding: '12px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="20" height="20" style={{ flexShrink: 0, marginTop: '2px' }}>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <div style={{ fontSize: '13px', color: '#92400E' }}>
+                    <strong>Tip:</strong> Result alerts are best used to highlight significant wins like keyword ranking improvements, lead increases, or traffic milestones.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowResultAlertModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSendResultAlert}
+                disabled={isSendingResultAlert || !resultAlertSubject.trim() || !resultAlertMessage.trim()}
+              >
+                {isSendingResultAlert ? (
+                  <>
+                    <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Send Alert
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -45,10 +45,13 @@ export default function WebsitePage() {
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   usePageView({ page: '/website', pageName: 'Website' })
-  const [hasWebsite, setHasWebsite] = useState(true) // Will be determined by client's subscriptions
 
-  // Check if client is pending (prospect only)
+  // Check if client is pending (prospect only) or has website services
   const isPending = client.status === 'pending'
+  const hasWebsite = client.access.hasWebsite
+  const hasWebsiteProducts = client.access.hasWebsiteProducts
+  // Show coming soon if client is active with website products but data isn't connected yet
+  const showComingSoon = !isPending && hasWebsiteProducts && !hasWebsite
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
@@ -119,9 +122,8 @@ export default function WebsitePage() {
     )
   }
 
-  // If client doesn't have website service, show upsell
-  // TODO: Check actual subscriptions to determine if client has website
-  if (!hasWebsite) {
+  // If client doesn't have website products, show upsell
+  if (!hasWebsiteProducts && !isPending) {
     return (
       <>
         {/* Top Header Bar */}
@@ -431,6 +433,32 @@ export default function WebsitePage() {
               </svg>
               View Your Proposal
             </Link>
+          </div>
+        ) : showComingSoon ? (
+          <div className="coming-soon-placeholder">
+            <div className="coming-soon-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <h2>Website Coming Soon</h2>
+            <p>We&apos;re building your new website. You&apos;ll be able to preview your site, request edits, and manage your web presence here once your site is ready.</p>
+            <div className="coming-soon-timeline">
+              <div className="timeline-item">
+                <div className="timeline-dot active"></div>
+                <span>Website plan selected</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Design &amp; development in progress</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Preview &amp; launch</span>
+              </div>
+            </div>
           </div>
         ) : (
           <>

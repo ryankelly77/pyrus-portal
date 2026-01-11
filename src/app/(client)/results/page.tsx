@@ -14,8 +14,9 @@ export default function ResultsPage() {
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
 
-  // Check if client is pending (prospect only)
+  // Check if client is pending (prospect only) or doesn't have results data yet
   const isPending = client.status === 'pending'
+  const showComingSoon = !isPending && !client.access.hasResults
 
   // KPI data - will be replaced with real data from API in the future
   const kpiData = {
@@ -89,6 +90,32 @@ export default function ResultsPage() {
               </svg>
               View Your Proposal
             </Link>
+          </div>
+        ) : showComingSoon ? (
+          <div className="coming-soon-placeholder">
+            <div className="coming-soon-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </div>
+            <h2>Results Coming Soon</h2>
+            <p>We&apos;re setting up your analytics dashboard. Your marketing performance metrics, keyword rankings, and lead tracking will appear here once your campaigns are active.</p>
+            <div className="coming-soon-timeline">
+              <div className="timeline-item">
+                <div className="timeline-dot active"></div>
+                <span>Account setup complete</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Campaign configuration in progress</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Analytics dashboard connection</span>
+              </div>
+            </div>
           </div>
         ) : (
           <>

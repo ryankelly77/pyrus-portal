@@ -45,6 +45,38 @@ interface VideoChapter {
   videoUrl: string
 }
 
+interface OnboardingQuestion {
+  id: string
+  questionText: string
+  questionType: string
+  options: string[] | null
+  placeholder: string | null
+  helpText: string | null
+  isRequired: boolean
+  section: string | null
+  product: {
+    id: string
+    name: string
+    category: string
+  }
+  response: {
+    id: string
+    text: string | null
+    options: string[] | null
+  } | null
+}
+
+interface OnboardingFormData {
+  questions: OnboardingQuestion[]
+  grouped: Record<string, OnboardingQuestion[]>
+  hasProducts: boolean
+  progress: {
+    answered: number
+    total: number
+    percent: number
+  }
+}
+
 interface OnboardingData {
   client: {
     id: string
@@ -75,7 +107,7 @@ export default function GettingStartedPage() {
   const { client, loading: clientLoading } = useClientData(viewingAs)
   usePageView({ page: '/getting-started', pageName: 'Getting Started' })
 
-  const [activeSubtab, setActiveSubtab] = useState('checklist')
+  const [activeSubtab, setActiveSubtab] = useState('questions')
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [clientDisplay, setClientDisplay] = useState<{ name: string; initials: string; contactName: string }>({
@@ -86,6 +118,13 @@ export default function GettingStartedPage() {
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
   const [clientStatus, setClientStatus] = useState<ClientStatus | null>(null)
+
+  // Onboarding form state
+  const [formData, setFormData] = useState<OnboardingFormData | null>(null)
+  const [formLoading, setFormLoading] = useState(true)
+  const [formResponses, setFormResponses] = useState<Record<string, string | string[]>>({})
+  const [isSavingForm, setIsSavingForm] = useState(false)
+  const [formSaveMessage, setFormSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Update client display and status when hook data loads
   useEffect(() => {
@@ -163,6 +202,93 @@ export default function GettingStartedPage() {
     }
     fetchData()
   }, [viewingAs, client.id, clientLoading])
+
+  // Fetch onboarding form questions
+  useEffect(() => {
+    async function fetchFormData() {
+      const clientId = viewingAs || client.id
+
+      if (!clientId || clientLoading) {
+        if (!clientLoading) setFormLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/client/onboarding-form?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setFormData(data)
+
+          // Initialize form responses with existing answers
+          const initialResponses: Record<string, string | string[]> = {}
+          data.questions?.forEach((q: OnboardingQuestion) => {
+            if (q.response) {
+              if (q.response.text) {
+                initialResponses[q.id] = q.response.text
+              } else if (q.response.options) {
+                initialResponses[q.id] = q.response.options
+              }
+            }
+          })
+          setFormResponses(initialResponses)
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding form:', error)
+      } finally {
+        setFormLoading(false)
+      }
+    }
+    fetchFormData()
+  }, [viewingAs, client.id, clientLoading])
+
+  // Handle form input change
+  const handleFormChange = (questionId: string, value: string | string[]) => {
+    setFormResponses(prev => ({
+      ...prev,
+      [questionId]: value,
+    }))
+  }
+
+  // Handle form submission
+  const handleSaveForm = async () => {
+    const clientId = viewingAs || client.id
+    if (!clientId) return
+
+    setIsSavingForm(true)
+    setFormSaveMessage(null)
+
+    try {
+      // Convert form responses to API format
+      const responses = Object.entries(formResponses).map(([questionId, value]) => ({
+        questionId,
+        text: typeof value === 'string' ? value : undefined,
+        options: Array.isArray(value) ? value : undefined,
+      }))
+
+      const res = await fetch(`/api/client/onboarding-form?clientId=${clientId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses }),
+      })
+
+      if (res.ok) {
+        setFormSaveMessage({ type: 'success', text: 'Your answers have been saved!' })
+        // Refresh form data to get updated progress
+        const refreshRes = await fetch(`/api/client/onboarding-form?clientId=${clientId}`)
+        if (refreshRes.ok) {
+          setFormData(await refreshRes.json())
+        }
+      } else {
+        throw new Error('Failed to save')
+      }
+    } catch (error) {
+      console.error('Failed to save form:', error)
+      setFormSaveMessage({ type: 'error', text: 'Failed to save. Please try again.' })
+    } finally {
+      setIsSavingForm(false)
+      setTimeout(() => setFormSaveMessage(null), 5000)
+    }
+  }
 
   const checklist = onboardingData?.checklist
   const summary = onboardingData?.onboardingSummary || {}
@@ -326,19 +452,9 @@ export default function GettingStartedPage() {
           <>
             {/* Active Client View - Show checklist and onboarding */}
             {/* Getting Started Sub-tabs */}
-            <div className="getting-started-subtabs">
+            <div className="results-subtabs">
               <button
-                className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
-                onClick={() => setActiveSubtab('checklist')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                Checklist
-              </button>
-              <button
-                className={`getting-started-subtab ${activeSubtab === 'questions' ? 'active' : ''}`}
+                className={`results-subtab ${activeSubtab === 'questions' ? 'active' : ''}`}
                 onClick={() => setActiveSubtab('questions')}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -349,7 +465,17 @@ export default function GettingStartedPage() {
                 Questions
               </button>
               <button
-                className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
+                className={`results-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
+                onClick={() => setActiveSubtab('checklist')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Checklist
+              </button>
+              <button
+                className={`results-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
                 onClick={() => setActiveSubtab('onboarding-summary')}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -493,25 +619,219 @@ export default function GettingStartedPage() {
         {/* Questions Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'questions' ? 'active' : ''}`} id="questions">
           <div className="onboarding-questions">
-            <div className="questions-card">
-              <div className="questions-header">
-                <h3>Onboarding Questions</h3>
-                <p>Help us understand your business better by answering these questions.</p>
+            {formLoading ? (
+              <div className="questions-loading" style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+                <div className="spinner" style={{ width: 40, height: 40 }}></div>
               </div>
-              <div className="questions-content">
-                <div className="questions-coming-soon">
-                  <div className="coming-soon-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
+            ) : !formData?.hasProducts || formData.questions.length === 0 ? (
+              <div className="questions-card">
+                <div className="questions-header">
+                  <h3>Onboarding Questions</h3>
+                  <p>Help us understand your business better by answering these questions.</p>
+                </div>
+                <div className="questions-content">
+                  <div className="questions-coming-soon">
+                    <div className="coming-soon-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </div>
+                    <h4>No Questions Yet</h4>
+                    <p>Once you have active services, personalized onboarding questions will appear here.</p>
                   </div>
-                  <h4>Onboarding Form Coming Soon</h4>
-                  <p>We&apos;re preparing personalized onboarding questions based on your selected services. Check back soon!</p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Progress Header */}
+                <div className="questions-card" style={{ marginBottom: '1.5rem' }}>
+                  <div className="questions-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div>
+                        <h3>Onboarding Questions</h3>
+                        <p>Help us understand your business better by answering these questions.</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#324438' }}>
+                          {formData.progress.percent}%
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                          {formData.progress.answered} of {formData.progress.total} completed
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', background: '#E5E7EB', borderRadius: '3px', marginTop: '1rem' }}>
+                      <div style={{ width: `${formData.progress.percent}%`, height: '100%', background: '#22C55E', borderRadius: '3px', transition: 'width 0.3s ease' }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions by Section */}
+                {Object.entries(formData.grouped).map(([section, questions]) => (
+                  <div key={section} className="questions-card" style={{ marginBottom: '1.5rem' }}>
+                    <div className="questions-header" style={{ borderBottom: '1px solid #E5E7EB' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        {section}
+                      </h3>
+                    </div>
+                    <div className="questions-content" style={{ padding: '1.5rem' }}>
+                      {questions.map((q) => (
+                        <div key={q.id} className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+                            {q.questionText}
+                            {q.isRequired && <span style={{ color: '#DC2626', marginLeft: '4px' }}>*</span>}
+                          </label>
+                          {q.helpText && (
+                            <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.5rem' }}>{q.helpText}</p>
+                          )}
+
+                          {/* Text input */}
+                          {(q.questionType === 'text' || q.questionType === 'url' || q.questionType === 'email' || q.questionType === 'phone') && (
+                            <input
+                              type={q.questionType === 'url' ? 'url' : q.questionType === 'email' ? 'email' : q.questionType === 'phone' ? 'tel' : 'text'}
+                              className="form-input"
+                              placeholder={q.placeholder || ''}
+                              value={(formResponses[q.id] as string) || ''}
+                              onChange={(e) => handleFormChange(q.id, e.target.value)}
+                              style={{ width: '100%', padding: '0.75rem', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '0.875rem' }}
+                            />
+                          )}
+
+                          {/* Textarea */}
+                          {q.questionType === 'textarea' && (
+                            <textarea
+                              className="form-textarea"
+                              placeholder={q.placeholder || ''}
+                              value={(formResponses[q.id] as string) || ''}
+                              onChange={(e) => handleFormChange(q.id, e.target.value)}
+                              rows={4}
+                              style={{ width: '100%', padding: '0.75rem', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '0.875rem', resize: 'vertical' }}
+                            />
+                          )}
+
+                          {/* Select */}
+                          {q.questionType === 'select' && q.options && (
+                            <select
+                              className="form-select"
+                              value={(formResponses[q.id] as string) || ''}
+                              onChange={(e) => handleFormChange(q.id, e.target.value)}
+                              style={{ width: '100%', padding: '0.75rem', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '0.875rem', background: 'white' }}
+                            >
+                              <option value="">Select an option...</option>
+                              {(q.options as string[]).map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          )}
+
+                          {/* Radio buttons */}
+                          {q.questionType === 'radio' && q.options && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {(q.options as string[]).map((opt) => (
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: '6px', background: formResponses[q.id] === opt ? '#F0FDF4' : 'transparent', border: formResponses[q.id] === opt ? '1px solid #22C55E' : '1px solid transparent' }}>
+                                  <input
+                                    type="radio"
+                                    name={q.id}
+                                    value={opt}
+                                    checked={formResponses[q.id] === opt}
+                                    onChange={(e) => handleFormChange(q.id, e.target.value)}
+                                    style={{ accentColor: '#22C55E' }}
+                                  />
+                                  <span style={{ fontSize: '0.875rem' }}>{opt}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Checkboxes (multiselect) */}
+                          {(q.questionType === 'checkbox' || q.questionType === 'multiselect') && q.options && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {(q.options as string[]).map((opt) => {
+                                const currentValues = (formResponses[q.id] as string[]) || []
+                                const isChecked = currentValues.includes(opt)
+                                return (
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: '6px', background: isChecked ? '#F0FDF4' : 'transparent', border: isChecked ? '1px solid #22C55E' : '1px solid transparent' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          handleFormChange(q.id, [...currentValues, opt])
+                                        } else {
+                                          handleFormChange(q.id, currentValues.filter((v) => v !== opt))
+                                        }
+                                      }}
+                                      style={{ accentColor: '#22C55E' }}
+                                    />
+                                    <span style={{ fontSize: '0.875rem' }}>{opt}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Save Button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0' }}>
+                  {formSaveMessage && (
+                    <span style={{
+                      fontSize: '0.875rem',
+                      color: formSaveMessage.type === 'success' ? '#059669' : '#DC2626',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}>
+                      {formSaveMessage.type === 'success' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="15" y1="9" x2="9" y2="15"></line>
+                          <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                      )}
+                      {formSaveMessage.text}
+                    </span>
+                  )}
+                  <div style={{ marginLeft: 'auto' }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleSaveForm}
+                      disabled={isSavingForm}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      {isSavingForm ? (
+                        <>
+                          <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                          </svg>
+                          Save Answers
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

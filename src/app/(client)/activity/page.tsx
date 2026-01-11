@@ -298,8 +298,9 @@ export default function ActivityPage() {
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
 
-  // Check if client is pending (prospect only)
+  // Check if client is pending (prospect only) or doesn't have activity data yet
   const isPending = client.status === 'pending'
+  const showComingSoon = !isPending && !client.access.hasActivity
 
   // Activity data - will be replaced with real data from API in the future
   const activities = tcClinicalActivities
@@ -368,6 +369,31 @@ export default function ActivityPage() {
               </svg>
               View Your Proposal
             </Link>
+          </div>
+        ) : showComingSoon ? (
+          <div className="coming-soon-placeholder">
+            <div className="coming-soon-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <h2>Activity Coming Soon</h2>
+            <p>We&apos;re setting up your activity feed. You&apos;ll see a timeline of all marketing activities, completed tasks, content updates, and milestone alerts here once your campaigns are active.</p>
+            <div className="coming-soon-timeline">
+              <div className="timeline-item">
+                <div className="timeline-dot active"></div>
+                <span>Account setup complete</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Campaign launch in progress</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Activity tracking activation</span>
+              </div>
+            </div>
           </div>
         ) : (
           <>

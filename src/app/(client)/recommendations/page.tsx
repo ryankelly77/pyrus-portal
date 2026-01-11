@@ -225,15 +225,29 @@ export default function RecommendationsPage() {
           {client.status !== 'pending' && (
           <div className="growth-stage-hero">
             <div className="growth-stage-main">
-              <div className="stage-icon-large">🌿</div>
+              <div className="stage-icon-large">
+                {dbClient?.growth_stage === 'seedling' && '🌱'}
+                {dbClient?.growth_stage === 'sprouting' && '🌿'}
+                {dbClient?.growth_stage === 'blooming' && '🌸'}
+                {dbClient?.growth_stage === 'harvesting' && '🌾'}
+                {!dbClient?.growth_stage && '🌱'}
+              </div>
               <div className="stage-content">
                 <div className="stage-label">Your Growth Stage</div>
                 <div className="stage-name-large">
-                  Sprouting
-                  <span className="month-badge">Month 4</span>
+                  {dbClient?.growth_stage === 'seedling' && 'Seedling'}
+                  {dbClient?.growth_stage === 'sprouting' && 'Sprouting'}
+                  {dbClient?.growth_stage === 'blooming' && 'Blooming'}
+                  {dbClient?.growth_stage === 'harvesting' && 'Harvesting'}
+                  {!dbClient?.growth_stage && 'Seedling'}
+                  <span className="month-badge">Month 1</span>
                 </div>
                 <div className="stage-description-large">
-                  Building momentum with early results appearing. Your marketing foundation is taking root and you&apos;re on track for the Blooming stage!
+                  {dbClient?.growth_stage === 'seedling' && "Just getting started! We're laying the groundwork for your marketing success."}
+                  {dbClient?.growth_stage === 'sprouting' && "Building momentum with early results appearing. Your marketing foundation is taking root!"}
+                  {dbClient?.growth_stage === 'blooming' && "Your marketing is flourishing with strong results. Time to optimize and scale!"}
+                  {dbClient?.growth_stage === 'harvesting' && "Peak performance achieved! Reaping the rewards of your marketing investment."}
+                  {!dbClient?.growth_stage && "Just getting started! We're laying the groundwork for your marketing success."}
                 </div>
               </div>
               <div className="stage-stats">
@@ -253,25 +267,25 @@ export default function RecommendationsPage() {
             </div>
             <div className="growth-progress-section">
               <div className="progress-track-large">
-                <div className="progress-stage completed">
+                <div className={`progress-stage ${dbClient?.growth_stage === 'seedling' ? 'current' : ['sprouting', 'blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : 'current'}`}>
                   <div className="stage-icon">🌱</div>
                   <div className="progress-dot"></div>
                   <span>Seedling</span>
                 </div>
-                <div className="progress-line completed"></div>
-                <div className="progress-stage current">
+                <div className={`progress-line ${['sprouting', 'blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}></div>
+                <div className={`progress-stage ${dbClient?.growth_stage === 'sprouting' ? 'current' : ['blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}>
                   <div className="stage-icon">🌿</div>
                   <div className="progress-dot"></div>
                   <span>Sprouting</span>
                 </div>
-                <div className="progress-line"></div>
-                <div className="progress-stage">
+                <div className={`progress-line ${['blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}></div>
+                <div className={`progress-stage ${dbClient?.growth_stage === 'blooming' ? 'current' : dbClient?.growth_stage === 'harvesting' ? 'completed' : ''}`}>
                   <div className="stage-icon">🌸</div>
                   <div className="progress-dot"></div>
                   <span>Blooming</span>
                 </div>
-                <div className="progress-line"></div>
-                <div className="progress-stage">
+                <div className={`progress-line ${dbClient?.growth_stage === 'harvesting' ? 'completed' : ''}`}></div>
+                <div className={`progress-stage ${dbClient?.growth_stage === 'harvesting' ? 'current' : ''}`}>
                   <div className="stage-icon">🌾</div>
                   <div className="progress-dot"></div>
                   <span>Harvesting</span>
@@ -352,6 +366,42 @@ export default function RecommendationsPage() {
                 <p>Once you&apos;re an active client, we&apos;ll analyze your marketing data to provide AI-powered recommendations tailored to your growth goals.</p>
               </div>
             ) : (
+              <div className="coming-soon-placeholder">
+                <div className="coming-soon-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+                <h2>Smart Recommendations Coming Soon</h2>
+                <p>We&apos;re analyzing your marketing performance data to generate personalized AI-powered recommendations. Your first set of smart recommendations will be available in approximately 90 days.</p>
+                <div className="coming-soon-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-dot active"></div>
+                    <span>Campaign data collection started</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>AI analysis in progress</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Smart recommendations generation</span>
+                  </div>
+                </div>
+                <div className="refresh-info" style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#5A6358' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  First recommendations expected around <strong>90 days</strong> from your start date
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* TODO: Uncomment when smart recommendations are implemented */}
+          {/* Smart Recommendations Cards - For Future Use */}
+          {false && (
             <div className="rec-cards-grid">
               {/* Featured Recommendation: Scale Ads */}
               <div className="rec-card featured">
@@ -649,7 +699,6 @@ export default function RecommendationsPage() {
               </div>
             </div>
             )}
-          </div>
 
           {/* Original Plan Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'original-plan' ? 'active' : ''}`} id="original-plan-tab">
