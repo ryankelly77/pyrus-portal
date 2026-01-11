@@ -3659,16 +3659,16 @@ export default function ClientDetailPage() {
                                 )}
                                 {/* Content-specific statuses */}
                                 {contentStatus === 'published' && (
-                                  <span className="status-pill delivered" style={{ background: 'var(--success-bg)', color: 'var(--success-text)' }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                  <span className="status-pill published">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                     Published
                                   </span>
                                 )}
                                 {contentStatus === 'pending_review' && (
-                                  <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                  <span className="status-pill pending-review">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <circle cx="12" cy="12" r="10"></circle>
                                       <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
@@ -3676,8 +3676,8 @@ export default function ClientDetailPage() {
                                   </span>
                                 )}
                                 {contentStatus === 'needs_revision' && (
-                                  <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)' }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '4px' }}>
+                                  <span className="status-pill needs-revision">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                     </svg>
@@ -3699,16 +3699,30 @@ export default function ClientDetailPage() {
 
                             {/* Result highlight for result alerts - keyword/milestone metadata */}
                             {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.milestone) && (
-                              <div className="result-highlight">
+                              <div className={`result-highlight result-highlight-${resultAlertType}`}>
+                                <div className="result-icon">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    {resultAlertType === 'ranking' && <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>}
+                                    {resultAlertType === 'traffic' && <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>}
+                                    {resultAlertType === 'leads' && <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>}
+                                    {resultAlertType === 'milestone' && <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>}
+                                    {(resultAlertType === 'other' || !resultAlertType) && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>}
+                                  </svg>
+                                </div>
                                 <div className="result-text">
                                   {comm.metadata.keyword && (
-                                    <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
+                                    <>
+                                      <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
+                                      {comm.metadata.previousPosition && (
+                                        <span>Moved from position #{comm.metadata.previousPosition} to #{comm.metadata.newPosition} (up {comm.metadata.previousPosition - comm.metadata.newPosition} spots!){comm.metadata.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
+                                      )}
+                                    </>
                                   )}
                                   {comm.metadata.milestone && !comm.metadata.keyword && (
-                                    <strong>{comm.metadata.milestone}</strong>
-                                  )}
-                                  {comm.metadata.change && (
-                                    <span>{comm.metadata.change}</span>
+                                    <>
+                                      <strong>{comm.metadata.milestone}</strong>
+                                      {comm.metadata.change && <span>{comm.metadata.change}</span>}
+                                    </>
                                   )}
                                 </div>
                               </div>
@@ -3716,7 +3730,7 @@ export default function ClientDetailPage() {
 
                             {/* Review Content button for content_review */}
                             {comm.type === 'content_review' && comm.status === 'pending_review' && (
-                              <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }}>
+                              <button className="btn btn-dark btn-sm" style={{ marginTop: '12px' }}>
                                 Review Content
                               </button>
                             )}
@@ -3731,16 +3745,16 @@ export default function ClientDetailPage() {
 
                             {/* Clicked button indicator */}
                             {comm.clickedAt && comm.metadata?.clickedButton && (
-                              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--pyrus-green-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--pyrus-green)" strokeWidth="2" width="12" height="12">
+                              <div className="click-inline">
+                                <div className="click-icon">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                                     <polyline points="10 17 15 12 10 7"></polyline>
                                     <line x1="15" y1="12" x2="3" y2="12"></line>
                                   </svg>
                                 </div>
-                                <span>Clicked &quot;<strong>{comm.metadata.clickedButton}</strong>&quot; button</span>
-                                {comm.metadata.clickedAt && <span style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }}>{comm.metadata.clickedAt}</span>}
+                                <span className="click-text">Clicked &quot;<strong>{comm.metadata.clickedButton}</strong>&quot; button</span>
+                                {comm.metadata.clickedAt && <span className="click-time">{comm.metadata.clickedAt}</span>}
                               </div>
                             )}
 
