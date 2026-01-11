@@ -42,14 +42,24 @@ export async function POST(request: NextRequest) {
 
     let stripeCustomerId = client.stripe_customer_id
 
-    // Verify existing Stripe customer still exists
+    // Verify existing Stripe customer still exists and is not deleted
     if (stripeCustomerId) {
       try {
-        await stripe.customers.retrieve(stripeCustomerId)
-        console.log('[SetupIntent] Verified existing Stripe customer:', stripeCustomerId)
+        const existingCustomer = await stripe.customers.retrieve(stripeCustomerId)
+        // Check if customer was deleted (Stripe returns deleted: true instead of throwing)
+        if ('deleted' in existingCustomer && existingCustomer.deleted) {
+          console.log('[SetupIntent] Stripe customer was deleted, will create new one. Old ID:', stripeCustomerId)
+          stripeCustomerId = null
+          await prisma.clients.update({
+            where: { id: clientId },
+            data: { stripe_customer_id: null },
+          })
+        } else {
+          console.log('[SetupIntent] Verified existing Stripe customer:', stripeCustomerId)
+        }
       } catch (verifyError) {
         // Customer doesn't exist in Stripe - clear it so we create a new one
-        console.log('[SetupIntent] Stripe customer not found, will create new one. Old ID:', stripeCustomerId)
+        console.log('[SetupIntent] Stripe customer not found, will create new one. Old ID:', stripeCustomerId, 'Error:', verifyError)
         stripeCustomerId = null
         await prisma.clients.update({
           where: { id: clientId },
