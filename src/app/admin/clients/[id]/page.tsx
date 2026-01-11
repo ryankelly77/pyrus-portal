@@ -3438,29 +3438,46 @@ export default function ClientDetailPage() {
                     const dateStr = sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     const timeStr = sentDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' CST'
 
-                    // Get icon class based on communication type
+                    // Get result alert type from metadata
+                    const resultAlertType = comm.type === 'result_alert' && comm.metadata?.alertType
+                      ? comm.metadata.alertType as string
+                      : 'other'
+
+                    // Get icon class based on communication type - for result alerts, use alertType colors
                     const getIconClass = (type: string) => {
+                      if (type === 'result_alert') {
+                        switch (resultAlertType) {
+                          case 'ranking': return 'result-ranking'   // green
+                          case 'traffic': return 'result-traffic'   // blue
+                          case 'leads': return 'result-leads'       // purple
+                          case 'milestone': return 'result-milestone' // amber
+                          case 'other':
+                          default: return 'result-other'            // pink
+                        }
+                      }
                       switch (type) {
                         case 'email_invite': return 'email-invite'
                         case 'email_reminder': return 'email-reminder'
                         case 'email_general': return 'email-invite'
-                        case 'result_alert': return 'result-alert'
                         case 'chat': return 'chat'
                         case 'monthly_report': return 'monthly-report'
                         case 'content_approved':
                         case 'content_review':
-                        case 'content_revision': return 'monthly-report' // Green, document icon
+                        case 'content_revision': return 'monthly-report'
                         default: return 'email-invite'
                       }
                     }
 
                     // Get type label and CSS class
                     const getTypeLabel = (type: string) => {
+                      if (type === 'result_alert') {
+                        const alertLabel = comm.metadata?.alertTypeLabel || 'Result Alert'
+                        return { label: alertLabel, class: 'result' }
+                      }
                       switch (type) {
                         case 'email_invite': return { label: 'Invitation', class: 'invitation' }
                         case 'email_reminder': return { label: 'Reminder', class: 'reminder' }
                         case 'email_general': return { label: 'Email', class: 'invitation' }
-                        case 'result_alert': return { label: 'Result Alert', class: 'result' }
                         case 'chat': return { label: 'Chat', class: 'chat' }
                         case 'monthly_report': return { label: 'Report', class: 'report' }
                         case 'content_approved':
@@ -3470,10 +3487,22 @@ export default function ClientDetailPage() {
                       }
                     }
 
-                    // Get icon SVG content based on type
+                    // Get icon SVG content based on type - for result alerts, use alertType icons
                     const getIcon = (type: string) => {
                       if (type === 'result_alert') {
-                        return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        switch (resultAlertType) {
+                          case 'ranking':
+                            return <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>
+                          case 'traffic':
+                            return <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>
+                          case 'leads':
+                            return <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>
+                          case 'milestone':
+                            return <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>
+                          case 'other':
+                          default:
+                            return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        }
                       }
                       if (type === 'chat') {
                         return <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></>

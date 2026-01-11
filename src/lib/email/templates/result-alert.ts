@@ -1,7 +1,7 @@
 interface ResultAlertData {
   firstName: string
   clientName: string
-  alertType: 'ranking' | 'traffic' | 'lead' | 'conversion' | 'review' | 'custom'
+  alertType: 'ranking' | 'traffic' | 'leads' | 'milestone' | 'other' | string
   alertTypeLabel: string
   subject: string
   message: string
@@ -18,21 +18,25 @@ interface ResultAlertData {
 export function getResultAlertEmail(data: ResultAlertData): { subject: string; html: string; text: string } {
   const { firstName, clientName, alertType, alertTypeLabel, subject, message, portalUrl, metadata } = data
 
-  // Get icon and color based on alert type
+  // Get icon and color based on alert type - matches Send Result Alert modal exactly
   const getAlertStyle = () => {
     switch (alertType) {
       case 'ranking':
-        return { icon: '📈', color: '#059669', bgColor: '#ECFDF5' }
+        // Keyword Ranking - green
+        return { icon: '🔍', color: '#10B981', bgColor: '#D1FAE5' }
       case 'traffic':
-        return { icon: '🚀', color: '#2563EB', bgColor: '#EFF6FF' }
-      case 'lead':
-        return { icon: '🎯', color: '#7C3AED', bgColor: '#F5F3FF' }
-      case 'conversion':
-        return { icon: '💰', color: '#D97706', bgColor: '#FFFBEB' }
-      case 'review':
-        return { icon: '⭐', color: '#DC2626', bgColor: '#FEF2F2' }
+        // Traffic Milestone - blue
+        return { icon: '📈', color: '#3B82F6', bgColor: '#DBEAFE' }
+      case 'leads':
+        // Lead Increase - purple
+        return { icon: '👤', color: '#8B5CF6', bgColor: '#EDE9FE' }
+      case 'milestone':
+        // Campaign Milestone - amber
+        return { icon: '🏆', color: '#F59E0B', bgColor: '#FEF3C7' }
+      case 'other':
       default:
-        return { icon: '✨', color: '#324438', bgColor: '#F8FAF8' }
+        // Other Update - pink
+        return { icon: '⚡', color: '#EC4899', bgColor: '#FCE7F3' }
     }
   }
 
