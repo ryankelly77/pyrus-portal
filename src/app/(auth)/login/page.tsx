@@ -40,11 +40,11 @@ function LoginForm() {
     try {
       const meRes = await fetch('/api/auth/me')
       if (meRes.ok) {
-        const profile = await meRes.json()
+        const profile: { role?: string } = await meRes.json()
 
         // Admin roles go to /admin, clients go to /getting-started
         const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
-        if (profile?.role && adminRoles.includes(profile.role)) {
+        if (profile.role && adminRoles.includes(profile.role)) {
           finalRedirect = '/admin'
         } else if (!searchParams.get('redirect')) {
           // Only default to /getting-started if no explicit redirect was requested
