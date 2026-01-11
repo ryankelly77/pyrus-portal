@@ -19,7 +19,8 @@ function RegisterForm() {
   const supabase = createClient()
 
   // Get redirect URL from query params (e.g., ?redirect=/recommendations)
-  const redirectUrl = searchParams.get('redirect') || '/dashboard'
+  // Default to /getting-started for client portal
+  const redirectUrl = searchParams.get('redirect') || '/getting-started'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -325,7 +326,7 @@ function RegisterForm() {
           {/* Sign in link */}
           <div className="login-footer">
             <span>Already have an account? </span>
-            <Link href={`/login${redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
+            <Link href={`/login${redirectUrl !== '/getting-started' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
               Sign in
             </Link>
           </div>

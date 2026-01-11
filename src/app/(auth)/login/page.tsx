@@ -16,7 +16,8 @@ function LoginForm() {
   const supabase = createClient()
 
   // Get redirect URL from query params (e.g., ?redirect=/recommendations)
-  const redirectUrl = searchParams.get('redirect') || '/dashboard'
+  // Default to /getting-started for client portal
+  const redirectUrl = searchParams.get('redirect') || '/getting-started'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,7 +124,7 @@ function LoginForm() {
 
           <div className="login-register">
             <span>New to Pyrus? </span>
-            <Link href={`/register${redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
+            <Link href={`/register${redirectUrl !== '/getting-started' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
               Create an account
             </Link>
           </div>
