@@ -41,6 +41,8 @@ interface DBClient {
   growth_stage: string | null
   avatar_color: string | null
   notes: string | null
+  referred_by: string | null
+  referral_source: string | null
   created_at: string
   // Integration fields
   agency_dashboard_share_key: string | null
@@ -320,6 +322,8 @@ export default function ClientDetailPage() {
     website: '',
     growthStage: 'prospect' as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
     internalNotes: '',
+    referredBy: '',
+    referralSource: '',
     avatarColor: '#885430',
     // Integrations
     agencyDashboardShareKey: '',
@@ -425,6 +429,8 @@ export default function ClientDetailPage() {
           status: editFormData.status,
           growthStage: editFormData.growthStage,
           notes: editFormData.internalNotes,
+          referredBy: editFormData.referredBy,
+          referralSource: editFormData.referralSource,
           avatarColor: editFormData.avatarColor,
           // Integration fields
           agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
@@ -470,6 +476,8 @@ export default function ClientDetailPage() {
             email: data.contact_email || '',
             growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
             internalNotes: data.notes || '',
+            referredBy: data.referred_by || '',
+            referralSource: data.referral_source || '',
             avatarColor: data.avatar_color || getAvatarColor(data.name),
             // Integration fields
             agencyDashboardShareKey: data.agency_dashboard_share_key || '',
@@ -4250,6 +4258,38 @@ export default function ClientDetailPage() {
                       value={editFormData.internalNotes}
                       onChange={(e) => setEditFormData({ ...editFormData, internalNotes: e.target.value })}
                     />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label htmlFor="referredBy">Referred By</label>
+                      <input
+                        type="text"
+                        id="referredBy"
+                        className="form-control"
+                        value={editFormData.referredBy}
+                        onChange={(e) => setEditFormData({ ...editFormData, referredBy: e.target.value })}
+                        placeholder="Name of referrer"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="referralSource">Referral Source</label>
+                      <select
+                        id="referralSource"
+                        className="form-control"
+                        value={editFormData.referralSource}
+                        onChange={(e) => setEditFormData({ ...editFormData, referralSource: e.target.value })}
+                      >
+                        <option value="">Select source...</option>
+                        <option value="client">Existing Client</option>
+                        <option value="partner">Partner</option>
+                        <option value="employee">Employee</option>
+                        <option value="website">Website</option>
+                        <option value="social">Social Media</option>
+                        <option value="event">Event</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
                   </div>
                 </>
               )}

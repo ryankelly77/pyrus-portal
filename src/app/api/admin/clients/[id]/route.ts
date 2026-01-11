@@ -46,6 +46,8 @@ export async function PATCH(
       growthStage,
       status,
       notes,
+      referredBy,
+      referralSource,
       avatarColor,
       // Integration fields
       agencyDashboardShareKey,
@@ -63,6 +65,8 @@ export async function PATCH(
         ...(growthStage !== undefined && { growth_stage: growthStage || null }),
         ...(status !== undefined && { status }),
         ...(notes !== undefined && { notes: notes || null }),
+        ...(referredBy !== undefined && { referred_by: referredBy || null }),
+        ...(referralSource !== undefined && { referral_source: referralSource || null }),
         ...(avatarColor !== undefined && { avatar_color: avatarColor || null }),
         // Integration fields
         ...(agencyDashboardShareKey !== undefined && { agency_dashboard_share_key: agencyDashboardShareKey || null }),

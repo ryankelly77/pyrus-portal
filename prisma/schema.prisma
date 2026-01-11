@@ -26,6 +26,8 @@ model clients {
   agency_dashboard_share_key String?
   landingsite_preview_url   String?
   notes                     String?
+  referred_by               String?
+  referral_source           String?
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
