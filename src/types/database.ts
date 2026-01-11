@@ -49,7 +49,7 @@ export type Database = {
           contact_email: string | null
           avatar_url: string | null
           avatar_color: string | null
-          growth_stage: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
+          growth_stage: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting' | null
           status: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend: number
           start_date: string | null
@@ -67,7 +67,7 @@ export type Database = {
           contact_email?: string | null
           avatar_url?: string | null
           avatar_color?: string | null
-          growth_stage?: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
+          growth_stage?: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting' | null
           status?: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend?: number
           start_date?: string | null
@@ -85,7 +85,7 @@ export type Database = {
           contact_email?: string | null
           avatar_url?: string | null
           avatar_color?: string | null
-          growth_stage?: 'seed' | 'sprout' | 'bloom' | 'harvest' | null
+          growth_stage?: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting' | null
           status?: 'active' | 'paused' | 'churned' | 'prospect'
           monthly_spend?: number
           start_date?: string | null

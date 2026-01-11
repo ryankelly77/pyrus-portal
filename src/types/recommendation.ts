@@ -88,14 +88,9 @@ export interface ClaimHints {
   add99Product: boolean
 }
 
-// Client data
-export interface Client {
-  id: string
-  name: string
-  email: string
-  initials: string
-  avatarColor: string
-}
+// Re-export Client from client.ts for backwards compatibility
+// New code should import from '@/types/client' directly
+export type { Client } from './client'
 
 // Complete recommendation state for a tier
 export interface TierState {

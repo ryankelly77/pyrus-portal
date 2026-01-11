@@ -487,9 +487,61 @@ All shared types should be defined in `/src/types/`:
 
 | File | Contents |
 |------|----------|
-| `database.ts` | Prisma-generated types and extensions |
-| `api.ts` | API request/response types |
-| `client.ts` | Client-related interfaces |
+| `index.ts` | Centralized exports - import from `@/types` |
+| `database.ts` | Prisma-generated types and Supabase types |
+| `client.ts` | Client types, GrowthStage, ClientStatus enums |
+| `subscription.ts` | Subscription types and SubscriptionStatus enum |
 | `recommendation.ts` | Recommendation and pricing types |
 
-**Rule**: Page-level interfaces should import from `/src/types/`, not define their own.
+**Rule**: Page-level interfaces should import from `@/types`, not define their own.
+
+### snake_case vs camelCase Convention
+
+Database records use `snake_case` (matching PostgreSQL/Prisma). Frontend components use `camelCase`.
+
+**Pattern**: Transform at API boundary using transform functions:
+
+```typescript
+// In API route - return raw DB format
+const dbClient = await prisma.clients.findUnique({ where: { id } })
+return NextResponse.json(dbClient) // snake_case
+
+// In frontend - transform for React
+import { transformDBClient, type DBClient } from '@/types'
+
+const res = await fetch(`/api/admin/clients/${id}`)
+const dbClient: DBClient = await res.json()
+const client = transformDBClient(dbClient) // camelCase
+```
+
+**Available transforms:**
+- `transformDBClient(db: DBClient): Client`
+- `transformDBSubscription(db: SubscriptionWithProducts): Subscription`
+
+### Decimal Handling
+
+Prisma returns `Decimal` objects for money fields. Use the `parseDecimal` utility:
+
+```typescript
+import { parseDecimal, formatCurrency } from '@/lib/utils'
+
+const amount = parseDecimal(subscription.monthly_amount) // number
+const display = formatCurrency(amount) // "$99.00"
+```
+
+### Canonical Enums
+
+**Growth Stages** (in order of progression):
+```typescript
+type GrowthStage = 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
+```
+
+**Client Status**:
+```typescript
+type ClientStatus = 'active' | 'paused' | 'churned' | 'prospect'
+```
+
+**Subscription Status**:
+```typescript
+type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'paused' | 'incomplete'
+```
