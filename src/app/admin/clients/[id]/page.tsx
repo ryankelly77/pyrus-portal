@@ -3543,8 +3543,13 @@ export default function ClientDetailPage() {
                               <p className="comm-body preview">{comm.body}</p>
                             )}
 
-                            {/* Result highlight for result alerts */}
-                            {comm.type === 'result_alert' && comm.metadata && (
+                            {/* Result alert body/description */}
+                            {comm.type === 'result_alert' && comm.body && (
+                              <p className="comm-body preview">{comm.body}</p>
+                            )}
+
+                            {/* Result highlight for result alerts - keyword/milestone metadata */}
+                            {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.milestone) && (
                               <div className="result-highlight">
                                 <div className="result-text">
                                   {comm.metadata.keyword && (

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendEmail, isMailgunConfigured } from '@/lib/email/mailgun'
+import { getResultAlertEmail } from '@/lib/email/templates/result-alert'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,6 +112,54 @@ export async function POST(
       )
     }
 
+    // Get client info for email
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { name: true, contact_name: true, contact_email: true },
+    })
+
+    // Determine initial status - will be updated after email send
+    let emailStatus = status
+    let emailMessageId: string | undefined
+
+    // Send email for result alerts if recipient email is provided
+    if (type === 'result_alert' && recipientEmail && isMailgunConfigured()) {
+      try {
+        const firstName = client?.contact_name?.split(' ')[0] || 'there'
+        const clientName = client?.name || 'your business'
+
+        const emailContent = getResultAlertEmail({
+          firstName,
+          clientName,
+          alertType: metadata?.alertType || 'custom',
+          alertTypeLabel: metadata?.alertTypeLabel || 'Result Alert',
+          subject: subject || title,
+          message: commBody || '',
+          metadata: metadata,
+        })
+
+        const result = await sendEmail({
+          to: recipientEmail,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text,
+          tags: ['result-alert', metadata?.alertType || 'custom'],
+        })
+
+        if (result.success) {
+          emailStatus = 'delivered'
+          emailMessageId = result.messageId
+          console.log(`[Communications] Result alert email sent to ${recipientEmail}`)
+        } else {
+          emailStatus = 'failed'
+          console.error(`[Communications] Failed to send result alert: ${result.error}`)
+        }
+      } catch (emailError) {
+        console.error('[Communications] Error sending result alert email:', emailError)
+        emailStatus = 'failed'
+      }
+    }
+
     const communication = await prisma.client_communications.create({
       data: {
         client_id: clientId,
@@ -117,8 +167,11 @@ export async function POST(
         title,
         subject,
         body: commBody,
-        status,
-        metadata,
+        status: emailStatus,
+        metadata: {
+          ...metadata,
+          ...(emailMessageId && { mailgunMessageId: emailMessageId }),
+        },
         highlight_type: highlightType,
         recipient_email: recipientEmail,
         created_by: createdBy,
