@@ -35,8 +35,8 @@ export function getResultAlertEmail(data: ResultAlertData): { subject: string; h
         return { icon: '🏆', color: '#F59E0B', bgColor: '#FEF3C7' }
       case 'other':
       default:
-        // Other Update - pink
-        return { icon: '⚡', color: '#EC4899', bgColor: '#FCE7F3' }
+        // Other Update - darker pink
+        return { icon: '⚡', color: '#DB2777', bgColor: '#FDF2F8' }
     }
   }
 

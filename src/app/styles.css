@@ -1211,14 +1211,14 @@
         }
 
         .comm-icon.result-other {
-            background: #FCE7F3;
-            color: #EC4899;
+            background: #FDF2F8;
+            color: #DB2777;
         }
 
         /* Legacy fallback */
         .comm-icon.result-alert {
-            background: #FCE7F3;
-            color: #EC4899;
+            background: #FDF2F8;
+            color: #DB2777;
         }
 
         .comm-icon.chat {

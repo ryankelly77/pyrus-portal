@@ -504,8 +504,8 @@ export default function ClientDetailPage() {
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
         </svg>
       ),
-      color: '#EC4899',
-      bgColor: '#FCE7F3',
+      color: '#DB2777',
+      bgColor: '#FDF2F8',
       defaultSubject: 'Marketing Update',
       placeholder: 'Write a custom message about the results you want to share...',
     },
@@ -530,6 +530,7 @@ export default function ClientDetailPage() {
   }
   const [communications, setCommunications] = useState<Communication[]>([])
   const [communicationsLoading, setCommunicationsLoading] = useState(false)
+  const [commFilter, setCommFilter] = useState<'all' | 'emails' | 'alerts' | 'chat' | 'content'>('all')
 
   // Resend invitation state
   const [isResendingInvite, setIsResendingInvite] = useState(false)
@@ -3349,54 +3350,129 @@ export default function ClientDetailPage() {
             {/* Stats Overview */}
             {(() => {
               // Calculate stats from communications
-              // Include result_alert in email types since they're sent via email
-              const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'result_alert']
-              const allEmails = communications.filter(c => emailTypes.includes(c.type))
-              // Count as delivered if status is sent, delivered, opened, or clicked (sent means it was sent successfully)
-              const deliveredEmails = allEmails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
-              const failedEmails = allEmails.filter(c => c.status === 'failed')
-              const bouncedEmails = allEmails.filter(c => c.status === 'bounced')
+              const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+              const emails = communications.filter(c => emailTypes.includes(c.type))
+              const deliveredEmails = emails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const failedEmails = emails.filter(c => c.status === 'failed')
+              const bouncedEmails = emails.filter(c => c.status === 'bounced')
+
               const resultAlerts = communications.filter(c => c.type === 'result_alert')
-              // Opened means opened or clicked
               const openedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
-              const deliveredAlerts = resultAlerts.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
-              const failedAlerts = resultAlerts.filter(c => c.status === 'failed' || c.status === 'bounced')
-              const openedEmails = allEmails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
-              const openRate = deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0
+
+              const chatMessages = communications.filter(c => c.type === 'chat')
+              const contentReviews = communications.filter(c => c.type.startsWith('content_'))
+              const pendingContent = contentReviews.filter(c => c.status === 'pending_review' || c.status === 'needs_revision')
+
+              const allEmailTypes = [...emails, ...resultAlerts]
+              const openedEmails = allEmailTypes.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              const deliveredForRate = allEmailTypes.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const openRate = deliveredForRate.length > 0 ? Math.round((openedEmails.length / deliveredForRate.length) * 100) : 0
 
               // Build detail strings
               const emailDetailParts = [`${deliveredEmails.length} delivered`]
               if (failedEmails.length > 0) emailDetailParts.push(`${failedEmails.length} failed`)
               if (bouncedEmails.length > 0) emailDetailParts.push(`${bouncedEmails.length} bounced`)
 
-              const alertDetailParts = [`${deliveredAlerts.length} sent`, `${openedAlerts.length} opened`]
-              if (failedAlerts.length > 0) alertDetailParts.push(`${failedAlerts.length} failed`)
+              const alertDetail = openedAlerts.length === resultAlerts.length && resultAlerts.length > 0
+                ? (resultAlerts.length === 1 ? 'Opened' : 'All opened')
+                : `${openedAlerts.length} opened`
 
               return (
-                <div className="stats-grid stats-grid-4">
+                <div className="stats-grid">
                   <div className="stat-card">
                     <div className="stat-label">Total Communications</div>
                     <div className="stat-value">{communications.length}</div>
-                    <div className="stat-detail">All time</div>
+                    <div className="stat-detail">Last 30 days</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Emails Sent</div>
-                    <div className="stat-value">{allEmails.length}</div>
+                    <div className="stat-value">{emails.length}</div>
                     <div className="stat-detail">{emailDetailParts.join(', ')}</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Result Alerts</div>
                     <div className="stat-value purple">{resultAlerts.length}</div>
-                    <div className="stat-detail">{alertDetailParts.join(', ')}</div>
+                    <div className="stat-detail">{alertDetail}</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Chat Messages</div>
+                    <div className="stat-value blue">{chatMessages.length}</div>
+                    <div className="stat-detail">From HighLevel</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Email Open Rate</div>
                     <div className="stat-value success">{openRate}%</div>
-                    <div className="stat-detail">{openedEmails.length} of {deliveredEmails.length} opened</div>
+                    <div className="stat-detail">{openedEmails.length} of {deliveredForRate.length} delivered</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Content Reviews</div>
+                    <div className="stat-value" style={{ color: 'var(--pyrus-green)' }}>{contentReviews.length}</div>
+                    <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending approval` : 'All reviewed'}</div>
                   </div>
                 </div>
               )
             })()}
+
+            {/* Filter Bar */}
+            <div className="filter-bar">
+              <div className="filter-tabs">
+                <button className={`filter-tab ${commFilter === 'all' ? 'active' : ''}`} onClick={() => setCommFilter('all')}>
+                  All
+                </button>
+                <button className={`filter-tab ${commFilter === 'emails' ? 'active' : ''}`} onClick={() => setCommFilter('emails')}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  Emails
+                </button>
+                <button className={`filter-tab ${commFilter === 'alerts' ? 'active' : ''}`} onClick={() => setCommFilter('alerts')}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  Result Alerts
+                </button>
+                <button className={`filter-tab ${commFilter === 'chat' ? 'active' : ''}`} onClick={() => setCommFilter('chat')} disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  Chat
+                </button>
+                <button className={`filter-tab ${commFilter === 'content' ? 'active' : ''}`} onClick={() => setCommFilter('content')} disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                  Content
+                </button>
+              </div>
+              <div className="filter-actions">
+                <button className="btn btn-secondary btn-sm" onClick={refreshCommunications} disabled={communicationsLoading}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  {communicationsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+                <button className="btn btn-secondary btn-sm" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  Date Range
+                </button>
+                <button className="btn btn-secondary btn-sm" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Export
+                </button>
+              </div>
+            </div>
 
             {/* Communication Timeline */}
             <div className="timeline-card">
@@ -3405,17 +3481,6 @@ export default function ClientDetailPage() {
                   <h3>Communication Timeline</h3>
                   <p>All client communications in chronological order</p>
                 </div>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={refreshCommunications}
-                  disabled={communicationsLoading}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '6px' }}>
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                  </svg>
-                  {communicationsLoading ? 'Refreshing...' : 'Refresh'}
-                </button>
               </div>
 
               <ul className="timeline-list">
@@ -3432,7 +3497,36 @@ export default function ClientDetailPage() {
                     </div>
                   </li>
                 ) : (
-                  communications.map(comm => {
+                  (() => {
+                    // Filter communications based on selected filter
+                    const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+                    const filteredComms = communications.filter(comm => {
+                      switch (commFilter) {
+                        case 'emails':
+                          return emailTypes.includes(comm.type)
+                        case 'alerts':
+                          return comm.type === 'result_alert'
+                        case 'chat':
+                          return comm.type === 'chat'
+                        case 'content':
+                          return comm.type.startsWith('content_')
+                        case 'all':
+                        default:
+                          return true
+                      }
+                    })
+
+                    if (filteredComms.length === 0) {
+                      return (
+                        <li className="timeline-item">
+                          <div className="timeline-content" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                            No {commFilter === 'all' ? 'communications' : commFilter} found
+                          </div>
+                        </li>
+                      )
+                    }
+
+                    return filteredComms.map(comm => {
                     // Format date and time
                     const sentDate = comm.sentAt ? new Date(comm.sentAt) : new Date()
                     const dateStr = sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -3671,6 +3765,7 @@ export default function ClientDetailPage() {
                       </li>
                     )
                   })
+                  })()
                 )}
               </ul>
             </div>
