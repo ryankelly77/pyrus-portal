@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+// Initialize Stripe
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 
@@ -46,6 +52,96 @@ interface SubscriptionData {
   clientSince: string | null
 }
 
+// Payment Method Form Component (used inside Elements provider)
+function PaymentMethodForm({
+  onSuccess,
+  onError,
+  onProcessingChange,
+  viewingAs,
+}: {
+  onSuccess: () => void
+  onError: (error: string) => void
+  onProcessingChange: (processing: boolean) => void
+  viewingAs: string | null
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isReady, setIsReady] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!stripe || !elements) return
+
+    onProcessingChange(true)
+
+    try {
+      const { error: setupError, setupIntent } = await stripe.confirmSetup({
+        elements,
+        confirmParams: {
+          return_url: window.location.href,
+        },
+        redirect: 'if_required',
+      })
+
+      if (setupError) {
+        onError(setupError.message || 'Failed to save payment method')
+        onProcessingChange(false)
+        return
+      }
+
+      if (!setupIntent || setupIntent.status !== 'succeeded') {
+        return // Will redirect if required
+      }
+
+      // Save as default payment method
+      const response = await fetch('/api/client/payment-method', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: viewingAs || undefined,
+          paymentMethodId: setupIntent.payment_method,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        onError(data.error || 'Failed to save payment method')
+        onProcessingChange(false)
+        return
+      }
+
+      onSuccess()
+    } catch (err) {
+      console.error('Payment method error:', err)
+      onError('An unexpected error occurred')
+      onProcessingChange(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <PaymentElement
+        onReady={() => setIsReady(true)}
+        options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['card', 'us_bank_account'],
+          business: { name: 'Pyrus Digital Media' },
+        }}
+      />
+      <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+        <button
+          type="submit"
+          disabled={!stripe || !elements || !isReady}
+          className="btn btn-primary"
+        >
+          Save Payment Method
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
@@ -56,6 +152,50 @@ export default function SettingsPage() {
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null)
   const [subscriptionLoading, setSubscriptionLoading] = useState(false)
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null)
+
+  // Payment method modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [paymentProcessing, setPaymentProcessing] = useState(false)
+
+  // Open payment method modal
+  const handleOpenPaymentModal = async () => {
+    setShowPaymentModal(true)
+    setPaymentLoading(true)
+    setPaymentError(null)
+    setPaymentClientSecret(null)
+
+    try {
+      let url = '/api/client/payment-method'
+      if (viewingAs) {
+        url += `?clientId=${viewingAs}`
+      }
+
+      const res = await fetch(url)
+      if (!res.ok) {
+        throw new Error('Failed to initialize payment form')
+      }
+
+      const data = await res.json()
+      setPaymentClientSecret(data.clientSecret)
+    } catch (err) {
+      console.error('Error opening payment modal:', err)
+      setPaymentError('Failed to load payment form. Please try again.')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  // Handle successful payment method update
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false)
+    setPaymentClientSecret(null)
+    // Refresh subscription data to show new payment method
+    setSubscriptionData(null)
+    setSubscriptionLoading(false)
+  }
 
   // Fetch subscription data when switching to subscription or billing tab
   useEffect(() => {
@@ -493,7 +633,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <div className="settings-card-footer">
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={handleOpenPaymentModal}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                     <line x1="1" y1="10" x2="23" y2="10"></line>
@@ -748,6 +888,83 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Method Modal */}
+      {showPaymentModal && (
+        <div className="privacy-modal-overlay" onClick={() => !paymentProcessing && setShowPaymentModal(false)}>
+          <div className="privacy-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="privacy-modal-header">
+              <h2>{subscriptionData?.paymentMethods?.length ? 'Update Payment Method' : 'Add Payment Method'}</h2>
+              <button
+                className="privacy-modal-close"
+                onClick={() => setShowPaymentModal(false)}
+                disabled={paymentProcessing}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="privacy-modal-content" style={{ padding: '1.5rem' }}>
+              {paymentLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                  <div className="spinner" style={{ width: 40, height: 40 }}></div>
+                </div>
+              ) : paymentError && !paymentClientSecret ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#DC2626' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ margin: '0 auto 1rem' }}>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  <p>{paymentError}</p>
+                  <button className="btn btn-secondary" onClick={handleOpenPaymentModal} style={{ marginTop: '1rem' }}>
+                    Try Again
+                  </button>
+                </div>
+              ) : paymentClientSecret && stripePromise ? (
+                <>
+                  {paymentError && (
+                    <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#FEE2E2', borderRadius: '8px', color: '#DC2626', fontSize: '0.875rem' }}>
+                      {paymentError}
+                    </div>
+                  )}
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret: paymentClientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#324438',
+                          fontFamily: 'Inter, system-ui, sans-serif',
+                        },
+                      },
+                    }}
+                  >
+                    <PaymentMethodForm
+                      onSuccess={handlePaymentSuccess}
+                      onError={setPaymentError}
+                      onProcessingChange={setPaymentProcessing}
+                      viewingAs={viewingAs}
+                    />
+                  </Elements>
+                  {subscriptionData?.paymentMethods?.length ? (
+                    <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#5A6358', textAlign: 'center' }}>
+                      Adding a new payment method will replace your current card on file.
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                  <p>Payment system is not available. Please try again later.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
