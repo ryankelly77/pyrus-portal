@@ -1,3 +1,4 @@
+// Root layout
 import type { Metadata } from 'next'
 import { DM_Sans } from 'next/font/google'
 import './styles.css'
