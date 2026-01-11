@@ -65,8 +65,7 @@ export async function GET(request: NextRequest) {
         p.email,
         p.client_id,
         p.created_at,
-        c.name as client_name,
-        c.contact_phone as phone
+        c.name as client_name
       FROM profiles p
       JOIN clients c ON c.id = p.client_id
       WHERE p.client_id IS NOT NULL
@@ -87,7 +86,6 @@ export async function GET(request: NextRequest) {
         name: clientUser.name || clientUser.email?.split('@')[0] || 'Unknown',
         initials,
         email: clientUser.email,
-        phone: clientUser.phone || '',
         clientId: clientUser.client_id,
         clientName: clientUser.client_name,
         status: 'registered',
