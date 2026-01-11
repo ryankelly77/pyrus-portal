@@ -60,7 +60,7 @@ interface DBClient {
   landingsite_preview_url: string | null
 }
 
-type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
+type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations' | 'subscriptions' | 'billing'
 
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
 
@@ -1381,6 +1381,12 @@ export default function ClientDetailPage() {
           <button className={`tab-btn ${activeTab === 'communication' ? 'active' : ''}`} onClick={() => setActiveTab('communication')}>
             Communication
             {!hasActiveSubscriptions && <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>}
+          </button>
+          <button className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`} onClick={() => setActiveTab('subscriptions')}>
+            Subscriptions & Services
+          </button>
+          <button className={`tab-btn ${activeTab === 'billing' ? 'active' : ''}`} onClick={() => setActiveTab('billing')}>
+            Payment & Billing
           </button>
         </div>
 
@@ -4319,6 +4325,201 @@ export default function ClientDetailPage() {
                 })()}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== SUBSCRIPTIONS & SERVICES TAB ==================== */}
+        {activeTab === 'subscriptions' && (
+          <div className="subscriptions-tab">
+            <div className="tab-header">
+              <h2>Subscriptions & Services</h2>
+              <p>Manage active subscriptions and purchased services</p>
+            </div>
+
+            {subscriptionsLoading ? (
+              <div className="loading-state">Loading subscriptions...</div>
+            ) : subscriptions.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                </div>
+                <h3>No Active Subscriptions</h3>
+                <p>This client does not have any active subscriptions yet.</p>
+              </div>
+            ) : (
+              <div className="subscriptions-grid">
+                {subscriptions.map((subscription) => (
+                  <div key={subscription.id} className="subscription-card">
+                    <div className="subscription-header">
+                      <div className="subscription-status">
+                        <span className={`status-badge ${subscription.status}`}>
+                          {subscription.status?.charAt(0).toUpperCase()}{subscription.status?.slice(1)}
+                        </span>
+                      </div>
+                      <div className="subscription-amount">
+                        ${Number(subscription.monthly_amount || 0).toLocaleString()}<span>/mo</span>
+                      </div>
+                    </div>
+
+                    <div className="subscription-period">
+                      <div className="period-item">
+                        <span className="period-label">Started</span>
+                        <span className="period-value">
+                          {subscription.current_period_start
+                            ? new Date(subscription.current_period_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="period-item">
+                        <span className="period-label">Next Billing</span>
+                        <span className="period-value">
+                          {subscription.current_period_end
+                            ? new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="subscription-services">
+                      <h4>Services Included</h4>
+                      <ul className="services-list">
+                        {subscription.subscription_items.map((item) => (
+                          <li key={item.id} className="service-item">
+                            <div className="service-info">
+                              <span className="service-name">{item.product?.name || item.bundle?.name || 'Unknown Service'}</span>
+                              <span className="service-category">{item.product?.category || 'Bundle'}</span>
+                            </div>
+                            <span className="service-price">
+                              ${Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0).toLocaleString()}/mo
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {subscription.subscription_history && subscription.subscription_history.length > 0 && (
+                      <div className="subscription-history">
+                        <h4>History</h4>
+                        <ul className="history-list">
+                          {subscription.subscription_history.slice(0, 5).map((entry) => (
+                            <li key={entry.id} className="history-item">
+                              <span className="history-date">
+                                {entry.created_at ? new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                              </span>
+                              <span className="history-action">{entry.action}</span>
+                              {entry.details && <span className="history-details">{entry.details}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== PAYMENT & BILLING TAB ==================== */}
+        {activeTab === 'billing' && (
+          <div className="billing-tab">
+            <div className="tab-header">
+              <h2>Payment & Billing</h2>
+              <p>View payment methods, invoices, and billing history</p>
+            </div>
+
+            <div className="billing-grid">
+              {/* Payment Method Section */}
+              <div className="billing-section">
+                <div className="section-header">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    Payment Method
+                  </h3>
+                </div>
+                <div className="payment-method-card">
+                  <div className="card-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    <span>Payment method on file via Stripe</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Billing Summary Section */}
+              <div className="billing-section">
+                <div className="section-header">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Billing Summary
+                  </h3>
+                </div>
+                <div className="billing-summary">
+                  <div className="summary-row">
+                    <span className="summary-label">Monthly Total</span>
+                    <span className="summary-value">
+                      ${subscriptions.reduce((sum, sub) => sum + Number(sub.monthly_amount || 0), 0).toLocaleString()}/mo
+                    </span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Active Subscriptions</span>
+                    <span className="summary-value">{subscriptions.filter(s => s.status === 'active').length}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Next Billing Date</span>
+                    <span className="summary-value">
+                      {subscriptions.length > 0 && subscriptions[0].current_period_end
+                        ? new Date(subscriptions[0].current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Invoices Section */}
+              <div className="billing-section full-width">
+                <div className="section-header">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Recent Invoices
+                  </h3>
+                </div>
+                <div className="invoices-placeholder">
+                  <p>Invoice history will be available via Stripe integration.</p>
+                  {dbClient?.stripe_customer_id && (
+                    <a
+                      href={`https://dashboard.stripe.com/customers/${dbClient.stripe_customer_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                      View in Stripe
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
