@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   const [selectedTier, setSelectedTier] = useState<string | null>(tier)
   const [recommendationId, setRecommendationId] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
-  const [isLoading, setIsLoading] = useState(!!tier)
+  const [isLoading, setIsLoading] = useState(true) // Always start loading
   const [mounted, setMounted] = useState(false)
 
   // Track mount state to prevent SSR/hydration flash
@@ -157,14 +157,16 @@ export default function CheckoutPage() {
       if (itemId && productCatalog[itemId]) {
         setCartItems([productCatalog[itemId]])
       }
+      setIsLoading(false)
       return
     }
 
+    // Don't fetch until we have a client ID - prevents premature isLoading=false
+    const clientId = viewingAs || client.id
+    if (!clientId) return
+
     async function fetchRecommendationItems() {
       try {
-        const clientId = viewingAs || client.id
-        if (!clientId) return
-
         const res = await fetch(`/api/client/recommendation?clientId=${clientId}`)
         if (res.ok) {
           const data = await res.json()
@@ -532,6 +534,9 @@ export default function CheckoutPage() {
                   <div className="stripe-loading">
                     <div className="spinner" style={{ width: 24, height: 24 }}></div>
                     <p>Loading payment form...</p>
+                    <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                      Client ID: {client.id ? 'Ready' : 'Loading...'}
+                    </p>
                   </div>
                 ) : (
                   <Elements

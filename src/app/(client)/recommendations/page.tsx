@@ -113,12 +113,17 @@ export default function RecommendationsPage() {
 
   // Fetch recommendation data from database
   useEffect(() => {
+    // Check if viewingAs is a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const isUUID = viewingAs && uuidRegex.test(viewingAs)
+
+    // Don't fetch until we have a valid identifier - prevents premature isLoading=false
+    if (!isUUID && !client.id && !client.name) {
+      return
+    }
+
     async function fetchRecommendation() {
       try {
-        // Check if viewingAs is a UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        const isUUID = viewingAs && uuidRegex.test(viewingAs)
-
         // Use clientId if we have a UUID, otherwise use clientName
         let apiUrl: string
         if (isUUID) {
