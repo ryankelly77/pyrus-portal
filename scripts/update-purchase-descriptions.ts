@@ -17,10 +17,12 @@ async function updatePurchaseDescriptions() {
   for (const purchase of purchases) {
     const metadata = purchase.metadata as Record<string, unknown> || {}
     const tier = metadata.tier as string | undefined
-    const monthlyTotal = (metadata.monthlyTotal as number) || 0
+    // Handle both formats: monthlyTotal/onetimeTotal (from checkout) and amount (from webhook)
+    const monthlyTotal = (metadata.monthlyTotal as number) || (metadata.amount as number) || 0
     const onetimeTotal = (metadata.onetimeTotal as number) || 0
     const couponCode = metadata.couponCode as string | undefined
     const isFreeOrder = metadata.isFreeOrder as boolean | undefined
+    const discountPercent = metadata.discountPercent as number | undefined
 
     console.log('\nPurchase ID:', purchase.id)
     console.log('  Current desc:', purchase.description)
@@ -39,6 +41,8 @@ async function updatePurchaseDescriptions() {
 
     if (isFreeOrder && couponCode) {
       newDesc += ` (100% off with ${couponCode})`
+    } else if (discountPercent && couponCode) {
+      newDesc += ` (${discountPercent}% off with ${couponCode})`
     } else if (couponCode) {
       newDesc += ` (with coupon: ${couponCode})`
     }
