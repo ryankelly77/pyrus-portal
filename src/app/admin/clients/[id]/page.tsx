@@ -3354,13 +3354,23 @@ export default function ClientDetailPage() {
               const allEmails = communications.filter(c => emailTypes.includes(c.type))
               // Count as delivered if status is sent, delivered, opened, or clicked (sent means it was sent successfully)
               const deliveredEmails = allEmails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
-              const failedEmails = allEmails.filter(c => c.status === 'failed' || c.status === 'bounced')
+              const failedEmails = allEmails.filter(c => c.status === 'failed')
+              const bouncedEmails = allEmails.filter(c => c.status === 'bounced')
               const resultAlerts = communications.filter(c => c.type === 'result_alert')
-              // Viewed means opened or clicked
-              const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              // Opened means opened or clicked
+              const openedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
               const deliveredAlerts = resultAlerts.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const failedAlerts = resultAlerts.filter(c => c.status === 'failed' || c.status === 'bounced')
               const openedEmails = allEmails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
               const openRate = deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0
+
+              // Build detail strings
+              const emailDetailParts = [`${deliveredEmails.length} delivered`]
+              if (failedEmails.length > 0) emailDetailParts.push(`${failedEmails.length} failed`)
+              if (bouncedEmails.length > 0) emailDetailParts.push(`${bouncedEmails.length} bounced`)
+
+              const alertDetailParts = [`${deliveredAlerts.length} sent`, `${openedAlerts.length} opened`]
+              if (failedAlerts.length > 0) alertDetailParts.push(`${failedAlerts.length} failed`)
 
               return (
                 <div className="stats-grid stats-grid-4">
@@ -3372,12 +3382,12 @@ export default function ClientDetailPage() {
                   <div className="stat-card">
                     <div className="stat-label">Emails Sent</div>
                     <div className="stat-value">{allEmails.length}</div>
-                    <div className="stat-detail">{deliveredEmails.length} delivered{failedEmails.length > 0 ? `, ${failedEmails.length} failed` : ''}</div>
+                    <div className="stat-detail">{emailDetailParts.join(', ')}</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Result Alerts</div>
                     <div className="stat-value purple">{resultAlerts.length}</div>
-                    <div className="stat-detail">{deliveredAlerts.length} sent, {viewedAlerts.length} viewed</div>
+                    <div className="stat-detail">{alertDetailParts.join(', ')}</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Email Open Rate</div>
@@ -3513,7 +3523,7 @@ export default function ClientDetailPage() {
                                   <span className="status-pill delivered">Delivered</span>
                                 )}
                                 {!isContentType && (comm.openedAt || comm.status === 'opened' || comm.status === 'clicked') && (
-                                  <span className="status-pill opened">{comm.type === 'result_alert' ? 'Viewed' : 'Opened'}</span>
+                                  <span className="status-pill opened">Opened</span>
                                 )}
                                 {!isContentType && (comm.clickedAt || comm.status === 'clicked') && (
                                   <span className="status-pill clicked">Clicked</span>
