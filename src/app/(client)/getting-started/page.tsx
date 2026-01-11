@@ -127,14 +127,16 @@ export default function GettingStartedPage() {
   // Fetch onboarding data
   useEffect(() => {
     async function fetchData() {
-      if (!viewingAs) {
-        setLoading(false)
+      // Use viewingAs if available, otherwise use the client's own ID
+      const clientId = viewingAs || client.id
+
+      if (!clientId || clientLoading) {
+        if (!clientLoading) setLoading(false)
         return
       }
 
       try {
-        // Use viewingAs directly - it could be a mock ID or a real database UUID
-        const res = await fetch(`/api/client/onboarding?clientId=${viewingAs}`)
+        const res = await fetch(`/api/client/onboarding?clientId=${clientId}`)
         if (res.ok) {
           const data = await res.json()
           setOnboardingData(data)
@@ -160,7 +162,7 @@ export default function GettingStartedPage() {
       }
     }
     fetchData()
-  }, [viewingAs])
+  }, [viewingAs, client.id, clientLoading])
 
   const checklist = onboardingData?.checklist
   const summary = onboardingData?.onboardingSummary || {}
@@ -336,6 +338,17 @@ export default function GettingStartedPage() {
                 Checklist
               </button>
               <button
+                className={`getting-started-subtab ${activeSubtab === 'questions' ? 'active' : ''}`}
+                onClick={() => setActiveSubtab('questions')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Questions
+              </button>
+              <button
                 className={`getting-started-subtab ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`}
                 onClick={() => setActiveSubtab('onboarding-summary')}
               >
@@ -346,7 +359,7 @@ export default function GettingStartedPage() {
                   <line x1="16" y1="17" x2="8" y2="17"></line>
                   <polyline points="10 9 9 9 8 9"></polyline>
                 </svg>
-                Onboarding Summary
+                Summary
               </button>
             </div>
 
@@ -477,6 +490,31 @@ export default function GettingStartedPage() {
           </div>
         </div>
 
+        {/* Questions Tab Content */}
+        <div className={`gs-tab-content ${activeSubtab === 'questions' ? 'active' : ''}`} id="questions">
+          <div className="onboarding-questions">
+            <div className="questions-card">
+              <div className="questions-header">
+                <h3>Onboarding Questions</h3>
+                <p>Help us understand your business better by answering these questions.</p>
+              </div>
+              <div className="questions-content">
+                <div className="questions-coming-soon">
+                  <div className="coming-soon-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  </div>
+                  <h4>Onboarding Form Coming Soon</h4>
+                  <p>We&apos;re preparing personalized onboarding questions based on your selected services. Check back soon!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Onboarding Summary Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`} id="onboarding-summary">
           <div className="onboarding-summary">
@@ -557,6 +595,67 @@ export default function GettingStartedPage() {
 
         .summary-empty-icon {
           color: #d1d5db;
+        }
+
+        /* Questions Tab Styles */
+        .onboarding-questions {
+          max-width: 800px;
+        }
+
+        .questions-card {
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #E5E7EB;
+          overflow: hidden;
+        }
+
+        .questions-header {
+          padding: 1.5rem;
+          border-bottom: 1px solid #E5E7EB;
+        }
+
+        .questions-header h3 {
+          margin: 0 0 0.5rem;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #1A1F16;
+        }
+
+        .questions-header p {
+          margin: 0;
+          font-size: 0.875rem;
+          color: #6B7280;
+        }
+
+        .questions-content {
+          padding: 2rem;
+        }
+
+        .questions-coming-soon {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          padding: 2rem;
+        }
+
+        .coming-soon-icon {
+          color: #D1D5DB;
+          margin-bottom: 1rem;
+        }
+
+        .questions-coming-soon h4 {
+          margin: 0 0 0.5rem;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .questions-coming-soon p {
+          margin: 0;
+          font-size: 0.875rem;
+          color: #6B7280;
+          max-width: 400px;
         }
 
         .summary-empty h3 {
