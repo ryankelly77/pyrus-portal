@@ -3620,6 +3620,87 @@ export default function ClientDetailPage() {
         {/* ==================== RECOMMENDATIONS TAB ==================== */}
         {activeTab === 'recommendations' && (
           <div className="recommendations-content">
+            {/* Growth Stage Hero Section - Show for active clients */}
+            {isActiveClient && (
+              <div className="growth-stage-hero">
+                <div className="growth-stage-main">
+                  <div className="stage-icon-large">
+                    {dbClient?.growth_stage === 'seedling' && '🌱'}
+                    {dbClient?.growth_stage === 'sprouting' && '🌿'}
+                    {dbClient?.growth_stage === 'blooming' && '🌸'}
+                    {dbClient?.growth_stage === 'harvesting' && '🌾'}
+                    {!dbClient?.growth_stage && '🌱'}
+                  </div>
+                  <div className="stage-content">
+                    <div className="stage-label">Growth Stage</div>
+                    <div className="stage-name-large">
+                      {dbClient?.growth_stage === 'seedling' && 'Seedling'}
+                      {dbClient?.growth_stage === 'sprouting' && 'Sprouting'}
+                      {dbClient?.growth_stage === 'blooming' && 'Blooming'}
+                      {dbClient?.growth_stage === 'harvesting' && 'Harvesting'}
+                      {!dbClient?.growth_stage && 'Seedling'}
+                      <span className="month-badge">Month 1</span>
+                    </div>
+                    <div className="stage-description-large">
+                      {dbClient?.growth_stage === 'seedling' && "Just getting started! Foundation being established."}
+                      {dbClient?.growth_stage === 'sprouting' && "Building momentum with early results appearing."}
+                      {dbClient?.growth_stage === 'blooming' && "Thriving with strong results and growth."}
+                      {dbClient?.growth_stage === 'harvesting' && "Reaping the rewards of sustained growth."}
+                      {!dbClient?.growth_stage && "Just getting started! Foundation being established."}
+                    </div>
+                  </div>
+                  <div className="stage-stats">
+                    <div className="stage-stat">
+                      <span className="stage-stat-value">--</span>
+                      <span className="stage-stat-label">Keywords Ranking</span>
+                    </div>
+                    <div className="stage-stat">
+                      <span className="stage-stat-value">--</span>
+                      <span className="stage-stat-label">Leads This Month</span>
+                    </div>
+                    <div className="stage-stat">
+                      <span className="stage-stat-value">--</span>
+                      <span className="stage-stat-label">Traffic Growth</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="growth-progress-section">
+                  <div className="progress-track-large">
+                    <div className={`progress-stage ${dbClient?.growth_stage === 'seedling' ? 'current' : ['sprouting', 'blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : 'current'}`}>
+                      <div className="stage-icon">🌱</div>
+                      <div className="progress-dot"></div>
+                      <span>Seedling</span>
+                    </div>
+                    <div className={`progress-line ${['sprouting', 'blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}></div>
+                    <div className={`progress-stage ${dbClient?.growth_stage === 'sprouting' ? 'current' : ['blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}>
+                      <div className="stage-icon">🌿</div>
+                      <div className="progress-dot"></div>
+                      <span>Sprouting</span>
+                    </div>
+                    <div className={`progress-line ${['blooming', 'harvesting'].includes(dbClient?.growth_stage || '') ? 'completed' : ''}`}></div>
+                    <div className={`progress-stage ${dbClient?.growth_stage === 'blooming' ? 'current' : dbClient?.growth_stage === 'harvesting' ? 'completed' : ''}`}>
+                      <div className="stage-icon">🌸</div>
+                      <div className="progress-dot"></div>
+                      <span>Blooming</span>
+                    </div>
+                    <div className={`progress-line ${dbClient?.growth_stage === 'harvesting' ? 'completed' : ''}`}></div>
+                    <div className={`progress-stage ${dbClient?.growth_stage === 'harvesting' ? 'current' : ''}`}>
+                      <div className="stage-icon">🌾</div>
+                      <div className="progress-dot"></div>
+                      <span>Harvesting</span>
+                    </div>
+                  </div>
+                  <div className="refresh-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Next recommendations refresh: <strong>90 days</strong> from start
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Subtabs Navigation - matching client portal styling */}
             <div className="recommendations-tabs">
               <button
@@ -3664,7 +3745,7 @@ export default function ClientDetailPage() {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
                 ) : (
-                  <span className="tab-count">4</span>
+                  <span className="tab-badge coming-soon">Coming Soon</span>
                 )}
               </button>
             </div>
@@ -3672,336 +3753,48 @@ export default function ClientDetailPage() {
             {/* Smart Recommendations Subtab */}
             {recommendationsSubtab === 'smart-recommendations' && (
               <>
-                {/* TEMPLATE 1: Pending State - No purchase yet */}
-                {recommendationState === 'pending' && (
-                  <div className="smart-rec-pending">
-                    <div className="pending-hero">
-                      <div className="pending-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="64" height="64">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                      </div>
-                      <h2>Smart Recommendations Await</h2>
-                      <p className="pending-subtitle">
-                        Complete your purchase to unlock personalized growth recommendations powered by AI
-                      </p>
+                {!isActiveClient ? (
+                  <div className="locked-placeholder">
+                    <div className="locked-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
                     </div>
-
-                    <div className="pending-features">
-                      <div className="feature-card">
-                        <div className="feature-icon" style={{ background: 'var(--pyrus-green-pale)', color: 'var(--pyrus-green)' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                            <path d="M12 20V10"></path>
-                            <path d="M18 20V4"></path>
-                            <path d="M6 20v-4"></path>
-                          </svg>
-                        </div>
-                        <h4>Performance Tracking</h4>
-                        <p>Monitor your keyword rankings, traffic, and leads in real-time</p>
-                      </div>
-                      <div className="feature-card">
-                        <div className="feature-icon" style={{ background: 'var(--accent-purple-bg)', color: 'var(--accent-purple)' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                          </svg>
-                        </div>
-                        <h4>AI-Powered Insights</h4>
-                        <p>Get personalized recommendations based on your business performance</p>
-                      </div>
-                      <div className="feature-card">
-                        <div className="feature-icon" style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                          </svg>
-                        </div>
-                        <h4>Growth Stage System</h4>
-                        <p>Track your journey from Seedling to Harvesting with milestone alerts</p>
-                      </div>
-                    </div>
-
-                    {recommendation && (
-                      <div className="pending-cta">
-                        <button
-                          className="btn btn-primary btn-lg"
-                          onClick={() => setRecommendationsSubtab('original-plan')}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                          </svg>
-                          View Your Recommended Plan
-                        </button>
-                        <p className="cta-note">Review the plan tailored for your business goals</p>
-                      </div>
-                    )}
+                    <h3>Smart Recommendations</h3>
+                    <p>Once {dbClient?.name} is an active client, we&apos;ll analyze their marketing data to provide AI-powered recommendations tailored to their growth goals.</p>
                   </div>
-                )}
-
-                {/* TEMPLATE 2: Purchased State - Less than 90 days */}
-                {recommendationState === 'purchased' && (
-                  <>
-                    {/* Growth Stage Hero Section */}
-                    {(() => {
-                      const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
-                        prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
-                        seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
-                        sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
-                        blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
-                        harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
-                      }
-                      const currentStage = client.growthStage || 'seedling'
-                      const current = stageInfo[currentStage] || stageInfo.seedling
-                      const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
-
-                      // Calculate the target date for smart recommendations
-                      const targetDate = firstPurchaseDate
-                        ? new Date(new Date(firstPurchaseDate).getTime() + 90 * 24 * 60 * 60 * 1000)
-                        : new Date()
-                      const targetDateStr = targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-
-                      return (
-                        <div className="growth-stage-hero">
-                          <div className="growth-stage-main">
-                            <div className="stage-icon-large">{current.icon}</div>
-                            <div className="stage-content">
-                              <div className="stage-label">Your Growth Stage</div>
-                              <div className="stage-name-large">
-                                {current.name}
-                              </div>
-                              <div className="stage-description-large">
-                                {current.description}
-                              </div>
-                            </div>
-                            <div className="stage-stats">
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">--</span>
-                                <span className="stage-stat-label">Keywords Ranking</span>
-                              </div>
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">--</span>
-                                <span className="stage-stat-label">Leads This Month</span>
-                              </div>
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">--</span>
-                                <span className="stage-stat-label">Traffic Growth</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="growth-progress-section">
-                            <div className="progress-track-large">
-                              {stages.map((stage, idx) => {
-                                const info = stageInfo[stage]
-                                const currentIndex = stageInfo[currentStage]?.index || 0
-                                const isCompleted = info.index < currentIndex
-                                const isCurrent = stage === currentStage
-                                return (
-                                  <div key={stage}>
-                                    {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
-                                    <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                                      <div className="stage-icon">{info.icon}</div>
-                                      <div className="progress-dot"></div>
-                                      <span>{info.name}</span>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                            <div className="refresh-info">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                              </svg>
-                              First recommendations available: <strong>{targetDateStr}</strong> ({daysUntilSmartRec} days)
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Coming Soon Placeholder */}
-                    <div className="smart-rec-placeholder">
-                      <div className="placeholder-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
+                ) : (
+                  <div className="coming-soon-placeholder">
+                    <div className="coming-soon-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </div>
+                    <h2>Smart Recommendations Coming Soon</h2>
+                    <p>We&apos;re analyzing {dbClient?.name}&apos;s marketing performance data to generate personalized AI-powered recommendations. The first set of smart recommendations will be available in approximately 90 days.</p>
+                    <div className="coming-soon-timeline">
+                      <div className="timeline-item">
+                        <div className="timeline-dot active"></div>
+                        <span>Campaign data collection started</span>
                       </div>
-                      <h3>Smart Recommendations Coming Soon</h3>
-                      <p>
-                        We&apos;re gathering performance data to create personalized recommendations for your business.
-                        <br />
-                        Check back in <strong>{daysUntilSmartRec} days</strong> for AI-powered growth insights.
-                      </p>
-                      <div className="coming-soon-progress">
-                        <div className="progress-bar-container">
-                          <div
-                            className="progress-bar-fill"
-                            style={{ width: `${Math.min(100, (daysSincePurchase / 90) * 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="progress-label">{daysSincePurchase} of 90 days</span>
+                      <div className="timeline-item">
+                        <div className="timeline-dot pending"></div>
+                        <span>AI analysis in progress</span>
+                      </div>
+                      <div className="timeline-item">
+                        <div className="timeline-dot pending"></div>
+                        <span>Smart recommendations generation</span>
                       </div>
                     </div>
-                  </>
-                )}
-
-                {/* TEMPLATE 3: Smart Available State - 90+ days */}
-                {recommendationState === 'smart_available' && (
-                  <>
-                    {/* Growth Stage Hero Section */}
-                    {(() => {
-                      const stageInfo: Record<string, { icon: string; name: string; description: string; index: number }> = {
-                        prospect: { icon: '🌰', name: 'Prospect', description: 'Not yet a client. Exploring growth opportunities.', index: 0 },
-                        seedling: { icon: '🌱', name: 'Seedling', description: 'Just getting started! Foundation being established.', index: 1 },
-                        sprouting: { icon: '🌿', name: 'Sprouting', description: 'Building momentum with early results appearing.', index: 2 },
-                        blooming: { icon: '🌸', name: 'Blooming', description: 'Thriving with strong results and growth.', index: 3 },
-                        harvesting: { icon: '🌾', name: 'Harvesting', description: 'Reaping the rewards of sustained growth.', index: 4 },
-                      }
-                      const currentStage = client.growthStage || 'seedling'
-                      const current = stageInfo[currentStage] || stageInfo.seedling
-                      const stages = ['seedling', 'sprouting', 'blooming', 'harvesting']
-
-                      // Next refresh is 90 days from now
-                      const nextRefreshDate = new Date(new Date().getTime() + 90 * 24 * 60 * 60 * 1000)
-                      const nextRefreshStr = nextRefreshDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-
-                      return (
-                        <div className="growth-stage-hero">
-                          <div className="growth-stage-main">
-                            <div className="stage-icon-large">{current.icon}</div>
-                            <div className="stage-content">
-                              <div className="stage-label">Your Growth Stage</div>
-                              <div className="stage-name-large">
-                                {current.name}
-                              </div>
-                              <div className="stage-description-large">
-                                {current.description}
-                              </div>
-                            </div>
-                            <div className="stage-stats">
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">12</span>
-                                <span className="stage-stat-label">Keywords Ranking</span>
-                              </div>
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">8</span>
-                                <span className="stage-stat-label">Leads This Month</span>
-                              </div>
-                              <div className="stage-stat">
-                                <span className="stage-stat-value">+24%</span>
-                                <span className="stage-stat-label">Traffic Growth</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="growth-progress-section">
-                            <div className="progress-track-large">
-                              {stages.map((stage, idx) => {
-                                const info = stageInfo[stage]
-                                const currentIndex = stageInfo[currentStage]?.index || 0
-                                const isCompleted = info.index < currentIndex
-                                const isCurrent = stage === currentStage
-                                return (
-                                  <div key={stage}>
-                                    {idx > 0 && <div className={`progress-line ${isCompleted || isCurrent ? 'completed' : ''}`}></div>}
-                                    <div className={`progress-stage ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                                      <div className="stage-icon">{info.icon}</div>
-                                      <div className="progress-dot"></div>
-                                      <span>{info.name}</span>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                            <div className="refresh-info">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                              </svg>
-                              Next recommendations refresh: <strong>{nextRefreshStr}</strong> (90 days)
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Smart Recommendations Cards */}
-                    <div className="smart-recommendations-section">
-                      <div className="section-header">
-                        <h3>Recommended for Your Growth</h3>
-                        <p>Based on your performance data and business goals</p>
-                      </div>
-
-                      <div className="smart-rec-cards">
-                        {/* Example recommendation card 1 */}
-                        <div className="smart-rec-card priority-high">
-                          <div className="rec-priority">
-                            <span className="priority-badge high">High Priority</span>
-                          </div>
-                          <div className="rec-content">
-                            <h4>Add Content Writing</h4>
-                            <p>Your site is ranking for 12 keywords but lacks fresh content. Adding monthly blog posts could increase organic traffic by 40%.</p>
-                            <div className="rec-stats">
-                              <div className="rec-stat">
-                                <span className="stat-value">+40%</span>
-                                <span className="stat-label">Est. Traffic Increase</span>
-                              </div>
-                              <div className="rec-stat">
-                                <span className="stat-value">$99</span>
-                                <span className="stat-label">per month</span>
-                              </div>
-                            </div>
-                          </div>
-                          <button className="btn btn-primary btn-sm">Add to Plan</button>
-                        </div>
-
-                        {/* Example recommendation card 2 */}
-                        <div className="smart-rec-card priority-medium">
-                          <div className="rec-priority">
-                            <span className="priority-badge medium">Recommended</span>
-                          </div>
-                          <div className="rec-content">
-                            <h4>Google Ads Campaign</h4>
-                            <p>Your competitors are running ads for your target keywords. A focused campaign could capture 15+ leads per month.</p>
-                            <div className="rec-stats">
-                              <div className="rec-stat">
-                                <span className="stat-value">15+</span>
-                                <span className="stat-label">Est. Monthly Leads</span>
-                              </div>
-                              <div className="rec-stat">
-                                <span className="stat-value">$500</span>
-                                <span className="stat-label">ad spend + mgmt</span>
-                              </div>
-                            </div>
-                          </div>
-                          <button className="btn btn-secondary btn-sm">Learn More</button>
-                        </div>
-
-                        {/* Example recommendation card 3 */}
-                        <div className="smart-rec-card priority-low">
-                          <div className="rec-priority">
-                            <span className="priority-badge low">Nice to Have</span>
-                          </div>
-                          <div className="rec-content">
-                            <h4>Social Media Management</h4>
-                            <p>Build brand awareness and engage with your audience through consistent social media presence.</p>
-                            <div className="rec-stats">
-                              <div className="rec-stat">
-                                <span className="stat-value">+500</span>
-                                <span className="stat-label">Est. Followers/Month</span>
-                              </div>
-                              <div className="rec-stat">
-                                <span className="stat-value">$299</span>
-                                <span className="stat-label">per month</span>
-                              </div>
-                            </div>
-                          </div>
-                          <button className="btn btn-secondary btn-sm">Learn More</button>
-                        </div>
-                      </div>
+                    <div className="refresh-info" style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#5A6358' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                      </svg>
+                      First recommendations expected around <strong>90 days</strong> from start date
                     </div>
-                  </>
+                  </div>
                 )}
               </>
             )}
