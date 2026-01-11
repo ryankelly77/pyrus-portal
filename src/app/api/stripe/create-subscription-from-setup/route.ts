@@ -74,8 +74,18 @@ export async function POST(request: NextRequest) {
 
     // Get or create coupon if provided
     let couponId: string | null = null
+    let discountPercent = 0
     if (couponCode) {
       couponId = await getOrCreateCoupon(couponCode)
+      // Fetch coupon details to get discount percentage
+      if (couponId) {
+        try {
+          const coupon = await stripe.coupons.retrieve(couponId)
+          discountPercent = coupon.percent_off || 0
+        } catch (e) {
+          console.error('Failed to fetch coupon details:', e)
+        }
+      }
     }
 
     // Calculate monthly total from cart items
@@ -212,12 +222,24 @@ export async function POST(request: NextRequest) {
     const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''
     let purchaseDescription = `${client.contact_name || client.name} purchased the ${tierDisplay} Plan`
     if (monthlyTotal > 0 || onetimeTotal > 0) {
-      const amountParts: string[] = []
-      if (monthlyTotal > 0) amountParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
-      if (onetimeTotal > 0) amountParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
-      purchaseDescription += ` - ${amountParts.join(' + ')}`
-    }
-    if (couponCode) {
+      const originalParts: string[] = []
+      if (monthlyTotal > 0) originalParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
+      if (onetimeTotal > 0) originalParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
+
+      if (discountPercent > 0) {
+        // Calculate discounted amounts
+        const discountedMonthly = Math.round(monthlyTotal * (1 - discountPercent / 100) * 100) / 100
+        const discountedOnetime = Math.round(onetimeTotal * (1 - discountPercent / 100) * 100) / 100
+        const discountedParts: string[] = []
+        if (monthlyTotal > 0) discountedParts.push(`$${discountedMonthly.toLocaleString()}/mo`)
+        if (onetimeTotal > 0) discountedParts.push(`$${discountedOnetime.toLocaleString()} one-time`)
+        purchaseDescription += ` - ${originalParts.join(' + ')} → ${discountedParts.join(' + ')} (${discountPercent}% off with ${couponCode})`
+      } else if (couponCode) {
+        purchaseDescription += ` - ${originalParts.join(' + ')} (with coupon: ${couponCode})`
+      } else {
+        purchaseDescription += ` - ${originalParts.join(' + ')}`
+      }
+    } else if (couponCode) {
       purchaseDescription += ` (with coupon: ${couponCode})`
     }
 
@@ -229,6 +251,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           tier: selectedTier,
           couponCode,
+          discountPercent,
           billingCycle,
           monthlyTotal,
           onetimeTotal,

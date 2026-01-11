@@ -275,9 +275,16 @@ export async function POST(request: NextRequest) {
               ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)
               : 'Custom'
 
-            let description = `Purchased ${tierDisplay} plan - $${amount.toFixed(2)}/mo`
-            if (couponCode) {
-              description += ` (${discountAmount}% off with ${couponCode})`
+            // Calculate original amount if there's a discount
+            const originalAmount = discountAmount > 0
+              ? Math.round(amount / (1 - discountAmount / 100) * 100) / 100
+              : amount
+
+            let description: string
+            if (discountAmount > 0 && couponCode) {
+              description = `Purchased ${tierDisplay} plan - $${originalAmount.toFixed(2)}/mo → $${amount.toFixed(2)}/mo (${discountAmount}% off with ${couponCode})`
+            } else {
+              description = `Purchased ${tierDisplay} plan - $${amount.toFixed(2)}/mo`
             }
 
             await prisma.activity_log.create({
@@ -288,6 +295,7 @@ export async function POST(request: NextRequest) {
                 metadata: {
                   tier: selectedTier,
                   amount,
+                  originalAmount,
                   couponCode,
                   discountPercent: discountAmount,
                   subscriptionId: subscription.id,

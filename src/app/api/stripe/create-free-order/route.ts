@@ -152,12 +152,13 @@ export async function POST(request: NextRequest) {
     const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''
     let purchaseDescription = `${client.contact_name || client.name} purchased the ${tierDisplay} Plan`
     if (monthlyTotal > 0 || onetimeTotal > 0) {
-      const amountParts: string[] = []
-      if (monthlyTotal > 0) amountParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
-      if (onetimeTotal > 0) amountParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
-      purchaseDescription += ` - ${amountParts.join(' + ')}`
+      const originalParts: string[] = []
+      if (monthlyTotal > 0) originalParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
+      if (onetimeTotal > 0) originalParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
+      purchaseDescription += ` - ${originalParts.join(' + ')} → $0 (100% off with ${couponCode})`
+    } else {
+      purchaseDescription += ` (100% off with ${couponCode})`
     }
-    purchaseDescription += ` (100% off with ${couponCode})`
 
     await prisma.activity_log.create({
       data: {
