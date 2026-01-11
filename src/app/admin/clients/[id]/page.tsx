@@ -3489,7 +3489,10 @@ export default function ClientDetailPage() {
                                 {comm.subject && <span className="subject">{comm.subject}</span>}
                               </div>
                               <div className="comm-status">
-                                {/* Email delivery statuses */}
+                                {/* Email delivery statuses - show cumulative progression: Sent → Delivered → Opened → Clicked */}
+                                {!isContentType && comm.status !== 'failed' && comm.status !== 'bounced' && (
+                                  <span className="status-pill sent">Sent</span>
+                                )}
                                 {!isContentType && (comm.status === 'delivered' || comm.status === 'opened' || comm.status === 'clicked') && (
                                   <span className="status-pill delivered">Delivered</span>
                                 )}
@@ -3504,9 +3507,6 @@ export default function ClientDetailPage() {
                                 )}
                                 {!isContentType && comm.status === 'bounced' && (
                                   <span className="status-pill failed">Bounced</span>
-                                )}
-                                {!isContentType && comm.status === 'sent' && !comm.openedAt && !comm.clickedAt && (
-                                  <span className="status-pill sent">Sent</span>
                                 )}
                                 {/* Content-specific statuses */}
                                 {contentStatus === 'published' && (
