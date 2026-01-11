@@ -293,12 +293,28 @@ export default function CheckoutPage() {
   // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
   useEffect(() => {
     const effectiveClientId = viewingAs || client.id
-    if (cartItems.length === 0 || !effectiveClientId) return
+    console.log('[Stripe] Effect triggered:', {
+      cartItemsLength: cartItems.length,
+      effectiveClientId,
+      viewingAs,
+      clientId: client.id,
+      clientLoading
+    })
+
+    if (cartItems.length === 0) {
+      console.log('[Stripe] Early return: no cart items')
+      return
+    }
+    if (!effectiveClientId) {
+      console.log('[Stripe] Early return: no client ID')
+      return
+    }
 
     // Reset client secret when billing cycle changes
     setClientSecret(null)
 
     async function createSetupIntent() {
+      console.log('[Stripe] Creating SetupIntent for client:', effectiveClientId)
       try {
         const res = await fetch('/api/stripe/setup-intent', {
           method: 'POST',
@@ -310,20 +326,27 @@ export default function CheckoutPage() {
             billingCycle,
           }),
         })
+        console.log('[Stripe] Response status:', res.status)
         const data = await res.json()
+        console.log('[Stripe] Response data:', data)
         if (data.clientSecret) {
+          console.log('[Stripe] Got client secret, setting state')
           setClientSecret(data.clientSecret)
         } else if (data.error) {
+          console.error('[Stripe] API error:', data.error)
           setStripeError(data.error)
+        } else {
+          console.error('[Stripe] Unexpected response:', data)
+          setStripeError('Unexpected response from payment server')
         }
       } catch (error) {
-        console.error('Failed to create SetupIntent:', error)
+        console.error('[Stripe] Failed to create SetupIntent:', error)
         setStripeError('Failed to initialize payment form')
       }
     }
 
     createSetupIntent()
-  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs, billingCycle])
+  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading])
 
   // Calculate discount
   const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
@@ -414,15 +437,6 @@ export default function CheckoutPage() {
             Back
           </Link>
           <h1>Checkout</h1>
-        </div>
-        <div className="client-top-header-right">
-          <div className="checkout-secure-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            Secure Checkout
-          </div>
         </div>
       </div>
 
@@ -776,12 +790,21 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              <div className="checkout-guarantee">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  <polyline points="9 12 11 14 15 10"></polyline>
-                </svg>
-                <span>30-day money-back guarantee</span>
+              <div className="checkout-trust-badges">
+                <div className="checkout-guarantee">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                  </svg>
+                  <span>30-day money-back guarantee</span>
+                </div>
+                <div className="checkout-secure-inline">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <span>Secure checkout</span>
+                </div>
               </div>
 
               <p className="checkout-terms">
