@@ -365,6 +365,40 @@ export default function ClientDetailPage() {
   const [onboardingSummary, setOnboardingSummary] = useState<OnboardingSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
 
+  // Onboarding questions form state (for Questions tab)
+  interface OnboardingQuestion {
+    id: string
+    questionText: string
+    questionType: string
+    options: string[] | null
+    placeholder: string | null
+    helpText: string | null
+    isRequired: boolean
+    section: string | null
+    product: {
+      id: string
+      name: string
+      category: string
+    }
+    response: {
+      id: string
+      text: string | null
+      options: string[] | null
+    } | null
+  }
+  interface OnboardingFormData {
+    questions: OnboardingQuestion[]
+    grouped: Record<string, OnboardingQuestion[]>
+    hasProducts: boolean
+    progress: {
+      answered: number
+      total: number
+      percent: number
+    }
+  }
+  const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData | null>(null)
+  const [onboardingFormLoading, setOnboardingFormLoading] = useState(false)
+
   // Recommendation state
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [recommendationLoading, setRecommendationLoading] = useState(false)
@@ -644,6 +678,25 @@ export default function ClientDetailPage() {
       }
     }
     fetchOnboardingSummary()
+  }, [clientId])
+
+  // Fetch onboarding form questions
+  useEffect(() => {
+    const fetchOnboardingForm = async () => {
+      setOnboardingFormLoading(true)
+      try {
+        const res = await fetch(`/api/client/onboarding-form?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setOnboardingForm(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding form:', error)
+      } finally {
+        setOnboardingFormLoading(false)
+      }
+    }
+    fetchOnboardingForm()
   }, [clientId])
 
   // Fetch recommendation data
@@ -1525,48 +1578,126 @@ export default function ClientDetailPage() {
 
             {/* Questions Tab Content */}
             <div className={`gs-tab-content ${activeSubtab === 'questions' ? 'active' : ''}`} id="questions">
-              <div className="inactive-service-container">
-                <div className="inactive-service-card">
-                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
+              {onboardingFormLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+                  <div className="spinner" style={{ width: 40, height: 40 }}></div>
+                </div>
+              ) : onboardingForm?.hasProducts && onboardingForm.questions.length > 0 ? (
+                <div className="onboarding-questions" style={{ maxWidth: '800px' }}>
+                  {/* Progress Header */}
+                  <div className="questions-card" style={{ background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
+                    <div style={{ padding: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.125rem', fontWeight: 600, color: '#1A1F16' }}>Onboarding Questions</h3>
+                          <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>View and manage client onboarding responses</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#324438' }}>
+                            {onboardingForm.progress.percent}%
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            {onboardingForm.progress.answered} of {onboardingForm.progress.total} completed
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ width: '100%', height: '6px', background: '#E5E7EB', borderRadius: '3px', marginTop: '1rem' }}>
+                        <div style={{ width: `${onboardingForm.progress.percent}%`, height: '100%', background: '#22C55E', borderRadius: '3px', transition: 'width 0.3s ease' }}></div>
+                      </div>
+                    </div>
                   </div>
-                  <h3>Onboarding Questions Coming Soon</h3>
-                  <p>We&apos;re preparing personalized onboarding questions for {dbClient?.name}. Once ready, this section will allow you to view and manage their responses to help us deliver the best marketing results.</p>
-                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
-                    <h4>What you&apos;ll see here:</h4>
-                    <ul>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Business information and goals
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Target audience details
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Brand preferences and guidelines
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Service-specific requirements
-                      </li>
-                    </ul>
+
+                  {/* Questions by Section */}
+                  {Object.entries(onboardingForm.grouped).map(([section, questions]) => (
+                    <div key={section} className="questions-card" style={{ background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
+                      <div style={{ padding: '1.5rem', borderBottom: '1px solid #E5E7EB' }}>
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1A1F16' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                          {section}
+                        </h3>
+                      </div>
+                      <div style={{ padding: '1.5rem' }}>
+                        {questions.map((q) => (
+                          <div key={q.id} style={{ marginBottom: '1.25rem', paddingBottom: '1.25rem', borderBottom: '1px solid #F3F4F6' }}>
+                            <label style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block', color: '#374151' }}>
+                              {q.questionText}
+                              {q.isRequired && <span style={{ color: '#DC2626', marginLeft: '4px' }}>*</span>}
+                            </label>
+                            {q.helpText && (
+                              <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.5rem' }}>{q.helpText}</p>
+                            )}
+                            <div style={{
+                              padding: '0.75rem',
+                              background: q.response ? '#F0FDF4' : '#F9FAFB',
+                              borderRadius: '8px',
+                              border: q.response ? '1px solid #BBF7D0' : '1px solid #E5E7EB',
+                            }}>
+                              {q.response ? (
+                                <span style={{ color: '#166534', fontSize: '0.875rem' }}>
+                                  {q.response.text || (q.response.options && q.response.options.join(', ')) || 'Answered'}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#9CA3AF', fontSize: '0.875rem', fontStyle: 'italic' }}>Not answered yet</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="inactive-service-container">
+                  <div className="inactive-service-card">
+                    <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </div>
+                    <h3>No Onboarding Questions</h3>
+                    <p>
+                      {onboardingForm?.hasProducts === false
+                        ? `${dbClient?.name} doesn't have any active services yet. Onboarding questions will appear here once they have purchased services.`
+                        : `No onboarding question templates have been configured for ${dbClient?.name}'s services. Add question templates in Settings to see them here.`
+                      }
+                    </p>
+                    <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
+                      <h4>What you&apos;ll see here:</h4>
+                      <ul>
+                        <li>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          Business information and goals
+                        </li>
+                        <li>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          Target audience details
+                        </li>
+                        <li>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          Brand preferences and guidelines
+                        </li>
+                        <li>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          Service-specific requirements
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Checklist Tab Content */}
