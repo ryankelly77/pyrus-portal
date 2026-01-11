@@ -31,6 +31,15 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
+// Format price - show cents only when there's a fractional part
+function formatPrice(amount: number): string {
+  const hasCents = amount % 1 !== 0
+  if (hasCents) {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  return Math.round(amount).toLocaleString('en-US')
+}
+
 // Database client interface
 interface DBClient {
   id: string
@@ -3319,13 +3328,13 @@ export default function ClientDetailPage() {
         {/* ==================== RECOMMENDATIONS TAB ==================== */}
         {activeTab === 'recommendations' && (
           <div className="recommendations-content">
-            {/* Subtabs Navigation */}
-            <div className="getting-started-subtabs">
+            {/* Subtabs Navigation - matching client portal styling */}
+            <div className="recommendations-tabs">
               <button
-                className={`getting-started-subtab ${recommendationsSubtab === 'original-plan' ? 'active' : ''}`}
+                className={`recommendations-tab ${recommendationsSubtab === 'original-plan' ? 'active' : ''}`}
                 onClick={() => setRecommendationsSubtab('original-plan')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -3334,23 +3343,37 @@ export default function ClientDetailPage() {
                 Original Plan
               </button>
               <button
-                className={`getting-started-subtab ${recommendationsSubtab === 'current-services' ? 'active' : ''}`}
+                className={`recommendations-tab ${recommendationsSubtab === 'current-services' ? 'active' : ''}`}
                 onClick={() => setRecommendationsSubtab('current-services')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                   <polyline points="9 11 12 14 22 4"></polyline>
                   <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                 </svg>
                 Your Current Services
+                {!isActiveClient && (
+                  <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                )}
               </button>
               <button
-                className={`getting-started-subtab ${recommendationsSubtab === 'smart-recommendations' ? 'active' : ''}`}
+                className={`recommendations-tab ${recommendationsSubtab === 'smart-recommendations' ? 'active' : ''}`}
                 onClick={() => setRecommendationsSubtab('smart-recommendations')}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
                 Smart Recommendations
+                {!isActiveClient ? (
+                  <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                ) : (
+                  <span className="tab-count">4</span>
+                )}
               </button>
             </div>
 
@@ -3698,101 +3721,221 @@ export default function ClientDetailPage() {
                   <div className="loading-placeholder">Loading recommendation data...</div>
                 ) : recommendation ? (
                   <>
-                    {/* Good Better Best Options from recommendation data */}
-                    <div className="gbb-options-grid">
+                    {/* Plan Intro Header */}
+                    <div className="original-plan-header">
+                      <div className="plan-intro-card">
+                        <div className="plan-intro-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                          </svg>
+                        </div>
+                        <div className="plan-intro-content">
+                          <h2>Marketing Proposal</h2>
+                          <p>Three service tiers tailored to {dbClient?.name || 'this client'}&apos;s business goals.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Good / Better / Best Pricing Tiers */}
+                    <div className="pricing-tiers">
                       {(['good', 'better', 'best'] as const).map(tierName => {
                         const tierItems = recommendation.recommendation_items.filter(item => item.tier === tierName)
-                        const monthlyTotal = tierItems.reduce((sum, item) => {
-                          if (item.is_free) return sum
-                          return sum + Number(item.monthly_price || 0)
-                        }, 0)
-                        const onetimeTotal = tierItems.reduce((sum, item) => {
-                          return sum + Number(item.onetime_price || 0)
-                        }, 0)
-                        const freeItems = tierItems.filter(item => item.is_free)
                         const isPurchased = recommendation.purchased_tier === tierName
 
-                        return (
-                          <div key={tierName} className={`gbb-option-card ${tierName}${isPurchased ? ' purchased' : ''}`}>
-                            {isPurchased && (
-                              <div className="gbb-purchased">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                                  <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                                Purchased
-                              </div>
-                            )}
-                            <div className="gbb-header">
-                              <span className={`gbb-badge ${tierName}`}>
-                                {tierName.charAt(0).toUpperCase() + tierName.slice(1)}
-                              </span>
-                            </div>
-                            <ul className="gbb-features">
-                              {tierItems.map(item => {
-                                const itemName = item.product?.name || item.bundle?.name || item.addon?.name
-                                const itemPrice = Number(item.monthly_price || 0)
-                                const isFree = item.is_free
+                        // Growth Rewards tier thresholds
+                        const REWARD_TIERS = [
+                          { threshold: 0, discount: 0, coupon: null },
+                          { threshold: 1000, discount: 5, coupon: 'HARVEST5X' },
+                          { threshold: 1500, discount: 5, coupon: 'HARVEST5X' },
+                          { threshold: 2000, discount: 10, coupon: 'CULTIVATE10' },
+                        ]
 
-                                return (
-                                  <li key={item.id} className={isFree ? 'free-item' : ''}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                                      <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    <span className="item-name">{itemName}</span>
-                                    <span className="item-price">
-                                      {isFree ? (
-                                        <span className="free-badge">Free</span>
-                                      ) : (
-                                        `$${itemPrice}/mo`
-                                      )}
-                                    </span>
-                                  </li>
-                                )
-                              })}
-                              {tierItems.length === 0 && (
-                                <li className="no-items">No items in this tier</li>
+                        // Calculate full pricing breakdown
+                        let fullPriceMonthly = 0
+                        let fullPriceOnetime = 0
+                        let freeItemsValueMonthly = 0
+                        let freeItemsValueOnetime = 0
+                        let yourPriceMonthlyRaw = 0
+                        let yourPriceOnetimeRaw = 0
+                        let baseTotalForRewards = 0
+
+                        tierItems.forEach(item => {
+                          const qty = 1
+                          const itemMonthly = Number(item.monthly_price || 0)
+                          const itemOnetime = Number(item.onetime_price || 0)
+                          const itemName = item.product?.name || item.bundle?.name || item.addon?.name || ''
+                          const isAnalytics = itemName.includes('Analytics Tracking')
+
+                          if (item.is_free) {
+                            const productMonthly = Number(item.product?.monthly_price || item.bundle?.monthly_price || 0)
+                            const productOnetime = Number(item.product?.onetime_price || item.bundle?.onetime_price || 0)
+                            fullPriceMonthly += productMonthly * qty
+                            fullPriceOnetime += productOnetime * qty
+                            freeItemsValueMonthly += productMonthly * qty
+                            freeItemsValueOnetime += productOnetime * qty
+                          } else {
+                            fullPriceMonthly += itemMonthly * qty
+                            fullPriceOnetime += itemOnetime * qty
+                            if (!isAnalytics) {
+                              baseTotalForRewards += itemMonthly * qty
+                            }
+                          }
+
+                          yourPriceMonthlyRaw += itemMonthly * qty
+                          yourPriceOnetimeRaw += itemOnetime * qty
+                        })
+
+                        // Determine reward tier
+                        let rewardTierIndex = 0
+                        for (let i = REWARD_TIERS.length - 1; i >= 0; i--) {
+                          if (baseTotalForRewards >= REWARD_TIERS[i].threshold) {
+                            rewardTierIndex = i
+                            break
+                          }
+                        }
+                        const currentRewardTier = REWARD_TIERS[rewardTierIndex]
+
+                        const discountPercent = currentRewardTier.discount
+                        const couponCode = currentRewardTier.coupon
+                        const discountAmount = Math.round(yourPriceMonthlyRaw * (discountPercent / 100) * 100) / 100
+                        const yourPriceMonthly = yourPriceMonthlyRaw - discountAmount
+                        const yourPriceOnetime = yourPriceOnetimeRaw
+
+                        const totalSavings = (fullPriceMonthly - yourPriceMonthly) + (fullPriceOnetime - yourPriceOnetime)
+                        const hasFreeItems = freeItemsValueMonthly > 0 || freeItemsValueOnetime > 0
+                        const afterFreeMonthly = fullPriceMonthly - freeItemsValueMonthly
+                        const afterFreeOnetime = fullPriceOnetime - freeItemsValueOnetime
+
+                        const tierDescriptions: Record<string, string> = {
+                          good: recommendation.good_description || 'Establish a professional foundation to help customers find and trust your business.',
+                          better: recommendation.better_description || 'Build your online presence and start attracting qualified leads through search.',
+                          best: recommendation.best_description || 'Comprehensive marketing to dominate your local market across all channels.',
+                        }
+
+                        return (
+                          <div key={tierName} className={`pricing-tier${isPurchased ? ' selected' : ''}`}>
+                            <div className="pricing-tier-header">
+                              <div className="pricing-tier-label">
+                                {tierName.charAt(0).toUpperCase() + tierName.slice(1)}
+                                {isPurchased && <span className="selected-badge">Selected</span>}
+                              </div>
+                              <div className="pricing-tier-desc">{tierDescriptions[tierName]}</div>
+                            </div>
+                            <div className="pricing-tier-services">
+                              {tierItems.length === 0 ? (
+                                <div className="pricing-service-item empty">
+                                  <div className="pricing-service-info">
+                                    <div className="pricing-service-name">No items in this tier</div>
+                                  </div>
+                                </div>
+                              ) : (
+                                tierItems.map(item => {
+                                  const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+                                  const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                                  const monthlyPrice = Number(item.monthly_price || 0)
+                                  const onetimePrice = Number(item.onetime_price || 0)
+                                  const isFree = item.is_free
+
+                                  return (
+                                    <div key={item.id} className={`pricing-service-item${isFree ? ' free' : ''}`}>
+                                      <div className={`pricing-service-check${isPurchased ? ' included' : ''}`}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                          <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                      </div>
+                                      <div className="pricing-service-info">
+                                        <div className="pricing-service-name">
+                                          {itemName}
+                                          {isFree && <span className="free-badge">FREE</span>}
+                                        </div>
+                                        {itemDesc && <div className="pricing-service-desc">{itemDesc}</div>}
+                                      </div>
+                                      <div className="pricing-service-price">
+                                        {isFree ? (
+                                          <>$0<br /><span>included</span></>
+                                        ) : monthlyPrice > 0 ? (
+                                          <>${monthlyPrice.toLocaleString()}<br /><span>/month</span></>
+                                        ) : onetimePrice > 0 ? (
+                                          <>${onetimePrice.toLocaleString()}<br /><span>one-time</span></>
+                                        ) : (
+                                          <>Included</>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                })
                               )}
-                            </ul>
-                            {(freeItems.length > 0 || Number(recommendation.discount_applied || 0) > 0) && (
-                              <div className="gbb-savings">
-                                {freeItems.length > 0 && (
-                                  <div className="savings-line">
-                                    <span>Free items included:</span>
-                                    <span className="savings-value">{freeItems.length}</span>
+                            </div>
+                            <div className="pricing-tier-footer">
+                              <div className="pricing-breakdown">
+                                {totalSavings > 0 && (
+                                  <div className="pricing-line strikethrough">
+                                    <span className="pricing-line-label">Full Price</span>
+                                    <span className="pricing-line-value">
+                                      {fullPriceOnetime > 0
+                                        ? `$${formatPrice(fullPriceOnetime + fullPriceMonthly)} today, then $${formatPrice(fullPriceMonthly)}/mo`
+                                        : `$${formatPrice(fullPriceMonthly)}/mo`
+                                      }
+                                    </span>
                                   </div>
                                 )}
-                                {Number(recommendation.discount_applied || 0) > 0 && (
-                                  <div className="savings-line">
-                                    <span>Discount applied:</span>
-                                    <span className="savings-value">-${Number(recommendation.discount_applied).toLocaleString()}</span>
+                                {hasFreeItems && (
+                                  <div className="pricing-line">
+                                    <span className="pricing-line-label">After Free Items</span>
+                                    <span className="pricing-line-value">
+                                      {afterFreeOnetime > 0
+                                        ? `$${formatPrice(afterFreeOnetime + afterFreeMonthly)} today, then $${formatPrice(afterFreeMonthly)}/mo`
+                                        : `$${formatPrice(afterFreeMonthly)}/mo`
+                                      }
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="pricing-line highlight">
+                                  <span className="pricing-line-label">{totalSavings > 0 ? 'Your Price' : 'Total'}</span>
+                                  <span className="pricing-line-value highlight">
+                                    {yourPriceOnetime > 0
+                                      ? `$${formatPrice(yourPriceOnetime + yourPriceMonthly)} today, then $${formatPrice(yourPriceMonthly)}/mo`
+                                      : `$${formatPrice(yourPriceMonthly)}/mo`
+                                    }
+                                  </span>
+                                </div>
+                                {totalSavings > 0 && (
+                                  <div className="pricing-line savings">
+                                    <span className="pricing-line-label">You Save</span>
+                                    <span className="pricing-line-value savings">
+                                      ${formatPrice(totalSavings)}/mo
+                                      {discountPercent > 0 && ` (includes ${discountPercent}% discount)`}
+                                    </span>
+                                  </div>
+                                )}
+                                {couponCode && (
+                                  <div className="coupon-display">
+                                    <span className="coupon-label">Use code at checkout:</span>
+                                    <span className="coupon-code">{couponCode}</span>
                                   </div>
                                 )}
                               </div>
-                            )}
-                            <div className="gbb-totals">
-                              <div className="total-line">
-                                <span>Monthly Total:</span>
-                                <strong>${monthlyTotal.toLocaleString()}/mo</strong>
-                              </div>
-                              {onetimeTotal > 0 && (
-                                <div className="total-line">
-                                  <span>One-time Total:</span>
-                                  <strong>${onetimeTotal.toLocaleString()}</strong>
+                              {isPurchased ? (
+                                <button className="pricing-tier-btn selected">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                  Selected Plan
+                                  {recommendation.purchased_at && (
+                                    <span style={{ fontWeight: 400, marginLeft: '8px', opacity: 0.8 }}>
+                                      ({new Date(recommendation.purchased_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})
+                                    </span>
+                                  )}
+                                </button>
+                              ) : (
+                                <div className="pricing-tier-btn-placeholder" style={{ height: '44px', borderRadius: '8px', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>
+                                  {tierName === 'good' ? 'Starter Option' : tierName === 'better' ? 'Popular Choice' : 'Premium Option'}
                                 </div>
                               )}
                             </div>
-                            {isPurchased && recommendation.purchased_at && (
-                              <div className="gbb-purchase-date">
-                                Purchased on {new Date(recommendation.purchased_at).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })} at {new Date(recommendation.purchased_at).toLocaleTimeString('en-US', {
-                                  hour: 'numeric',
-                                  minute: '2-digit'
-                                })}
-                              </div>
-                            )}
                           </div>
                         )
                       })}
@@ -3800,27 +3943,38 @@ export default function ClientDetailPage() {
 
                     {/* Recommendation History */}
                     {recommendation.history && recommendation.history.length > 0 && (
-                      <div className="recommendation-history">
-                        <h4>Recommendation History</h4>
-                        <ul className="history-list">
-                          {recommendation.history.map((entry) => (
-                            <li key={entry.id} className="history-item">
-                              <div className="history-date">
+                      <div className="recommendation-history" style={{ marginTop: '2rem' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                          </svg>
+                          Recommendation History
+                        </h4>
+                        <div className="history-list" style={{ background: '#f9fafb', borderRadius: '8px', padding: '1rem', border: '1px solid #e5e7eb' }}>
+                          {recommendation.history.map((entry, index) => (
+                            <div key={entry.id} className="history-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.75rem 0', borderBottom: index < recommendation.history!.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                              <div className="history-date" style={{ fontSize: '0.75rem', color: '#6b7280', whiteSpace: 'nowrap', minWidth: '100px' }}>
                                 {new Date(entry.created_at).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
-                                  year: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit'
+                                  year: 'numeric'
                                 })}
+                                <br />
+                                <span style={{ opacity: 0.8 }}>
+                                  {new Date(entry.created_at).toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
                               </div>
-                              <div className="history-content">
-                                <span className="history-action">{entry.action}</span>
-                                {entry.details && <span className="history-details">{entry.details}</span>}
+                              <div className="history-content" style={{ flex: 1 }}>
+                                <span className="history-action" style={{ fontWeight: 500, color: '#111827' }}>{entry.action}</span>
+                                {entry.details && <span className="history-details" style={{ display: 'block', fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>{entry.details}</span>}
                               </div>
-                            </li>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
                   </>

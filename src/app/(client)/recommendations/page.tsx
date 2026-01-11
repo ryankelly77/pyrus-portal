@@ -30,13 +30,25 @@ interface RecommendationItem {
   addon: { id: string; name: string; description: string | null; monthly_price: string | null; onetime_price: string | null } | null
 }
 
+interface RecommendationHistory {
+  id: string
+  action: string
+  details: string | null
+  created_at: string
+  created_by: string | null
+}
+
 interface Recommendation {
   id: string
   status: string
   purchased_tier: string | null
   purchased_at: string | null
   discount_applied: string | null
+  good_description: string | null
+  better_description: string | null
+  best_description: string | null
   recommendation_items: RecommendationItem[]
+  history?: RecommendationHistory[]
 }
 
 interface DBClient {
@@ -743,9 +755,9 @@ export default function RecommendationsPage() {
                   const hasOnetime = yourPriceOnetime > 0
 
                   const tierDescriptions: Record<string, string> = {
-                    good: 'Establish a professional foundation to help customers find and trust your business.',
-                    better: 'Build your online presence and start attracting qualified leads through search.',
-                    best: 'Comprehensive marketing to dominate your local market across all channels.',
+                    good: recommendation.good_description || 'Establish a professional foundation to help customers find and trust your business.',
+                    better: recommendation.better_description || 'Build your online presence and start attracting qualified leads through search.',
+                    best: recommendation.best_description || 'Comprehensive marketing to dominate your local market across all channels.',
                   }
 
                   return (
@@ -884,6 +896,43 @@ export default function RecommendationsPage() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+
+            {/* Recommendation History */}
+            {recommendation?.history && recommendation.history.length > 0 && (
+              <div className="recommendation-history" style={{ marginTop: '2rem' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  Recommendation History
+                </h4>
+                <div className="history-list" style={{ background: '#f9fafb', borderRadius: '8px', padding: '1rem', border: '1px solid #e5e7eb' }}>
+                  {recommendation.history.map((entry, index) => (
+                    <div key={entry.id} className="history-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.75rem 0', borderBottom: index < (recommendation.history?.length || 0) - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                      <div className="history-date" style={{ fontSize: '0.75rem', color: '#6b7280', whiteSpace: 'nowrap', minWidth: '100px' }}>
+                        {new Date(entry.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                        <br />
+                        <span style={{ opacity: 0.8 }}>
+                          {new Date(entry.created_at).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="history-content" style={{ flex: 1 }}>
+                        <span className="history-action" style={{ fontWeight: 500, color: '#111827' }}>{entry.action}</span>
+                        {entry.details && <span className="history-details" style={{ display: 'block', fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>{entry.details}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -54,6 +54,10 @@ export async function GET(request: NextRequest) {
             addon: true,
           },
         },
+        history: {
+          orderBy: { created_at: 'desc' },
+          take: 20,
+        },
       },
       orderBy: { updated_at: 'desc' },
     })
