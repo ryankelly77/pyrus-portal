@@ -1389,6 +1389,7 @@
         .result-highlight .result-icon svg {
             width: 18px;
             height: 18px;
+            stroke: white;
         }
 
         .result-highlight .result-text {
