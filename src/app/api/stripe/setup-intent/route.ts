@@ -42,6 +42,22 @@ export async function POST(request: NextRequest) {
 
     let stripeCustomerId = client.stripe_customer_id
 
+    // Verify existing Stripe customer still exists
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId)
+        console.log('[SetupIntent] Verified existing Stripe customer:', stripeCustomerId)
+      } catch (verifyError) {
+        // Customer doesn't exist in Stripe - clear it so we create a new one
+        console.log('[SetupIntent] Stripe customer not found, will create new one. Old ID:', stripeCustomerId)
+        stripeCustomerId = null
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: { stripe_customer_id: null },
+        })
+      }
+    }
+
     if (!stripeCustomerId) {
       console.log('[SetupIntent] Creating new Stripe customer...')
       // Create a new Stripe customer
