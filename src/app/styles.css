@@ -27354,3 +27354,20 @@ input[type="date"].form-control {
     background: #D1FAE5;
     color: #065F46;
 }
+
+.activity-icon.purchase {
+    background: #22C55E;
+    color: #FFFFFF;
+}
+
+/* Purchase notifications stand out with green background */
+.activity-item.purchase-highlight {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+    border: 1px solid #86EFAC;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.activity-item.purchase-highlight:hover {
+    background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+}

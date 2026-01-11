@@ -173,6 +173,14 @@ export default function AdminNotificationsPage() {
             <line x1="23" y1="11" x2="17" y2="11"></line>
           </svg>
         )
+      case 'purchase':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+        )
       default:
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -283,6 +291,21 @@ export default function AdminNotificationsPage() {
         </span>
       )
     }
+    if (type === 'purchase') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#22C55E',
+          color: '#FFFFFF',
+        }}>
+          purchase
+        </span>
+      )
+    }
     return null
   }
 
@@ -315,6 +338,7 @@ export default function AdminNotificationsPage() {
       case 'login': return 'login'
       case 'page_view': return 'page-view'
       case 'registration': return 'registration'
+      case 'purchase': return 'purchase'
       default: return 'action'
     }
   }
@@ -425,6 +449,17 @@ export default function AdminNotificationsPage() {
               </svg>
               Page Views
             </button>
+            <button
+              className={`filter-tab ${filter === 'purchase' ? 'active' : ''}`}
+              onClick={() => setFilter('purchase')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              Purchases
+            </button>
           </div>
           <div className="filter-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -488,7 +523,7 @@ export default function AdminNotificationsPage() {
               <div key={date} className="activity-date-group">
                 <div className="activity-date-header">{date}</div>
                 {items.map((notification) => (
-                  <div key={notification.id} className={`activity-item ${isUnread(notification) ? 'unread' : ''}`}>
+                  <div key={notification.id} className={`activity-item ${isUnread(notification) ? 'unread' : ''} ${notification.type === 'purchase' ? 'purchase-highlight' : ''}`}>
                     {isUnread(notification) && <span className="unread-dot"></span>}
                     <div className={`activity-icon ${getIconClass(notification.type)}`}>
                       {getTypeIcon(notification.type)}

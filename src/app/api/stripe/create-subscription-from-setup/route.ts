@@ -194,10 +194,30 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Update client status to active
+    // Update client status to active and growth stage to seedling (from prospect)
     await prisma.clients.update({
       where: { id: clientId },
-      data: { status: 'active' },
+      data: {
+        status: 'active',
+        growth_stage: 'seedling',
+        start_date: new Date(),
+      },
+    })
+
+    // Log purchase activity for notifications
+    await prisma.activity_log.create({
+      data: {
+        client_id: clientId,
+        activity_type: 'purchase',
+        description: `${client.contact_name || client.name} purchased the ${selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''} Plan`,
+        metadata: {
+          tier: selectedTier,
+          couponCode,
+          billingCycle,
+          monthlyTotal,
+          stripeSubscriptionId: subscription.id,
+        },
+      },
     })
 
     return NextResponse.json({
