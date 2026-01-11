@@ -3358,7 +3358,7 @@ export default function ClientDetailPage() {
               const openRate = deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0
 
               return (
-                <div className="stats-grid">
+                <div className="stats-grid stats-grid-4">
                   <div className="stat-card">
                     <div className="stat-label">Total Communications</div>
                     <div className="stat-value">{communications.length}</div>
