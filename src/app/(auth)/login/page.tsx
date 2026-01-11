@@ -24,7 +24,7 @@ function LoginForm() {
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -33,6 +33,25 @@ function LoginForm() {
       setError(error.message)
       setLoading(false)
       return
+    }
+
+    // Fetch user's profile to determine role
+    let finalRedirect = redirectUrl
+    if (authData.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single()
+
+      // Admin roles go to /admin, clients go to /getting-started
+      const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
+      if (profile?.role && adminRoles.includes(profile.role)) {
+        finalRedirect = '/admin'
+      } else if (!searchParams.get('redirect')) {
+        // Only default to /getting-started if no explicit redirect was requested
+        finalRedirect = '/getting-started'
+      }
     }
 
     // Log the login activity
@@ -54,7 +73,7 @@ function LoginForm() {
       console.error('Failed to log login activity:', e)
     }
 
-    router.push(redirectUrl)
+    router.push(finalRedirect)
     router.refresh()
   }
 
