@@ -330,32 +330,71 @@ export default function SettingsPage() {
                     <div className="spinner" style={{ width: 32, height: 32 }}></div>
                   </div>
                 ) : subscriptionData?.services && subscriptionData.services.length > 0 ? (
-                  <div className="services-list">
+                  <div className="services-grid" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '1rem'
+                  }}>
                     {subscriptionData.services.map((service) => (
-                      <div key={service.id} className="service-item" style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '1rem 0',
-                        borderBottom: '1px solid #E8EDE6'
+                      <div key={service.id} className="service-card" style={{
+                        padding: '1.25rem',
+                        backgroundColor: '#F5F8F5',
+                        borderRadius: '12px',
+                        border: '1px solid #E8EDE6'
                       }}>
-                        <div>
-                          <div style={{ fontWeight: 500, color: '#1A1F18' }}>{service.name}</div>
-                          {service.category && (
-                            <div style={{ fontSize: '0.875rem', color: '#5A6358', marginTop: '0.25rem' }}>
-                              {service.category}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 500, color: '#1A1F18' }}>
-                            ${service.price.toLocaleString()}/mo
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          marginBottom: '0.75rem'
+                        }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#324438',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="20" height="20">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
                           </div>
-                          {service.quantity > 1 && (
-                            <div style={{ fontSize: '0.875rem', color: '#5A6358' }}>
-                              Qty: {service.quantity}
-                            </div>
-                          )}
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#2E7D32',
+                            fontWeight: 500,
+                            backgroundColor: '#E8F5E9',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px'
+                          }}>
+                            Active
+                          </span>
+                        </div>
+                        <div style={{ fontWeight: 600, color: '#1A1F18', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                          {service.name}
+                        </div>
+                        {service.category && (
+                          <div style={{ fontSize: '0.875rem', color: '#5A6358', marginBottom: '0.75rem' }}>
+                            {service.category}
+                          </div>
+                        )}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: '0.75rem',
+                          borderTop: '1px solid #E8EDE6',
+                          marginTop: 'auto'
+                        }}>
+                          <span style={{ fontSize: '0.875rem', color: '#5A6358' }}>
+                            {service.quantity > 1 ? `Qty: ${service.quantity}` : 'Monthly'}
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#324438' }}>
+                            ${service.price.toLocaleString()}/mo
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -598,7 +637,11 @@ export default function SettingsPage() {
                       <line x1="16" y1="13" x2="8" y2="13"></line>
                       <line x1="16" y1="17" x2="8" y2="17"></line>
                     </svg>
-                    <p>No invoices yet. Your billing history will appear here.</p>
+                    <p>
+                      {subscriptionData?.subscription?.monthlyAmount === 0
+                        ? 'No invoices generated for $0 subscriptions.'
+                        : 'No invoices yet. Your billing history will appear here.'}
+                    </p>
                   </div>
                 )}
               </div>

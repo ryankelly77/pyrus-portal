@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
       billingEmail: client.contact_email,
       clientName: client.name,
       clientSince: client.start_date
-        ? new Date(client.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        ? new Date(client.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
         : null,
     })
   } catch (error) {
