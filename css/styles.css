@@ -269,11 +269,13 @@
             background: var(--bg-white);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-light);
+            overflow: visible;
         }
 
         .checklist-header {
-            padding: 20px 24px;
+            padding: 20px 24px 24px 24px;
             border-bottom: 1px solid var(--border-light);
+            overflow: visible;
         }
 
         .checklist-header h3 {
@@ -290,6 +292,7 @@
 
         .progress-bar-container {
             margin-top: 16px;
+            margin-bottom: 4px;
         }
 
         .progress-bar-label {
