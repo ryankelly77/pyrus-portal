@@ -169,23 +169,58 @@ export async function POST(request: NextRequest) {
 
       case 'failed':
       case 'rejected':
-        const errorMessage = eventData['delivery-status']?.message ||
+      case 'temporary_fail':
+        const tempFailMessage = eventData['delivery-status']?.message ||
+                           eventData['delivery-status']?.description ||
                            eventData.reason ||
                            body.reason ||
-                           'Delivery failed'
+                           'Temporary delivery failure'
+
+        // Don't overwrite if already delivered/opened/clicked
+        const commForTempFail = await prisma.client_communications.findUnique({
+          where: { id: commId },
+          select: { status: true, metadata: true },
+        })
+        const tempFailMetadata = (commForTempFail?.metadata as Record<string, any>) || {}
+
+        // Only update if not already successfully delivered
+        if (!['delivered', 'opened', 'clicked'].includes(commForTempFail?.status || '')) {
+          await prisma.client_communications.update({
+            where: { id: commId },
+            data: {
+              status: 'failed',
+              metadata: {
+                ...tempFailMetadata,
+                errorMessage: tempFailMessage,
+                failedAt: now.toISOString(),
+                failureType: 'temporary',
+              },
+            },
+          })
+          console.log(`[Mailgun Webhook] Marked ${commId} as failed (temporary): ${tempFailMessage}`)
+        }
+        break
+
+      case 'permanent_fail':
+        const permFailMessage = eventData['delivery-status']?.message ||
+                           eventData['delivery-status']?.description ||
+                           eventData.reason ||
+                           body.reason ||
+                           'Delivery failed permanently'
 
         await prisma.client_communications.update({
           where: { id: commId },
           data: {
-            status: 'failed',
+            status: 'bounced',
             metadata: {
               ...existingMetadata,
-              errorMessage: errorMessage,
-              failedAt: now.toISOString(),
+              errorMessage: permFailMessage,
+              bouncedAt: now.toISOString(),
+              failureType: 'permanent',
             },
           },
         })
-        console.log(`[Mailgun Webhook] Marked ${commId} as failed: ${errorMessage}`)
+        console.log(`[Mailgun Webhook] Marked ${commId} as bounced (permanent): ${permFailMessage}`)
         break
 
       case 'complained':
@@ -204,8 +239,18 @@ export async function POST(request: NextRequest) {
         break
 
       case 'unsubscribed':
-        // Log but don't change status
-        console.log(`[Mailgun Webhook] Recipient ${recipient} unsubscribed`)
+        // Update metadata to track unsubscribe
+        await prisma.client_communications.update({
+          where: { id: commId },
+          data: {
+            metadata: {
+              ...existingMetadata,
+              unsubscribed: true,
+              unsubscribedAt: now.toISOString(),
+            },
+          },
+        })
+        console.log(`[Mailgun Webhook] Recipient ${recipient} unsubscribed, updated ${commId}`)
         break
 
       default:
