@@ -3348,13 +3348,17 @@ export default function ClientDetailPage() {
             {/* Stats Overview */}
             {(() => {
               // Calculate stats from communications
-              const emailTypes = ['email_invite', 'email_reminder', 'email_general']
-              const emails = communications.filter(c => emailTypes.includes(c.type))
-              const deliveredEmails = emails.filter(c => c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
-              const failedEmails = emails.filter(c => c.status === 'failed' || c.status === 'bounced')
+              // Include result_alert in email types since they're sent via email
+              const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'result_alert']
+              const allEmails = communications.filter(c => emailTypes.includes(c.type))
+              // Count as delivered if status is sent, delivered, opened, or clicked (sent means it was sent successfully)
+              const deliveredEmails = allEmails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const failedEmails = allEmails.filter(c => c.status === 'failed' || c.status === 'bounced')
               const resultAlerts = communications.filter(c => c.type === 'result_alert')
-              const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened')
-              const openedEmails = emails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              // Viewed means opened or clicked
+              const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              const deliveredAlerts = resultAlerts.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+              const openedEmails = allEmails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
               const openRate = deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0
 
               return (
@@ -3366,18 +3370,18 @@ export default function ClientDetailPage() {
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Emails Sent</div>
-                    <div className="stat-value">{emails.length}</div>
+                    <div className="stat-value">{allEmails.length}</div>
                     <div className="stat-detail">{deliveredEmails.length} delivered{failedEmails.length > 0 ? `, ${failedEmails.length} failed` : ''}</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Result Alerts</div>
                     <div className="stat-value purple">{resultAlerts.length}</div>
-                    <div className="stat-detail">{viewedAlerts.length === resultAlerts.length && resultAlerts.length > 0 ? 'All viewed' : `${viewedAlerts.length} viewed`}</div>
+                    <div className="stat-detail">{deliveredAlerts.length} sent, {viewedAlerts.length} viewed</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Email Open Rate</div>
                     <div className="stat-value success">{openRate}%</div>
-                    <div className="stat-detail">{openedEmails.length} of {deliveredEmails.length} delivered</div>
+                    <div className="stat-detail">{openedEmails.length} of {deliveredEmails.length} opened</div>
                   </div>
                 </div>
               )
