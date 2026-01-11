@@ -438,6 +438,11 @@ export default function ClientDetailPage() {
   const [resultAlertSubject, setResultAlertSubject] = useState('')
   const [resultAlertMessage, setResultAlertMessage] = useState('')
   const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
+  // Optional structured data for highlight box
+  const [resultAlertKeyword, setResultAlertKeyword] = useState('')
+  const [resultAlertNewPosition, setResultAlertNewPosition] = useState('')
+  const [resultAlertPrevPosition, setResultAlertPrevPosition] = useState('')
+  const [resultAlertMilestone, setResultAlertMilestone] = useState('')
 
   // Alert type options with icons and default subjects
   const alertTypes = {
@@ -919,6 +924,28 @@ export default function ClientDetailPage() {
     setIsSendingResultAlert(true)
 
     try {
+      // Build metadata with optional structured data
+      const metadata: Record<string, any> = {
+        alertType: resultAlertType,
+        alertTypeLabel: alertTypes[resultAlertType].label,
+      }
+
+      // Add keyword/position data if provided
+      if (resultAlertKeyword.trim()) {
+        metadata.keyword = resultAlertKeyword.trim()
+        if (resultAlertNewPosition.trim()) {
+          metadata.newPosition = parseInt(resultAlertNewPosition)
+        }
+        if (resultAlertPrevPosition.trim()) {
+          metadata.previousPosition = parseInt(resultAlertPrevPosition)
+        }
+      }
+
+      // Add milestone data if provided
+      if (resultAlertMilestone.trim()) {
+        metadata.milestone = resultAlertMilestone.trim()
+      }
+
       const res = await fetch(`/api/admin/clients/${clientId}/communications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -929,10 +956,7 @@ export default function ClientDetailPage() {
           body: resultAlertMessage,
           recipientEmail: dbClient.contact_email,
           highlightType: 'success',
-          metadata: {
-            alertType: resultAlertType,
-            alertTypeLabel: alertTypes[resultAlertType].label,
-          },
+          metadata,
         }),
       })
 
@@ -947,6 +971,10 @@ export default function ClientDetailPage() {
       setResultAlertType('ranking')
       setResultAlertSubject('')
       setResultAlertMessage('')
+      setResultAlertKeyword('')
+      setResultAlertNewPosition('')
+      setResultAlertPrevPosition('')
+      setResultAlertMilestone('')
 
       // Show success message
       setResendMessage({
@@ -5314,6 +5342,70 @@ export default function ClientDetailPage() {
                 </div>
               </div>
 
+              {/* Optional Keyword/Position fields for ranking alerts */}
+              {(resultAlertType === 'ranking' || resultAlertType === 'traffic') && (
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534', marginBottom: '12px' }}>
+                    Highlight Box (Optional)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Keyword</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g., wound care san antonio"
+                        value={resultAlertKeyword}
+                        onChange={(e) => setResultAlertKeyword(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>New Position</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        placeholder="7"
+                        value={resultAlertNewPosition}
+                        onChange={(e) => setResultAlertNewPosition(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Previous Position</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        placeholder="24"
+                        value={resultAlertPrevPosition}
+                        onChange={(e) => setResultAlertPrevPosition(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Optional Milestone field for milestone alerts */}
+              {resultAlertType === 'milestone' && (
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#92400E', marginBottom: '12px' }}>
+                    Highlight Box (Optional)
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Milestone Achievement</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., 10,000 Monthly Visitors!"
+                      value={resultAlertMilestone}
+                      onChange={(e) => setResultAlertMilestone(e.target.value)}
+                      style={{ fontSize: '13px' }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Message</label>
                 <textarea
@@ -5373,6 +5465,56 @@ export default function ClientDetailPage() {
                   }}>
                     {resultAlertMessage || <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Your message will appear here...</span>}
                   </div>
+
+                  {/* Preview highlight box */}
+                  {(resultAlertKeyword || resultAlertMilestone) && (
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '14px 16px',
+                      background: `linear-gradient(135deg, ${alertTypes[resultAlertType].bgColor} 0%, ${alertTypes[resultAlertType].bgColor}dd 100%)`,
+                      borderLeft: `4px solid ${alertTypes[resultAlertType].color}`,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                    }}>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        background: alertTypes[resultAlertType].color,
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <div style={{ transform: 'scale(0.75)' }}>
+                          {alertTypes[resultAlertType].icon}
+                        </div>
+                      </div>
+                      <div>
+                        {resultAlertKeyword && (
+                          <>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
+                              &quot;{resultAlertKeyword}&quot; — Now Position #{resultAlertNewPosition || '?'}
+                            </div>
+                            {resultAlertPrevPosition && resultAlertNewPosition && (
+                              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                Moved from position #{resultAlertPrevPosition} to #{resultAlertNewPosition} (up {parseInt(resultAlertPrevPosition) - parseInt(resultAlertNewPosition)} spots!)
+                                {parseInt(resultAlertNewPosition) <= 10 && ' - First page visibility achieved'}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {resultAlertMilestone && !resultAlertKeyword && (
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
+                            {resultAlertMilestone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
