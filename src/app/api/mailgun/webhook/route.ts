@@ -29,11 +29,14 @@ function verifyWebhookSignature(
 }
 
 /**
- * POST /api/webhooks/mailgun - Handle Mailgun webhook events
+ * POST /api/mailgun/webhook - Handle Mailgun webhook events
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    // Log the full payload for debugging
+    console.log('[Mailgun Webhook] Received payload:', JSON.stringify(body, null, 2))
 
     // Mailgun sends events in different formats depending on webhook version
     // Legacy webhooks send flat data, newer ones nest under "event-data"
@@ -54,7 +57,11 @@ export async function POST(request: NextRequest) {
     }
 
     const event = eventData.event || body.event
-    const messageId = eventData.message?.headers?.['message-id'] || body['message-id'] || body['Message-Id']
+    // Try multiple paths for message ID
+    const messageId = eventData.message?.headers?.['message-id']
+      || eventData['message-id']
+      || body['message-id']
+      || body['Message-Id']
     const recipient = eventData.recipient || body.recipient
 
     console.log(`[Mailgun Webhook] Event: ${event}, MessageId: ${messageId}, Recipient: ${recipient}`)
@@ -66,22 +73,29 @@ export async function POST(request: NextRequest) {
 
     // Clean up message ID (remove angle brackets if present)
     const cleanMessageId = messageId.replace(/^<|>$/g, '')
+    console.log(`[Mailgun Webhook] Clean message ID: ${cleanMessageId}`)
 
     // Find the communication record by Mailgun message ID
     // The message ID is stored in metadata.mailgunMessageId
-    const communications = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM client_communications
-      WHERE metadata->>'mailgunMessageId' LIKE ${'%' + cleanMessageId + '%'}
-      LIMIT 1
-    `
+    const searchPattern = `%${cleanMessageId}%`
+    const communications = await prisma.$queryRawUnsafe<Array<{ id: string, metadata: any }>>(
+      `SELECT id, metadata FROM client_communications WHERE metadata->>'mailgunMessageId' LIKE $1 LIMIT 1`,
+      searchPattern
+    )
+
+    console.log(`[Mailgun Webhook] Found ${communications?.length || 0} communications`)
 
     if (!communications || communications.length === 0) {
       console.warn(`[Mailgun Webhook] No communication found for message ID: ${cleanMessageId}`)
       return NextResponse.json({ received: true })
     }
 
-    const commId = communications[0].id
+    const comm = communications[0]
+    const commId = comm.id
+    const existingMetadata = (comm.metadata as Record<string, any>) || {}
     const now = new Date()
+
+    console.log(`[Mailgun Webhook] Updating communication ${commId} for event: ${event}`)
 
     // Update based on event type
     switch (event) {
@@ -91,6 +105,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: 'delivered',
             metadata: {
+              ...existingMetadata,
               deliveredAt: now.toISOString(),
             },
           },
@@ -102,8 +117,10 @@ export async function POST(request: NextRequest) {
         // Don't downgrade status if already clicked
         const commForOpen = await prisma.client_communications.findUnique({
           where: { id: commId },
-          select: { status: true, opened_at: true },
+          select: { status: true, opened_at: true, metadata: true },
         })
+
+        const openMetadata = (commForOpen?.metadata as Record<string, any>) || {}
 
         // Only update if not already opened (first open)
         if (!commForOpen?.opened_at) {
@@ -112,9 +129,15 @@ export async function POST(request: NextRequest) {
             data: {
               status: commForOpen?.status === 'clicked' ? 'clicked' : 'opened',
               opened_at: now,
+              metadata: {
+                ...openMetadata,
+                openedAt: now.toISOString(),
+              },
             },
           })
           console.log(`[Mailgun Webhook] Marked ${commId} as opened`)
+        } else {
+          console.log(`[Mailgun Webhook] ${commId} already opened, skipping`)
         }
         break
 
@@ -122,12 +145,20 @@ export async function POST(request: NextRequest) {
         // Get the clicked URL from the event data
         const clickedUrl = eventData.url || body.url
 
+        // Get current metadata to merge
+        const commForClick = await prisma.client_communications.findUnique({
+          where: { id: commId },
+          select: { metadata: true },
+        })
+        const clickMetadata = (commForClick?.metadata as Record<string, any>) || {}
+
         await prisma.client_communications.update({
           where: { id: commId },
           data: {
             status: 'clicked',
             clicked_at: now,
             metadata: {
+              ...clickMetadata,
               clickedUrl: clickedUrl,
               clickedAt: now.toISOString(),
             },
@@ -148,6 +179,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: 'failed',
             metadata: {
+              ...existingMetadata,
               errorMessage: errorMessage,
               failedAt: now.toISOString(),
             },
@@ -162,6 +194,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: 'bounced',
             metadata: {
+              ...existingMetadata,
               complaint: true,
               complainedAt: now.toISOString(),
             },
