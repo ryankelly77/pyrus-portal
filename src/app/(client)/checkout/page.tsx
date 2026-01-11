@@ -151,6 +151,56 @@ export default function CheckoutPage() {
   const [stripeError, setStripeError] = useState<string | null>(null)
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
   const [isPaymentReady, setIsPaymentReady] = useState(false)
+  const [isFreeOrderProcessing, setIsFreeOrderProcessing] = useState(false)
+  const [freeOrderError, setFreeOrderError] = useState<string | null>(null)
+
+  // Handle $0 order submission (no payment needed)
+  const handleFreeOrderSubmit = async () => {
+    setIsFreeOrderProcessing(true)
+    setFreeOrderError(null)
+
+    try {
+      const effectiveClientId = viewingAs || client.id
+      const response = await fetch('/api/stripe/create-free-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: effectiveClientId,
+          recommendationId,
+          selectedTier,
+          cartItems: cartItems.filter(item => !item.isFree).map(item => ({
+            name: item.name,
+            price: item.price,
+            billingPeriod: item.billingPeriod,
+          })),
+          couponCode: appliedCoupon,
+          billingCycle,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setFreeOrderError(data.error || 'Failed to process order')
+        setIsFreeOrderProcessing(false)
+        return
+      }
+
+      // Order created successfully, redirect to success page
+      const successUrl = new URL('/checkout/success', window.location.origin)
+      successUrl.searchParams.set('tier', selectedTier || '')
+      if (viewingAs) {
+        successUrl.searchParams.set('viewingAs', viewingAs)
+      }
+      successUrl.searchParams.set('redirect_status', 'succeeded')
+
+      window.location.href = successUrl.toString()
+    } catch (err) {
+      console.error('Free order error:', err)
+      setFreeOrderError('An unexpected error occurred')
+      setIsFreeOrderProcessing(false)
+    }
+  }
 
   // Fetch recommendation items when tier is provided
   useEffect(() => {
@@ -293,6 +343,7 @@ export default function CheckoutPage() {
 
   // Fetch SetupIntent client secret for Stripe Elements
   // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
+  // Skip for $0 orders (no payment needed)
   useEffect(() => {
     const effectiveClientId = viewingAs || client.id
     console.log('[Stripe] Effect triggered:', {
@@ -309,6 +360,28 @@ export default function CheckoutPage() {
     }
     if (!effectiveClientId) {
       console.log('[Stripe] Early return: no client ID')
+      return
+    }
+
+    // Calculate if this is a $0 order (e.g., 100% discount coupon)
+    const currentMonthlyTotal = cartItems.reduce((sum, item) =>
+      item.billingPeriod === 'monthly' ? sum + item.price : sum, 0
+    )
+    const currentOnetimeTotal = cartItems.reduce((sum, item) =>
+      item.billingPeriod === 'one-time' ? sum + item.price : sum, 0
+    )
+    const currentCouponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
+      ? Math.round(currentMonthlyTotal * (VALID_COUPONS[appliedCoupon].discount / 100) * 100) / 100
+      : 0
+    const currentDiscountedMonthly = currentMonthlyTotal - currentCouponDiscount
+    const currentAnnualTotal = currentDiscountedMonthly * 12 * 0.9
+    const currentTotalDue = billingCycle === 'monthly'
+      ? currentDiscountedMonthly + currentOnetimeTotal
+      : currentAnnualTotal + currentOnetimeTotal
+
+    if (currentTotalDue === 0) {
+      console.log('[Stripe] Skipping SetupIntent: $0 order')
+      setClientSecret(null)
       return
     }
 
@@ -348,7 +421,7 @@ export default function CheckoutPage() {
     }
 
     createSetupIntent()
-  }, [cartItems.length, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading])
+  }, [cartItems, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading, appliedCoupon])
 
   // Calculate discount
   const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
@@ -356,6 +429,12 @@ export default function CheckoutPage() {
     : 0
   const discountedMonthlyTotal = monthlyTotal - couponDiscount
   const annualTotal = discountedMonthlyTotal * 12 * 0.9 // 10% discount for annual
+
+  // Calculate total due today - for detecting $0 orders
+  const totalDueToday = billingCycle === 'monthly'
+    ? discountedMonthlyTotal + onetimeTotal
+    : annualTotal + onetimeTotal
+  const isZeroOrder = totalDueToday === 0
 
 
   // Loading state when mounting or fetching recommendation items
@@ -536,85 +615,87 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Payment Method */}
-            <div className="checkout-section">
-              <h2 className="checkout-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                  <line x1="1" y1="10" x2="23" y2="10"></line>
-                </svg>
-                Payment Method
-              </h2>
+            {/* Payment Method - Hidden for $0 orders */}
+            {!isZeroOrder && (
+              <div className="checkout-section">
+                <h2 className="checkout-section-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
+                  Payment Method
+                </h2>
 
-              <div className="payment-form">
-                {!stripePromise ? (
-                  <div className="stripe-error">
-                    <p>Payment system is not configured. Please contact support.</p>
-                  </div>
-                ) : stripeError ? (
-                  <div className="stripe-error">
-                    <p>{stripeError}</p>
-                  </div>
-                ) : !clientSecret ? (
-                  <div className="stripe-loading">
-                    <div className="spinner" style={{ width: 24, height: 24 }}></div>
-                    <p>Loading payment form...</p>
-                    <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                      Client ID: {client.id ? 'Ready' : 'Loading...'}
-                    </p>
-                  </div>
-                ) : (
-                  <Elements
-                    key={`${clientSecret}-${billingCycle}`}
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: 'stripe',
-                        variables: {
-                          colorPrimary: '#324438',
-                          fontFamily: 'Inter, system-ui, sans-serif',
+                <div className="payment-form">
+                  {!stripePromise ? (
+                    <div className="stripe-error">
+                      <p>Payment system is not configured. Please contact support.</p>
+                    </div>
+                  ) : stripeError ? (
+                    <div className="stripe-error">
+                      <p>{stripeError}</p>
+                    </div>
+                  ) : !clientSecret ? (
+                    <div className="stripe-loading">
+                      <div className="spinner" style={{ width: 24, height: 24 }}></div>
+                      <p>Loading payment form...</p>
+                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                        Client ID: {client.id ? 'Ready' : 'Loading...'}
+                      </p>
+                    </div>
+                  ) : (
+                    <Elements
+                      key={`${clientSecret}-${billingCycle}`}
+                      stripe={stripePromise}
+                      options={{
+                        clientSecret,
+                        appearance: {
+                          theme: 'stripe',
+                          variables: {
+                            colorPrimary: '#324438',
+                            fontFamily: 'Inter, system-ui, sans-serif',
+                          },
                         },
-                      },
-                    }}
-                  >
-                    <PaymentForm
-                      clientId={viewingAs || client.id}
-                      recommendationId={recommendationId}
-                      selectedTier={selectedTier}
-                      cartItems={cartItems}
-                      couponCode={appliedCoupon}
-                      billingCycle={billingCycle}
-                      viewingAs={viewingAs}
-                      onError={(error) => setStripeError(error)}
-                      onProcessingChange={setIsPaymentProcessing}
-                      onReadyChange={setIsPaymentReady}
-                    />
-                  </Elements>
-                )}
-              </div>
-
-              {billingCycle === 'annual' ? (
-                <div className="ach-notice">
-                  <div className="ach-notice-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                      <path d="M3 21h18"></path>
-                      <path d="M3 10h18"></path>
-                      <path d="M5 6l7-3 7 3"></path>
-                      <path d="M4 10v11"></path>
-                      <path d="M20 10v11"></path>
-                      <path d="M8 14v3"></path>
-                      <path d="M12 14v3"></path>
-                      <path d="M16 14v3"></path>
-                    </svg>
-                  </div>
-                  <div className="ach-notice-content">
-                    <strong>Bank Transfer (ACH) Required</strong>
-                    <p>Annual billing requires payment via ACH bank transfer for security.</p>
-                  </div>
+                      }}
+                    >
+                      <PaymentForm
+                        clientId={viewingAs || client.id}
+                        recommendationId={recommendationId}
+                        selectedTier={selectedTier}
+                        cartItems={cartItems}
+                        couponCode={appliedCoupon}
+                        billingCycle={billingCycle}
+                        viewingAs={viewingAs}
+                        onError={(error) => setStripeError(error)}
+                        onProcessingChange={setIsPaymentProcessing}
+                        onReadyChange={setIsPaymentReady}
+                      />
+                    </Elements>
+                  )}
                 </div>
-              ) : null}
-            </div>
+
+                {billingCycle === 'annual' ? (
+                  <div className="ach-notice">
+                    <div className="ach-notice-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                        <path d="M3 21h18"></path>
+                        <path d="M3 10h18"></path>
+                        <path d="M5 6l7-3 7 3"></path>
+                        <path d="M4 10v11"></path>
+                        <path d="M20 10v11"></path>
+                        <path d="M8 14v3"></path>
+                        <path d="M12 14v3"></path>
+                        <path d="M16 14v3"></path>
+                      </svg>
+                    </div>
+                    <div className="ach-notice-content">
+                      <strong>Bank Transfer (ACH) Required</strong>
+                      <p>Annual billing requires payment via ACH bank transfer for security.</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Billing Info */}
             <div className="checkout-section">
@@ -795,29 +876,60 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              {/* Complete Purchase Button */}
-              <button
-                type="submit"
-                form="checkout-payment-form"
-                className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
-                disabled={!isPaymentReady || isPaymentProcessing || !clientSecret}
-                style={{ width: '100%', marginTop: '1rem' }}
-              >
-                {isPaymentProcessing ? (
-                  <>
-                    <span className="spinner"></span>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    Complete Purchase
-                  </>
-                )}
-              </button>
+              {/* Complete Purchase Button - Different for $0 vs paid orders */}
+              {isZeroOrder ? (
+                <>
+                  {freeOrderError && (
+                    <div className="stripe-error" style={{ marginBottom: '1rem' }}>
+                      <p>{freeOrderError}</p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleFreeOrderSubmit}
+                    className={`btn btn-primary btn-lg checkout-btn ${isFreeOrderProcessing ? 'processing' : ''}`}
+                    disabled={isFreeOrderProcessing}
+                    style={{ width: '100%', marginTop: '1rem' }}
+                  >
+                    {isFreeOrderProcessing ? (
+                      <>
+                        <span className="spinner"></span>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Complete Order
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="submit"
+                  form="checkout-payment-form"
+                  className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
+                  disabled={!isPaymentReady || isPaymentProcessing || !clientSecret}
+                  style={{ width: '100%', marginTop: '1rem' }}
+                >
+                  {isPaymentProcessing ? (
+                    <>
+                      <span className="spinner"></span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      Complete Purchase
+                    </>
+                  )}
+                </button>
+              )}
 
               <div className="checkout-trust-badges">
                 <div className="checkout-guarantee">
