@@ -1,12 +1,50 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
+
+interface SubscriptionData {
+  subscription: {
+    id: string
+    status: string
+    currentPeriodStart: string
+    currentPeriodEnd: string
+    monthlyAmount: number
+    createdAt: string
+  } | null
+  services: Array<{
+    id: string
+    name: string
+    category: string | null
+    price: number
+    quantity: number
+    type: 'product' | 'bundle'
+  }>
+  paymentMethods: Array<{
+    id: string
+    brand: string
+    last4: string
+    expMonth: number
+    expYear: number
+    isDefault: boolean
+  }>
+  invoices: Array<{
+    id: string
+    number: string | null
+    date: string
+    amount: number
+    status: string
+    pdfUrl: string | null
+  }>
+  billingEmail: string | null
+  clientName: string
+  clientSince: string | null
+}
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
@@ -15,6 +53,38 @@ export default function SettingsPage() {
   usePageView({ page: '/settings', pageName: 'Settings' })
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null)
+
+  // Fetch subscription data when switching to subscription or billing tab
+  useEffect(() => {
+    if ((activeTab === 'subscription' || activeTab === 'billing') && !subscriptionData && !subscriptionLoading) {
+      setSubscriptionLoading(true)
+      setSubscriptionError(null)
+
+      let url = '/api/client/subscription'
+      if (viewingAs) {
+        url += `?clientId=${viewingAs}`
+      }
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch subscription data')
+          return res.json()
+        })
+        .then((data) => {
+          setSubscriptionData(data)
+        })
+        .catch((err) => {
+          console.error('Error fetching subscription:', err)
+          setSubscriptionError(err.message)
+        })
+        .finally(() => {
+          setSubscriptionLoading(false)
+        })
+    }
+  }, [activeTab, subscriptionData, subscriptionLoading, viewingAs])
 
   // Parse first and last name from contactName
   const nameParts = client.contactName.split(' ')
@@ -196,21 +266,56 @@ export default function SettingsPage() {
                 <p>Your active plan and next billing date</p>
               </div>
               <div className="settings-card-body">
-                <div className="subscription-overview">
-                  <div className="subscription-meta">
-                    <div className="meta-item">
-                      <span className="meta-label">Status</span>
-                      <span className="meta-value" style={{ textTransform: 'capitalize' }}>{client.status || 'N/A'}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Client Since</span>
-                      <span className="meta-value">{client.clientSince || 'N/A'}</span>
+                {subscriptionLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ width: 32, height: 32 }}></div>
+                  </div>
+                ) : subscriptionData?.subscription ? (
+                  <div className="subscription-overview">
+                    <div className="subscription-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">Status</span>
+                        <span className="meta-value" style={{ textTransform: 'capitalize', color: subscriptionData.subscription.status === 'active' ? '#2E7D32' : undefined }}>
+                          {subscriptionData.subscription.status}
+                        </span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Monthly Amount</span>
+                        <span className="meta-value">${subscriptionData.subscription.monthlyAmount.toLocaleString()}/mo</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Next Billing Date</span>
+                        <span className="meta-value">
+                          {new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Client Since</span>
+                        <span className="meta-value">{subscriptionData.clientSince || client.clientSince || 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p style={{ fontSize: '0.875rem', color: '#5A6358', marginTop: '1rem' }}>
-                  Subscription details will be available once your services are activated.
-                </p>
+                ) : (
+                  <div className="subscription-overview">
+                    <div className="subscription-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">Status</span>
+                        <span className="meta-value" style={{ textTransform: 'capitalize' }}>{client.status || 'N/A'}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Client Since</span>
+                        <span className="meta-value">{client.clientSince || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: '#5A6358', marginTop: '1rem' }}>
+                      Subscription details will be available once your services are activated.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -220,14 +325,51 @@ export default function SettingsPage() {
                 <p>Services included in your subscription</p>
               </div>
               <div className="settings-card-body">
-                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                  </svg>
-                  <p>Your active services will appear here once your subscription is set up.</p>
-                </div>
+                {subscriptionLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ width: 32, height: 32 }}></div>
+                  </div>
+                ) : subscriptionData?.services && subscriptionData.services.length > 0 ? (
+                  <div className="services-list">
+                    {subscriptionData.services.map((service) => (
+                      <div key={service.id} className="service-item" style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem 0',
+                        borderBottom: '1px solid #E8EDE6'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 500, color: '#1A1F18' }}>{service.name}</div>
+                          {service.category && (
+                            <div style={{ fontSize: '0.875rem', color: '#5A6358', marginTop: '0.25rem' }}>
+                              {service.category}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 500, color: '#1A1F18' }}>
+                            ${service.price.toLocaleString()}/mo
+                          </div>
+                          {service.quantity > 1 && (
+                            <div style={{ fontSize: '0.875rem', color: '#5A6358' }}>
+                              Qty: {service.quantity}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                      <line x1="8" y1="21" x2="16" y2="21"></line>
+                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    <p>Your active services will appear here once your subscription is set up.</p>
+                  </div>
+                )}
               </div>
               <div className="settings-card-footer">
                 <p className="footer-note">Want to add or change services? <Link href={viewingAs ? `/recommendations?viewingAs=${viewingAs}` : '/recommendations'}>View recommendations</Link> or contact your account manager.</p>
@@ -245,13 +387,71 @@ export default function SettingsPage() {
                 <p>Your card on file for recurring payments</p>
               </div>
               <div className="settings-card-body">
-                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
-                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                    <line x1="1" y1="10" x2="23" y2="10"></line>
-                  </svg>
-                  <p>No payment method on file yet.</p>
-                </div>
+                {subscriptionLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ width: 32, height: 32 }}></div>
+                  </div>
+                ) : subscriptionData?.paymentMethods && subscriptionData.paymentMethods.length > 0 ? (
+                  <div className="payment-methods-list">
+                    {subscriptionData.paymentMethods.map((pm) => (
+                      <div key={pm.id} className="payment-method-item" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        padding: '1rem',
+                        backgroundColor: pm.isDefault ? '#F5F8F5' : 'transparent',
+                        borderRadius: '8px',
+                        border: pm.isDefault ? '1px solid #2E7D32' : '1px solid #E8EDE6',
+                        marginBottom: '0.5rem'
+                      }}>
+                        <div style={{
+                          width: '48px',
+                          height: '32px',
+                          backgroundColor: '#fff',
+                          border: '1px solid #E8EDE6',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          color: '#5A6358'
+                        }}>
+                          {pm.brand}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, color: '#1A1F18' }}>
+                            •••• •••• •••• {pm.last4}
+                          </div>
+                          <div style={{ fontSize: '0.875rem', color: '#5A6358' }}>
+                            Expires {pm.expMonth.toString().padStart(2, '0')}/{pm.expYear.toString().slice(-2)}
+                          </div>
+                        </div>
+                        {pm.isDefault && (
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#2E7D32',
+                            fontWeight: 500,
+                            backgroundColor: '#E8F5E9',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px'
+                          }}>
+                            Default
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                      <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    <p>No payment method on file yet.</p>
+                  </div>
+                )}
               </div>
               <div className="settings-card-footer">
                 <button className="btn btn-secondary">
@@ -259,7 +459,7 @@ export default function SettingsPage() {
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                     <line x1="1" y1="10" x2="23" y2="10"></line>
                   </svg>
-                  Add Payment Method
+                  {subscriptionData?.paymentMethods?.length ? 'Update Payment Method' : 'Add Payment Method'}
                 </button>
               </div>
             </div>
@@ -272,11 +472,11 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="form-group">
                   <label className="form-label">Billing Email</label>
-                  <input type="email" className="form-input" defaultValue={client.contactEmail || ''} />
+                  <input type="email" className="form-input" defaultValue={subscriptionData?.billingEmail || client.contactEmail || ''} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-input" defaultValue={client.name} />
+                  <input type="text" className="form-input" defaultValue={subscriptionData?.clientName || client.name} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Billing Address</label>
@@ -308,15 +508,99 @@ export default function SettingsPage() {
                 <p>View and download past invoices</p>
               </div>
               <div className="settings-card-body">
-                <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                  </svg>
-                  <p>No invoices yet. Your billing history will appear here.</p>
-                </div>
+                {subscriptionLoading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <div className="spinner" style={{ width: 32, height: 32 }}></div>
+                  </div>
+                ) : subscriptionData?.invoices && subscriptionData.invoices.length > 0 ? (
+                  <div className="invoice-list">
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr auto',
+                      gap: '1rem',
+                      padding: '0.75rem 0',
+                      borderBottom: '2px solid #E8EDE6',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: '#5A6358',
+                      textTransform: 'uppercase'
+                    }}>
+                      <div>Invoice</div>
+                      <div>Date</div>
+                      <div>Amount</div>
+                      <div></div>
+                    </div>
+                    {subscriptionData.invoices.map((invoice) => (
+                      <div key={invoice.id} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr auto',
+                        gap: '1rem',
+                        padding: '1rem 0',
+                        borderBottom: '1px solid #E8EDE6',
+                        alignItems: 'center'
+                      }}>
+                        <div style={{ fontWeight: 500, color: '#1A1F18' }}>
+                          {invoice.number || invoice.id.slice(0, 8)}
+                        </div>
+                        <div style={{ color: '#5A6358' }}>
+                          {new Date(invoice.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{ fontWeight: 500, color: '#1A1F18' }}>
+                          ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div>
+                          {invoice.pdfUrl ? (
+                            <a
+                              href={invoice.pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                fontSize: '0.875rem',
+                                color: '#324438',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                              </svg>
+                              PDF
+                            </a>
+                          ) : (
+                            <span style={{
+                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.5rem',
+                              backgroundColor: invoice.status === 'paid' ? '#E8F5E9' : '#FFF3E0',
+                              color: invoice.status === 'paid' ? '#2E7D32' : '#E65100',
+                              borderRadius: '4px',
+                              textTransform: 'capitalize'
+                            }}>
+                              {invoice.status}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="services-empty" style={{ textAlign: 'center', padding: '2rem', color: '#5A6358' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <p>No invoices yet. Your billing history will appear here.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
