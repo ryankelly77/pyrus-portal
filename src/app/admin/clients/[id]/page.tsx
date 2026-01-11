@@ -1933,45 +1933,28 @@ export default function ClientDetailPage() {
             </>
             ) : checklistItems.length > 0 ? (
               /* Service purchased but not yet activated */
-              <div className="inactive-service-container">
-                <div className="inactive-service-card">
-                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
-                      <line x1="18" y1="20" x2="18" y2="10"></line>
-                      <line x1="12" y1="20" x2="12" y2="4"></line>
-                      <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
+              <div className="coming-soon-placeholder">
+                <div className="coming-soon-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                  </svg>
+                </div>
+                <h2>Results Coming Soon</h2>
+                <p>We&apos;re setting up {dbClient?.name}&apos;s analytics dashboard. Marketing performance metrics, keyword rankings, and lead tracking will appear here once campaigns are active.</p>
+                <div className="coming-soon-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-dot active"></div>
+                    <span>Account setup complete</span>
                   </div>
-                  <h3>Results Dashboard Coming Soon</h3>
-                  <p>We&apos;re setting up your performance dashboard. Once your marketing campaigns are connected, you&apos;ll be able to track website traffic, keyword rankings, leads, and more.</p>
-                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
-                    <h4>What you&apos;ll see here:</h4>
-                    <ul>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Website traffic and visitor analytics
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Keyword rankings and SEO performance
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Lead generation metrics
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Google Ads campaign performance
-                      </li>
-                    </ul>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Campaign configuration in progress</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Analytics dashboard connection</span>
                   </div>
                 </div>
               </div>
@@ -2103,43 +2086,27 @@ export default function ClientDetailPage() {
               </>
             ) : checklistItems.length > 0 ? (
               /* Service purchased but not yet activated */
-              <div className="inactive-service-container">
-                <div className="inactive-service-card">
-                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
+              <div className="coming-soon-placeholder">
+                <div className="coming-soon-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <h2>Activity Coming Soon</h2>
+                <p>We&apos;re setting up {dbClient?.name}&apos;s activity feed. You&apos;ll see a timeline of all marketing activities, completed tasks, content updates, and milestone alerts here once campaigns are active.</p>
+                <div className="coming-soon-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-dot active"></div>
+                    <span>Account setup complete</span>
                   </div>
-                  <h3>Activity Feed Coming Soon</h3>
-                  <p>We&apos;re connecting your project activity feed. Once set up, you&apos;ll see all tasks, updates, and milestones from your marketing projects here.</p>
-                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
-                    <h4>What you&apos;ll see here:</h4>
-                    <ul>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Task completions and updates
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Project milestone achievements
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Content approvals and publishing
-                      </li>
-                      <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Team communication updates
-                      </li>
-                    </ul>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Campaign launch in progress</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Activity tracking activation</span>
                   </div>
                 </div>
               </div>
@@ -2346,36 +2313,28 @@ export default function ClientDetailPage() {
               </>
             ) : hasWebsiteProducts && !hasWebsiteAccess ? (
               /* Coming Soon - has website products but no preview URL set yet */
-              <div className="inactive-service-container">
-                <div className="inactive-service-card coming-soon">
-                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #0B7277 0%, #14B8A6 100%)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="2" y1="12" x2="22" y2="12"></line>
-                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
+              <div className="coming-soon-placeholder">
+                <div className="coming-soon-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                </div>
+                <h2>Website Coming Soon</h2>
+                <p>We&apos;re building {dbClient?.name}&apos;s website. Once the preview URL is configured, you&apos;ll be able to view and manage the website here.</p>
+                <div className="coming-soon-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-dot active"></div>
+                    <span>Website service purchased</span>
                   </div>
-                  <h3>Website Coming Soon</h3>
-                  <p>Your website service is being set up. Once the preview URL is configured, you&apos;ll be able to view and manage your website here.</p>
-                  <div className="coming-soon-checklist">
-                    <div className="checklist-item completed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                      Website service purchased
-                    </div>
-                    <div className="checklist-item pending">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                      </svg>
-                      Website being built
-                    </div>
-                    <div className="checklist-item pending">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                      </svg>
-                      Preview URL configuration
-                    </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Website being built</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Preview URL configuration</span>
                   </div>
                 </div>
               </div>

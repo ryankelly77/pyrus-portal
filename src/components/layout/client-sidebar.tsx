@@ -42,7 +42,7 @@ export function ClientSidebar() {
   const isPending = client.status === 'pending'
 
   // Access flags (only relevant for active clients)
-  const { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent } = client.access
+  const { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent, hasContentProducts } = client.access
 
   // Helper to build href with viewingAs param preserved
   const buildHref = (path: string) => {
@@ -142,7 +142,8 @@ export function ClientSidebar() {
           </svg>
           <span>Content</span>
           {isPending && <LockIcon />}
-          {!isPending && !hasContent && <Badge type="inactive" />}
+          {!isPending && hasContentProducts && !hasContent && <Badge type="coming-soon" />}
+          {!isPending && !hasContentProducts && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/recommendations')}

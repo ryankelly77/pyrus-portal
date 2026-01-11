@@ -154,7 +154,10 @@ export async function GET(request: NextRequest) {
         hasActivity: hasActivityAccess,
         hasWebsite: hasWebsiteAccess,
         hasWebsiteProducts,
-        hasContent: hasContentProducts,
+        // For content: hasContent means content is actively being delivered (like hasActivity uses basecamp_id)
+        // For now, we don't have a separate field to indicate content is active, so use hasActivityAccess as proxy
+        hasContent: hasActivityAccess && hasContentProducts,
+        hasContentProducts,
       }
     })
   } catch (error) {

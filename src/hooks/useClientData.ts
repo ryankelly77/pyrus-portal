@@ -9,6 +9,7 @@ export interface ClientAccess {
   hasWebsite: boolean
   hasWebsiteProducts: boolean
   hasContent: boolean
+  hasContentProducts: boolean
 }
 
 export interface ClientInfo {
@@ -50,6 +51,7 @@ const defaultClient: ClientInfo = {
     hasWebsite: false,
     hasWebsiteProducts: false,
     hasContent: false,
+    hasContentProducts: false,
   },
 }
 
