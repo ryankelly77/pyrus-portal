@@ -123,8 +123,34 @@ export async function POST(request: NextRequest) {
 
     const subscription = await stripe.subscriptions.create(subscriptionParams)
 
+    // Get recommendation items for the selected tier to create subscription items
+    let recommendationItems: Array<{
+      product_id: string | null
+      bundle_id: string | null
+      quantity: number | null
+      monthly_price: any
+      onetime_price: any
+    }> = []
+
+    if (recommendationId && selectedTier) {
+      const items = await prisma.recommendation_items.findMany({
+        where: {
+          recommendation_id: recommendationId,
+          tier: selectedTier,
+        },
+        select: {
+          product_id: true,
+          bundle_id: true,
+          quantity: true,
+          monthly_price: true,
+          onetime_price: true,
+        },
+      })
+      recommendationItems = items
+    }
+
     // Save subscription to database
-    await prisma.subscriptions.create({
+    const dbSubscription = await prisma.subscriptions.create({
       data: {
         client_id: clientId,
         recommendation_id: recommendationId || null,
@@ -135,6 +161,26 @@ export async function POST(request: NextRequest) {
         current_period_end: new Date((subscription as any).current_period_end * 1000),
       },
     })
+
+    // Create subscription items to link products to the subscription
+    // This is required for the client to be detected as "active"
+    if (recommendationItems.length > 0) {
+      const subscriptionItemsData = recommendationItems
+        .filter(item => item.product_id || item.bundle_id)
+        .map(item => ({
+          subscription_id: dbSubscription.id,
+          product_id: item.product_id,
+          bundle_id: item.bundle_id,
+          quantity: item.quantity || 1,
+          unit_amount: item.monthly_price || item.onetime_price || 0,
+        }))
+
+      if (subscriptionItemsData.length > 0) {
+        await prisma.subscription_items.createMany({
+          data: subscriptionItemsData,
+        })
+      }
+    }
 
     // Update recommendation status if provided
     if (recommendationId) {

@@ -53,8 +53,34 @@ export async function POST(request: NextRequest) {
     console.log('[FreeOrder] Processing $0 order for client:', client.name)
     console.log('[FreeOrder] Coupon:', couponCode, 'Tier:', selectedTier, 'Items:', cartItems.length)
 
+    // Get recommendation items for the selected tier to create subscription items
+    let recommendationItems: Array<{
+      product_id: string | null
+      bundle_id: string | null
+      quantity: number | null
+      monthly_price: any
+      onetime_price: any
+    }> = []
+
+    if (recommendationId && selectedTier) {
+      const items = await prisma.recommendation_items.findMany({
+        where: {
+          recommendation_id: recommendationId,
+          tier: selectedTier,
+        },
+        select: {
+          product_id: true,
+          bundle_id: true,
+          quantity: true,
+          monthly_price: true,
+          onetime_price: true,
+        },
+      })
+      recommendationItems = items
+      console.log('[FreeOrder] Found', items.length, 'recommendation items for tier:', selectedTier)
+    }
+
     // Create a subscription record without Stripe (for $0 orders)
-    // This allows us to track the free subscription in our system
     const subscription = await prisma.subscriptions.create({
       data: {
         client_id: clientId,
@@ -70,6 +96,27 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('[FreeOrder] Created subscription:', subscription.id)
+
+    // Create subscription items to link products to the subscription
+    // This is required for the client to be detected as "active"
+    if (recommendationItems.length > 0) {
+      const subscriptionItemsData = recommendationItems
+        .filter(item => item.product_id || item.bundle_id)
+        .map(item => ({
+          subscription_id: subscription.id,
+          product_id: item.product_id,
+          bundle_id: item.bundle_id,
+          quantity: item.quantity || 1,
+          unit_amount: item.monthly_price || item.onetime_price || 0,
+        }))
+
+      if (subscriptionItemsData.length > 0) {
+        await prisma.subscription_items.createMany({
+          data: subscriptionItemsData,
+        })
+        console.log('[FreeOrder] Created', subscriptionItemsData.length, 'subscription items')
+      }
+    }
 
     // Update recommendation status if provided
     if (recommendationId) {
