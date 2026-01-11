@@ -793,7 +793,8 @@ export default function RecommendationsPage() {
                             const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
                             const monthlyPrice = Number(item.monthly_price || 0)
                             const onetimePrice = Number(item.onetime_price || 0)
-                            const isFree = item.is_free
+                            // Treat as free if explicitly marked OR if both prices are 0 (legacy data compatibility)
+                            const isFree = item.is_free === true || (monthlyPrice === 0 && onetimePrice === 0)
 
                             return (
                               <div key={item.id} className={`pricing-service-item${isFree ? ' free' : ''}`}>
