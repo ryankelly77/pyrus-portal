@@ -89,16 +89,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
+    // For annual billing, only allow ACH (bank transfer)
+    // For monthly billing, allow card and ACH
     const setupIntentParams: Stripe.SetupIntentCreateParams = {
       customer: stripeCustomerId,
       metadata: {
         clientId: clientId,
         billingCycle: billingCycle || 'monthly',
       },
-      // Use automatic payment methods - Stripe will show methods enabled in dashboard
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      ...(billingCycle === 'annual'
+        ? {
+            // Annual billing: ACH only
+            payment_method_types: ['us_bank_account'],
+          }
+        : {
+            // Monthly billing: card and ACH
+            automatic_payment_methods: {
+              enabled: true,
+            },
+          }),
     }
 
     console.log('[SetupIntent] Creating SetupIntent for customer:', stripeCustomerId)

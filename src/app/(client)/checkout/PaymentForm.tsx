@@ -18,6 +18,8 @@ interface PaymentFormProps {
   billingCycle: 'monthly' | 'annual'
   viewingAs: string | null
   onError: (error: string) => void
+  onProcessingChange?: (isProcessing: boolean) => void
+  onReadyChange?: (isReady: boolean) => void
 }
 
 export default function PaymentForm({
@@ -29,10 +31,24 @@ export default function PaymentForm({
   billingCycle,
   viewingAs,
   onError,
+  onProcessingChange,
+  onReadyChange,
 }: PaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Notify parent of ready state changes
+  const isReady = !!(stripe && elements)
+  if (onReadyChange) {
+    // Use effect-like pattern to notify parent
+    setTimeout(() => onReadyChange(isReady), 0)
+  }
+
+  const updateProcessing = (value: boolean) => {
+    setIsProcessing(value)
+    onProcessingChange?.(value)
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -41,7 +57,7 @@ export default function PaymentForm({
       return
     }
 
-    setIsProcessing(true)
+    updateProcessing(true)
 
     try {
       // First confirm the SetupIntent to save the payment method
@@ -55,7 +71,7 @@ export default function PaymentForm({
 
       if (setupError) {
         onError(setupError.message || 'Payment setup failed')
-        setIsProcessing(false)
+        updateProcessing(false)
         return
       }
 
@@ -87,7 +103,7 @@ export default function PaymentForm({
 
       if (!response.ok) {
         onError(data.error || 'Failed to create subscription')
-        setIsProcessing(false)
+        updateProcessing(false)
         return
       }
 
@@ -103,44 +119,29 @@ export default function PaymentForm({
     } catch (err) {
       console.error('Payment error:', err)
       onError('An unexpected error occurred')
-      setIsProcessing(false)
+      updateProcessing(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form id="checkout-payment-form" onSubmit={handleSubmit}>
       <PaymentElement
         options={{
-          layout: 'tabs',
+          layout: billingCycle === 'annual' ? 'accordion' : 'tabs',
           paymentMethodOrder: billingCycle === 'annual' ? ['us_bank_account'] : ['card', 'us_bank_account'],
+          business: { name: 'Pyrus Digital Media' },
           wallets: {
             applePay: billingCycle === 'annual' ? 'never' : 'auto',
             googlePay: billingCycle === 'annual' ? 'never' : 'auto',
           },
+          // Only show ACH for annual billing
+          ...(billingCycle === 'annual' && {
+            fields: {
+              billingDetails: 'auto',
+            },
+          }),
         }}
       />
-      
-      <button
-        type="submit"
-        className={`btn btn-primary btn-lg checkout-btn ${isProcessing ? 'processing' : ''}`}
-        disabled={!stripe || isProcessing}
-        style={{ marginTop: 24, width: '100%' }}
-      >
-        {isProcessing ? (
-          <>
-            <span className="spinner"></span>
-            Processing...
-          </>
-        ) : (
-          <>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            Complete Purchase
-          </>
-        )}
-      </button>
     </form>
   )
 }

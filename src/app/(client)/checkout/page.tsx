@@ -149,6 +149,8 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [stripeError, setStripeError] = useState<string | null>(null)
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
+  const [isPaymentReady, setIsPaymentReady] = useState(false)
 
   // Fetch recommendation items when tier is provided
   useEffect(() => {
@@ -584,6 +586,8 @@ export default function CheckoutPage() {
                       billingCycle={billingCycle}
                       viewingAs={viewingAs}
                       onError={(error) => setStripeError(error)}
+                      onProcessingChange={setIsPaymentProcessing}
+                      onReadyChange={setIsPaymentReady}
                     />
                   </Elements>
                 )}
@@ -605,7 +609,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="ach-notice-content">
                     <strong>Bank Transfer (ACH) Required</strong>
-                    <p>Annual billing over $10,000 requires payment via ACH bank transfer for security.</p>
+                    <p>Annual billing requires payment via ACH bank transfer for security.</p>
                   </div>
                 </div>
               ) : null}
@@ -790,6 +794,30 @@ export default function CheckoutPage() {
                 </p>
               )}
 
+              {/* Complete Purchase Button */}
+              <button
+                type="submit"
+                form="checkout-payment-form"
+                className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
+                disabled={!isPaymentReady || isPaymentProcessing || !clientSecret}
+                style={{ width: '100%', marginTop: '1rem' }}
+              >
+                {isPaymentProcessing ? (
+                  <>
+                    <span className="spinner"></span>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Complete Purchase
+                  </>
+                )}
+              </button>
+
               <div className="checkout-trust-badges">
                 <div className="checkout-guarantee">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -803,7 +831,7 @@ export default function CheckoutPage() {
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
-                  <span>Secure checkout</span>
+                  <span>Secure checkout by Stripe</span>
                 </div>
               </div>
 
