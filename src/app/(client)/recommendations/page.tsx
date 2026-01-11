@@ -117,8 +117,15 @@ export default function RecommendationsPage() {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     const isUUID = viewingAs && uuidRegex.test(viewingAs)
 
-    // Don't fetch until we have a valid identifier - prevents premature isLoading=false
-    if (!isUUID && !client.id && !client.name) {
+    // Don't fetch until client data is loaded and we have a valid identifier
+    // This prevents fetching with default client data and showing "no recommendation" flash
+    if (clientLoading) {
+      return
+    }
+
+    // Need either a UUID from URL or a real client.id (not empty string)
+    if (!isUUID && !client.id) {
+      setIsLoading(false)
       return
     }
 
@@ -151,7 +158,7 @@ export default function RecommendationsPage() {
     }
 
     fetchRecommendation()
-  }, [viewingAs, client.id, client.name])
+  }, [viewingAs, client.id, client.name, clientLoading])
 
   // Handle purchase button click
   const handlePurchaseClick = (item: PurchaseItem) => {

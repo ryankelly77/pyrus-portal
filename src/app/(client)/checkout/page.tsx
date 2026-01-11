@@ -161,9 +161,17 @@ export default function CheckoutPage() {
       return
     }
 
+    // Wait for client data to load before fetching
+    if (clientLoading) {
+      return
+    }
+
     // Don't fetch until we have a client ID - prevents premature isLoading=false
     const clientId = viewingAs || client.id
-    if (!clientId) return
+    if (!clientId) {
+      setIsLoading(false)
+      return
+    }
 
     async function fetchRecommendationItems() {
       try {
@@ -214,7 +222,7 @@ export default function CheckoutPage() {
     }
 
     fetchRecommendationItems()
-  }, [tier, viewingAs, client.id, itemId])
+  }, [tier, viewingAs, client.id, itemId, clientLoading])
 
   // Calculate base monthly total (excluding Analytics which is always free)
   const baseMonthlyTotal = cartItems.reduce((sum, item) => {
@@ -284,7 +292,8 @@ export default function CheckoutPage() {
   // Fetch SetupIntent client secret for Stripe Elements
   // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
   useEffect(() => {
-    if (cartItems.length === 0 || !client.id) return
+    const effectiveClientId = viewingAs || client.id
+    if (cartItems.length === 0 || !effectiveClientId) return
 
     // Reset client secret when billing cycle changes
     setClientSecret(null)
@@ -295,7 +304,7 @@ export default function CheckoutPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            clientId: viewingAs || client.id,
+            clientId: effectiveClientId,
             email: client.contactEmail,
             name: client.name,
             billingCycle,
