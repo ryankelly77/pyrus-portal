@@ -278,3 +278,210 @@ export async function GET(request: NextRequest) {
 ### Stripe payment form not loading
 - Check NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is set
 - Verify SetupIntent API returns clientSecret
+
+---
+
+## Template System by Client Status
+
+The portal uses a **status-based access control system** that shows different templates based on client lifecycle stage.
+
+### Key Variables
+
+| Variable | Type | Source | Purpose |
+|----------|------|--------|---------|
+| `hasActiveSubscriptions` | boolean | `subscriptions.filter(s => s.status === 'active')` | Primary access gate |
+| `isActiveClient` | boolean | `growth_stage !== 'prospect'` | Growth stage check |
+| `recommendationState` | `'pending'` \| `'purchased'` \| `'smart_available'` | Days since purchase | Smart recommendations timing |
+| `hasResultsAccess` | boolean | `!!agency_dashboard_share_key` | Results dashboard integration |
+| `hasActivityAccess` | boolean | `!!basecamp_id` | Activity feed integration |
+| `hasWebsiteAccess` | boolean | `!!landingsite_preview_url` | Website preview integration |
+
+### Growth Stages
+
+| Stage | Icon | Description |
+|-------|------|-------------|
+| Prospect | 🌰 | Not yet a client |
+| Seedling | 🌱 | Just started, foundation being established |
+| Sprouting | 🌿 | Building momentum with early results |
+| Blooming | 🌸 | Thriving with strong results and growth |
+| Harvesting | 🌾 | Reaping sustained growth rewards |
+
+### Templates by Status (Client Portal)
+
+#### Getting Started Page
+| Status | Template | Features |
+|--------|----------|----------|
+| `pending` | Welcome Hero | 3-column cards: View Proposal, Why Choose Pyrus, What Happens Next |
+| `active` | Checklist + Video | Progress bar, checklist items, video chapters, onboarding summary |
+
+#### Website Page
+| Status | Has Product | Template | Features |
+|--------|-------------|----------|----------|
+| `pending` | - | Locked | "Available After Purchase" message |
+| `active` | No | Upsell | 4 website tiers + 2 care plans |
+| `active` | Yes | Dashboard | Preview iframe, edit requests, status |
+
+#### Content Page
+| Status | Has Product | Template | Features |
+|--------|-------------|----------|----------|
+| `pending` | - | Locked | "Available After Purchase" message |
+| `active` | No | Upsell Hub | Hub diagram, 3 content offerings |
+| `active` | Yes | Manager | Content review queue, files, stats |
+
+#### Results Page
+| Status | Has Integration | Template | Features |
+|--------|-----------------|----------|----------|
+| `pending` | - | Locked | "Available After Purchase" message |
+| `active` | No | Coming Soon | Features preview, countdown |
+| `active` | Yes | Dashboard | KPIs, keyword rankings, Pro Dashboard iframe |
+
+#### Recommendations Page - Smart Recommendations Tab
+| Status | Days Since Purchase | Template | Features |
+|--------|---------------------|----------|----------|
+| `pending` | - | Locked | Lock icon, upsell message |
+| `active` | < 90 days | Coming Soon | Growth stage hero, countdown timer |
+| `active` | ≥ 90 days | Smart Recs | 4 recommendation cards (boost, add, upgrade, premium) |
+
+### Templates by Status (Admin Client Detail)
+
+#### Tab Lock States
+| Tab | No Subscription | Has Subscription, No Integration | Has Integration |
+|-----|-----------------|----------------------------------|-----------------|
+| Getting Started | Shows "Welcome" | Shows "Getting Started" | Shows "Getting Started" |
+| Results | 🔒 Locked | "Coming Soon" badge | Active |
+| Activity | 🔒 Locked | "Coming Soon" badge | Active |
+| Website | 🔒 Locked | "Inactive" (no product) or "Coming Soon" | Active |
+| Content | 🔒 Locked | "Inactive" (no product) | Active |
+| Communication | 🔒 Locked | Active | Active |
+| Recommendations | Active (shows proposal) | Active | Active |
+
+---
+
+## Template System by Purchased Products
+
+### Product Categories
+
+| Category | Products | Features Unlocked |
+|----------|----------|-------------------|
+| **Website** | Seed Site, Sprout Site, Bloom Site, Harvest Site | Website tab, preview, edit requests |
+| **Care Plans** | Website Care Plan, WordPress Care Plan | Website maintenance features |
+| **Content** | Content Writing, AI Creative Assets, Business Branding | Content tab, review queue, files |
+| **SEO** | Growth SEO, Harvest SEO | Results dashboard, keyword rankings |
+| **Ads** | Google Ads Management | Ad performance metrics |
+
+### Product Detection Logic
+
+```typescript
+// Line 851-858 in admin/clients/[id]/page.tsx
+const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'website care plan', 'wordpress care plan']
+const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation']
+
+const hasWebsiteProducts = activeSubscriptionProducts.some(name =>
+  websiteProducts.some(wp => name.includes(wp))
+)
+const hasContentProducts = activeSubscriptionProducts.some(name =>
+  contentProducts.some(cp => name.includes(cp))
+)
+```
+
+### Content Tab Templates
+
+| Has Content Products | Template | Components |
+|---------------------|----------|------------|
+| No | Content Upsell Hub | Hero, visual hub diagram, 3 offering cards |
+| Yes | Content Manager | Stats bar, Review tab, Files tab |
+
+**Content Offerings (Upsell):**
+1. **Content Writing** - $99 per article
+2. **AI Creative Assets** - $299/mo (marked "Best Value")
+3. **Business Branding Foundation** - $99/mo or $899 one-time
+
+### Website Tab Templates
+
+| Has Website Products | Has Integration URL | Template |
+|---------------------|---------------------|----------|
+| No | - | Website Upsell (4 tiers) |
+| Yes | No | "Coming Soon" state |
+| Yes | Yes | Full Website Dashboard |
+
+**Website Tiers:**
+1. **Seed Site** (AI-Built) - $249/mo
+2. **Sprout Site** (WordPress) - $300/mo
+3. **Bloom Site** (Premium) - $450/mo
+4. **Harvest Site** (Enterprise) - $600/mo
+
+### Smart Recommendations Cards (Active Clients Only)
+
+| Card | Description | Typical Pricing |
+|------|-------------|-----------------|
+| Boost Google Ads | Increase current ad spend | Variable |
+| AI Visibility Foundation | AI-powered marketing | $3,000 one-time or $300/mo × 12 |
+| Upgrade SEO Tier | Move from Growth to Harvest | $1,499/mo |
+| Pear Analytics Premium | Full-service tier | $5,000/mo (invitation-only) |
+
+---
+
+## Known Issues & Fix Plan
+
+### Phase 1: Critical Fixes (Immediate)
+
+| Issue | File | Fix |
+|-------|------|-----|
+| Schema mismatch: `type` should be `activity_type` | `src/app/api/stripe/webhook/route.ts` | Change `type:` to `activity_type:` on lines 58, 75, 94, 113, 130 |
+| TypeScript `pricing_type` wrong enum | `src/types/database.ts:267,283,299` | Change from `'monthly'\|'quarterly'\|'annual'` to `'good'\|'better'\|'best'\|null` |
+| Debug endpoint exposed | `src/app/api/client/debug/route.ts` | Add `if (process.env.NODE_ENV === 'production') return 403` or delete file |
+
+### Phase 2: High Priority (This Sprint)
+
+| Issue | Files | Fix |
+|-------|-------|-----|
+| Missing input validation | Multiple API routes | Add Zod schemas for request body validation |
+| No quantity/price validation | `src/app/api/admin/subscriptions/route.ts` | Add `if (quantity <= 0) throw Error` |
+| Email format not validated | `src/app/api/admin/recommendations/[id]/invite/route.ts` | Add email regex validation |
+| Inconsistent error responses | All API routes | Create `ApiError` helper, standardize format |
+| Silent failures in history creation | `src/app/api/admin/recommendations/route.ts` | Log errors properly, consider failing operation |
+| Missing client existence checks | Checklist, onboarding routes | Add `findUnique` before processing |
+
+### Phase 3: Type System Cleanup (Next Sprint)
+
+| Issue | Fix |
+|-------|-----|
+| Duplicate interface definitions | Create canonical types in `/src/types/` for Client, Recommendation, Subscription |
+| snake_case/camelCase inconsistency | Transform at API boundary only, use camelCase in frontend |
+| Decimal type handling | Create `parseDecimal()` utility, use consistently |
+| Growth stage enum mismatch | Consolidate to single enum: `'prospect'\|'seedling'\|'sprouting'\|'blooming'\|'harvesting'` |
+| Status enum mismatch | Consolidate to: `'active'\|'paused'\|'onboarding'\|'churned'` |
+
+### Phase 4: Code Quality (Ongoing)
+
+| Issue | Fix |
+|-------|-----|
+| Remove dead endpoints | Delete `/api/admin/fix-purchased-tier`, `/api/admin/seed-ai-creative-questions` |
+| N+1 query in recommendations | Use Prisma `include` instead of mapping with separate queries |
+| Missing database indexes | Add indexes on `client_id`, `status`, `created_at DESC` |
+| Race conditions in updates | Wrap related operations in `prisma.$transaction()` |
+| CSRF protection | Implement token validation for state-changing operations |
+
+### Phase 5: Documentation & Testing
+
+| Task | Description |
+|------|-------------|
+| API documentation | Document all endpoints with request/response schemas |
+| Type generation | Consider Prisma client extensions or tRPC for auto-generated types |
+| Integration tests | Add tests for critical flows (checkout, recommendations) |
+| Error monitoring | Add Sentry or similar for production error tracking |
+
+---
+
+## Type Definitions Location
+
+All shared types should be defined in `/src/types/`:
+
+| File | Contents |
+|------|----------|
+| `database.ts` | Prisma-generated types and extensions |
+| `api.ts` | API request/response types |
+| `client.ts` | Client-related interfaces |
+| `recommendation.ts` | Recommendation and pricing types |
+
+**Rule**: Page-level interfaces should import from `/src/types/`, not define their own.
