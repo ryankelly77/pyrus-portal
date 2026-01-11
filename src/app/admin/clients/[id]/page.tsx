@@ -400,9 +400,82 @@ export default function ClientDetailPage() {
 
   // Result Alert modal state
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
+  const [resultAlertType, setResultAlertType] = useState<'ranking' | 'traffic' | 'leads' | 'milestone' | 'other'>('ranking')
   const [resultAlertSubject, setResultAlertSubject] = useState('')
   const [resultAlertMessage, setResultAlertMessage] = useState('')
   const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
+
+  // Alert type options with icons and default subjects
+  const alertTypes = {
+    ranking: {
+      label: 'Keyword Ranking',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="11" y1="8" x2="11" y2="14"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      ),
+      color: '#10B981',
+      bgColor: '#D1FAE5',
+      defaultSubject: 'Your Keywords Are Climbing!',
+      placeholder: 'e.g., Your keyword "wound care san antonio" jumped from #24 to #7 this month!',
+    },
+    traffic: {
+      label: 'Traffic Milestone',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+          <polyline points="17 6 23 6 23 12"></polyline>
+        </svg>
+      ),
+      color: '#3B82F6',
+      bgColor: '#DBEAFE',
+      defaultSubject: 'Traffic Milestone Reached!',
+      placeholder: 'e.g., Your website just hit 3,000 monthly visitors - up 45% from last month!',
+    },
+    leads: {
+      label: 'Lead Increase',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+      ),
+      color: '#8B5CF6',
+      bgColor: '#EDE9FE',
+      defaultSubject: 'New Lead Alert!',
+      placeholder: 'e.g., Great news! You received 12 new leads this week through your Google Ads campaign.',
+    },
+    milestone: {
+      label: 'Campaign Milestone',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <circle cx="12" cy="8" r="7"></circle>
+          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+        </svg>
+      ),
+      color: '#F59E0B',
+      bgColor: '#FEF3C7',
+      defaultSubject: 'Campaign Milestone Achieved!',
+      placeholder: 'e.g., Your Google Ads campaign just completed its first 90 days with a 3.2x ROI!',
+    },
+    other: {
+      label: 'Other Update',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      ),
+      color: '#EC4899',
+      bgColor: '#FCE7F3',
+      defaultSubject: 'Marketing Update',
+      placeholder: 'Write a custom message about the results you want to share...',
+    },
+  }
 
   // Communications state
   interface Communication {
@@ -801,6 +874,10 @@ export default function ClientDetailPage() {
           body: resultAlertMessage,
           recipientEmail: dbClient.contact_email,
           highlightType: 'success',
+          metadata: {
+            alertType: resultAlertType,
+            alertTypeLabel: alertTypes[resultAlertType].label,
+          },
         }),
       })
 
@@ -812,6 +889,7 @@ export default function ClientDetailPage() {
 
       // Close modal and reset fields
       setShowResultAlertModal(false)
+      setResultAlertType('ranking')
       setResultAlertSubject('')
       setResultAlertMessage('')
 
@@ -5056,17 +5134,15 @@ export default function ClientDetailPage() {
       {/* Send Result Alert Modal */}
       {showResultAlertModal && (
         <div className="modal-overlay active" onClick={() => setShowResultAlertModal(false)}>
-          <div className="modal modal-md" onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-header-content">
-                <div className="modal-header-icon" style={{ background: '#FEF3C7', color: '#F59E0B' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                  </svg>
+                <div className="modal-header-icon" style={{ background: alertTypes[resultAlertType].bgColor, color: alertTypes[resultAlertType].color }}>
+                  {alertTypes[resultAlertType].icon}
                 </div>
                 <div>
                   <h2 className="modal-title">Send Result Alert</h2>
-                  <p className="modal-subtitle">Notify {dbClient?.name || 'the client'} about new marketing results</p>
+                  <p className="modal-subtitle">Share exciting marketing wins with {dbClient?.name || 'the client'}</p>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setShowResultAlertModal(false)}>
@@ -5077,46 +5153,131 @@ export default function ClientDetailPage() {
               </button>
             </div>
             <div className="modal-body">
+              {/* Alert Type Selection */}
               <div className="form-group">
-                <label className="form-label">Recipient</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={dbClient?.contact_email || ''}
-                  disabled
-                  style={{ background: '#f9fafb' }}
-                />
+                <label className="form-label">What type of win are you sharing?</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '8px' }}>
+                  {(Object.keys(alertTypes) as Array<keyof typeof alertTypes>).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setResultAlertType(type)
+                        if (!resultAlertSubject || Object.values(alertTypes).some(t => t.defaultSubject === resultAlertSubject)) {
+                          setResultAlertSubject(alertTypes[type].defaultSubject)
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '16px 12px',
+                        border: resultAlertType === type ? `2px solid ${alertTypes[type].color}` : '2px solid var(--border-color)',
+                        borderRadius: '12px',
+                        background: resultAlertType === type ? alertTypes[type].bgColor : 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ color: alertTypes[type].color }}>
+                        {alertTypes[type].icon}
+                      </div>
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: resultAlertType === type ? 600 : 500,
+                        color: resultAlertType === type ? alertTypes[type].color : 'var(--text-secondary)',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                      }}>
+                        {alertTypes[type].label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Subject</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g., Your January Marketing Results Are In!"
-                  value={resultAlertSubject}
-                  onChange={(e) => setResultAlertSubject(e.target.value)}
-                />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Recipient</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={dbClient?.contact_email || ''}
+                    disabled
+                    style={{ background: '#f9fafb' }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Subject Line</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={alertTypes[resultAlertType].defaultSubject}
+                    value={resultAlertSubject}
+                    onChange={(e) => setResultAlertSubject(e.target.value)}
+                  />
+                </div>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Message</label>
                 <textarea
                   className="form-textarea"
-                  placeholder="Write a brief message highlighting key results or metrics..."
-                  rows={5}
+                  placeholder={alertTypes[resultAlertType].placeholder}
+                  rows={4}
                   value={resultAlertMessage}
                   onChange={(e) => setResultAlertMessage(e.target.value)}
                   style={{ resize: 'vertical' }}
                 />
               </div>
-              <div className="info-box" style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '8px', padding: '12px', marginTop: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" width="20" height="20" style={{ flexShrink: 0, marginTop: '2px' }}>
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                  </svg>
-                  <div style={{ fontSize: '13px', color: '#92400E' }}>
-                    <strong>Tip:</strong> Result alerts are best used to highlight significant wins like keyword ranking improvements, lead increases, or traffic milestones.
+
+              {/* Preview Card */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginTop: '8px',
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Email Preview
+                </div>
+                <div style={{
+                  background: 'white',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  border: '1px solid var(--border-color)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: alertTypes[resultAlertType].bgColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: alertTypes[resultAlertType].color,
+                    }}>
+                      {alertTypes[resultAlertType].icon}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
+                        {resultAlertSubject || alertTypes[resultAlertType].defaultSubject}
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        From: Pyrus Digital Media
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                  }}>
+                    {resultAlertMessage || <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Your message will appear here...</span>}
                   </div>
                 </div>
               </div>
@@ -5129,6 +5290,7 @@ export default function ClientDetailPage() {
                 className="btn btn-primary"
                 onClick={handleSendResultAlert}
                 disabled={isSendingResultAlert || !resultAlertSubject.trim() || !resultAlertMessage.trim()}
+                style={{ background: alertTypes[resultAlertType].color }}
               >
                 {isSendingResultAlert ? (
                   <>
@@ -5141,7 +5303,7 @@ export default function ClientDetailPage() {
                       <line x1="22" y1="2" x2="11" y2="13"></line>
                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
-                    Send Alert
+                    Send {alertTypes[resultAlertType].label} Alert
                   </>
                 )}
               </button>
