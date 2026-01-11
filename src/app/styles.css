@@ -1599,16 +1599,16 @@
         .progress-stage.current .progress-dot {
             background: white;
             border-color: white;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3);
-            animation: pulse-glow 2s ease-in-out infinite;
+            box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.5), 0 0 100px rgba(255, 255, 255, 0.3);
+            animation: pulse-glow 1.5s ease-in-out infinite;
         }
 
         @keyframes pulse-glow {
             0%, 100% {
-                box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3);
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.5), 0 0 100px rgba(255, 255, 255, 0.3);
             }
             50% {
-                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 255, 255, 0.4);
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.6), 0 0 50px rgba(255, 255, 255, 1), 0 0 80px rgba(255, 255, 255, 0.7), 0 0 120px rgba(255, 255, 255, 0.4);
             }
         }
 
@@ -8045,6 +8045,7 @@
             justify-content: center;
             opacity: 0;
             transition: opacity 0.15s ease;
+            z-index: 10; /* Above requirement-overlay which has z-index: 5 */
         }
 
         .service-item:hover .remove-service-btn {
@@ -17024,6 +17025,7 @@ input[type="date"].form-control {
     justify-content: center;
     opacity: 0;
     transition: opacity 0.15s ease;
+    z-index: 10; /* Above requirement-overlay */
 }
 
 .service-item:hover .remove-service-btn {

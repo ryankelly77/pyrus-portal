@@ -1103,12 +1103,14 @@ export default function ClientDetailPage() {
                   {resendMessage.text}
                 </span>
               )}
-              <button className="btn btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                </svg>
-                Send Result Alert
-              </button>
+              {editFormData.status === 'active' && (
+                <button className="btn btn-secondary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  Send Result Alert
+                </button>
+              )}
               <button
                 className="btn btn-secondary"
                 onClick={handleResendInvitation}
