@@ -1,17 +1,22 @@
 'use client'
 
 import Script from 'next/script'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, usePathname } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 
 export function ChatbotWidget() {
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const viewingAs = searchParams.get('viewingAs')
   const { client } = useClientData(viewingAs)
 
-  // Only show the active customer chatbot for non-pending clients
-  // Prospect chatbot is handled separately on Welcome and Recommendations pages
-  if (client.status === 'pending') {
+  // Pages that have their own chat widget (d6b)
+  const pagesWithOwnWidget = ['/getting-started', '/recommendations']
+  const hasOwnWidget = pagesWithOwnWidget.some(page => pathname?.startsWith(page))
+
+  // Don't show this widget on pages that have their own widget
+  // or for pending clients (prospects)
+  if (hasOwnWidget || client.status === 'pending') {
     return null
   }
 

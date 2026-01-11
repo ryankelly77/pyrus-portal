@@ -844,15 +844,13 @@ export default function GettingStartedPage() {
 
       `}</style>
 
-      {/* LeadConnector Chatbot - Only for prospects on Welcome page */}
-      {clientStatus === 'pending' && (
-        <Script
-          src="https://widgets.leadconnectorhq.com/loader.js"
-          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-          data-widget-id="6879420133ee4bc0c5428d6b"
-          strategy="lazyOnload"
-        />
-      )}
+      {/* LeadConnector Chatbot - For all clients on Getting Started/Welcome page */}
+      <Script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879420133ee4bc0c5428d6b"
+        strategy="lazyOnload"
+      />
     </>
   )
 }

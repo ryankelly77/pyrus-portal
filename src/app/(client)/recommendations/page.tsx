@@ -1310,15 +1310,13 @@ export default function RecommendationsPage() {
         </div>
       )}
 
-      {/* LeadConnector Chatbot - Only for prospects */}
-      {client.status === 'pending' && (
-        <Script
-          src="https://widgets.leadconnectorhq.com/loader.js"
-          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-          data-widget-id="6879420133ee4bc0c5428d6b"
-          strategy="lazyOnload"
-        />
-      )}
+      {/* LeadConnector Chatbot - For all clients on recommendations page */}
+      <Script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6879420133ee4bc0c5428d6b"
+        strategy="lazyOnload"
+      />
     </>
   )
 }
