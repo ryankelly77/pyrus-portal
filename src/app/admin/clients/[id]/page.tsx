@@ -300,7 +300,7 @@ interface VideoChapter {
   videoUrl: string
 }
 
-type GettingStartedSubtab = 'checklist' | 'onboarding-summary'
+type GettingStartedSubtab = 'questions' | 'checklist' | 'onboarding-summary'
 type ResultsSubtab = 'overview' | 'pro-dashboard'
 type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'current-services'
 type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
@@ -315,7 +315,7 @@ export default function ClientDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const [activeTab, setActiveTab] = useState<MainTab>('getting-started')
-  const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('checklist')
+  const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('questions')
   const [resultsSubtab, setResultsSubtab] = useState<ResultsSubtab>('overview')
   const [recommendationsSubtab, setRecommendationsSubtab] = useState<RecommendationsSubtab>('original-plan')
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
@@ -1365,6 +1365,17 @@ export default function ClientDetailPage() {
             <div className="getting-started-subtabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
+                  className={`getting-started-subtab ${activeSubtab === 'questions' ? 'active' : ''}`}
+                  onClick={() => setActiveSubtab('questions')}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  Questions
+                </button>
+                <button
                   className={`getting-started-subtab ${activeSubtab === 'checklist' ? 'active' : ''}`}
                   onClick={() => setActiveSubtab('checklist')}
                 >
@@ -1385,7 +1396,7 @@ export default function ClientDetailPage() {
                     <line x1="16" y1="17" x2="8" y2="17"></line>
                     <polyline points="10 9 9 9 8 9"></polyline>
                   </svg>
-                  Onboarding Summary
+                  Summary
                 </button>
               </div>
               {activeSubtab === 'checklist' && (
@@ -1432,6 +1443,52 @@ export default function ClientDetailPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Questions Tab Content */}
+            <div className={`gs-tab-content ${activeSubtab === 'questions' ? 'active' : ''}`} id="questions">
+              <div className="inactive-service-container">
+                <div className="inactive-service-card">
+                  <div className="inactive-service-icon" style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="48" height="48">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  </div>
+                  <h3>Onboarding Questions Coming Soon</h3>
+                  <p>We&apos;re preparing personalized onboarding questions for {dbClient?.name}. Once ready, this section will allow you to view and manage their responses to help us deliver the best marketing results.</p>
+                  <div className="inactive-service-info" style={{ marginTop: '1.5rem' }}>
+                    <h4>What you&apos;ll see here:</h4>
+                    <ul>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Business information and goals
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Target audience details
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Brand preferences and guidelines
+                      </li>
+                      <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Service-specific requirements
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Checklist Tab Content */}

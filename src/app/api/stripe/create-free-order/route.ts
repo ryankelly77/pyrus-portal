@@ -142,16 +142,34 @@ export async function POST(request: NextRequest) {
     })
     console.log('[FreeOrder] Updated client status to active, growth_stage to seedling')
 
+    // Calculate totals from cart items (before coupon discount)
+    const monthlyItems = cartItems.filter(item => item.billingPeriod === 'monthly' && item.price > 0)
+    const monthlyTotal = monthlyItems.reduce((sum, item) => sum + item.price, 0)
+    const onetimeItems = cartItems.filter(item => item.billingPeriod === 'one-time' && item.price > 0)
+    const onetimeTotal = onetimeItems.reduce((sum, item) => sum + item.price, 0)
+
     // Log purchase activity for notifications
+    const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''
+    let purchaseDescription = `${client.contact_name || client.name} purchased the ${tierDisplay} Plan`
+    if (monthlyTotal > 0 || onetimeTotal > 0) {
+      const amountParts: string[] = []
+      if (monthlyTotal > 0) amountParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
+      if (onetimeTotal > 0) amountParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
+      purchaseDescription += ` - ${amountParts.join(' + ')}`
+    }
+    purchaseDescription += ` (100% off with ${couponCode})`
+
     await prisma.activity_log.create({
       data: {
         client_id: clientId,
         activity_type: 'purchase',
-        description: `${client.contact_name || client.name} purchased the ${selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''} Plan`,
+        description: purchaseDescription,
         metadata: {
           tier: selectedTier,
           couponCode,
           billingCycle,
+          monthlyTotal,
+          onetimeTotal,
           isFreeOrder: true,
           subscriptionId: subscription.id,
         },

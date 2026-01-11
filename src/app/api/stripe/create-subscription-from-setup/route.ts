@@ -82,6 +82,10 @@ export async function POST(request: NextRequest) {
     const monthlyItems = cartItems.filter(item => item.billingPeriod === 'monthly' && item.price > 0)
     const monthlyTotal = monthlyItems.reduce((sum, item) => sum + item.price, 0)
 
+    // Calculate one-time total from cart items
+    const onetimeItems = cartItems.filter(item => item.billingPeriod === 'one-time' && item.price > 0)
+    const onetimeTotal = onetimeItems.reduce((sum, item) => sum + item.price, 0)
+
     if (monthlyTotal === 0) {
       return NextResponse.json(
         { error: 'No monthly items to subscribe to' },
@@ -205,16 +209,29 @@ export async function POST(request: NextRequest) {
     })
 
     // Log purchase activity for notifications
+    const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''
+    let purchaseDescription = `${client.contact_name || client.name} purchased the ${tierDisplay} Plan`
+    if (monthlyTotal > 0 || onetimeTotal > 0) {
+      const amountParts: string[] = []
+      if (monthlyTotal > 0) amountParts.push(`$${monthlyTotal.toLocaleString()}/mo`)
+      if (onetimeTotal > 0) amountParts.push(`$${onetimeTotal.toLocaleString()} one-time`)
+      purchaseDescription += ` - ${amountParts.join(' + ')}`
+    }
+    if (couponCode) {
+      purchaseDescription += ` (with coupon: ${couponCode})`
+    }
+
     await prisma.activity_log.create({
       data: {
         client_id: clientId,
         activity_type: 'purchase',
-        description: `${client.contact_name || client.name} purchased the ${selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''} Plan`,
+        description: purchaseDescription,
         metadata: {
           tier: selectedTier,
           couponCode,
           billingCycle,
           monthlyTotal,
+          onetimeTotal,
           stripeSubscriptionId: subscription.id,
         },
       },
