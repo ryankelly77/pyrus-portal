@@ -944,8 +944,10 @@
             background: var(--bg-white);
             border-radius: var(--radius-md);
             border: 1px solid var(--border-light);
-            padding: 18px 20px;
+            padding: 20px;
             transition: box-shadow 0.15s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         .stat-card:hover {
@@ -953,18 +955,19 @@
         }
 
         .stat-label {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .stat-value {
-            font-size: 26px;
+            font-size: 32px;
             font-weight: 700;
             color: var(--text-primary);
+            line-height: 1;
         }
 
         .stat-value.success { color: var(--success-text); }
@@ -973,9 +976,9 @@
         .stat-value.blue { color: var(--accent-blue); }
 
         .stat-detail {
-            font-size: 11px;
+            font-size: 13px;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 8px;
         }
 
         .filter-bar {
@@ -15206,15 +15209,9 @@ input[type="date"].form-control {
     grid-template-columns: repeat(4, 1fr);
 }
 
-.stats-grid-4 .stat-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-/* Stats Grid with Icon Layout */
-.stats-grid .stat-card {
-    display: flex;
+/* Stats Grid with Icon Layout - for cards that have icons */
+.stats-grid .stat-card.with-icon {
+    flex-direction: row;
     align-items: center;
     gap: 16px;
 }
