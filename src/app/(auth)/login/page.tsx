@@ -37,21 +37,22 @@ function LoginForm() {
 
     // Fetch user's profile to determine role
     let finalRedirect = redirectUrl
-    if (authData.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authData.user.id)
-        .single()
+    try {
+      const meRes = await fetch('/api/auth/me')
+      if (meRes.ok) {
+        const profile = await meRes.json()
 
-      // Admin roles go to /admin, clients go to /getting-started
-      const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
-      if (profile?.role && adminRoles.includes(profile.role)) {
-        finalRedirect = '/admin'
-      } else if (!searchParams.get('redirect')) {
-        // Only default to /getting-started if no explicit redirect was requested
-        finalRedirect = '/getting-started'
+        // Admin roles go to /admin, clients go to /getting-started
+        const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
+        if (profile?.role && adminRoles.includes(profile.role)) {
+          finalRedirect = '/admin'
+        } else if (!searchParams.get('redirect')) {
+          // Only default to /getting-started if no explicit redirect was requested
+          finalRedirect = '/getting-started'
+        }
       }
+    } catch (e) {
+      console.error('Failed to fetch profile for redirect:', e)
     }
 
     // Log the login activity
