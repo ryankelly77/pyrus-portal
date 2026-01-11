@@ -315,18 +315,20 @@ The portal uses a **status-based access control system** that shows different te
 | `active` | Checklist + Video | Progress bar, checklist items, video chapters, onboarding summary |
 
 #### Website Page
-| Status | Has Product | Template | Features |
-|--------|-------------|----------|----------|
-| `pending` | - | Locked | "Available After Purchase" message |
-| `active` | No | Upsell | 4 website tiers + 2 care plans |
-| `active` | Yes | Dashboard | Preview iframe, edit requests, status |
+| Status | Has Product | Has Integration | Template | Features |
+|--------|-------------|-----------------|----------|----------|
+| `pending` | - | - | Locked | "Available After Purchase" message |
+| `active` | No | - | Upsell | 4 website tiers + 2 care plans |
+| `active` | Yes | No | Coming Soon | Checklist of setup steps, "we're building your site" |
+| `active` | Yes | Yes | Dashboard | Preview iframe, edit requests, status |
 
 #### Content Page
-| Status | Has Product | Template | Features |
-|--------|-------------|----------|----------|
-| `pending` | - | Locked | "Available After Purchase" message |
-| `active` | No | Upsell Hub | Hub diagram, 3 content offerings |
-| `active` | Yes | Manager | Content review queue, files, stats |
+| Status | Has Product | Has Integration | Template | Features |
+|--------|-------------|-----------------|----------|----------|
+| `pending` | - | - | Locked | "Available After Purchase" message |
+| `active` | No | - | Upsell Hub | Hub diagram, 3 content offerings |
+| `active` | Yes | No | Coming Soon | "Content Coming Soon" with setup progress |
+| `active` | Yes | Yes | Manager | Content review queue, files, stats |
 
 #### Results Page
 | Status | Has Integration | Template | Features |
@@ -345,15 +347,21 @@ The portal uses a **status-based access control system** that shows different te
 ### Templates by Status (Admin Client Detail)
 
 #### Tab Lock States
-| Tab | No Subscription | Has Subscription, No Integration | Has Integration |
-|-----|-----------------|----------------------------------|-----------------|
-| Getting Started | Shows "Welcome" | Shows "Getting Started" | Shows "Getting Started" |
-| Results | 🔒 Locked | "Coming Soon" badge | Active |
-| Activity | 🔒 Locked | "Coming Soon" badge | Active |
-| Website | 🔒 Locked | "Inactive" (no product) or "Coming Soon" | Active |
-| Content | 🔒 Locked | "Inactive" (no product) | Active |
-| Communication | 🔒 Locked | Active | Active |
-| Recommendations | Active (shows proposal) | Active | Active |
+| Tab | No Subscription | Has Subscription | Has Product, No Integration | Fully Active |
+|-----|-----------------|------------------|----------------------------|--------------|
+| Getting Started | Shows "Welcome" | Shows "Getting Started" | Shows "Getting Started" | Shows "Getting Started" |
+| Results | 🔒 Locked | "Coming Soon" badge | "Coming Soon" badge | Active |
+| Activity | 🔒 Locked | "Coming Soon" badge | "Coming Soon" badge | Active |
+| Website | 🔒 Locked | "Inactive" badge | "Coming Soon" badge | Active |
+| Content | 🔒 Locked | "Inactive" badge | "Coming Soon" badge | Active |
+| Communication | 🔒 Locked | Active | Active | Active |
+| Recommendations | Active (shows proposal) | Active | Active | Active |
+
+**Integration requirements:**
+- Results: `agency_dashboard_share_key` must be set
+- Activity: `basecamp_id` must be set
+- Website: `landingsite_preview_url` must be set + website product purchased
+- Content: Content product purchased + content integration active
 
 ---
 
