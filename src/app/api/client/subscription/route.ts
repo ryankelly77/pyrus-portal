@@ -182,16 +182,28 @@ export async function GET(request: NextRequest) {
         }
       : null
 
+    // Format dates in Central Time (Fort Worth, TX)
+    const formatDate = (date: Date | string | null) => {
+      if (!date) return null
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'America/Chicago'
+      })
+    }
+
     return NextResponse.json({
-      subscription,
+      subscription: subscription ? {
+        ...subscription,
+        currentPeriodEndFormatted: formatDate(subscription.currentPeriodEnd),
+      } : null,
       services,
       paymentMethods,
       invoices,
       billingEmail: client.contact_email,
       clientName: client.name,
-      clientSince: client.start_date
-        ? new Date(client.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-        : null,
+      clientSince: formatDate(client.start_date),
     })
   } catch (error) {
     console.error('Error fetching subscription data:', error)

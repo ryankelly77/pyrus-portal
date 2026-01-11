@@ -20,6 +20,7 @@ interface SubscriptionData {
     status: string
     currentPeriodStart: string
     currentPeriodEnd: string
+    currentPeriodEndFormatted?: string
     monthlyAmount: number
     createdAt: string
   } | null
@@ -426,10 +427,11 @@ export default function SettingsPage() {
                       <div className="meta-item">
                         <span className="meta-label">Next Billing Date</span>
                         <span className="meta-value">
-                          {new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                          {subscriptionData.subscription.currentPeriodEndFormatted || new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
                             month: 'long',
                             day: 'numeric',
-                            year: 'numeric'
+                            year: 'numeric',
+                            timeZone: 'America/Chicago'
                           })}
                         </span>
                       </div>
