@@ -134,12 +134,22 @@ export async function GET(request: NextRequest) {
       )
 
       for (const login of loginsResult.rows) {
+        // Determine a display name for the client column
+        let clientDisplay = login.client_name
+        if (!clientDisplay && login.user_email) {
+          // Extract company from email domain (e.g., "ryan@raptor-vending.com" -> "Raptor Vending")
+          const domain = login.user_email.split('@')[1]?.split('.')[0]
+          if (domain && domain !== 'gmail' && domain !== 'yahoo' && domain !== 'hotmail' && domain !== 'outlook') {
+            clientDisplay = domain.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          }
+        }
+
         notifications.push({
           id: login.id,
           type: 'login',
           title: login.activity_type === 'admin_login' ? 'Admin Login' : 'Client Login',
           description: `${login.user_name || login.user_email || 'User'} logged in`,
-          clientName: login.client_name || 'N/A',
+          clientName: clientDisplay || 'Unlinked Account',
           clientId: login.client_id || '',
           metadata: login.metadata,
           timestamp: login.created_at,
@@ -171,12 +181,22 @@ export async function GET(request: NextRequest) {
 
       for (const view of pageViewsResult.rows) {
         const metadata = view.metadata || {}
+
+        // Determine a display name for the client column
+        let clientDisplay = view.client_name
+        if (!clientDisplay && view.user_email) {
+          const domain = view.user_email.split('@')[1]?.split('.')[0]
+          if (domain && domain !== 'gmail' && domain !== 'yahoo' && domain !== 'hotmail' && domain !== 'outlook') {
+            clientDisplay = domain.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          }
+        }
+
         notifications.push({
           id: view.id,
           type: 'page_view',
           title: 'Page View',
           description: `${view.user_name || view.user_email || 'User'} viewed ${metadata.pageName || metadata.page || 'a page'}`,
-          clientName: view.client_name || 'N/A',
+          clientName: clientDisplay || 'Unlinked Account',
           clientId: view.client_id || '',
           metadata: view.metadata,
           timestamp: view.created_at,
@@ -207,12 +227,21 @@ export async function GET(request: NextRequest) {
       )
 
       for (const reg of registrationsResult.rows) {
+        // Determine a display name for the client column
+        let clientDisplay = reg.client_name
+        if (!clientDisplay && reg.user_email) {
+          const domain = reg.user_email.split('@')[1]?.split('.')[0]
+          if (domain && domain !== 'gmail' && domain !== 'yahoo' && domain !== 'hotmail' && domain !== 'outlook') {
+            clientDisplay = domain.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          }
+        }
+
         notifications.push({
           id: reg.id,
           type: 'registration',
           title: 'New Registration',
           description: `${reg.user_name || reg.user_email || 'User'} created an account`,
-          clientName: reg.client_name || 'N/A',
+          clientName: clientDisplay || 'Unlinked Account',
           clientId: reg.client_id || '',
           metadata: reg.metadata,
           timestamp: reg.created_at,
