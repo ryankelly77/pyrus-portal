@@ -5406,6 +5406,46 @@ export default function ClientDetailPage() {
                 </div>
               )}
 
+              {/* Optional Highlight field for leads alerts */}
+              {resultAlertType === 'leads' && (
+                <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#5B21B6', marginBottom: '12px' }}>
+                    Highlight Box (Optional)
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Lead Highlight</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., 15 New Leads This Week!"
+                      value={resultAlertMilestone}
+                      onChange={(e) => setResultAlertMilestone(e.target.value)}
+                      style={{ fontSize: '13px' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Optional Highlight field for other alerts */}
+              {resultAlertType === 'other' && (
+                <div style={{ background: '#FDF2F8', border: '1px solid #FBCFE8', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#9D174D', marginBottom: '12px' }}>
+                    Highlight Box (Optional)
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Highlight Text</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., Campaign Launch Complete!"
+                      value={resultAlertMilestone}
+                      onChange={(e) => setResultAlertMilestone(e.target.value)}
+                      style={{ fontSize: '13px' }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Message</label>
                 <textarea
