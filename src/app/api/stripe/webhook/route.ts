@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           await prisma.activity_log.create({
             data: {
               client_id: clientId,
-              type: 'payment',
+              activity_type: 'payment',
               description: 'Payment method saved successfully',
             },
           })
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           await prisma.activity_log.create({
             data: {
               client_id: clientId,
-              type: 'payment',
+              activity_type: 'payment',
               description: `Payment setup failed: ${errorMsg}`,
             },
           })
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
           await prisma.activity_log.create({
             data: {
               client_id: clientId,
-              type: 'payment',
+              activity_type: 'payment',
               description: 'ACH payment processing - funds will be available in 4-5 business days',
             },
           })
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
           await prisma.activity_log.create({
             data: {
               client_id: clientId,
-              type: 'payment',
+              activity_type: 'payment',
               description: `Payment confirmed: $${(paymentIntent.amount / 100).toFixed(2)}`,
             },
           })
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
           await prisma.activity_log.create({
             data: {
               client_id: clientId,
-              type: 'payment',
+              activity_type: 'payment',
               description: `Payment failed: ${errorMsg}`,
             },
           })

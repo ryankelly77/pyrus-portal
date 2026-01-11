@@ -264,7 +264,7 @@ export type Database = {
           client_id: string
           created_by: string | null
           status: 'draft' | 'sent' | 'accepted' | 'declined'
-          pricing_type: 'monthly' | 'quarterly' | 'annual' | null
+          pricing_type: 'good' | 'better' | 'best' | null  // Tier name stored during recommendation creation
           total_monthly: number | null
           total_onetime: number | null
           discount_applied: number
@@ -280,7 +280,7 @@ export type Database = {
           client_id: string
           created_by?: string | null
           status?: 'draft' | 'sent' | 'accepted' | 'declined'
-          pricing_type?: 'monthly' | 'quarterly' | 'annual' | null
+          pricing_type?: 'good' | 'better' | 'best' | null
           total_monthly?: number | null
           total_onetime?: number | null
           discount_applied?: number
@@ -296,7 +296,7 @@ export type Database = {
           client_id?: string
           created_by?: string | null
           status?: 'draft' | 'sent' | 'accepted' | 'declined'
-          pricing_type?: 'monthly' | 'quarterly' | 'annual' | null
+          pricing_type?: 'good' | 'better' | 'best' | null
           total_monthly?: number | null
           total_onetime?: number | null
           discount_applied?: number

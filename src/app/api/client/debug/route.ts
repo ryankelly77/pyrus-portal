@@ -5,7 +5,13 @@ import { dbPool } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // GET /api/client/debug - Debug client association
+// WARNING: This endpoint exposes sensitive data - disabled in production
 export async function GET() {
+  // Block access in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
