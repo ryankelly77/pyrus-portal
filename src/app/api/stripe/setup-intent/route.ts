@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Check for Stripe secret key
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+if (!stripeSecretKey) {
+  console.error('STRIPE_SECRET_KEY is not configured')
+}
+
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      console.error('Stripe is not initialized - STRIPE_SECRET_KEY missing')
+      return NextResponse.json(
+        { error: 'Payment system not configured. Please contact support.' },
+        { status: 503 }
+      )
+    }
+
     const { clientId, email, name, billingCycle } = await request.json()
+    console.log('[SetupIntent] Request:', { clientId, email, name, billingCycle })
 
     if (!clientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 })
@@ -18,12 +34,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (!client) {
+      console.error('[SetupIntent] Client not found:', clientId)
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
+
+    console.log('[SetupIntent] Found client:', client.name, 'Stripe ID:', client.stripe_customer_id)
 
     let stripeCustomerId = client.stripe_customer_id
 
     if (!stripeCustomerId) {
+      console.log('[SetupIntent] Creating new Stripe customer...')
       // Create a new Stripe customer
       const customer = await stripe.customers.create({
         email: email || client.contact_email || undefined,
@@ -33,6 +53,7 @@ export async function POST(request: NextRequest) {
         },
       })
       stripeCustomerId = customer.id
+      console.log('[SetupIntent] Created Stripe customer:', stripeCustomerId)
 
       // Save the Stripe customer ID to the client record
       await prisma.clients.update({
@@ -42,7 +63,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
-    // For annual billing, prefer ACH; for monthly, prefer card
     const setupIntentParams: Stripe.SetupIntentCreateParams = {
       customer: stripeCustomerId,
       metadata: {
@@ -55,18 +75,31 @@ export async function POST(request: NextRequest) {
       },
     }
 
-    console.log('Creating SetupIntent with params:', JSON.stringify(setupIntentParams, null, 2))
+    console.log('[SetupIntent] Creating SetupIntent for customer:', stripeCustomerId)
     const setupIntent = await stripe.setupIntents.create(setupIntentParams)
-    console.log('SetupIntent created:', setupIntent.id)
+    console.log('[SetupIntent] Created:', setupIntent.id)
 
     return NextResponse.json({
       clientSecret: setupIntent.client_secret,
       customerId: stripeCustomerId,
     })
   } catch (error) {
-    console.error('Failed to create SetupIntent:', error)
+    // Log the full error for debugging
+    console.error('[SetupIntent] Error:', error)
+
+    // Return more specific error messages
+    if (error instanceof Stripe.errors.StripeError) {
+      console.error('[SetupIntent] Stripe error type:', error.type, 'message:', error.message)
+      return NextResponse.json(
+        { error: `Stripe error: ${error.message}` },
+        { status: error.statusCode || 500 }
+      )
+    }
+
+    // Generic error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to initialize payment' },
+      { error: `Failed to initialize payment: ${errorMessage}` },
       { status: 500 }
     )
   }
