@@ -9,8 +9,12 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import PaymentForm from './PaymentForm'
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+// Initialize Stripe - log if key is missing
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+if (!stripePublishableKey) {
+  console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set')
+}
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
 
 interface CartItem {
   id: string
@@ -124,7 +128,7 @@ export default function CheckoutPage() {
   const itemId = searchParams.get('item')
   const tier = searchParams.get('tier') // 'good', 'better', or 'best'
   const urlCoupon = searchParams.get('coupon')
-  const { client } = useClientData(viewingAs)
+  const { client, loading: clientLoading } = useClientData(viewingAs)
   usePageView({ page: '/checkout', pageName: 'Checkout' })
 
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -132,6 +136,12 @@ export default function CheckoutPage() {
   const [recommendationId, setRecommendationId] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
   const [isLoading, setIsLoading] = useState(!!tier)
+  const [mounted, setMounted] = useState(false)
+
+  // Track mount state to prevent SSR/hydration flash
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
@@ -312,8 +322,8 @@ export default function CheckoutPage() {
   const annualTotal = discountedMonthlyTotal * 12 * 0.9 // 10% discount for annual
 
 
-  // Loading state when fetching recommendation items
-  if (isLoading) {
+  // Loading state when mounting or fetching recommendation items
+  if (!mounted || clientLoading || isLoading) {
     return (
       <>
         <div className="client-top-header">
@@ -510,7 +520,11 @@ export default function CheckoutPage() {
               </h2>
 
               <div className="payment-form">
-                {stripeError ? (
+                {!stripePromise ? (
+                  <div className="stripe-error">
+                    <p>Payment system is not configured. Please contact support.</p>
+                  </div>
+                ) : stripeError ? (
                   <div className="stripe-error">
                     <p>{stripeError}</p>
                   </div>

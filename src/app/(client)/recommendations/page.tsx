@@ -98,12 +98,18 @@ export default function RecommendationsPage() {
   const [selectedItem, setSelectedItem] = useState<PurchaseItem | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   // Database-connected state
   const [dbClient, setDbClient] = useState<DBClient | null>(null)
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  // Track mount state to prevent SSR/hydration flash
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch recommendation data from database
   useEffect(() => {
@@ -158,8 +164,8 @@ export default function RecommendationsPage() {
     setShowSuccessModal(true)
   }
 
-  // Show loading state while client data is being fetched
-  if (clientLoading || isLoading) {
+  // Show loading state while mounting or fetching data
+  if (!mounted || clientLoading || isLoading) {
     return (
       <>
         <div className="client-top-header">
