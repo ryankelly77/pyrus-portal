@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { dbPool } from '@/lib/db'
+import { dbPool } from '@/lib/prisma'
 
 export async function GET() {
   const supabase = await createClient()
