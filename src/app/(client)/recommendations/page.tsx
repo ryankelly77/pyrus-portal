@@ -347,7 +347,7 @@ export default function RecommendationsPage() {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               ) : (
-                <span className="tab-count">4</span>
+                <span className="tab-badge coming-soon">Coming Soon</span>
               )}
             </button>
           </div>

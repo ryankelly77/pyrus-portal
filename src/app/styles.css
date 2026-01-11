@@ -1967,6 +1967,20 @@
             color: white;
         }
 
+        .recommendations-tab .tab-badge.coming-soon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .recommendations-tab:not(.active) .tab-badge.coming-soon {
+            background: #6B7280;
+            color: white;
+        }
+
         .recommendations-tab-content {
             display: none;
         }
