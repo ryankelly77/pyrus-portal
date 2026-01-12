@@ -117,23 +117,33 @@ export async function POST(request: NextRequest) {
 
     // Create Stripe subscription with 100% coupon
     // Even though it's $0, we create a real subscription for tracking
+
+    // First create a product for this plan
+    const productName = selectedTier ? `${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} Plan` : 'Monthly Plan'
+    const product = await stripe.products.create({
+      name: productName,
+      metadata: {
+        pyrus_client_id: clientId,
+        tier: selectedTier || '',
+      },
+    })
+    console.log('[FreeOrder] Created Stripe product:', product.id)
+
+    // Then create a price for the product
+    const price = await stripe.prices.create({
+      product: product.id,
+      currency: 'usd',
+      unit_amount: Math.round(monthlyTotal * 100), // Original price in cents
+      recurring: {
+        interval: billingCycle === 'annual' ? 'year' : 'month',
+      },
+    })
+    console.log('[FreeOrder] Created Stripe price:', price.id)
+
     const subscriptionParams: any = {
       customer: stripeCustomerId,
       items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: selectedTier ? `${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} Plan` : 'Monthly Plan',
-            metadata: {
-              pyrus_client_id: clientId,
-              tier: selectedTier || '',
-            },
-          },
-          unit_amount: Math.round(monthlyTotal * 100), // Original price in cents
-          recurring: {
-            interval: billingCycle === 'annual' ? 'year' : 'month',
-          },
-        },
+        price: price.id,
       }],
       coupon: couponId,
       metadata: {
