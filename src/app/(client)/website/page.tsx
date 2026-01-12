@@ -64,16 +64,84 @@ export default function WebsitePage() {
   const router = useRouter()
   usePageView({ page: '/website', pageName: 'Website' })
 
-  // Check if client is pending (prospect only) or has website services
-  const isPending = client.status === 'pending'
-  const hasWebsite = client.access.hasWebsite
-  const hasWebsiteProducts = client.access.hasWebsiteProducts
-  // Show coming soon if client is active with website products but data isn't connected yet
-  const showComingSoon = !isPending && hasWebsiteProducts && !hasWebsite
-
+  // State hooks - must be declared before conditional logic
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [demoStateOverride, setDemoStateOverride] = useState<'active' | 'coming-soon' | 'locked' | 'upsell' | null>(null)
+
+  const isDemo = viewingAs === DEMO_CLIENT_ID
+
+  // Check if client is pending (prospect only) or has website services
+  const isPending = isDemo
+    ? demoStateOverride === 'locked'
+    : client.status === 'pending'
+  const hasWebsite = isDemo
+    ? demoStateOverride === 'active' || demoStateOverride === null
+    : client.access.hasWebsite
+  const hasWebsiteProducts = isDemo
+    ? demoStateOverride !== 'upsell'
+    : client.access.hasWebsiteProducts
+  // Show coming soon if client is active with website products but data isn't connected yet
+  const showComingSoon = isDemo
+    ? demoStateOverride === 'coming-soon'
+    : !isPending && hasWebsiteProducts && !hasWebsite
+  // Show upsell if client doesn't have website products
+  const showUpsell = isDemo
+    ? demoStateOverride === 'upsell'
+    : !isPending && !hasWebsiteProducts
+
+  // Demo state selector component
+  const DemoStateSelector = () => {
+    if (!isDemo) return null
+    return (
+      <div className="demo-state-selector" style={{
+        background: 'linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%)',
+        border: '1px solid #C4B5FD',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexWrap: 'wrap'
+      }}>
+        <span style={{ fontSize: '13px', fontWeight: '600', color: '#6B21A8' }}>
+          Demo Mode - View Page State:
+        </span>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { value: null, label: 'Active' },
+            { value: 'coming-soon', label: 'Coming Soon' },
+            { value: 'locked', label: 'Locked' },
+            { value: 'upsell', label: 'Upsell' }
+          ].map((state) => (
+            <button
+              key={state.value ?? 'active'}
+              onClick={() => setDemoStateOverride(state.value as typeof demoStateOverride)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                background: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
+                  ? '#7C3AED'
+                  : 'white',
+                color: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
+                  ? 'white'
+                  : '#6B21A8',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              {state.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const handleAddToCart = (itemId: string) => {
     const params = new URLSearchParams()
@@ -117,7 +185,6 @@ export default function WebsitePage() {
 
   // Use demo data for demo client, otherwise use client-specific or default data
   // TODO: Fetch real website data from API based on client subscriptions
-  const isDemo = viewingAs === DEMO_CLIENT_ID
   const clientWebsiteData = isDemo ? demoWebsiteData : (client.landingsitePreviewUrl ? {
     ...defaultWebsiteData,
     previewUrl: client.landingsitePreviewUrl,
@@ -142,7 +209,7 @@ export default function WebsitePage() {
   }
 
   // If client doesn't have website products, show upsell
-  if (!hasWebsiteProducts && !isPending) {
+  if (showUpsell) {
     return (
       <>
         {/* Top Header Bar */}
@@ -168,6 +235,7 @@ export default function WebsitePage() {
         </div>
 
         <div className="client-content">
+          <DemoStateSelector />
           <div className="upsell-container">
             <div className="upsell-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="64" height="64">
@@ -435,6 +503,7 @@ export default function WebsitePage() {
       </div>
 
       <div className="client-content">
+        <DemoStateSelector />
         {/* Pending client placeholder */}
         {isPending ? (
           <div className="locked-page-placeholder">
