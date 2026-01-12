@@ -50,14 +50,15 @@ async function seedDemoClient() {
   await prisma.clients.deleteMany({ where: { id: DEMO_CLIENT_ID } })
 
   // Create demo client with ALL access fields populated
+  // Using Raptor Vending as the demo company
   console.log('Creating demo client with full access...')
   await prisma.clients.create({
     data: {
       id: DEMO_CLIENT_ID,
-      name: 'Acme Corporation',
-      contact_name: 'John Smith',
-      contact_email: 'john@acme-demo.com',
-      avatar_color: '#3B82F6',
+      name: 'Raptor Vending',
+      contact_name: 'Mike Reynolds',
+      contact_email: 'mike@raptorvending.com',
+      avatar_color: '#DC2626', // Red color for Raptor
       growth_stage: 'blooming',
       status: 'active',
       monthly_spend: 2847,
@@ -66,7 +67,7 @@ async function seedDemoClient() {
       // These fields enable access to each page:
       agency_dashboard_share_key: 'demo-dashboard-key-12345', // Enables Results page
       basecamp_id: 'demo-basecamp-12345', // Enables Activity page
-      landingsite_preview_url: 'https://app.landingsite.ai/website-preview?id=demo-preview', // Enables Website page
+      landingsite_preview_url: 'https://raptor-vending.com', // Enables Website page
     }
   })
 
@@ -98,11 +99,86 @@ async function seedDemoClient() {
     }
   })
 
-  // Add recommendation items for the Best tier (what they purchased)
+  // Add recommendation items for Good/Better/Best tiers
   const recommendationItems = []
-  const productsToAdd = [seoProduct, websiteProduct, contentProduct, socialProduct, aiCreativeProduct, carePlanProduct].filter(Boolean)
 
-  for (const product of productsToAdd) {
+  // Good tier - Basic package (SEO + Website)
+  if (seoProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: seoProduct.id,
+      tier: 'good',
+      quantity: 1,
+      monthly_price: seoProduct.monthly_price,
+      onetime_price: seoProduct.onetime_price,
+    })
+  }
+  if (websiteProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: websiteProduct.id,
+      tier: 'good',
+      quantity: 1,
+      monthly_price: websiteProduct.monthly_price,
+      onetime_price: websiteProduct.onetime_price,
+    })
+  }
+  if (carePlanProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: carePlanProduct.id,
+      tier: 'good',
+      quantity: 1,
+      monthly_price: carePlanProduct.monthly_price,
+      onetime_price: carePlanProduct.onetime_price,
+    })
+  }
+
+  // Better tier - Includes Good + Content
+  if (seoProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: seoProduct.id,
+      tier: 'better',
+      quantity: 1,
+      monthly_price: seoProduct.monthly_price,
+      onetime_price: seoProduct.onetime_price,
+    })
+  }
+  if (websiteProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: websiteProduct.id,
+      tier: 'better',
+      quantity: 1,
+      monthly_price: websiteProduct.monthly_price,
+      onetime_price: websiteProduct.onetime_price,
+    })
+  }
+  if (carePlanProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: carePlanProduct.id,
+      tier: 'better',
+      quantity: 1,
+      monthly_price: carePlanProduct.monthly_price,
+      onetime_price: carePlanProduct.onetime_price,
+    })
+  }
+  if (contentProduct) {
+    recommendationItems.push({
+      recommendation_id: DEMO_RECOMMENDATION_ID,
+      product_id: contentProduct.id,
+      tier: 'better',
+      quantity: 2,
+      monthly_price: contentProduct.monthly_price,
+      onetime_price: contentProduct.onetime_price,
+    })
+  }
+
+  // Best tier - Full package (includes everything)
+  const bestTierProducts = [seoProduct, websiteProduct, contentProduct, socialProduct, aiCreativeProduct, carePlanProduct].filter(Boolean)
+  for (const product of bestTierProducts) {
     if (product) {
       recommendationItems.push({
         recommendation_id: DEMO_RECOMMENDATION_ID,
@@ -117,7 +193,7 @@ async function seedDemoClient() {
 
   if (recommendationItems.length > 0) {
     await prisma.recommendation_items.createMany({ data: recommendationItems })
-    console.log(`Created ${recommendationItems.length} recommendation items`)
+    console.log(`Created ${recommendationItems.length} recommendation items (Good: 3, Better: 4, Best: ${bestTierProducts.length})`)
   }
 
   // Create demo subscription (ACTIVE with products)
@@ -136,7 +212,7 @@ async function seedDemoClient() {
 
   // Add subscription items - need products that trigger access flags
   const subscriptionItems = []
-  for (const product of productsToAdd) {
+  for (const product of bestTierProducts) {
     if (product) {
       subscriptionItems.push({
         subscription_id: DEMO_SUBSCRIPTION_ID,
@@ -179,18 +255,18 @@ async function seedDemoClient() {
   })
 
   const demoResponses = [
-    { question: 'business name', response: 'Acme Corporation' },
-    { question: 'website', response: 'https://www.acme-demo.com' },
-    { question: 'industry', response: 'Technology & Software Services' },
-    { question: 'target', response: 'Small to medium businesses looking to modernize their IT infrastructure' },
-    { question: 'goal', response: 'Increase online visibility, generate qualified leads, and establish thought leadership' },
-    { question: 'competitor', response: 'TechCorp Solutions, InnovateTech, DigitalFirst Partners' },
-    { question: 'service', response: 'Cloud migration, IT consulting, Custom software development, Managed IT services' },
-    { question: 'location', response: 'San Francisco, CA (serving nationwide)' },
-    { question: 'phone', response: '(555) 123-4567' },
-    { question: 'email', response: 'contact@acme-demo.com' },
-    { question: 'brand', response: 'Professional, innovative, trustworthy, forward-thinking' },
-    { question: 'color', response: 'Blue (#3B82F6) and white with gray accents' },
+    { question: 'business name', response: 'Raptor Vending' },
+    { question: 'website', response: 'https://raptor-vending.com' },
+    { question: 'industry', response: 'Vending & Workplace Dining Services' },
+    { question: 'target', response: 'Businesses, offices, and facilities in San Antonio looking for modern vending and micromarket solutions' },
+    { question: 'goal', response: 'Increase local visibility, generate leads for micromarket installations, and establish authority in workplace dining' },
+    { question: 'competitor', response: 'Canteen, Aramark, Five Star Food Service' },
+    { question: 'service', response: 'Micromarkets, traditional vending machines, office coffee service, workplace dining solutions' },
+    { question: 'location', response: 'San Antonio, TX (serving South Texas)' },
+    { question: 'phone', response: '(210) 555-8274' },
+    { question: 'email', response: 'info@raptorvending.com' },
+    { question: 'brand', response: 'Modern, reliable, convenient, employee-focused' },
+    { question: 'color', response: 'Red (#DC2626) and black with white accents' },
   ]
 
   const onboardingResponses = []
@@ -221,9 +297,9 @@ async function seedDemoClient() {
       comm_type: 'email_invite',
       title: 'Welcome to Pyrus Digital Media',
       subject: 'Welcome to Your Client Portal',
-      body: 'Hi John, Welcome to Pyrus Digital Media! Your client portal is now ready. Log in to track your marketing progress.',
+      body: 'Hi Mike, Welcome to Pyrus Digital Media! Your client portal is now ready. Log in to track your marketing progress.',
       status: 'opened',
-      recipient_email: 'john@acme-demo.com',
+      recipient_email: 'mike@raptorvending.com',
       sent_at: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000), // 6 months ago
       opened_at: new Date(now.getTime() - 179 * 24 * 60 * 60 * 1000),
     },
@@ -231,29 +307,29 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'result_alert',
       title: 'Keyword Ranking Update',
-      subject: '"cloud migration services" moved to position #3',
-      body: 'Great news! Your target keyword "cloud migration services" has improved from position #12 to position #3 on Google.',
+      subject: '"micromarket san antonio" moved to position #3',
+      body: 'Great news! Your target keyword "micromarket san antonio" has improved from position #12 to position #3 on Google.',
       status: 'delivered',
       highlight_type: 'success',
-      metadata: { keyword: 'cloud migration services', oldPosition: 12, newPosition: 3 },
+      metadata: { keyword: 'micromarket san antonio', oldPosition: 12, newPosition: 3 },
       sent_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'result_alert',
       title: 'Traffic Milestone Reached',
-      subject: 'Your website reached 10,000 monthly visitors!',
-      body: 'Congratulations! Your website has reached 10,000 monthly visitors, a 45% increase from last month.',
+      subject: 'Your website reached 2,500 monthly visitors!',
+      body: 'Congratulations! Your website has reached 2,500 monthly visitors, a 45% increase from last month.',
       status: 'delivered',
       highlight_type: 'success',
-      metadata: { milestone: 10000, metric: 'monthly_visitors', growth: '45%' },
+      metadata: { milestone: 2500, metric: 'monthly_visitors', growth: '45%' },
       sent_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'content_approval',
       title: 'Blog Post Ready for Review',
-      subject: 'New content: "10 Ways to Improve Your IT Infrastructure"',
+      subject: 'New content: "5 Benefits of Micromarkets for Your Workplace"',
       body: 'A new blog post is ready for your review. Please check and approve or request changes.',
       status: 'clicked',
       sent_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
@@ -264,7 +340,7 @@ async function seedDemoClient() {
       comm_type: 'monthly_report',
       title: 'December 2024 Performance Report',
       subject: 'Your Monthly Marketing Report is Ready',
-      body: 'Your December performance report is now available. Key highlights: +32% traffic, 47 keywords ranking, 28 leads generated.',
+      body: 'Your December performance report is now available. Key highlights: +32% traffic, 24 keywords ranking, 8 leads generated.',
       status: 'opened',
       sent_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
       opened_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
@@ -273,8 +349,8 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'task_complete',
       title: 'Website Update Completed',
-      subject: 'Homepage redesign deployed',
-      body: 'The homepage redesign has been deployed to your live website. The new design includes improved CTAs and faster load times.',
+      subject: 'New micromarket gallery section deployed',
+      body: 'The new micromarket photo gallery has been added to your website. Showcases your installations at local businesses.',
       status: 'delivered',
       highlight_type: 'success',
       sent_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
@@ -284,9 +360,9 @@ async function seedDemoClient() {
       comm_type: 'result_alert',
       title: 'New Lead Generated',
       subject: 'New contact form submission',
-      body: 'You received a new lead from your website contact form. The prospect is interested in cloud migration services.',
+      body: 'You received a new lead from your website contact form. A local office is interested in micromarket installation.',
       status: 'delivered',
-      metadata: { leadSource: 'contact_form', interest: 'cloud migration' },
+      metadata: { leadSource: 'contact_form', interest: 'micromarket installation' },
       sent_at: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
     },
   ]
@@ -301,25 +377,25 @@ async function seedDemoClient() {
   const contentItems = [
     {
       client_id: DEMO_CLIENT_ID,
-      title: '10 Ways to Improve Your IT Infrastructure',
+      title: '5 Benefits of Micromarkets for Your Workplace',
       content_type: 'blog',
-      body: 'A comprehensive guide to modernizing your IT systems for better efficiency and security...',
+      body: 'Discover how micromarkets can boost employee satisfaction, increase productivity, and provide healthier options than traditional vending...',
       status: 'published',
       published_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'Cloud Migration Success Story: 40% Cost Reduction',
+      title: 'Why San Antonio Businesses Are Switching to Micromarkets',
       content_type: 'blog',
-      body: 'Learn how we helped a client reduce their infrastructure costs by 40% through strategic cloud migration...',
+      body: 'Local businesses share their experience upgrading from traditional vending to modern micromarket solutions...',
       status: 'published',
       published_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'The Future of Remote Work Technology',
+      title: 'The Complete Guide to Office Coffee Service',
       content_type: 'blog',
-      body: 'Exploring emerging technologies that are reshaping how distributed teams collaborate...',
+      body: 'Everything you need to know about providing quality coffee solutions for your workplace...',
       status: 'published',
       published_at: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000),
     },
@@ -327,7 +403,7 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       title: 'Monthly Newsletter - January',
       content_type: 'email',
-      body: 'This month: New service offerings, client success stories, and industry insights...',
+      body: 'This month: New healthy snack options, micromarket spotlight at USAA, and winter promotions...',
       status: 'pending_review',
       due_date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
     },
@@ -335,15 +411,15 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       title: 'Social Media Content - Week of Jan 13',
       content_type: 'social',
-      body: 'LinkedIn: Industry thought leadership post\nTwitter: Product tip thread\nFacebook: Team spotlight',
+      body: 'LinkedIn: Micromarket installation showcase\nFacebook: Employee testimonial video\nInstagram: Fresh food delivery photos',
       status: 'approved',
       due_date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'Free Consultation Landing Page',
+      title: 'Free Workplace Assessment Landing Page',
       content_type: 'landing_page',
-      body: 'Lead generation page for free IT infrastructure assessment...',
+      body: 'Lead generation page for free workplace vending and micromarket assessment...',
       status: 'published',
       published_at: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
     },
@@ -351,7 +427,7 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       title: 'Q1 2025 Marketing Strategy',
       content_type: 'other',
-      body: 'Quarterly marketing plan covering SEO, content, and advertising initiatives...',
+      body: 'Quarterly marketing plan focusing on local SEO, workplace dining content, and Google Ads campaigns...',
       status: 'draft',
       due_date: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
     },
@@ -366,71 +442,71 @@ async function seedDemoClient() {
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'website_update',
-      description: 'Homepage hero section updated with new messaging and CTAs',
-      metadata: { page: 'homepage', section: 'hero', changes: ['headline', 'cta_button', 'background_image'] },
+      description: 'Micromarket photo gallery added to website',
+      metadata: { page: 'gallery', section: 'micromarkets', changes: ['new_photos', 'installation_showcase'] },
       created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'seo_ranking',
-      description: 'Keyword "cloud migration services" improved from #12 to #3',
-      metadata: { keyword: 'cloud migration services', oldRank: 12, newRank: 3 },
+      description: 'Keyword "micromarket san antonio" improved from #12 to #3',
+      metadata: { keyword: 'micromarket san antonio', oldRank: 12, newRank: 3 },
       created_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'content_published',
-      description: 'Blog post "10 Ways to Improve Your IT Infrastructure" published',
-      metadata: { contentType: 'blog', wordCount: 1850, readTime: '8 min' },
+      description: 'Blog post "5 Benefits of Micromarkets for Your Workplace" published',
+      metadata: { contentType: 'blog', wordCount: 1200, readTime: '5 min' },
       created_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'lead_generated',
-      description: 'New lead from website contact form - interested in cloud migration',
-      metadata: { source: 'contact_form', interest: 'cloud migration', leadScore: 85 },
+      description: 'New lead from website - local office interested in micromarket',
+      metadata: { source: 'contact_form', interest: 'micromarket installation', leadScore: 85 },
       created_at: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'traffic_milestone',
-      description: 'Website reached 10,000 monthly visitors',
-      metadata: { milestone: 10000, metric: 'monthly_visitors', previousMonth: 6897 },
+      description: 'Website reached 2,500 monthly visitors',
+      metadata: { milestone: 2500, metric: 'monthly_visitors', previousMonth: 1724 },
       created_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'social_engagement',
-      description: 'LinkedIn post reached 5,200 impressions with 3.2% engagement rate',
-      metadata: { platform: 'linkedin', impressions: 5200, engagementRate: '3.2%', likes: 87, comments: 23 },
+      description: 'LinkedIn post about workplace dining reached 1,800 impressions',
+      metadata: { platform: 'linkedin', impressions: 1800, engagementRate: '4.1%', likes: 45, comments: 12 },
       created_at: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'seo_ranking',
-      description: 'Keyword "IT consulting services" entered top 10 at position #8',
-      metadata: { keyword: 'IT consulting services', oldRank: 24, newRank: 8 },
+      description: 'Keyword "vending machines san antonio" entered top 10 at position #7',
+      metadata: { keyword: 'vending machines san antonio', oldRank: 19, newRank: 7 },
       created_at: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'website_update',
-      description: 'New services page added with detailed service descriptions',
-      metadata: { page: 'services', action: 'created', sections: ['cloud', 'consulting', 'development'] },
+      description: 'New services page added with micromarket and coffee service details',
+      metadata: { page: 'services', action: 'created', sections: ['micromarkets', 'vending', 'coffee'] },
       created_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'ad_campaign',
-      description: 'Google Ads campaign "Cloud Services" achieved 4.2% CTR',
-      metadata: { platform: 'google_ads', campaign: 'Cloud Services', ctr: '4.2%', conversions: 12, spend: 450 },
+      description: 'Google Ads campaign "Micromarket San Antonio" achieved 5.1% CTR',
+      metadata: { platform: 'google_ads', campaign: 'Micromarket San Antonio', ctr: '5.1%', conversions: 8, spend: 380 },
       created_at: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'lead_generated',
-      description: 'New lead from Google Ads - enterprise prospect',
-      metadata: { source: 'google_ads', interest: 'managed IT services', leadScore: 92, company: 'Enterprise Corp' },
+      description: 'New lead from Google Ads - corporate campus interested in vending',
+      metadata: { source: 'google_ads', interest: 'corporate vending', leadScore: 92, company: 'Valero Energy' },
       created_at: new Date(now.getTime() - 18 * 24 * 60 * 60 * 1000),
     },
   ]

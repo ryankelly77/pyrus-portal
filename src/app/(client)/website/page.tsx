@@ -17,8 +17,26 @@ interface EditRequest {
   date: string
 }
 
-// Mock data for TC Clinical
-const websiteData = {
+// Demo client ID for showing demo-specific data
+const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
+
+// Demo website data (Raptor Vending)
+const demoWebsiteData = {
+  domain: 'raptor-vending.com',
+  previewUrl: 'https://raptor-vending.com',
+  plan: 'Bloom Site (WordPress)',
+  carePlan: 'Website Care Plan',
+  status: 'active' as const,
+  launchDate: 'Jun 20, 2024',
+  hosting: {
+    provider: 'WPEngine',
+    uptime: '99.9%',
+    lastUpdated: 'Jan 10, 2026',
+  },
+}
+
+// Default website data for TC Clinical
+const defaultWebsiteData = {
   domain: 'tc-clinicalservices.com',
   previewUrl: 'https://app.landingsite.ai/website-preview?id=8869fd44-f6ea-4bd7-bc24-92a7a14f17a5',
   plan: 'Seed Site (AI-Built)',
@@ -42,18 +60,16 @@ const editRequests: EditRequest[] = [
 export default function WebsitePage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   usePageView({ page: '/website', pageName: 'Website' })
 
   // Check if client is pending (prospect only) or has website services
-  // Demo mode bypasses these checks to show the full website dashboard
-  const isPending = !isDemo && client.status === 'pending'
-  const hasWebsite = isDemo || client.access.hasWebsite
-  const hasWebsiteProducts = isDemo || client.access.hasWebsiteProducts
+  const isPending = client.status === 'pending'
+  const hasWebsite = client.access.hasWebsite
+  const hasWebsiteProducts = client.access.hasWebsiteProducts
   // Show coming soon if client is active with website products but data isn't connected yet
-  const showComingSoon = !isDemo && !isPending && hasWebsiteProducts && !hasWebsite
+  const showComingSoon = !isPending && hasWebsiteProducts && !hasWebsite
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
@@ -99,12 +115,13 @@ export default function WebsitePage() {
     }
   }
 
-  // Use client-specific website data if available, otherwise fall back to default
+  // Use demo data for demo client, otherwise use client-specific or default data
   // TODO: Fetch real website data from API based on client subscriptions
-  const clientWebsiteData = client.landingsitePreviewUrl ? {
-    ...websiteData,
+  const isDemo = viewingAs === DEMO_CLIENT_ID
+  const clientWebsiteData = isDemo ? demoWebsiteData : (client.landingsitePreviewUrl ? {
+    ...defaultWebsiteData,
     previewUrl: client.landingsitePreviewUrl,
-  } : websiteData
+  } : defaultWebsiteData)
 
   // Show loading state while fetching client data
   if (loading) {
