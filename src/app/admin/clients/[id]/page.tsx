@@ -554,7 +554,7 @@ export default function ClientDetailPage() {
   interface Communication {
     id: string
     clientId: string
-    type: string  // 'email_invite', 'email_reminder', 'result_alert', 'chat', 'monthly_report', etc.
+    type: string  // 'email_invite', 'email_reminder', 'email_highlevel', 'result_alert', 'sms', 'chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp', 'monthly_report', etc.
     title: string
     subject: string | null
     body: string | null
@@ -566,10 +566,12 @@ export default function ClientDetailPage() {
     clickedAt: string | null
     sentAt: string | null
     createdAt: string | null
+    source?: 'database' | 'highlevel'
+    direction?: 'inbound' | 'outbound'
   }
   const [communications, setCommunications] = useState<Communication[]>([])
   const [communicationsLoading, setCommunicationsLoading] = useState(false)
-  const [commFilter, setCommFilter] = useState<'all' | 'emails' | 'alerts' | 'chat' | 'content'>('all')
+  const [commFilter, setCommFilter] = useState<'all' | 'emails' | 'alerts' | 'sms' | 'chat' | 'content'>('all')
 
   // Resend invitation state
   const [isResendingInvite, setIsResendingInvite] = useState(false)
@@ -3417,45 +3419,67 @@ export default function ClientDetailPage() {
           <div className="communication-content">
             {/* Stats Overview */}
             {(() => {
-              // Calculate stats from communications
-              const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+              // Calculate stats from communications (matching client page logic)
+              const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'email_highlevel']
               const emails = communications.filter(c => emailTypes.includes(c.type))
               const deliveredEmails = emails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
               const failedEmails = emails.filter(c => c.status === 'failed')
               const bouncedEmails = emails.filter(c => c.status === 'bounced')
 
               const resultAlerts = communications.filter(c => c.type === 'result_alert')
-              const openedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+              const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
 
-              const chatMessages = communications.filter(c => c.type === 'chat')
-              const contentReviews = communications.filter(c => c.type.startsWith('content_'))
-              const pendingContent = contentReviews.filter(c => c.status === 'pending_review' || c.status === 'needs_revision')
+              // SMS messages from HighLevel
+              const smsMessages = communications.filter(c => c.type === 'sms')
+              const inboundSms = smsMessages.filter(c => c.direction === 'inbound')
+              const outboundSms = smsMessages.filter(c => c.direction === 'outbound')
 
-              const allEmailTypes = [...emails, ...resultAlerts]
-              const openedEmails = allEmailTypes.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
-              const deliveredForRate = allEmailTypes.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
-              const openRate = deliveredForRate.length > 0 ? Math.round((openedEmails.length / deliveredForRate.length) * 100) : 0
+              // Chat messages (includes HighLevel chat types)
+              const chatTypes = ['chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp']
+              const chatMessages = communications.filter(c => chatTypes.includes(c.type) || c.type.startsWith('chat_'))
+              const inboundChat = chatMessages.filter(c => c.direction === 'inbound')
+
+              const contentComms = communications.filter(c => c.type.startsWith('content_'))
+              const pendingContent = contentComms.filter(c => c.status === 'pending_review' || c.status === 'needs_revision')
 
               // Build detail strings
               const emailDetailParts = [`${deliveredEmails.length} delivered`]
               if (failedEmails.length > 0) emailDetailParts.push(`${failedEmails.length} failed`)
               if (bouncedEmails.length > 0) emailDetailParts.push(`${bouncedEmails.length} bounced`)
 
-              const alertDetail = openedAlerts.length === resultAlerts.length && resultAlerts.length > 0
+              const alertDetail = viewedAlerts.length === resultAlerts.length && resultAlerts.length > 0
                 ? (resultAlerts.length === 1 ? 'Opened' : 'All opened')
-                : `${openedAlerts.length} opened`
+                : `${viewedAlerts.length} opened`
+
+              const smsDetail = smsMessages.length > 0
+                ? `${outboundSms.length} sent, ${inboundSms.length} received`
+                : 'No messages'
+
+              const chatDetail = chatMessages.length > 0
+                ? `${inboundChat.length} from client`
+                : 'No messages'
 
               return (
                 <div className="stats-grid">
                   <div className="stat-card">
                     <div className="stat-label">Total Communications</div>
                     <div className="stat-value">{communications.length}</div>
-                    <div className="stat-detail">Last 30 days</div>
+                    <div className="stat-detail">All time</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-label">Emails Sent</div>
+                    <div className="stat-label">Emails</div>
                     <div className="stat-value">{emails.length}</div>
                     <div className="stat-detail">{emailDetailParts.join(', ')}</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">SMS Messages</div>
+                    <div className="stat-value" style={{ color: '#10B981' }}>{smsMessages.length}</div>
+                    <div className="stat-detail">{smsDetail}</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-label">Chat Messages</div>
+                    <div className="stat-value blue">{chatMessages.length}</div>
+                    <div className="stat-detail">{chatDetail}</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">Result Alerts</div>
@@ -3463,19 +3487,9 @@ export default function ClientDetailPage() {
                     <div className="stat-detail">{alertDetail}</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-label">Chat Messages</div>
-                    <div className="stat-value blue">{chatMessages.length}</div>
-                    <div className="stat-detail">From HighLevel</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">Email Open Rate</div>
-                    <div className="stat-value success">{openRate}%</div>
-                    <div className="stat-detail">{openedEmails.length} of {deliveredForRate.length} delivered</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">Content Reviews</div>
-                    <div className="stat-value" style={{ color: 'var(--pyrus-green)' }}>{contentReviews.length}</div>
-                    <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending approval` : 'All reviewed'}</div>
+                    <div className="stat-label">Content Updates</div>
+                    <div className="stat-value" style={{ color: 'var(--primary)' }}>{contentComms.length}</div>
+                    <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending` : 'All reviewed'}</div>
                   </div>
                 </div>
               )
@@ -3500,13 +3514,21 @@ export default function ClientDetailPage() {
                   </svg>
                   Result Alerts
                 </button>
-                <button className={`filter-tab ${commFilter === 'chat' ? 'active' : ''}`} onClick={() => setCommFilter('chat')} disabled>
+                <button className={`filter-tab ${commFilter === 'sms' ? 'active' : ''}`} onClick={() => setCommFilter('sms')}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <path d="M8 10h8"></path>
+                    <path d="M8 14h4"></path>
+                  </svg>
+                  SMS
+                </button>
+                <button className={`filter-tab ${commFilter === 'chat' ? 'active' : ''}`} onClick={() => setCommFilter('chat')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                   </svg>
                   Chat
                 </button>
-                <button className={`filter-tab ${commFilter === 'content' ? 'active' : ''}`} onClick={() => setCommFilter('content')} disabled>
+                <button className={`filter-tab ${commFilter === 'content' ? 'active' : ''}`} onClick={() => setCommFilter('content')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -3566,16 +3588,19 @@ export default function ClientDetailPage() {
                   </li>
                 ) : (
                   (() => {
-                    // Filter communications based on selected filter
-                    const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+                    // Filter communications based on selected filter (matching client page logic)
+                    const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'email_highlevel']
+                    const chatTypes = ['chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp']
                     const filteredComms = communications.filter(comm => {
                       switch (commFilter) {
                         case 'emails':
                           return emailTypes.includes(comm.type)
                         case 'alerts':
                           return comm.type === 'result_alert'
+                        case 'sms':
+                          return comm.type === 'sms'
                         case 'chat':
-                          return comm.type === 'chat'
+                          return chatTypes.includes(comm.type) || comm.type.startsWith('chat_')
                         case 'content':
                           return comm.type.startsWith('content_')
                         case 'all':
@@ -3620,9 +3645,10 @@ export default function ClientDetailPage() {
                       : 'other'
 
                     // Get icon class based on communication type - for result alerts, use alertType colors
-                    const getIconClass = (type: string) => {
+                    const getIconClass = (type: string, metadata: Record<string, any> | null) => {
                       if (type === 'result_alert') {
-                        switch (resultAlertType) {
+                        const alertType = metadata?.alertType || 'other'
+                        switch (alertType) {
                           case 'ranking': return 'result-ranking'   // green
                           case 'traffic': return 'result-traffic'   // blue
                           case 'leads': return 'result-leads'       // purple
@@ -3635,27 +3661,37 @@ export default function ClientDetailPage() {
                       switch (type) {
                         case 'email_invite': return 'email-invite'
                         case 'email_reminder': return 'email-reminder'
-                        case 'email_general': return 'email-invite'
-                        case 'chat': return 'chat'
+                        case 'email_general':
+                        case 'email_highlevel': return 'email-invite'
+                        case 'sms': return 'sms'
+                        case 'chat':
+                        case 'chat_facebook':
+                        case 'chat_instagram':
+                        case 'chat_whatsapp': return 'chat'
                         case 'monthly_report': return 'monthly-report'
                         case 'content_approved':
                         case 'content_review':
                         case 'content_revision': return 'monthly-report'
-                        default: return 'email-invite'
+                        default: return type.startsWith('chat_') ? 'chat' : 'email-invite'
                       }
                     }
 
                     // Get type label and CSS class
-                    const getTypeLabel = (type: string) => {
+                    const getTypeLabel = (type: string, metadata: Record<string, any> | null, direction?: string) => {
                       if (type === 'result_alert') {
-                        const alertLabel = comm.metadata?.alertTypeLabel || 'Result Alert'
+                        const alertLabel = metadata?.alertTypeLabel || 'Result Alert'
                         return { label: alertLabel, class: 'result' }
                       }
                       switch (type) {
                         case 'email_invite': return { label: 'Invitation', class: 'invitation' }
                         case 'email_reminder': return { label: 'Reminder', class: 'reminder' }
                         case 'email_general': return { label: 'Email', class: 'invitation' }
-                        case 'chat': return { label: 'Chat', class: 'chat' }
+                        case 'email_highlevel': return { label: direction === 'inbound' ? 'Email Received' : 'Email', class: 'invitation' }
+                        case 'sms': return { label: direction === 'inbound' ? 'SMS Received' : 'SMS Sent', class: 'sms' }
+                        case 'chat': return { label: direction === 'inbound' ? 'Message' : 'Reply', class: 'chat' }
+                        case 'chat_facebook': return { label: 'Facebook', class: 'chat' }
+                        case 'chat_instagram': return { label: 'Instagram', class: 'chat' }
+                        case 'chat_whatsapp': return { label: 'WhatsApp', class: 'chat' }
                         case 'monthly_report': return { label: 'Report', class: 'report' }
                         case 'content_approved':
                         case 'content_review':
@@ -3665,9 +3701,10 @@ export default function ClientDetailPage() {
                     }
 
                     // Get icon SVG content based on type - for result alerts, use alertType icons
-                    const getIcon = (type: string) => {
+                    const getIcon = (type: string, metadata: Record<string, any> | null) => {
                       if (type === 'result_alert') {
-                        switch (resultAlertType) {
+                        const alertType = metadata?.alertType || 'other'
+                        switch (alertType) {
                           case 'ranking':
                             return <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>
                           case 'traffic':
@@ -3683,8 +3720,13 @@ export default function ClientDetailPage() {
                             return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         }
                       }
-                      if (type === 'chat') {
-                        return <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></>
+                      // SMS icon (message bubble with lines)
+                      if (type === 'sms') {
+                        return <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 10h8"></path><path d="M8 14h4"></path></>
+                      }
+                      // Chat/message icons
+                      if (type === 'chat' || type.startsWith('chat_')) {
+                        return <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                       }
                       if (type === 'monthly_report' || type.startsWith('content_')) {
                         return <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></>
@@ -3701,7 +3743,7 @@ export default function ClientDetailPage() {
                     const isContentType = comm.type.startsWith('content_')
                     const contentStatus = isContentType ? comm.status : null
 
-                    const typeInfo = getTypeLabel(comm.type)
+                    const typeInfo = getTypeLabel(comm.type, comm.metadata, comm.direction)
                     const highlightClass = comm.highlightType ? `highlight-${comm.highlightType}` : ''
 
                     return (
@@ -3711,9 +3753,9 @@ export default function ClientDetailPage() {
                           <span className="time">{timeStr}</span>
                         </div>
                         <div className="timeline-content">
-                          <div className={`comm-icon ${getIconClass(comm.type)}`}>
+                          <div className={`comm-icon ${getIconClass(comm.type, comm.metadata)}`}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              {getIcon(comm.type)}
+                              {getIcon(comm.type, comm.metadata)}
                             </svg>
                           </div>
                           <div className="comm-details">
@@ -3770,6 +3812,11 @@ export default function ClientDetailPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Source indicator for CRM messages */}
+                            {comm.source === 'highlevel' && (
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>via CRM</span>
+                            )}
 
                             {/* Body text for content descriptions */}
                             {comm.body && !comm.type.startsWith('result_') && !comm.metadata?.feedback && (

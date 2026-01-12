@@ -318,14 +318,14 @@ export default function CommunicationPage() {
               <div className="stat-detail">{smsDetail}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Result Alerts</div>
-              <div className="stat-value purple">{resultAlerts.length}</div>
-              <div className="stat-detail">{alertDetail}</div>
-            </div>
-            <div className="stat-card">
               <div className="stat-label">Chat Messages</div>
               <div className="stat-value blue">{chatMessages.length}</div>
               <div className="stat-detail">{chatDetail}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Result Alerts</div>
+              <div className="stat-value purple">{resultAlerts.length}</div>
+              <div className="stat-detail">{alertDetail}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Content Updates</div>
