@@ -299,10 +299,15 @@ export default function CheckoutPage() {
 
   // Validate and apply coupon
   const validateCoupon = (code: string): { valid: boolean; error?: string } => {
-    const coupon = VALID_COUPONS[code.toUpperCase()]
+    const upperCode = code.toUpperCase()
+    console.log('Validating coupon:', upperCode)
+    console.log('Available coupons:', Object.keys(VALID_COUPONS))
+    const coupon = VALID_COUPONS[upperCode]
+    console.log('Found coupon:', coupon)
     if (!coupon) {
       return { valid: false, error: 'Invalid coupon code' }
     }
+    console.log('baseMonthlyTotal:', baseMonthlyTotal, 'minSpend:', coupon.minSpend)
     if (baseMonthlyTotal < coupon.minSpend) {
       return { valid: false, error: `This coupon requires a minimum of $${coupon.minSpend}/mo (current: $${baseMonthlyTotal}/mo)` }
     }
