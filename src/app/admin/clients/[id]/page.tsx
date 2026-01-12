@@ -3766,7 +3766,7 @@ export default function ClientDetailPage() {
                                       )}
                                     </>
                                   )}
-                                  {comm.metadata.milestone && !comm.metadata.keyword && (
+                                  {comm.metadata.milestone && (
                                     <>
                                       <strong>{comm.metadata.milestone}</strong>
                                       {comm.metadata.change && <span>{comm.metadata.change}</span>}
@@ -5308,6 +5308,11 @@ export default function ClientDetailPage() {
                         if (!resultAlertSubject || Object.values(alertTypes).some(t => t.defaultSubject === resultAlertSubject)) {
                           setResultAlertSubject(alertTypes[type].defaultSubject)
                         }
+                        // Clear all type-specific fields when switching to prevent cross-contamination
+                        setResultAlertKeyword('')
+                        setResultAlertNewPosition('')
+                        setResultAlertPrevPosition('')
+                        setResultAlertMilestone('')
                       }}
                       style={{
                         display: 'flex',
