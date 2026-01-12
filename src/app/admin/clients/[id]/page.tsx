@@ -434,7 +434,7 @@ export default function ClientDetailPage() {
 
   // Result Alert modal state
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
-  const [resultAlertType, setResultAlertType] = useState<'ranking' | 'traffic' | 'leads' | 'milestone' | 'other'>('ranking')
+  const [resultAlertType, setResultAlertType] = useState<'ranking' | 'traffic' | 'leads' | 'milestone' | 'other' | 'ai'>('ranking')
   const [resultAlertSubject, setResultAlertSubject] = useState('')
   const [resultAlertMessage, setResultAlertMessage] = useState('')
   const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
@@ -513,6 +513,18 @@ export default function ClientDetailPage() {
       bgColor: '#FDF2F8',
       defaultSubject: 'Marketing Update',
       placeholder: 'Write a custom message about the results you want to share...',
+    },
+    ai: {
+      label: 'AI Alert',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+        </svg>
+      ),
+      color: '#06B6D4',
+      bgColor: '#CFFAFE',
+      defaultSubject: 'AI Insights for Your Business',
+      placeholder: 'e.g., Our AI analysis identified 3 new keyword opportunities that could increase your traffic by 25%.',
     },
   }
 
@@ -3573,6 +3585,7 @@ export default function ClientDetailPage() {
                           case 'traffic': return 'result-traffic'   // blue
                           case 'leads': return 'result-leads'       // purple
                           case 'milestone': return 'result-milestone' // amber
+                          case 'ai': return 'result-ai'             // cyan
                           case 'other':
                           default: return 'result-other'            // pink
                         }
@@ -3621,6 +3634,8 @@ export default function ClientDetailPage() {
                             return <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>
                           case 'milestone':
                             return <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>
+                          case 'ai':
+                            return <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
                           case 'other':
                           default:
                             return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -3734,6 +3749,7 @@ export default function ClientDetailPage() {
                                     {resultAlertType === 'traffic' && <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>}
                                     {resultAlertType === 'leads' && <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>}
                                     {resultAlertType === 'milestone' && <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>}
+                                    {resultAlertType === 'ai' && <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>}
                                     {(resultAlertType === 'other' || !resultAlertType) && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>}
                                   </svg>
                                 </div>
@@ -5278,7 +5294,7 @@ export default function ClientDetailPage() {
               {/* Alert Type Selection */}
               <div className="form-group">
                 <label className="form-label">What type of win are you sharing?</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
                   {(Object.keys(alertTypes) as Array<keyof typeof alertTypes>).map((type) => (
                     <button
                       key={type}
@@ -5438,6 +5454,26 @@ export default function ClientDetailPage() {
                       type="text"
                       className="form-input"
                       placeholder="e.g., Campaign Launch Complete!"
+                      value={resultAlertMilestone}
+                      onChange={(e) => setResultAlertMilestone(e.target.value)}
+                      style={{ fontSize: '13px' }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Optional Highlight field for AI alerts */}
+              {resultAlertType === 'ai' && (
+                <div style={{ background: '#ECFEFF', border: '1px solid #A5F3FC', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#0E7490', marginBottom: '12px' }}>
+                    Highlight Box (Optional)
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>AI Insight</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., 3 New Keyword Opportunities Identified"
                       value={resultAlertMilestone}
                       onChange={(e) => setResultAlertMilestone(e.target.value)}
                       style={{ fontSize: '13px' }}

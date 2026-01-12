@@ -1224,6 +1224,11 @@
             color: #DB2777;
         }
 
+        .comm-icon.result-ai {
+            background: #CFFAFE;
+            color: #06B6D4;
+        }
+
         /* Legacy fallback */
         .comm-icon.result-alert {
             background: #FDF2F8;
@@ -1471,6 +1476,18 @@
         }
         .result-highlight.result-highlight-other .result-text strong {
             color: #9D174D;
+        }
+
+        .result-highlight.result-highlight-ai {
+            background: linear-gradient(135deg, #ECFEFF 0%, #CFFAFE 100%);
+            border-left-color: #06B6D4;
+        }
+        .result-highlight.result-highlight-ai .result-icon {
+            background: #06B6D4;
+            color: white;
+        }
+        .result-highlight.result-highlight-ai .result-text strong {
+            color: #0E7490;
         }
 
         .click-inline {
