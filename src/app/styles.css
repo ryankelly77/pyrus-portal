@@ -9694,7 +9694,6 @@
         .ai-score-gauge {
             position: relative;
             width: 180px;
-            height: 110px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -9706,11 +9705,8 @@
         }
 
         .ai-score-value {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
             text-align: center;
+            margin-top: -50px;
         }
 
         .ai-score-value .score-number {
@@ -9731,7 +9727,7 @@
             font-weight: 600;
             padding: 4px 12px;
             border-radius: 20px;
-            margin-top: 40px;
+            margin-top: 16px;
         }
 
         .ai-score-label.low {
