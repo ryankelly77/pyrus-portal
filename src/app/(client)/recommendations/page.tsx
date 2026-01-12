@@ -408,43 +408,8 @@ export default function RecommendationsPage() {
                 <h3>Smart Recommendations</h3>
                 <p>Once you&apos;re an active client, we&apos;ll analyze your marketing data to provide AI-powered recommendations tailored to your growth goals.</p>
               </div>
-            ) : (
-              <div className="coming-soon-placeholder">
-                <div className="coming-soon-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                </div>
-                <h2>Smart Recommendations Coming Soon</h2>
-                <p>We&apos;re analyzing your marketing performance data to generate personalized AI-powered recommendations. Your first set of smart recommendations will be available in approximately 90 days.</p>
-                <div className="coming-soon-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-dot active"></div>
-                    <span>Campaign data collection started</span>
-                  </div>
-                  <div className="timeline-item">
-                    <div className="timeline-dot pending"></div>
-                    <span>AI analysis in progress</span>
-                  </div>
-                  <div className="timeline-item">
-                    <div className="timeline-dot pending"></div>
-                    <span>Smart recommendations generation</span>
-                  </div>
-                </div>
-                <div className="refresh-info" style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#5A6358' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                  </svg>
-                  First recommendations expected around <strong>90 days</strong> from your start date
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* TODO: Uncomment when smart recommendations are implemented */}
-          {/* Smart Recommendations Cards - For Future Use */}
-          {false && (
+            ) : isDemo && (!demoState || demoState === 'active') ? (
+              /* Demo mode active state - show dummy recommendation cards */
             <div className="rec-cards-grid">
               {/* Featured Recommendation: Scale Ads */}
               <div className="rec-card featured">
@@ -741,7 +706,39 @@ export default function RecommendationsPage() {
                 </div>
               </div>
             </div>
+            ) : (
+              <div className="coming-soon-placeholder">
+                <div className="coming-soon-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+                <h2>Smart Recommendations Coming Soon</h2>
+                <p>We&apos;re analyzing your marketing performance data to generate personalized AI-powered recommendations. Your first set of smart recommendations will be available in approximately 90 days.</p>
+                <div className="coming-soon-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-dot active"></div>
+                    <span>Campaign data collection started</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>AI analysis in progress</span>
+                  </div>
+                  <div className="timeline-item">
+                    <div className="timeline-dot pending"></div>
+                    <span>Smart recommendations generation</span>
+                  </div>
+                </div>
+                <div className="refresh-info" style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#5A6358' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  First recommendations expected around <strong>90 days</strong> from your start date
+                </div>
+              </div>
             )}
+          </div>
 
           {/* Original Plan Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'original-plan' ? 'active' : ''}`} id="original-plan-tab">
