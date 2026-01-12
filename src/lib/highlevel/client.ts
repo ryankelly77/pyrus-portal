@@ -315,6 +315,7 @@ export interface HighLevelMessage {
       subject?: string
       from?: string
       to?: string[]
+      direction?: 'inbound' | 'outbound'
     }
   }
 }
