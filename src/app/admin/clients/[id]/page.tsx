@@ -3755,12 +3755,12 @@ export default function ClientDetailPage() {
 
                             {/* Result alert body/description */}
                             {comm.type === 'result_alert' && comm.body && (
-                              <p className="comm-body preview">{comm.body}</p>
+                              <p className="comm-body preview" style={{ marginTop: '8px', marginBottom: '8px' }}>{comm.body}</p>
                             )}
 
                             {/* Result highlight for result alerts - keyword/milestone metadata */}
                             {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.milestone) && (
-                              <div className={`result-highlight result-highlight-${resultAlertType}`}>
+                              <div className={`result-highlight result-highlight-${resultAlertType}`} style={{ marginTop: '12px' }}>
                                 <div className="result-icon">
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     {resultAlertType === 'ranking' && <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>}
