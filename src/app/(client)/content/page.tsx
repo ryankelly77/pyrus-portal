@@ -6,30 +6,106 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 
+const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
+
 export default function ContentPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const isDemo = searchParams.get('demo') === 'true'
+  const isDemo = viewingAs === DEMO_CLIENT_ID
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   usePageView({ page: '/content', pageName: 'Content' })
 
-  // Check if client is pending (prospect only)
-  // Demo mode bypasses these checks to show the full content dashboard
-  const isPending = !isDemo && client.status === 'pending'
-
-  // Check if client has content access from their subscriptions
-  const hasContentAccess = isDemo || client.access.hasContent
-
-  // Show coming soon if client has content products but no active content yet
-  const showComingSoon = !isDemo && !isPending && client.access.hasContentProducts && !hasContentAccess
-
+  // State hooks - must be declared before conditional logic that uses them
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
   const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
+  const [demoStateOverride, setDemoStateOverride] = useState<'active' | 'coming-soon' | 'locked' | 'upsell' | null>(null)
 
-  // Files data
-  const files = [
+  // Check if client is pending (prospect only)
+  // Demo mode bypasses these checks to show the full content dashboard
+  // Unless there's a demo state override
+  const isPending = isDemo
+    ? demoStateOverride === 'locked'
+    : client.status === 'pending'
+
+  // Check if client has content access from their subscriptions
+  const hasContentAccess = isDemo
+    ? demoStateOverride === 'active' || demoStateOverride === null
+    : client.access.hasContent
+
+  // Show coming soon if client has content products but no active content yet
+  const showComingSoon = isDemo
+    ? demoStateOverride === 'coming-soon'
+    : !isPending && client.access.hasContentProducts && !hasContentAccess
+
+  // Show upsell/no content products state
+  const showUpsell = isDemo
+    ? demoStateOverride === 'upsell'
+    : !isPending && !client.access.hasContentProducts
+
+  // Demo state selector component
+  const DemoStateSelector = () => {
+    if (!isDemo) return null
+    return (
+      <div className="demo-state-selector" style={{
+        background: 'linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%)',
+        border: '1px solid #C4B5FD',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexWrap: 'wrap'
+      }}>
+        <span style={{ fontSize: '13px', fontWeight: '600', color: '#6B21A8' }}>
+          Demo Mode - View Page State:
+        </span>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {[
+            { value: null, label: 'Active' },
+            { value: 'coming-soon', label: 'Coming Soon' },
+            { value: 'locked', label: 'Locked' },
+            { value: 'upsell', label: 'Upsell' }
+          ].map((state) => (
+            <button
+              key={state.value ?? 'active'}
+              onClick={() => setDemoStateOverride(state.value as typeof demoStateOverride)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                background: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
+                  ? '#7C3AED'
+                  : 'white',
+                color: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
+                  ? 'white'
+                  : '#6B21A8',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              {state.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Files data - Raptor Vending specific for demo
+  const files = isDemo ? [
+    { id: 1, name: 'Raptor Vending Brand Strategy.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Jan 5, 2026' },
+    { id: 2, name: 'Micromarket Sales Playbook.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Jan 3, 2026' },
+    { id: 3, name: 'San Antonio Market Analysis.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 28, 2025' },
+    { id: 4, name: 'Raptor Brand Guidelines.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 20, 2025' },
+    { id: 5, name: 'Micromarket Promo Banner.png', type: 'images' as const, category: 'AI Creative', date: 'Jan 8, 2026' },
+    { id: 6, name: 'Workplace Dining Solutions.jpg', type: 'images' as const, category: 'AI Creative', date: 'Jan 6, 2026' },
+    { id: 7, name: 'Break Room Showcase Video.mp4', type: 'video' as const, category: 'AI Creative', date: 'Dec 15, 2025' },
+  ] : [
     { id: 1, name: 'Brand Strategy Framework.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 15, 2025' },
     { id: 2, name: 'Go-To-Market Playbook.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 15, 2025' },
     { id: 3, name: 'Competitive Analysis.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 12, 2025' },
@@ -40,6 +116,176 @@ export default function ContentPage() {
   ]
 
   const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
+
+  // Demo content data for Raptor Vending
+  const demoContentData = {
+    urgentReviews: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        timeRemaining: '23 hours',
+        title: 'Why San Antonio Businesses Are Switching to Micromarkets',
+        type: 'Blog Post',
+        date: 'Jan 8',
+        preview: 'Discover why forward-thinking San Antonio companies are replacing traditional vending with 24/7 micromarket solutions...'
+      },
+      {
+        platform: 'gbp',
+        platformLabel: 'Google Business Profile',
+        timeRemaining: '18 hours',
+        title: 'New Micromarket Installation in Stone Oak',
+        type: 'Google Post',
+        date: 'Jan 10',
+        preview: 'Excited to announce our latest micromarket installation! Employees now enjoy fresh food, healthy snacks, and premium coffee 24/7...'
+      }
+    ],
+    pendingApproval: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        timeRemaining: '4 days',
+        title: '5 Ways Micromarkets Boost Employee Productivity',
+        type: 'Blog Post',
+        date: 'Jan 6',
+        preview: 'Research shows that convenient access to healthy food options can improve workplace productivity by up to 25%...'
+      },
+      {
+        platform: 'social',
+        platformLabel: 'Social Posts',
+        timeRemaining: '5 days',
+        title: 'January Social Media Calendar',
+        type: '8 Posts',
+        date: 'Jan 5',
+        preview: 'Your complete January social media package: New Year workplace wellness tips, micromarket features, and employee appreciation content...'
+      },
+      {
+        platform: 'ai-creative',
+        platformLabel: 'AI Creative',
+        timeRemaining: '6 days',
+        title: 'Micromarket Feature Graphics Package',
+        type: '4 Graphics',
+        date: 'Jan 4',
+        preview: 'AI-generated visuals showcasing your micromarket amenities: fresh food displays, coffee stations, and convenient checkout...'
+      }
+    ],
+    approved: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        title: 'The Complete Guide to Workplace Dining Solutions',
+        type: 'Blog Post',
+        date: 'Jan 3',
+        preview: 'Everything San Antonio businesses need to know about modernizing their break room with vending and micromarket options...',
+        scheduledDate: 'Jan 12'
+      }
+    ],
+    published: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        title: 'Micromarket vs Traditional Vending: Which Is Right for Your Office?',
+        type: 'Blog Post',
+        date: 'Dec 28',
+        preview: 'Compare the benefits of modern micromarkets against traditional vending machines for your San Antonio workplace...',
+        daysAgo: '14 days ago'
+      },
+      {
+        platform: 'gbp',
+        platformLabel: 'Google Business Profile',
+        title: 'Holiday Hours & New Year Services',
+        type: 'Google Post',
+        date: 'Dec 23',
+        preview: 'Happy Holidays from Raptor Vending! Our micromarkets keep running 24/7 so your team always has access to fresh food and drinks...',
+        daysAgo: '19 days ago'
+      }
+    ]
+  }
+
+  // Default content data for non-demo clients
+  const defaultContentData = {
+    urgentReviews: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        timeRemaining: '23 hours',
+        title: 'Black Friday Sale Announcement',
+        type: 'Blog Post',
+        date: 'Nov 15',
+        preview: 'Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...'
+      },
+      {
+        platform: 'gbp',
+        platformLabel: 'Google Business Profile',
+        timeRemaining: '18 hours',
+        title: 'Limited Time Offer Post',
+        type: 'Google Post',
+        date: 'Nov 18',
+        preview: 'This week only! Get a free SEO audit with any web design package. Limited slots available...'
+      }
+    ],
+    pendingApproval: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        timeRemaining: '4 days',
+        title: '2025 Marketing Trends You Need to Know',
+        type: 'Blog Post',
+        date: 'Nov 20',
+        preview: 'Stay ahead of the curve with these 10 marketing trends that will dominate 2025...'
+      },
+      {
+        platform: 'social',
+        platformLabel: 'Social Posts',
+        timeRemaining: '5 days',
+        title: 'December Social Media Calendar',
+        type: '8 Posts',
+        date: 'Nov 22',
+        preview: 'Your complete December social media content package: holiday promotions, year-end highlights, and New Year preview...'
+      },
+      {
+        platform: 'ai-creative',
+        platformLabel: 'AI Creative',
+        timeRemaining: '6 days',
+        title: 'Holiday Promotion Graphics Package',
+        type: '4 Graphics',
+        date: 'Nov 23',
+        preview: 'AI-generated promotional graphics for your holiday campaign: social banners, email headers, and website hero images...'
+      }
+    ],
+    approved: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        title: 'Complete Guide to Digital Marketing in 2024',
+        type: 'Blog Post',
+        date: 'Nov 19',
+        preview: 'Get ready to take your business to the next level with our comprehensive guide to digital marketing...',
+        scheduledDate: 'Nov 21'
+      }
+    ],
+    published: [
+      {
+        platform: 'website',
+        platformLabel: 'Website Content',
+        title: 'How to Improve Your Local SEO Rankings',
+        type: 'Blog Post',
+        date: 'Nov 10',
+        preview: 'Learn the essential strategies for boosting your local search visibility and attracting more customers...',
+        daysAgo: '10 days ago'
+      },
+      {
+        platform: 'gbp',
+        platformLabel: 'Google Business Profile',
+        title: 'Veterans Day Special Offer',
+        type: 'Google Post',
+        date: 'Nov 11',
+        preview: 'This Veterans Day, we\'re proud to offer 20% off all services for veterans and active military...',
+        daysAgo: '9 days ago'
+      }
+    ]
+  }
+
+  const contentData = isDemo ? demoContentData : defaultContentData
 
   // Show loading state while fetching client data
   if (loading) {
@@ -92,6 +338,7 @@ export default function ContentPage() {
           </div>
         </div>
         <div className="client-content">
+          <DemoStateSelector />
           <div className="locked-page-placeholder">
             <div className="locked-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
@@ -139,6 +386,7 @@ export default function ContentPage() {
           </div>
         </div>
         <div className="client-content">
+          <DemoStateSelector />
           {/* Content Stats - showing zeros for coming soon state */}
           <div className="content-stats">
             <div className="content-stat-card">
@@ -267,7 +515,7 @@ export default function ContentPage() {
   }
 
   // If client doesn't have content products purchased, show upsell
-  if (!client.access.hasContentProducts) {
+  if (showUpsell) {
     return (
       <>
         {/* Top Header Bar */}
@@ -293,6 +541,7 @@ export default function ContentPage() {
         </div>
 
         <div className="client-content">
+          <DemoStateSelector />
           <div className="content-upsell-container">
             {/* Hero Section */}
             <div className="content-hero">
@@ -646,6 +895,8 @@ export default function ContentPage() {
       </div>
 
       <div className="client-content">
+        <DemoStateSelector />
+
         {/* Content Stats */}
         <div className="content-stats">
           <div className="content-stat-card urgent">
@@ -815,107 +1066,67 @@ export default function ContentPage() {
           </div>
 
           <div className="content-list">
-            <div className="content-item urgent">
-              <div className="content-item-header">
-                <span className="platform-badge website">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  Website Content
-                </span>
-                <div className="time-remaining urgent">
-                  <span className="time-label">Time remaining</span>
-                  <span className="time-value">23 hours</span>
+            {contentData.urgentReviews.map((item, index) => (
+              <div key={index} className="content-item urgent">
+                <div className="content-item-header">
+                  <span className={`platform-badge ${item.platform}`}>
+                    {item.platform === 'website' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                      </svg>
+                    )}
+                    {item.platform === 'gbp' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    )}
+                    {item.platformLabel}
+                  </span>
+                  <div className="time-remaining urgent">
+                    <span className="time-label">Time remaining</span>
+                    <span className="time-value">{item.timeRemaining}</span>
+                  </div>
+                </div>
+                <h4 className="content-title">{item.title}</h4>
+                <div className="content-meta">
+                  <span className="content-type">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    {item.type}
+                  </span>
+                  <span className="content-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Added {item.date}
+                  </span>
+                </div>
+                <p className="content-preview">{item.preview}</p>
+                <div className="content-actions">
+                  <button className="btn btn-primary btn-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Review &amp; Edit
+                  </button>
+                  <button className="btn btn-outline btn-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Quick Approve
+                  </button>
                 </div>
               </div>
-              <h4 className="content-title">Black Friday Sale Announcement</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  Blog Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Added Nov 15
-                </span>
-              </div>
-              <p className="content-preview">Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...</p>
-              <div className="content-actions">
-                <button className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Review &amp; Edit
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Quick Approve
-                </button>
-              </div>
-            </div>
-
-            <div className="content-item urgent">
-              <div className="content-item-header">
-                <span className="platform-badge gbp">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  Google Business Profile
-                </span>
-                <div className="time-remaining urgent">
-                  <span className="time-label">Time remaining</span>
-                  <span className="time-value">18 hours</span>
-                </div>
-              </div>
-              <h4 className="content-title">Limited Time Offer Post</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  Google Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Added Nov 18
-                </span>
-              </div>
-              <p className="content-preview">This week only! Get a free SEO audit with any web design package. Limited slots available...</p>
-              <div className="content-actions">
-                <button className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Review &amp; Edit
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Quick Approve
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
