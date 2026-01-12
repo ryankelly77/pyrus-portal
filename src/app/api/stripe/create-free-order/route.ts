@@ -145,7 +145,9 @@ export async function POST(request: NextRequest) {
       items: [{
         price: price.id,
       }],
-      coupon: couponId,
+      discounts: [{
+        coupon: couponId,
+      }],
       metadata: {
         pyrus_client_id: clientId,
         recommendation_id: recommendationId || '',

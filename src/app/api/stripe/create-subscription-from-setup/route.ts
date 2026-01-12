@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (couponId) {
-      subscriptionParams.coupon = couponId
+      subscriptionParams.discounts = [{ coupon: couponId }]
     }
 
     const subscription = await stripe.subscriptions.create(subscriptionParams)
