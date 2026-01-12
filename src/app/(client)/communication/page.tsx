@@ -328,9 +328,9 @@ export default function CommunicationPage() {
               <div className="stat-detail">{chatDetail}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Email Open Rate</div>
-              <div className="stat-value success">{openRate}%</div>
-              <div className="stat-detail">{openedEmails.length} of {deliveredForRate.length} delivered</div>
+              <div className="stat-label">Content Updates</div>
+              <div className="stat-value" style={{ color: 'var(--primary)' }}>{contentComms.length}</div>
+              <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending` : 'All reviewed'}</div>
             </div>
           </div>
 

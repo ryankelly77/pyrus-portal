@@ -1,15 +1,37 @@
 /**
  * HighLevel API Client
  * Documentation: https://marketplace.gohighlevel.com/docs/
- * Base URL: https://services.leadconnectorhq.com
+ *
+ * V1 API (rest.gohighlevel.com) - Works with Location API Keys
+ *   - Contacts: GET, CREATE, UPDATE
+ *   - Notes, Tasks, Tags
+ *   - Limited functionality
+ *
+ * V2 API (services.leadconnectorhq.com) - Requires OAuth
+ *   - Full conversations/messages access
+ *   - More endpoints
  */
 
-const HIGHLEVEL_API_URL = 'https://services.leadconnectorhq.com'
+import { Pool } from 'pg'
+
+const HIGHLEVEL_API_V1_URL = 'https://rest.gohighlevel.com/v1'
+const HIGHLEVEL_API_V2_URL = 'https://services.leadconnectorhq.com'
+const HIGHLEVEL_TOKEN_URL = 'https://services.leadconnectorhq.com/oauth/token'
 
 interface HighLevelConfig {
   apiKey: string
   locationId: string
 }
+
+interface OAuthTokens {
+  accessToken: string
+  refreshToken: string
+  expiresAt: Date
+}
+
+// Cache for OAuth tokens to avoid repeated DB queries
+let tokenCache: { tokens: OAuthTokens; fetchedAt: number } | null = null
+const TOKEN_CACHE_TTL = 60000 // 1 minute
 
 function getConfig(): HighLevelConfig {
   const apiKey = process.env.HIGHLEVEL_API_KEY
@@ -29,16 +51,203 @@ export function isHighLevelConfigured(): boolean {
   return !!(process.env.HIGHLEVEL_API_KEY && process.env.HIGHLEVEL_LOCATION_ID)
 }
 
-async function makeRequest<T>(
+/**
+ * Get OAuth tokens from database
+ */
+async function getOAuthTokens(): Promise<OAuthTokens | null> {
+  // Check cache first
+  if (tokenCache && Date.now() - tokenCache.fetchedAt < TOKEN_CACHE_TTL) {
+    return tokenCache.tokens
+  }
+
+  const locationId = process.env.HIGHLEVEL_LOCATION_ID
+  if (!locationId) return null
+
+  try {
+    // Create a temporary pool for this query (since we can't import dbPool here due to circular deps)
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+    })
+
+    const result = await pool.query(
+      `SELECT access_token, refresh_token, expires_at
+       FROM highlevel_oauth
+       WHERE location_id = $1`,
+      [locationId]
+    )
+
+    await pool.end()
+
+    if (result.rows.length === 0) {
+      return null
+    }
+
+    const row = result.rows[0]
+    const tokens: OAuthTokens = {
+      accessToken: row.access_token,
+      refreshToken: row.refresh_token,
+      expiresAt: new Date(row.expires_at),
+    }
+
+    // Update cache
+    tokenCache = { tokens, fetchedAt: Date.now() }
+
+    return tokens
+  } catch (error) {
+    console.error('Error fetching OAuth tokens:', error)
+    return null
+  }
+}
+
+/**
+ * Refresh OAuth tokens if expired
+ */
+async function refreshOAuthTokens(refreshToken: string): Promise<OAuthTokens | null> {
+  const clientId = process.env.HIGHLEVEL_CLIENT_ID
+  const clientSecret = process.env.HIGHLEVEL_CLIENT_SECRET
+  const locationId = process.env.HIGHLEVEL_LOCATION_ID
+
+  if (!clientId || !clientSecret || !locationId) {
+    console.error('Missing OAuth configuration for token refresh')
+    return null
+  }
+
+  try {
+    const response = await fetch(HIGHLEVEL_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Token refresh failed:', response.status, errorText)
+      return null
+    }
+
+    const data = await response.json()
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000)
+
+    // Update database
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+    })
+
+    await pool.query(
+      `UPDATE highlevel_oauth
+       SET access_token = $1, refresh_token = $2, expires_at = $3, updated_at = NOW()
+       WHERE location_id = $4`,
+      [data.access_token, data.refresh_token, expiresAt, locationId]
+    )
+
+    await pool.end()
+
+    const tokens: OAuthTokens = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt,
+    }
+
+    // Update cache
+    tokenCache = { tokens, fetchedAt: Date.now() }
+
+    console.log('HighLevel OAuth tokens refreshed successfully')
+    return tokens
+  } catch (error) {
+    console.error('Error refreshing OAuth tokens:', error)
+    return null
+  }
+}
+
+/**
+ * Get valid OAuth access token (refreshes if needed)
+ */
+async function getValidAccessToken(): Promise<string | null> {
+  let tokens = await getOAuthTokens()
+
+  if (!tokens) {
+    return null
+  }
+
+  // Check if token is expired or about to expire (5 min buffer)
+  const now = new Date()
+  const expiresAt = new Date(tokens.expiresAt)
+  const bufferMs = 5 * 60 * 1000 // 5 minutes
+
+  if (expiresAt.getTime() - now.getTime() < bufferMs) {
+    console.log('HighLevel OAuth token expired or expiring soon, refreshing...')
+    tokens = await refreshOAuthTokens(tokens.refreshToken)
+    if (!tokens) {
+      return null
+    }
+  }
+
+  return tokens.accessToken
+}
+
+/**
+ * Check if OAuth is configured and tokens are available
+ */
+export async function isOAuthConfigured(): Promise<boolean> {
+  const token = await getValidAccessToken()
+  return token !== null
+}
+
+// ============ V1 API (Location API Key) ============
+
+async function makeRequestV1<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const config = getConfig()
 
-  const response = await fetch(`${HIGHLEVEL_API_URL}${endpoint}`, {
+  const response = await fetch(`${HIGHLEVEL_API_V1_URL}${endpoint}`, {
     ...options,
     headers: {
       'Authorization': `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`HighLevel V1 API error: ${response.status} ${errorText}`)
+    throw new Error(`HighLevel API error: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+// ============ V2 API (OAuth) ============
+
+async function makeRequestV2<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T | null> {
+  const accessToken = await getValidAccessToken()
+
+  if (!accessToken) {
+    console.log('HighLevel V2 API: No valid OAuth token available')
+    return null
+  }
+
+  const response = await fetch(`${HIGHLEVEL_API_V2_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'Version': '2021-07-28',
       ...options.headers,
@@ -47,14 +256,15 @@ async function makeRequest<T>(
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error(`HighLevel API error: ${response.status} ${errorText}`)
-    throw new Error(`HighLevel API error: ${response.status}`)
+    console.error(`HighLevel V2 API error: ${response.status} ${errorText}`)
+    throw new Error(`HighLevel V2 API error: ${response.status}`)
   }
 
   return response.json()
 }
 
-// Contact types
+// ============ Types ============
+
 export interface HighLevelContact {
   id: string
   locationId: string
@@ -67,7 +277,6 @@ export interface HighLevelContact {
   tags?: string[]
 }
 
-// Conversation types
 export interface HighLevelConversation {
   id: string
   contactId: string
@@ -84,7 +293,6 @@ export interface HighLevelConversation {
   dateUpdated?: string
 }
 
-// Message types
 export interface HighLevelMessage {
   id: string
   conversationId: string
@@ -125,52 +333,89 @@ interface MessagesResponse {
 interface ContactSearchResponse {
   contacts: HighLevelContact[]
   total?: number
+  meta?: { total: number }
 }
 
+// ============ API Functions ============
+
 /**
- * Search for conversations by contact ID
+ * Search for conversations by contact ID (V2 OAuth API)
  */
 export async function getConversationsByContactId(
   contactId: string
 ): Promise<HighLevelConversation[]> {
   const config = getConfig()
 
-  const response = await makeRequest<ConversationsResponse>(
-    `/conversations/search?locationId=${config.locationId}&contactId=${contactId}`
-  )
+  try {
+    const response = await makeRequestV2<ConversationsResponse>(
+      `/conversations/search?locationId=${config.locationId}&contactId=${contactId}`
+    )
 
-  return response.conversations || []
+    if (!response) {
+      console.log('HighLevel: OAuth not configured, cannot fetch conversations')
+      return []
+    }
+
+    return response.conversations || []
+  } catch (error) {
+    console.error('Error fetching conversations:', error)
+    return []
+  }
 }
 
 /**
- * Get messages for a conversation
+ * Get messages for a conversation (V2 OAuth API)
  */
 export async function getMessagesByConversationId(
   conversationId: string,
   limit: number = 50
 ): Promise<HighLevelMessage[]> {
-  const response = await makeRequest<MessagesResponse>(
-    `/conversations/${conversationId}/messages?limit=${limit}`
-  )
+  try {
+    const response = await makeRequestV2<MessagesResponse>(
+      `/conversations/${conversationId}/messages?limit=${limit}`
+    )
 
-  return response.messages || []
+    if (!response) {
+      console.log('HighLevel: OAuth not configured, cannot fetch messages')
+      return []
+    }
+
+    return response.messages || []
+  } catch (error) {
+    console.error('Error fetching messages:', error)
+    return []
+  }
 }
 
 /**
- * Search for a contact by email
+ * Get a contact by ID (V1 API)
+ */
+export async function getContactById(
+  contactId: string
+): Promise<HighLevelContact | null> {
+  try {
+    const response = await makeRequestV1<{ contact: HighLevelContact }>(
+      `/contacts/${contactId}`
+    )
+    return response.contact || null
+  } catch (error) {
+    console.error('Error getting contact by ID:', error)
+    return null
+  }
+}
+
+/**
+ * Search for a contact by email (V1 API)
  */
 export async function getContactByEmail(
   email: string
 ): Promise<HighLevelContact | null> {
-  const config = getConfig()
-
   try {
-    const response = await makeRequest<ContactSearchResponse>(
-      `/contacts/?locationId=${config.locationId}&query=${encodeURIComponent(email)}&limit=1`
+    const response = await makeRequestV1<ContactSearchResponse>(
+      `/contacts/?query=${encodeURIComponent(email)}&limit=10`
     )
 
     if (response.contacts && response.contacts.length > 0) {
-      // Verify email match (search might return partial matches)
       const contact = response.contacts.find(
         c => c.email?.toLowerCase() === email.toLowerCase()
       )
@@ -186,12 +431,20 @@ export async function getContactByEmail(
 
 /**
  * Get all messages for a contact (combines all their conversations)
+ * Requires OAuth to be configured
  */
 export async function getAllMessagesForContact(
   contactId: string,
   limit: number = 100
 ): Promise<HighLevelMessage[]> {
   try {
+    // Check if OAuth is available
+    const hasOAuth = await isOAuthConfigured()
+    if (!hasOAuth) {
+      console.log('HighLevel: OAuth not configured, cannot fetch messages')
+      return []
+    }
+
     // Get all conversations for this contact
     const conversations = await getConversationsByContactId(contactId)
 
@@ -245,7 +498,6 @@ export function transformHighLevelMessage(message: HighLevelMessage): {
   direction: 'inbound' | 'outbound'
   source: 'highlevel'
 } {
-  // Determine the communication type
   let commType = 'chat'
   let title = 'Message'
 
