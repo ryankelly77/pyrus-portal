@@ -325,9 +325,11 @@ interface ConversationsResponse {
 }
 
 interface MessagesResponse {
-  messages: HighLevelMessage[]
-  nextPage?: boolean
-  lastMessageId?: string
+  messages: {
+    messages: HighLevelMessage[]
+    nextPage?: boolean
+    lastMessageId?: string
+  } | HighLevelMessage[]
 }
 
 interface ContactSearchResponse {
@@ -380,9 +382,14 @@ export async function getMessagesByConversationId(
       return []
     }
 
-    // Ensure we always return an array
-    const messages = response.messages
-    return Array.isArray(messages) ? messages : []
+    // Handle nested response structure: { messages: { messages: [...] } }
+    const messagesData = response.messages
+    if (Array.isArray(messagesData)) {
+      return messagesData
+    } else if (messagesData && Array.isArray(messagesData.messages)) {
+      return messagesData.messages
+    }
+    return []
   } catch (error) {
     console.error('Error fetching messages:', error)
     return []
@@ -506,35 +513,46 @@ export function transformHighLevelMessage(message: HighLevelMessage): {
   let commType = 'chat'
   let title = 'Message'
 
-  switch (message.type) {
+  // Handle both old format (SMS, Email) and new format (TYPE_SMS, TYPE_EMAIL)
+  const msgType = message.messageType || message.type
+  const direction = message.direction || message.meta?.email?.direction || 'outbound'
+
+  switch (msgType) {
     case 'SMS':
+    case 'TYPE_SMS':
       commType = 'sms'
-      title = message.direction === 'inbound' ? 'SMS Received' : 'SMS Sent'
+      title = direction === 'inbound' ? 'SMS Received' : 'SMS Sent'
       break
     case 'Email':
+    case 'TYPE_EMAIL':
       commType = 'email_highlevel'
-      title = message.direction === 'inbound' ? 'Email Received' : 'Email Sent'
+      title = direction === 'inbound' ? 'Email Received' : 'Email Sent'
       break
     case 'Live_Chat':
     case 'Custom':
+    case 'TYPE_WEBCHAT':
+    case 'TYPE_LIVE_CHAT':
       commType = 'chat'
-      title = message.direction === 'inbound' ? 'Chat Message' : 'Chat Reply'
+      title = direction === 'inbound' ? 'Chat Message' : 'Chat Reply'
       break
     case 'FB':
+    case 'TYPE_FB':
       commType = 'chat_facebook'
       title = 'Facebook Message'
       break
     case 'IG':
+    case 'TYPE_IG':
       commType = 'chat_instagram'
       title = 'Instagram Message'
       break
     case 'WhatsApp':
+    case 'TYPE_WHATSAPP':
       commType = 'chat_whatsapp'
       title = 'WhatsApp Message'
       break
     default:
       commType = 'chat'
-      title = message.direction === 'inbound' ? 'Message Received' : 'Message Sent'
+      title = direction === 'inbound' ? 'Message Received' : 'Message Sent'
   }
 
   return {
@@ -547,14 +565,14 @@ export function transformHighLevelMessage(message: HighLevelMessage): {
     metadata: {
       highlevelMessageId: message.id,
       highlevelConversationId: message.conversationId,
-      messageType: message.type,
-      direction: message.direction,
+      messageType: msgType,
+      direction: direction,
       attachments: message.attachments,
       emailMeta: message.meta?.email,
     },
     highlightType: null,
     sentAt: message.dateAdded || null,
-    direction: message.direction,
+    direction: direction as 'inbound' | 'outbound',
     source: 'highlevel',
   }
 }
