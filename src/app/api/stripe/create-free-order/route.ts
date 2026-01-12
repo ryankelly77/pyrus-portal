@@ -159,6 +159,21 @@ export async function POST(request: NextRequest) {
     const stripeSubscription = await stripe.subscriptions.create(subscriptionParams) as any
 
     console.log('[FreeOrder] Created Stripe subscription:', stripeSubscription.id)
+    console.log('[FreeOrder] Subscription details:', JSON.stringify({
+      id: stripeSubscription.id,
+      status: stripeSubscription.status,
+      current_period_start: stripeSubscription.current_period_start,
+      current_period_end: stripeSubscription.current_period_end,
+    }))
+
+    // Safely parse dates from Stripe response
+    const now = new Date()
+    const periodStart = stripeSubscription.current_period_start
+      ? new Date(stripeSubscription.current_period_start * 1000)
+      : now
+    const periodEnd = stripeSubscription.current_period_end
+      ? new Date(stripeSubscription.current_period_end * 1000)
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // Default to 30 days
 
     // Create local subscription record
     const subscription = await prisma.subscriptions.create({
@@ -169,8 +184,8 @@ export async function POST(request: NextRequest) {
         stripe_customer_id: stripeCustomerId,
         status: 'active',
         monthly_amount: 0, // $0 after coupon
-        current_period_start: new Date(stripeSubscription.current_period_start * 1000),
-        current_period_end: new Date(stripeSubscription.current_period_end * 1000),
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
       },
     })
 
