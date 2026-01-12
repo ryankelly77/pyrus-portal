@@ -3778,13 +3778,17 @@ export default function ClientDetailPage() {
                                       {comm.metadata.previousPosition && (
                                         <span>Moved from position #{comm.metadata.previousPosition} to #{comm.metadata.newPosition} (up {comm.metadata.previousPosition - comm.metadata.newPosition} spots!){comm.metadata.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
                                       )}
+                                      {comm.body && <span style={{ display: 'block', marginTop: '4px', fontWeight: 'normal' }}>{comm.body}</span>}
                                     </>
                                   )}
                                   {comm.metadata.milestone && (
                                     <>
                                       <strong>{comm.metadata.milestone}</strong>
-                                      {comm.metadata.change && <span>{comm.metadata.change}</span>}
+                                      {comm.body && <span style={{ display: 'block', marginTop: '4px', fontWeight: 'normal' }}>{comm.body}</span>}
                                     </>
+                                  )}
+                                  {!comm.metadata.keyword && !comm.metadata.milestone && comm.body && (
+                                    <span style={{ fontWeight: 'normal' }}>{comm.body}</span>
                                   )}
                                 </div>
                               </div>
