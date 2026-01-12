@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
 import { sendEmail, isMailgunConfigured } from '@/lib/email/mailgun'
 import { getResultAlertEmail } from '@/lib/email/templates/result-alert'
+import {
+  isHighLevelConfigured,
+  getAllMessagesForContact,
+  getContactByEmail,
+  transformHighLevelMessage,
+} from '@/lib/highlevel/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +35,26 @@ const COMM_STATUS = {
   BOUNCED: 'bounced',
 } as const
 
+interface Communication {
+  id: string
+  clientId: string
+  type: string
+  title: string
+  subject: string | null
+  body: string | null
+  status: string | null
+  metadata: Record<string, any> | null
+  highlightType: string | null
+  recipientEmail?: string | null
+  openedAt: string | null
+  clickedAt: string | null
+  sentAt: string | null
+  createdAt: string | null
+  createdBy?: string | null
+  source?: 'database' | 'highlevel'
+  direction?: 'inbound' | 'outbound'
+}
+
 // GET /api/admin/clients/[id]/communications - Get all communications for a client
 export async function GET(
   request: NextRequest,
@@ -40,7 +66,8 @@ export async function GET(
     // Get query params for filtering
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type') // Filter by comm_type
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const includeHighLevel = searchParams.get('includeHighLevel') !== 'false' // Default true
+    const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
     const whereClause: any = { client_id: clientId }
@@ -48,15 +75,22 @@ export async function GET(
       whereClause.comm_type = type
     }
 
-    const communications = await prisma.client_communications.findMany({
-      where: whereClause,
-      orderBy: { sent_at: 'desc' },
-      take: limit,
-      skip: offset,
-    })
+    // Fetch database communications and client info in parallel
+    const [communications, client] = await Promise.all([
+      prisma.client_communications.findMany({
+        where: whereClause,
+        orderBy: { sent_at: 'desc' },
+        take: limit * 2, // Fetch more to account for merging
+        skip: offset,
+      }),
+      prisma.clients.findUnique({
+        where: { id: clientId },
+        select: { highlevel_id: true, contact_email: true },
+      }),
+    ])
 
-    // Transform for frontend
-    const transformed = communications.map(comm => ({
+    // Transform database communications
+    const dbCommunications: Communication[] = communications.map(comm => ({
       id: comm.id,
       clientId: comm.client_id,
       type: comm.comm_type,
@@ -64,17 +98,95 @@ export async function GET(
       subject: comm.subject,
       body: comm.body,
       status: comm.status,
-      metadata: comm.metadata,
+      metadata: comm.metadata as Record<string, any> | null,
       highlightType: comm.highlight_type,
       recipientEmail: comm.recipient_email,
-      openedAt: comm.opened_at,
-      clickedAt: comm.clicked_at,
-      sentAt: comm.sent_at,
+      openedAt: comm.opened_at?.toISOString() || null,
+      clickedAt: comm.clicked_at?.toISOString() || null,
+      sentAt: comm.sent_at?.toISOString() || null,
       createdBy: comm.created_by,
-      createdAt: comm.created_at,
+      createdAt: comm.created_at?.toISOString() || null,
+      source: 'database' as const,
     }))
 
-    return NextResponse.json(transformed)
+    // Fetch HighLevel messages if configured
+    let hlCommunications: Communication[] = []
+
+    if (includeHighLevel && isHighLevelConfigured() && client) {
+      let highlevelContactId = client.highlevel_id
+
+      // If no HighLevel ID stored, try to find by email
+      if (!highlevelContactId && client.contact_email) {
+        try {
+          const contact = await getContactByEmail(client.contact_email)
+          if (contact) {
+            highlevelContactId = contact.id
+            // Update the client record with the found ID
+            await dbPool.query(
+              `UPDATE clients SET highlevel_id = $1 WHERE id = $2`,
+              [highlevelContactId, clientId]
+            )
+          }
+        } catch (error) {
+          console.error('Error looking up HighLevel contact by email:', error)
+        }
+      }
+
+      // Fetch HighLevel messages
+      if (highlevelContactId) {
+        try {
+          const hlMessages = await getAllMessagesForContact(highlevelContactId, limit)
+
+          hlCommunications = hlMessages.map(msg => {
+            const transformed = transformHighLevelMessage(msg)
+            return {
+              id: transformed.id,
+              clientId,
+              type: transformed.type,
+              title: transformed.title,
+              subject: transformed.subject,
+              body: transformed.body,
+              status: transformed.status,
+              metadata: transformed.metadata,
+              highlightType: transformed.highlightType,
+              openedAt: null,
+              clickedAt: null,
+              sentAt: transformed.sentAt,
+              createdAt: transformed.sentAt,
+              source: 'highlevel' as const,
+              direction: transformed.direction,
+            }
+          })
+        } catch (error) {
+          console.error('Error fetching HighLevel messages:', error)
+          // Continue without HighLevel messages
+        }
+      }
+    }
+
+    // Merge and sort all communications
+    const allCommunications = [...dbCommunications, ...hlCommunications]
+      .sort((a, b) => {
+        const dateA = new Date(a.sentAt || a.createdAt || 0).getTime()
+        const dateB = new Date(b.sentAt || b.createdAt || 0).getTime()
+        return dateB - dateA
+      })
+      .slice(0, limit)
+
+    // Apply type filter to HighLevel messages if specified
+    let filteredCommunications = allCommunications
+    if (type) {
+      filteredCommunications = allCommunications.filter(comm => {
+        if (comm.source === 'database') return true // Already filtered in query
+        // Filter HighLevel messages by type
+        if (type === 'sms') return comm.type === 'sms'
+        if (type === 'chat') return comm.type.startsWith('chat')
+        if (type === 'email_highlevel') return comm.type === 'email_highlevel'
+        return true
+      })
+    }
+
+    return NextResponse.json(filteredCommunications)
   } catch (error) {
     console.error('Error fetching communications:', error)
     return NextResponse.json(
