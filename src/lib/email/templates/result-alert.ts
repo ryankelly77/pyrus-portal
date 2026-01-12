@@ -1,3 +1,9 @@
+interface KeywordData {
+  keyword: string
+  newPosition: number | null
+  previousPosition: number | null
+}
+
 interface ResultAlertData {
   firstName: string
   clientName: string
@@ -10,6 +16,7 @@ interface ResultAlertData {
     keyword?: string
     newPosition?: number
     previousPosition?: number
+    keywords?: KeywordData[]
     milestone?: string
     change?: string
   }
@@ -91,7 +98,22 @@ export function getResultAlertEmail(data: ResultAlertData): { subject: string; h
                 ${message}
               </p>
 
-              ${metadata?.keyword ? `
+              ${metadata?.keywords && metadata.keywords.length > 0 ? `
+              <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: ${style.bgColor}; border-radius: 8px; margin-bottom: 24px;">
+                ${metadata.keywords.map((kw, idx) => `
+                <tr>
+                  <td style="padding: ${idx === 0 ? '20px 20px 16px' : '16px 20px'}; text-align: center;${idx > 0 ? ' border-top: 1px solid rgba(0,0,0,0.1);' : ''}">
+                    <p style="margin: 0 0 8px; font-size: 14px; color: #5A6358;">Keyword</p>
+                    <p style="margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #1A1F16;">"${kw.keyword}"</p>
+                    <p style="margin: 0; font-size: 28px; font-weight: 700; color: ${style.color};">
+                      Position #${kw.newPosition || '?'}
+                      ${kw.previousPosition ? `<span style="font-size: 14px; font-weight: 400; color: #5A6358;"> (was #${kw.previousPosition})</span>` : ''}
+                    </p>
+                  </td>
+                </tr>
+                `).join('')}
+              </table>
+              ` : metadata?.keyword ? `
               <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: ${style.bgColor}; border-radius: 8px; margin-bottom: 24px;">
                 <tr>
                   <td style="padding: 20px; text-align: center;">
@@ -178,10 +200,11 @@ Hi ${firstName},
 
 ${message}
 
-${metadata?.keyword ? `
+${metadata?.keywords && metadata.keywords.length > 0 ? metadata.keywords.map(kw => `
+Keyword: "${kw.keyword}"
+Position: #${kw.newPosition || '?'}${kw.previousPosition ? ` (was #${kw.previousPosition})` : ''}`).join('\n') : metadata?.keyword ? `
 Keyword: "${metadata.keyword}"
-Position: #${metadata.newPosition}${metadata.previousPosition ? ` (was #${metadata.previousPosition})` : ''}
-` : ''}
+Position: #${metadata.newPosition}${metadata.previousPosition ? ` (was #${metadata.previousPosition})` : ''}` : ''}
 
 ${metadata?.milestone ? `
 ${metadata.milestone}
