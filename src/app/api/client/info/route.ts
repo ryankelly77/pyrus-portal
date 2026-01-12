@@ -43,10 +43,12 @@ export async function GET(request: NextRequest) {
         if (inviteResult.rows.length > 0) {
           const foundClientId = inviteResult.rows[0].client_id
           // Auto-associate the user with this client
+          // Use UPDATE since profile already exists (created by auth trigger)
+          // If profile doesn't exist, INSERT with required 'role' field
           await dbPool.query(
-            `INSERT INTO profiles (id, client_id, email, full_name)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (id) DO UPDATE SET client_id = $2`,
+            `INSERT INTO profiles (id, client_id, email, full_name, role)
+             VALUES ($1, $2, $3, $4, 'client')
+             ON CONFLICT (id) DO UPDATE SET client_id = EXCLUDED.client_id`,
             [user.id, foundClientId, user.email, user.user_metadata?.full_name || user.email?.split('@')[0] || 'User']
           )
           profileClientId = foundClientId
