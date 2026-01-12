@@ -27,7 +27,7 @@ export async function getOrCreateCoupon(code: string): Promise<string | null> {
 
   for (const tryCode of codesToTry) {
     try {
-      console.log(`Trying promotion code lookup: "${tryCode}"`)
+      console.log(`[Coupon] Trying promotion code lookup: "${tryCode}"`)
       const promoCodes = await stripe.promotionCodes.list({
         code: tryCode,
         active: true,
@@ -38,33 +38,43 @@ export async function getOrCreateCoupon(code: string): Promise<string | null> {
       if (promoCodes.data.length > 0) {
         // Return the coupon ID associated with this promotion code
         const promoCode = promoCodes.data[0] as unknown as { coupon: { id: string } }
-        console.log(`Found Stripe promotion code: ${tryCode} -> coupon ${promoCode.coupon.id}`)
+        console.log(`[Coupon] Found Stripe promotion code: ${tryCode} -> coupon ${promoCode.coupon.id}`)
         return promoCode.coupon.id
       }
     } catch (err) {
-      console.log(`Promotion code lookup failed for "${tryCode}":`, err)
+      console.log(`[Coupon] Promotion code lookup failed for "${tryCode}":`, err)
     }
   }
 
   // Fall back to hardcoded coupon codes
   const discountPercent = COUPON_CODES[upperCode]
+  console.log(`[Coupon] Checking hardcoded list for ${upperCode}: ${discountPercent}%`)
   if (!discountPercent) {
-    console.log(`Coupon code not found in Stripe or hardcoded list: ${code}`)
+    console.log(`[Coupon] Code not found in Stripe or hardcoded list: ${code}`)
     return null
   }
 
   try {
     // Try to retrieve existing coupon
+    console.log(`[Coupon] Trying to retrieve existing Stripe coupon: ${upperCode}`)
     const coupon = await stripe.coupons.retrieve(upperCode)
+    console.log(`[Coupon] Found existing coupon: ${coupon.id}`)
     return coupon.id
-  } catch {
-    // Create coupon if it doesn't exist
-    const coupon = await stripe.coupons.create({
-      id: upperCode,
-      percent_off: discountPercent,
-      duration: 'forever',
-      name: `${discountPercent}% Growth Rewards Discount`,
-    })
-    return coupon.id
+  } catch (retrieveErr: any) {
+    console.log(`[Coupon] Coupon ${upperCode} not found, creating new one. Error:`, retrieveErr?.message)
+    try {
+      // Create coupon if it doesn't exist
+      const coupon = await stripe.coupons.create({
+        id: upperCode,
+        percent_off: discountPercent,
+        duration: 'forever',
+        name: `${discountPercent}% Growth Rewards Discount`,
+      })
+      console.log(`[Coupon] Created new coupon: ${coupon.id}`)
+      return coupon.id
+    } catch (createErr: any) {
+      console.error(`[Coupon] Failed to create coupon ${upperCode}:`, createErr?.message)
+      return null
+    }
   }
 }
