@@ -3571,6 +3571,20 @@ export default function ClientDetailPage() {
                     }
 
                     return filteredComms.map(comm => {
+                    // Debug logging for result alerts
+                    if (comm.type === 'result_alert') {
+                      console.log('Result Alert Debug:', {
+                        id: comm.id,
+                        type: comm.type,
+                        title: comm.title,
+                        body: comm.body,
+                        bodyLength: comm.body?.length,
+                        metadata: comm.metadata,
+                        hasKeyword: !!comm.metadata?.keyword,
+                        hasMilestone: !!comm.metadata?.milestone,
+                        alertType: comm.metadata?.alertType,
+                      })
+                    }
                     // Format date and time
                     const sentDate = comm.sentAt ? new Date(comm.sentAt) : new Date()
                     const dateStr = sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
