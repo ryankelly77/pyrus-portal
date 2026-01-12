@@ -9731,7 +9731,7 @@
             font-weight: 600;
             padding: 4px 12px;
             border-radius: 20px;
-            margin-top: 24px;
+            margin-top: 40px;
         }
 
         .ai-score-label.low {
@@ -22680,7 +22680,8 @@ input[type="date"].form-control {
 
 /* Content CTA */
 .content-cta {
-    background: linear-gradient(135deg, var(--primary-light) 0%, #f0e6ff 100%);
+    background: #F9FAFB;
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
     padding: 40px;
     display: flex;

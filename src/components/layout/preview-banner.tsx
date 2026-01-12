@@ -8,6 +8,22 @@ const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
 // Pages that support demo state switching
 const DEMO_STATE_PAGES = ['/content', '/website', '/results', '/activity', '/recommendations']
 
+// Get state options based on the current page
+function getStateOptionsForPage(pathname: string) {
+  const baseStates = [
+    { value: null, label: 'Active' },
+    { value: 'coming-soon', label: 'Coming Soon' },
+    { value: 'locked', label: 'Locked' }
+  ]
+
+  // Only Content and Website have Upsell state
+  if (pathname === '/content' || pathname === '/website') {
+    return [...baseStates, { value: 'upsell', label: 'Upsell' }]
+  }
+
+  return baseStates
+}
+
 export function PreviewBanner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -53,12 +69,7 @@ export function PreviewBanner() {
           {showStateSelector && (
             <div className="demo-state-buttons">
               <span className="state-label">View:</span>
-              {[
-                { value: null, label: 'Active' },
-                { value: 'coming-soon', label: 'Coming Soon' },
-                { value: 'locked', label: 'Locked' },
-                { value: 'upsell', label: 'Upsell' }
-              ].map((state) => (
+              {getStateOptionsForPage(pathname).map((state) => (
                 <button
                   key={state.value ?? 'active'}
                   onClick={() => handleStateChange(state.value)}

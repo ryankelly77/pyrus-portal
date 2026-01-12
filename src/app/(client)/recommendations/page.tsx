@@ -98,11 +98,13 @@ export default function RecommendationsPage() {
   const isDemo = viewingAs === DEMO_CLIENT_ID
   const demoState = searchParams.get('demoState')
 
-  // For recommendations, "locked" means pending (prospect), "active" means accepted
-  // "coming-soon" doesn't really apply to recommendations
+  // For recommendations, "locked" means pending (prospect), "coming-soon" means recommendation being prepared
   const isPending = isDemo
     ? demoState === 'locked'
     : client.status === 'pending'
+  const showComingSoon = isDemo
+    ? demoState === 'coming-soon'
+    : false // Real clients would see Original Plan if they have a recommendation
 
   const [activeTab, setActiveTab] = useState<TabType>('original-plan')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -230,6 +232,36 @@ export default function RecommendationsPage() {
       </div>
 
       <div className="client-content">
+        {/* Coming Soon State for Demo */}
+        {showComingSoon ? (
+          <div className="coming-soon-placeholder">
+            <div className="coming-soon-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </div>
+            <h2>Recommendations Coming Soon</h2>
+            <p>We&apos;re preparing your personalized marketing proposal. Our team is analyzing your business goals to create tailored service recommendations.</p>
+            <div className="coming-soon-timeline">
+              <div className="timeline-item">
+                <div className="timeline-dot active"></div>
+                <span>Account created</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Analyzing your business needs</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Proposal ready for review</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Recommendations Content */}
         <div className="recommendations-content">
           {/* Growth Stage Hero Section - Hide for prospects */}
@@ -1252,6 +1284,8 @@ export default function RecommendationsPage() {
             })()}
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Purchase Confirmation Modal */}

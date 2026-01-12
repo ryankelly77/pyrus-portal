@@ -308,7 +308,7 @@ export default function ResultsPage() {
                     <path d="M 20 100 A 80 80 0 0 1 53 38" fill="none" stroke="#EF4444" strokeWidth="16" strokeLinecap="round"/>
                     {/* Industry average marker (45% position) */}
                     <line x1="100" y1="30" x2="100" y2="42" stroke="#6B7280" strokeWidth="3" strokeLinecap="round"/>
-                    <text x="100" y="20" textAnchor="middle" fill="#4B5563" fontSize="18" fontWeight="700">Avg: 45</text>
+                    <text x="100" y="20" textAnchor="middle" fill="#4B5563" fontSize="24" fontWeight="700">Avg: 45</text>
                   </svg>
                   <div className="ai-score-value">
                     <span className="score-number">21</span>
