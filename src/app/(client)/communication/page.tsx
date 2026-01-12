@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 
-type FilterType = 'all' | 'emails' | 'alerts' | 'chat' | 'content'
+type FilterType = 'all' | 'emails' | 'alerts' | 'sms' | 'chat' | 'content'
 
 interface Communication {
   id: string
@@ -18,11 +18,13 @@ interface Communication {
   status: string | null
   metadata: Record<string, any> | null
   highlightType: string | null
-  recipientEmail: string | null
+  recipientEmail?: string | null
   openedAt: string | null
   clickedAt: string | null
   sentAt: string | null
   createdAt: string | null
+  source?: 'database' | 'highlevel'
+  direction?: 'inbound' | 'outbound'
 }
 
 export default function CommunicationPage() {
@@ -61,7 +63,7 @@ export default function CommunicationPage() {
   const isPending = client.status === 'pending'
 
   // Calculate stats from communications (matching admin page logic)
-  const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+  const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'email_highlevel']
   const emails = communications.filter(c => emailTypes.includes(c.type))
   const deliveredEmails = emails.filter(c => c.status === 'sent' || c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
   const failedEmails = emails.filter(c => c.status === 'failed')
@@ -70,7 +72,16 @@ export default function CommunicationPage() {
   const resultAlerts = communications.filter(c => c.type === 'result_alert')
   const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
 
-  const chatMessages = communications.filter(c => c.type === 'chat')
+  // SMS messages from HighLevel
+  const smsMessages = communications.filter(c => c.type === 'sms')
+  const inboundSms = smsMessages.filter(c => c.direction === 'inbound')
+  const outboundSms = smsMessages.filter(c => c.direction === 'outbound')
+
+  // Chat messages (includes HighLevel chat types)
+  const chatTypes = ['chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp']
+  const chatMessages = communications.filter(c => chatTypes.includes(c.type) || c.type.startsWith('chat_'))
+  const inboundChat = chatMessages.filter(c => c.direction === 'inbound')
+
   const contentComms = communications.filter(c => c.type.startsWith('content_'))
   const pendingContent = contentComms.filter(c => c.status === 'pending_review' || c.status === 'needs_revision')
 
@@ -89,12 +100,21 @@ export default function CommunicationPage() {
     ? (resultAlerts.length === 1 ? 'Opened' : 'All opened')
     : `${viewedAlerts.length} opened`
 
+  const smsDetail = smsMessages.length > 0
+    ? `${outboundSms.length} sent, ${inboundSms.length} received`
+    : 'No messages'
+
+  const chatDetail = chatMessages.length > 0
+    ? `${inboundChat.length} from client`
+    : 'No messages'
+
   // Filter communications based on selected filter
   const filteredComms = communications.filter(comm => {
     if (activeFilter === 'all') return true
     if (activeFilter === 'emails') return emailTypes.includes(comm.type)
     if (activeFilter === 'alerts') return comm.type === 'result_alert'
-    if (activeFilter === 'chat') return comm.type === 'chat'
+    if (activeFilter === 'sms') return comm.type === 'sms'
+    if (activeFilter === 'chat') return chatTypes.includes(comm.type) || comm.type.startsWith('chat_')
     if (activeFilter === 'content') return comm.type.startsWith('content_')
     return true
   })
@@ -180,17 +200,22 @@ export default function CommunicationPage() {
     switch (type) {
       case 'email_invite': return 'email-invite'
       case 'email_reminder': return 'email-reminder'
-      case 'email_general': return 'email-invite'
-      case 'chat': return 'chat'
+      case 'email_general':
+      case 'email_highlevel': return 'email-invite'
+      case 'sms': return 'sms'
+      case 'chat':
+      case 'chat_facebook':
+      case 'chat_instagram':
+      case 'chat_whatsapp': return 'chat'
       case 'monthly_report': return 'monthly-report'
       case 'content_approved':
       case 'content_review':
       case 'content_revision': return 'monthly-report'
-      default: return 'email-invite'
+      default: return type.startsWith('chat_') ? 'chat' : 'email-invite'
     }
   }
 
-  const getTypeLabel = (type: string, metadata: Record<string, any> | null) => {
+  const getTypeLabel = (type: string, metadata: Record<string, any> | null, direction?: string) => {
     if (type === 'result_alert') {
       const alertLabel = metadata?.alertTypeLabel || 'Result Alert'
       return { label: alertLabel, class: 'result' }
@@ -199,7 +224,12 @@ export default function CommunicationPage() {
       case 'email_invite': return { label: 'Invitation', class: 'invitation' }
       case 'email_reminder': return { label: 'Reminder', class: 'reminder' }
       case 'email_general': return { label: 'Email', class: 'invitation' }
-      case 'chat': return { label: 'Chat', class: 'chat' }
+      case 'email_highlevel': return { label: direction === 'inbound' ? 'Email Received' : 'Email', class: 'invitation' }
+      case 'sms': return { label: direction === 'inbound' ? 'SMS Received' : 'SMS Sent', class: 'sms' }
+      case 'chat': return { label: direction === 'inbound' ? 'Message' : 'Reply', class: 'chat' }
+      case 'chat_facebook': return { label: 'Facebook', class: 'chat' }
+      case 'chat_instagram': return { label: 'Instagram', class: 'chat' }
+      case 'chat_whatsapp': return { label: 'WhatsApp', class: 'chat' }
       case 'monthly_report': return { label: 'Report', class: 'report' }
       case 'content_approved':
       case 'content_review':
@@ -226,7 +256,12 @@ export default function CommunicationPage() {
           return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
       }
     }
-    if (type === 'chat') {
+    // SMS icon (message bubble with phone)
+    if (type === 'sms') {
+      return <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 10h8"></path><path d="M8 14h4"></path></>
+    }
+    // Chat/message icons
+    if (type === 'chat' || type.startsWith('chat_')) {
       return <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
     }
     if (type === 'monthly_report' || type.startsWith('content_')) {
@@ -273,9 +308,14 @@ export default function CommunicationPage() {
               <div className="stat-detail">All time</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Emails Sent</div>
+              <div className="stat-label">Emails</div>
               <div className="stat-value">{emails.length}</div>
               <div className="stat-detail">{emailDetailParts.join(', ')}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">SMS Messages</div>
+              <div className="stat-value" style={{ color: '#10B981' }}>{smsMessages.length}</div>
+              <div className="stat-detail">{smsDetail}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Result Alerts</div>
@@ -285,17 +325,12 @@ export default function CommunicationPage() {
             <div className="stat-card">
               <div className="stat-label">Chat Messages</div>
               <div className="stat-value blue">{chatMessages.length}</div>
-              <div className="stat-detail">From your team</div>
+              <div className="stat-detail">{chatDetail}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Email Open Rate</div>
               <div className="stat-value success">{openRate}%</div>
               <div className="stat-detail">{openedEmails.length} of {deliveredForRate.length} delivered</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Content Updates</div>
-              <div className="stat-value" style={{ color: 'var(--primary)' }}>{contentComms.length}</div>
-              <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending` : 'All reviewed'}</div>
             </div>
           </div>
 
@@ -326,6 +361,17 @@ export default function CommunicationPage() {
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
                 Result Alerts
+              </button>
+              <button
+                className={`filter-tab ${activeFilter === 'sms' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('sms')}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  <path d="M8 10h8"></path>
+                  <path d="M8 14h4"></path>
+                </svg>
+                SMS
               </button>
               <button
                 className={`filter-tab ${activeFilter === 'chat' ? 'active' : ''}`}
@@ -376,7 +422,7 @@ export default function CommunicationPage() {
 
                   const isContentType = comm.type.startsWith('content_')
                   const contentStatus = isContentType ? comm.status : null
-                  const typeInfo = getTypeLabel(comm.type, comm.metadata)
+                  const typeInfo = getTypeLabel(comm.type, comm.metadata, comm.direction)
                   const highlightClass = comm.highlightType ? `highlight-${comm.highlightType}` : ''
 
                   return (

@@ -1240,6 +1240,11 @@
             color: var(--accent-blue);
         }
 
+        .comm-icon.sms {
+            background: #D1FAE5;
+            color: #10B981;
+        }
+
         .comm-icon.monthly-report {
             background: var(--pyrus-green-pale);
             color: var(--pyrus-green);
@@ -1286,6 +1291,7 @@
         .type-label.reminder { background: var(--warning-bg); color: var(--warning-text); }
         .type-label.result { background: var(--accent-purple-bg); color: var(--accent-purple); }
         .type-label.chat { background: var(--accent-blue-bg); color: var(--accent-blue); }
+        .type-label.sms { background: #D1FAE5; color: #10B981; }
         .type-label.report { background: var(--pyrus-green-pale); color: var(--pyrus-green); }
 
         .comm-title .subject {
