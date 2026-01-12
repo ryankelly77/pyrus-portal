@@ -380,7 +380,9 @@ export async function getMessagesByConversationId(
       return []
     }
 
-    return response.messages || []
+    // Ensure we always return an array
+    const messages = response.messages
+    return Array.isArray(messages) ? messages : []
   } catch (error) {
     console.error('Error fetching messages:', error)
     return []
@@ -462,7 +464,10 @@ export async function getAllMessagesForContact(
           conversation.id,
           messagesPerConversation
         )
-        allMessages.push(...messages)
+        // Ensure messages is an array before spreading
+        if (Array.isArray(messages)) {
+          allMessages.push(...messages)
+        }
       } catch (error) {
         console.error(`Error fetching messages for conversation ${conversation.id}:`, error)
       }

@@ -18,9 +18,6 @@ export async function GET() {
   }
 
   try {
-    // Debug: check all tokens
-    const allTokens = await dbPool.query(`SELECT location_id FROM highlevel_oauth`)
-
     const result = await dbPool.query(
       `SELECT location_id, expires_at, scope, updated_at
        FROM highlevel_oauth
@@ -34,10 +31,6 @@ export async function GET() {
         locationId,
         message: 'Not connected - OAuth authorization needed',
         connectUrl: '/api/auth/crm/connect',
-        debug: {
-          searchingFor: locationId,
-          tokensInDb: allTokens.rows.map(r => r.location_id),
-        }
       })
     }
 
