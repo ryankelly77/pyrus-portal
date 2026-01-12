@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
@@ -38,6 +38,45 @@ function formatPrice(amount: number): string {
     return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
   return Math.round(amount).toLocaleString('en-US')
+}
+
+// Export communications to CSV
+interface CommForExport {
+  sentAt: string | null
+  createdAt: string | null
+  type: string
+  title: string
+  subject: string | null
+  status: string | null
+  direction?: string
+  source?: string
+  body: string | null
+}
+
+function exportCommunicationsToCSV(communications: CommForExport[], filename: string) {
+  const headers = ['Date', 'Type', 'Title', 'Subject', 'Status', 'Direction', 'Source', 'Body']
+  const rows = communications.map(comm => [
+    comm.sentAt ? new Date(comm.sentAt).toLocaleString() : '',
+    comm.type,
+    comm.title,
+    comm.subject || '',
+    comm.status || '',
+    comm.direction || '',
+    comm.source || 'database',
+    (comm.body || '').replace(/"/g, '""').substring(0, 500),
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
 }
 
 // Database client interface
@@ -572,6 +611,9 @@ export default function ClientDetailPage() {
   const [communications, setCommunications] = useState<Communication[]>([])
   const [communicationsLoading, setCommunicationsLoading] = useState(false)
   const [commFilter, setCommFilter] = useState<'all' | 'emails' | 'alerts' | 'sms' | 'chat' | 'content'>('all')
+  const [commDateRange, setCommDateRange] = useState<'all' | '7days' | '30days' | '90days'>('all')
+  const [showCommDateDropdown, setShowCommDateDropdown] = useState(false)
+  const commDateDropdownRef = useRef<HTMLDivElement>(null)
 
   // Resend invitation state
   const [isResendingInvite, setIsResendingInvite] = useState(false)
@@ -830,6 +872,17 @@ export default function ClientDetailPage() {
   useEffect(() => {
     refreshCommunications()
   }, [clientId])
+
+  // Close date dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (commDateDropdownRef.current && !commDateDropdownRef.current.contains(event.target as Node)) {
+        setShowCommDateDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Handle adding a product to the plan
   const handleAddProductToPlan = (product: ContentProduct) => {
@@ -3544,16 +3597,66 @@ export default function ClientDetailPage() {
                   </svg>
                   {communicationsLoading ? 'Refreshing...' : 'Refresh'}
                 </button>
-                <button className="btn btn-secondary btn-sm" disabled>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Date Range
-                </button>
-                <button className="btn btn-secondary btn-sm" disabled>
+                <div className="dropdown-container" ref={commDateDropdownRef} style={{ position: 'relative' }}>
+                  <button
+                    className={`btn btn-secondary btn-sm ${commDateRange !== 'all' ? 'active' : ''}`}
+                    onClick={() => setShowCommDateDropdown(!showCommDateDropdown)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {commDateRange === 'all' ? 'All Time' : commDateRange === '7days' ? 'Last 7 Days' : commDateRange === '30days' ? 'Last 30 Days' : 'Last 90 Days'}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginLeft: '4px' }}>
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                  {showCommDateDropdown && (
+                    <div className="dropdown-menu" style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: '4px',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 100,
+                      minWidth: '140px',
+                      overflow: 'hidden',
+                    }}>
+                      {(['all', '7days', '30days', '90days'] as const).map(range => (
+                        <button
+                          key={range}
+                          onClick={() => { setCommDateRange(range); setShowCommDateDropdown(false) }}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '10px 14px',
+                            textAlign: 'left',
+                            background: commDateRange === range ? 'var(--bg-secondary)' : 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            color: 'var(--text-primary)',
+                          }}
+                        >
+                          {range === 'all' ? 'All Time' : range === '7days' ? 'Last 7 Days' : range === '30days' ? 'Last 30 Days' : 'Last 90 Days'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    const filename = `${dbClient?.name || 'client'}-communications-${new Date().toISOString().split('T')[0]}.csv`
+                    exportCommunicationsToCSV(communications, filename)
+                  }}
+                  disabled={communications.length === 0}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -3588,10 +3691,29 @@ export default function ClientDetailPage() {
                   </li>
                 ) : (
                   (() => {
-                    // Filter communications based on selected filter (matching client page logic)
+                    // Filter communications based on selected filter and date range
                     const emailTypes = ['email_invite', 'email_reminder', 'email_general', 'email_highlevel']
                     const chatTypes = ['chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp']
+
+                    // Get date range cutoff
+                    const getDateCutoff = () => {
+                      const now = new Date()
+                      switch (commDateRange) {
+                        case '7days': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+                        case '30days': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+                        case '90days': return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+                        default: return null
+                      }
+                    }
+                    const dateCutoff = getDateCutoff()
+
                     const filteredComms = communications.filter(comm => {
+                      // Date range filter
+                      if (dateCutoff) {
+                        const commDate = new Date(comm.sentAt || comm.createdAt || 0)
+                        if (commDate < dateCutoff) return false
+                      }
+                      // Type filter
                       switch (commFilter) {
                         case 'emails':
                           return emailTypes.includes(comm.type)
