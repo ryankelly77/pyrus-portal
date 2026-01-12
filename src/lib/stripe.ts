@@ -14,6 +14,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 export const COUPON_CODES: Record<string, number> = {
   'HARVEST5X': 5,    // 5% discount at $1000+ monthly
   'CULTIVATE10': 10, // 10% discount at $2000+ monthly
+  'TEST2': 100,      // 100% discount for testing
 }
 
 // Helper to get coupon/promotion code from Stripe
