@@ -3696,7 +3696,6 @@ export default function ClientDetailPage() {
                             <div className="comm-header">
                               <div className="comm-title">
                                 <h4>{comm.title} <span className={`type-label ${typeInfo.class}`}>{typeInfo.label}</span></h4>
-                                {comm.subject && <span className="subject">{comm.subject}</span>}
                               </div>
                               <div className="comm-status">
                                 {/* Email delivery statuses - show cumulative progression: Sent → Delivered → Opened → Clicked */}
@@ -3750,12 +3749,7 @@ export default function ClientDetailPage() {
 
                             {/* Body text for content descriptions */}
                             {comm.body && !comm.type.startsWith('result_') && !comm.metadata?.feedback && (
-                              <p className="comm-body preview">{comm.body}</p>
-                            )}
-
-                            {/* Result alert body/description */}
-                            {comm.type === 'result_alert' && comm.body && (
-                              <p className="comm-body preview" style={{ marginTop: '8px', marginBottom: '8px' }}>{comm.body}</p>
+                              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '8px' }}>{comm.body}</p>
                             )}
 
                             {/* Result highlight for result alerts - keyword/milestone metadata */}
