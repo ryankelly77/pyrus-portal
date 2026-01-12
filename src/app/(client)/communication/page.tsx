@@ -492,6 +492,11 @@ export default function CommunicationPage() {
                             </div>
                           </div>
 
+                          {/* Source indicator for CRM messages */}
+                          {comm.source === 'highlevel' && (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>via CRM</span>
+                          )}
+
                           {/* Body text for non-result communications */}
                           {comm.body && !comm.type.startsWith('result_') && !comm.metadata?.feedback && (
                             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '8px' }}>{comm.body}</p>
