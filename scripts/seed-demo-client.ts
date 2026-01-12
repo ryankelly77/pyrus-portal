@@ -4,6 +4,12 @@
  * Creates a demo client with all necessary data for showcasing the portal.
  * The demo client has a fixed UUID so it can be easily referenced.
  *
+ * This creates a FULLY ACTIVE client with:
+ * - Purchased "Best" tier recommendation
+ * - Active subscription with all products
+ * - Access to Results, Activity, Website, and Content pages
+ * - Sample data on all pages
+ *
  * Run with: npx tsx scripts/seed-demo-client.ts
  */
 
@@ -43,8 +49,8 @@ async function seedDemoClient() {
   await prisma.content.deleteMany({ where: { client_id: DEMO_CLIENT_ID } })
   await prisma.clients.deleteMany({ where: { id: DEMO_CLIENT_ID } })
 
-  // Create demo client
-  console.log('Creating demo client...')
+  // Create demo client with ALL access fields populated
+  console.log('Creating demo client with full access...')
   await prisma.clients.create({
     data: {
       id: DEMO_CLIENT_ID,
@@ -52,145 +58,61 @@ async function seedDemoClient() {
       contact_name: 'John Smith',
       contact_email: 'john@acme-demo.com',
       avatar_color: '#3B82F6',
-      growth_stage: 'growing',
+      growth_stage: 'blooming',
       status: 'active',
-      monthly_spend: 2500,
+      monthly_spend: 2847,
       start_date: new Date('2024-06-15'),
-      notes: 'This is a demo client used for showcasing the portal. Changes to the recommendation will appear here.',
+      notes: 'Demo client for showcasing the portal. All pages have sample data.',
+      // These fields enable access to each page:
+      agency_dashboard_share_key: 'demo-dashboard-key-12345', // Enables Results page
+      basecamp_id: 'demo-basecamp-12345', // Enables Activity page
+      landingsite_preview_url: 'https://app.landingsite.ai/website-preview?id=demo-preview', // Enables Website page
     }
   })
 
-  // Get products for the recommendation and subscription
+  // Get products for the subscription
   const products = await prisma.products.findMany({ where: { status: 'active' } })
-  const bundles = await prisma.bundles.findMany({ where: { status: 'active' } })
 
-  // Find specific products by category
+  // Find products by category or name
   const seoProduct = products.find(p => p.category === 'seo')
-  const websiteProduct = products.find(p => p.category === 'website')
-  const contentProducts = products.filter(p => p.category === 'content').slice(0, 2)
+  const websiteProduct = products.find(p => p.category === 'website' || p.name.toLowerCase().includes('site'))
+  const contentProduct = products.find(p => p.category === 'content' || p.name.toLowerCase().includes('content'))
   const socialProduct = products.find(p => p.category === 'social')
-  const adsProduct = products.find(p => p.category === 'ads')
+  const aiCreativeProduct = products.find(p => p.name.toLowerCase().includes('ai creative') || p.name.toLowerCase().includes('branding'))
+  const carePlanProduct = products.find(p => p.name.toLowerCase().includes('care plan'))
 
-  // Create demo recommendation (editable in recommendation builder)
-  console.log('Creating demo recommendation...')
+  // Create demo recommendation (ACCEPTED with purchased tier)
+  console.log('Creating demo recommendation (accepted, best tier)...')
   await prisma.recommendations.create({
     data: {
       id: DEMO_RECOMMENDATION_ID,
       client_id: DEMO_CLIENT_ID,
-      status: 'draft', // Draft so it can be edited
-      total_monthly: 2500,
-      total_onetime: 1500,
-      notes: 'Demo recommendation - edit this in the Recommendation Builder to see changes in the demo portal view.',
+      status: 'accepted', // Already purchased
+      purchased_tier: 'best', // They chose the best tier
+      purchased_at: new Date('2024-06-20'),
+      total_monthly: 2847,
+      total_onetime: 0,
+      notes: 'Demo recommendation - purchased Best tier.',
+      sent_at: new Date('2024-06-18'),
+      responded_at: new Date('2024-06-20'),
     }
   })
 
-  // Add recommendation items for Good/Better/Best tiers
+  // Add recommendation items for the Best tier (what they purchased)
   const recommendationItems = []
+  const productsToAdd = [seoProduct, websiteProduct, contentProduct, socialProduct, aiCreativeProduct, carePlanProduct].filter(Boolean)
 
-  // Good tier - basic package
-  if (seoProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: seoProduct.id,
-      tier: 'good',
-      quantity: 1,
-      monthly_price: seoProduct.monthly_price,
-      onetime_price: seoProduct.onetime_price,
-    })
-  }
-  if (websiteProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: websiteProduct.id,
-      tier: 'good',
-      quantity: 1,
-      monthly_price: websiteProduct.monthly_price,
-      onetime_price: websiteProduct.onetime_price,
-    })
-  }
-
-  // Better tier - includes Good + more
-  if (seoProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: seoProduct.id,
-      tier: 'better',
-      quantity: 1,
-      monthly_price: seoProduct.monthly_price,
-      onetime_price: seoProduct.onetime_price,
-    })
-  }
-  if (websiteProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: websiteProduct.id,
-      tier: 'better',
-      quantity: 1,
-      monthly_price: websiteProduct.monthly_price,
-      onetime_price: websiteProduct.onetime_price,
-    })
-  }
-  if (contentProducts[0]) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: contentProducts[0].id,
-      tier: 'better',
-      quantity: 2,
-      monthly_price: contentProducts[0].monthly_price,
-      onetime_price: contentProducts[0].onetime_price,
-    })
-  }
-
-  // Best tier - full package
-  if (seoProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: seoProduct.id,
-      tier: 'best',
-      quantity: 1,
-      monthly_price: seoProduct.monthly_price,
-      onetime_price: seoProduct.onetime_price,
-    })
-  }
-  if (websiteProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: websiteProduct.id,
-      tier: 'best',
-      quantity: 1,
-      monthly_price: websiteProduct.monthly_price,
-      onetime_price: websiteProduct.onetime_price,
-    })
-  }
-  if (contentProducts[0]) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: contentProducts[0].id,
-      tier: 'best',
-      quantity: 4,
-      monthly_price: contentProducts[0].monthly_price,
-      onetime_price: contentProducts[0].onetime_price,
-    })
-  }
-  if (socialProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: socialProduct.id,
-      tier: 'best',
-      quantity: 1,
-      monthly_price: socialProduct.monthly_price,
-      onetime_price: socialProduct.onetime_price,
-    })
-  }
-  if (adsProduct) {
-    recommendationItems.push({
-      recommendation_id: DEMO_RECOMMENDATION_ID,
-      product_id: adsProduct.id,
-      tier: 'best',
-      quantity: 1,
-      monthly_price: adsProduct.monthly_price,
-      onetime_price: adsProduct.onetime_price,
-    })
+  for (const product of productsToAdd) {
+    if (product) {
+      recommendationItems.push({
+        recommendation_id: DEMO_RECOMMENDATION_ID,
+        product_id: product.id,
+        tier: 'best',
+        quantity: product.category === 'content' ? 4 : 1,
+        monthly_price: product.monthly_price,
+        onetime_price: product.onetime_price,
+      })
+    }
   }
 
   if (recommendationItems.length > 0) {
@@ -198,10 +120,8 @@ async function seedDemoClient() {
     console.log(`Created ${recommendationItems.length} recommendation items`)
   }
 
-  // Create demo subscription (what the "active" client has)
+  // Create demo subscription (ACTIVE with products)
   console.log('Creating demo subscription...')
-  const subscriptionProducts = [seoProduct, websiteProduct, contentProducts[0]].filter(Boolean)
-
   await prisma.subscriptions.create({
     data: {
       id: DEMO_SUBSCRIPTION_ID,
@@ -210,17 +130,22 @@ async function seedDemoClient() {
       status: 'active',
       current_period_start: new Date(),
       current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      monthly_amount: 2500,
+      monthly_amount: 2847,
     }
   })
 
-  // Add subscription items
-  const subscriptionItems = subscriptionProducts.map(product => ({
-    subscription_id: DEMO_SUBSCRIPTION_ID,
-    product_id: product!.id,
-    quantity: product!.category === 'content' ? 2 : 1,
-    unit_amount: product!.monthly_price,
-  }))
+  // Add subscription items - need products that trigger access flags
+  const subscriptionItems = []
+  for (const product of productsToAdd) {
+    if (product) {
+      subscriptionItems.push({
+        subscription_id: DEMO_SUBSCRIPTION_ID,
+        product_id: product.id,
+        quantity: product.category === 'content' ? 4 : 1,
+        unit_amount: product.monthly_price,
+      })
+    }
+  }
 
   if (subscriptionItems.length > 0) {
     await prisma.subscription_items.createMany({ data: subscriptionItems })
@@ -237,8 +162,8 @@ async function seedDemoClient() {
   const checklistItems = checklistTemplates.slice(0, 8).map((template, index) => ({
     client_id: DEMO_CLIENT_ID,
     template_id: template.id,
-    is_completed: index < 4, // First 4 are completed
-    completed_at: index < 4 ? new Date(Date.now() - (4 - index) * 24 * 60 * 60 * 1000) : null,
+    is_completed: index < 6, // Most are completed
+    completed_at: index < 6 ? new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000) : null,
   }))
 
   if (checklistItems.length > 0) {
@@ -256,18 +181,20 @@ async function seedDemoClient() {
   const demoResponses = [
     { question: 'business name', response: 'Acme Corporation' },
     { question: 'website', response: 'https://www.acme-demo.com' },
-    { question: 'industry', response: 'Technology Services' },
-    { question: 'target', response: 'Small to medium businesses in the tech sector' },
-    { question: 'goal', response: 'Increase online visibility and generate more qualified leads' },
-    { question: 'competitor', response: 'TechCorp, InnovateTech, DigitalFirst' },
-    { question: 'service', response: 'Software development, IT consulting, Cloud solutions' },
-    { question: 'location', response: 'San Francisco, CA' },
+    { question: 'industry', response: 'Technology & Software Services' },
+    { question: 'target', response: 'Small to medium businesses looking to modernize their IT infrastructure' },
+    { question: 'goal', response: 'Increase online visibility, generate qualified leads, and establish thought leadership' },
+    { question: 'competitor', response: 'TechCorp Solutions, InnovateTech, DigitalFirst Partners' },
+    { question: 'service', response: 'Cloud migration, IT consulting, Custom software development, Managed IT services' },
+    { question: 'location', response: 'San Francisco, CA (serving nationwide)' },
     { question: 'phone', response: '(555) 123-4567' },
     { question: 'email', response: 'contact@acme-demo.com' },
+    { question: 'brand', response: 'Professional, innovative, trustworthy, forward-thinking' },
+    { question: 'color', response: 'Blue (#3B82F6) and white with gray accents' },
   ]
 
   const onboardingResponses = []
-  for (const template of questionTemplates.slice(0, 10)) {
+  for (const template of questionTemplates.slice(0, 15)) {
     const matchingDemo = demoResponses.find(d =>
       template.question_text.toLowerCase().includes(d.question)
     )
@@ -294,29 +221,40 @@ async function seedDemoClient() {
       comm_type: 'email_invite',
       title: 'Welcome to Pyrus Digital Media',
       subject: 'Welcome to Your Client Portal',
-      body: 'Hi John, Welcome to Pyrus Digital Media! Your client portal is now ready...',
+      body: 'Hi John, Welcome to Pyrus Digital Media! Your client portal is now ready. Log in to track your marketing progress.',
       status: 'opened',
       recipient_email: 'john@acme-demo.com',
-      sent_at: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-      opened_at: new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+      sent_at: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000), // 6 months ago
+      opened_at: new Date(now.getTime() - 179 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'result_alert',
       title: 'Keyword Ranking Update',
-      subject: 'Great news! "cloud services" moved to position #3',
-      body: 'Your keyword "cloud services" has improved from position #12 to position #3.',
+      subject: '"cloud migration services" moved to position #3',
+      body: 'Great news! Your target keyword "cloud migration services" has improved from position #12 to position #3 on Google.',
       status: 'delivered',
       highlight_type: 'success',
-      metadata: { keyword: 'cloud services', oldPosition: 12, newPosition: 3 },
+      metadata: { keyword: 'cloud migration services', oldPosition: 12, newPosition: 3 },
       sent_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      comm_type: 'result_alert',
+      title: 'Traffic Milestone Reached',
+      subject: 'Your website reached 10,000 monthly visitors!',
+      body: 'Congratulations! Your website has reached 10,000 monthly visitors, a 45% increase from last month.',
+      status: 'delivered',
+      highlight_type: 'success',
+      metadata: { milestone: 10000, metric: 'monthly_visitors', growth: '45%' },
+      sent_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'content_approval',
       title: 'Blog Post Ready for Review',
-      subject: 'New content ready: "10 Ways to Improve Your IT Infrastructure"',
-      body: 'A new blog post is ready for your review and approval.',
+      subject: 'New content: "10 Ways to Improve Your IT Infrastructure"',
+      body: 'A new blog post is ready for your review. Please check and approve or request changes.',
       status: 'clicked',
       sent_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
       clicked_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000 + 3600000),
@@ -326,7 +264,7 @@ async function seedDemoClient() {
       comm_type: 'monthly_report',
       title: 'December 2024 Performance Report',
       subject: 'Your Monthly Marketing Report is Ready',
-      body: 'Your December performance report is now available in your portal.',
+      body: 'Your December performance report is now available. Key highlights: +32% traffic, 47 keywords ranking, 28 leads generated.',
       status: 'opened',
       sent_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
       opened_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
@@ -335,11 +273,21 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       comm_type: 'task_complete',
       title: 'Website Update Completed',
-      subject: 'Task Complete: Homepage redesign deployed',
-      body: 'The homepage redesign has been deployed to your live website.',
+      subject: 'Homepage redesign deployed',
+      body: 'The homepage redesign has been deployed to your live website. The new design includes improved CTAs and faster load times.',
       status: 'delivered',
       highlight_type: 'success',
       sent_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      comm_type: 'result_alert',
+      title: 'New Lead Generated',
+      subject: 'New contact form submission',
+      body: 'You received a new lead from your website contact form. The prospect is interested in cloud migration services.',
+      status: 'delivered',
+      metadata: { leadSource: 'contact_form', interest: 'cloud migration' },
+      sent_at: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
     },
   ]
 
@@ -355,31 +303,55 @@ async function seedDemoClient() {
       client_id: DEMO_CLIENT_ID,
       title: '10 Ways to Improve Your IT Infrastructure',
       content_type: 'blog',
-      body: 'A comprehensive guide to modernizing your IT systems...',
+      body: 'A comprehensive guide to modernizing your IT systems for better efficiency and security...',
       status: 'published',
       published_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'Cloud Migration Success Story',
+      title: 'Cloud Migration Success Story: 40% Cost Reduction',
       content_type: 'blog',
-      body: 'How Acme helped a client reduce costs by 40% with cloud migration...',
+      body: 'Learn how we helped a client reduce their infrastructure costs by 40% through strategic cloud migration...',
       status: 'published',
       published_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'Monthly Newsletter - January',
-      content_type: 'email',
-      body: 'Monthly newsletter with company updates and tips...',
-      status: 'pending_review',
-      due_date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      title: 'The Future of Remote Work Technology',
+      content_type: 'blog',
+      body: 'Exploring emerging technologies that are reshaping how distributed teams collaborate...',
+      status: 'published',
+      published_at: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
-      title: 'Social Media Content Calendar - January',
+      title: 'Monthly Newsletter - January',
+      content_type: 'email',
+      body: 'This month: New service offerings, client success stories, and industry insights...',
+      status: 'pending_review',
+      due_date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      title: 'Social Media Content - Week of Jan 13',
       content_type: 'social',
-      body: 'Monthly social media posting schedule...',
+      body: 'LinkedIn: Industry thought leadership post\nTwitter: Product tip thread\nFacebook: Team spotlight',
+      status: 'approved',
+      due_date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      title: 'Free Consultation Landing Page',
+      content_type: 'landing_page',
+      body: 'Lead generation page for free IT infrastructure assessment...',
+      status: 'published',
+      published_at: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      title: 'Q1 2025 Marketing Strategy',
+      content_type: 'other',
+      body: 'Quarterly marketing plan covering SEO, content, and advertising initiatives...',
       status: 'draft',
       due_date: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
     },
@@ -394,37 +366,72 @@ async function seedDemoClient() {
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'website_update',
-      description: 'Homepage hero section updated with new messaging',
-      metadata: { page: 'homepage', section: 'hero' },
-      created_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      description: 'Homepage hero section updated with new messaging and CTAs',
+      metadata: { page: 'homepage', section: 'hero', changes: ['headline', 'cta_button', 'background_image'] },
+      created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'seo_ranking',
-      description: 'Keyword "cloud services" improved from #12 to #3',
-      metadata: { keyword: 'cloud services', oldRank: 12, newRank: 3 },
-      created_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      description: 'Keyword "cloud migration services" improved from #12 to #3',
+      metadata: { keyword: 'cloud migration services', oldRank: 12, newRank: 3 },
+      created_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'content_published',
       description: 'Blog post "10 Ways to Improve Your IT Infrastructure" published',
-      metadata: { contentType: 'blog' },
-      created_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+      metadata: { contentType: 'blog', wordCount: 1850, readTime: '8 min' },
+      created_at: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      activity_type: 'lead_generated',
+      description: 'New lead from website contact form - interested in cloud migration',
+      metadata: { source: 'contact_form', interest: 'cloud migration', leadScore: 85 },
+      created_at: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'traffic_milestone',
       description: 'Website reached 10,000 monthly visitors',
-      metadata: { milestone: 10000, metric: 'monthly_visitors' },
-      created_at: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+      metadata: { milestone: 10000, metric: 'monthly_visitors', previousMonth: 6897 },
+      created_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       client_id: DEMO_CLIENT_ID,
       activity_type: 'social_engagement',
-      description: 'LinkedIn post reached 5,000 impressions',
-      metadata: { platform: 'linkedin', impressions: 5000 },
+      description: 'LinkedIn post reached 5,200 impressions with 3.2% engagement rate',
+      metadata: { platform: 'linkedin', impressions: 5200, engagementRate: '3.2%', likes: 87, comments: 23 },
+      created_at: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      activity_type: 'seo_ranking',
+      description: 'Keyword "IT consulting services" entered top 10 at position #8',
+      metadata: { keyword: 'IT consulting services', oldRank: 24, newRank: 8 },
       created_at: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      activity_type: 'website_update',
+      description: 'New services page added with detailed service descriptions',
+      metadata: { page: 'services', action: 'created', sections: ['cloud', 'consulting', 'development'] },
+      created_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      activity_type: 'ad_campaign',
+      description: 'Google Ads campaign "Cloud Services" achieved 4.2% CTR',
+      metadata: { platform: 'google_ads', campaign: 'Cloud Services', ctr: '4.2%', conversions: 12, spend: 450 },
+      created_at: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+    },
+    {
+      client_id: DEMO_CLIENT_ID,
+      activity_type: 'lead_generated',
+      description: 'New lead from Google Ads - enterprise prospect',
+      metadata: { source: 'google_ads', interest: 'managed IT services', leadScore: 92, company: 'Enterprise Corp' },
+      created_at: new Date(now.getTime() - 18 * 24 * 60 * 60 * 1000),
     },
   ]
 
@@ -434,10 +441,14 @@ async function seedDemoClient() {
   console.log('\n✅ Demo client seeded successfully!')
   console.log(`\nDemo Client ID: ${DEMO_CLIENT_ID}`)
   console.log(`Demo Recommendation ID: ${DEMO_RECOMMENDATION_ID}`)
-  console.log('\nYou can now:')
-  console.log('1. View the demo portal at /getting-started?viewingAs=' + DEMO_CLIENT_ID)
-  console.log('2. Edit the demo recommendation in the Recommendation Builder')
-  console.log('3. Add "View Demo" button to the clients overview page')
+  console.log('\nThe demo client has:')
+  console.log('  - Status: active (purchased Best tier)')
+  console.log('  - Results page: enabled (agency_dashboard_share_key set)')
+  console.log('  - Activity page: enabled (basecamp_id set)')
+  console.log('  - Website page: enabled (landingsite_preview_url set)')
+  console.log('  - Content page: enabled (has content products)')
+  console.log('  - Sample data on all pages')
+  console.log('\nView the demo at: /getting-started?viewingAs=' + DEMO_CLIENT_ID)
 }
 
 seedDemoClient()
