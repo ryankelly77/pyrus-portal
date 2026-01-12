@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
 type ClientStatus = 'active' | 'inactive' | 'prospect' | 'paused'
+
+// Demo client ID - used to filter it from the regular list
+const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
 type GrowthStage = 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
 type SortOption = 'name' | 'date-desc' | 'date-asc' | 'stage'
 type ViewMode = 'grid' | 'list'
@@ -111,8 +114,11 @@ export default function ClientsPage() {
       if (!res.ok) throw new Error('Failed to fetch clients')
       const dbClients: DBClient[] = await res.json()
 
+      // Filter out the demo client from the list
+      const filteredClients = dbClients.filter(c => c.id !== DEMO_CLIENT_ID)
+
       // Transform DB clients to Client interface
-      const transformedClients: Client[] = dbClients.map(c => {
+      const transformedClients: Client[] = filteredClients.map(c => {
         // Determine display status and growth stage
         const growthStage: GrowthStage = (c.growth_stage as GrowthStage) || 'prospect'
         const isProspect = growthStage === 'prospect'
@@ -359,13 +365,21 @@ export default function ClientsPage() {
           <div className="page-header-content">
             <p>Manage your client accounts and view their marketing performance</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowAddClientModal(true)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Client
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Link href={`/getting-started?viewingAs=${DEMO_CLIENT_ID}`} className="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              View Demo
+            </Link>
+            <button className="btn btn-primary" onClick={() => setShowAddClientModal(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Client
+            </button>
+          </div>
         </div>
 
         {/* Search and Filters */}

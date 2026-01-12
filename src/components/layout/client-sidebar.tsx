@@ -9,7 +9,6 @@ export function ClientSidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
-  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
 
   // Show minimal skeleton while loading to prevent flash
@@ -40,29 +39,17 @@ export function ClientSidebar() {
   }
 
   // Check if client is pending (prospect with recommendation only)
-  // Demo mode bypasses pending state to show full navigation
-  const isPending = !isDemo && client.status === 'pending'
+  const isPending = client.status === 'pending'
 
   // Access flags (only relevant for active clients)
-  // Demo mode shows all features as accessible
   const { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent, hasContentProducts } = client.access
-  const demoAccess = isDemo ? {
-    isActive: true,
-    hasResults: true,
-    hasActivity: true,
-    hasWebsite: true,
-    hasWebsiteProducts: true,
-    hasContent: true,
-    hasContentProducts: true,
-  } : { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent, hasContentProducts }
 
-  // Helper to build href with viewingAs and demo params preserved
+  // Helper to build href with viewingAs param preserved
   const buildHref = (path: string) => {
-    const params = new URLSearchParams()
-    if (viewingAs) params.set('viewingAs', viewingAs)
-    if (isDemo) params.set('demo', 'true')
-    const queryString = params.toString()
-    return queryString ? `${path}?${queryString}` : path
+    if (viewingAs) {
+      return `${path}?viewingAs=${viewingAs}`
+    }
+    return path
   }
 
   // Badge component for text badges
@@ -113,8 +100,8 @@ export function ClientSidebar() {
           </svg>
           <span>Results</span>
           {isPending && <LockIcon />}
-          {!isPending && !demoAccess.hasResults && demoAccess.isActive && <Badge type="coming-soon" />}
-          {!isPending && !demoAccess.isActive && <Badge type="inactive" />}
+          {!isPending && !hasResults && isActive && <Badge type="coming-soon" />}
+          {!isPending && !isActive && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/activity')}
@@ -125,8 +112,8 @@ export function ClientSidebar() {
           </svg>
           <span>Activity</span>
           {isPending && <LockIcon />}
-          {!isPending && !demoAccess.hasActivity && demoAccess.isActive && <Badge type="coming-soon" />}
-          {!isPending && !demoAccess.isActive && <Badge type="inactive" />}
+          {!isPending && !hasActivity && isActive && <Badge type="coming-soon" />}
+          {!isPending && !isActive && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/website')}
@@ -139,8 +126,8 @@ export function ClientSidebar() {
           </svg>
           <span>Website</span>
           {isPending && <LockIcon />}
-          {!isPending && demoAccess.hasWebsiteProducts && !demoAccess.hasWebsite && <Badge type="coming-soon" />}
-          {!isPending && !demoAccess.hasWebsiteProducts && <Badge type="inactive" />}
+          {!isPending && hasWebsiteProducts && !hasWebsite && <Badge type="coming-soon" />}
+          {!isPending && !hasWebsiteProducts && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/content')}
@@ -155,8 +142,8 @@ export function ClientSidebar() {
           </svg>
           <span>Content</span>
           {isPending && <LockIcon />}
-          {!isPending && demoAccess.hasContentProducts && !demoAccess.hasContent && <Badge type="coming-soon" />}
-          {!isPending && !demoAccess.hasContentProducts && <Badge type="inactive" />}
+          {!isPending && hasContentProducts && !hasContent && <Badge type="coming-soon" />}
+          {!isPending && !hasContentProducts && <Badge type="inactive" />}
         </Link>
         <Link
           href={buildHref('/recommendations')}
