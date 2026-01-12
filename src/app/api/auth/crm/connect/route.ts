@@ -31,12 +31,10 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // Scopes needed for conversations and messages
+  // Scopes needed for conversations and messages (readonly only)
   const scopes = [
     'conversations.readonly',
-    'conversations.write',
     'conversations/message.readonly',
-    'conversations/message.write',
     'contacts.readonly',
   ].join(' ')
 

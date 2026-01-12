@@ -30,7 +30,7 @@ export async function GET() {
         connected: false,
         locationId,
         message: 'Not connected - OAuth authorization needed',
-        connectUrl: '/api/auth/highlevel/connect',
+        connectUrl: '/api/auth/crm/connect',
       })
     }
 
