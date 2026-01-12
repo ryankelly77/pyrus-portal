@@ -35,7 +35,7 @@ export function getResultAlertEmail(data: ResultAlertData): { subject: string; h
         return { icon: '🏆', color: '#F59E0B', bgColor: '#FEF3C7' }
       case 'ai':
         // AI Alert - cyan
-        return { icon: '⭐', color: '#06B6D4', bgColor: '#CFFAFE' }
+        return { icon: '✨', color: '#06B6D4', bgColor: '#CFFAFE' }
       case 'other':
       default:
         // Other Update - darker pink
