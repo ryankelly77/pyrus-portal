@@ -9,14 +9,16 @@ import { usePageView } from '@/hooks/usePageView'
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
   usePageView({ page: '/results', pageName: 'Results' })
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
 
   // Check if client is pending (prospect only) or doesn't have results data yet
-  const isPending = client.status === 'pending'
-  const showComingSoon = !isPending && !client.access.hasResults
+  // Demo mode bypasses these checks to show the full dashboard
+  const isPending = !isDemo && client.status === 'pending'
+  const showComingSoon = !isDemo && !isPending && !client.access.hasResults
 
   // KPI data - will be replaced with real data from API in the future
   const kpiData = {

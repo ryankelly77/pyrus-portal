@@ -293,14 +293,16 @@ function getActivityIcon(type: string, iconStyle?: { background: string; color: 
 export default function ActivityPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
   usePageView({ page: '/activity', pageName: 'Activity' })
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
 
   // Check if client is pending (prospect only) or doesn't have activity data yet
-  const isPending = client.status === 'pending'
-  const showComingSoon = !isPending && !client.access.hasActivity
+  // Demo mode bypasses these checks to show the full activity feed
+  const isPending = !isDemo && client.status === 'pending'
+  const showComingSoon = !isDemo && !isPending && !client.access.hasActivity
 
   // Activity data - will be replaced with real data from API in the future
   const activities = tcClinicalActivities

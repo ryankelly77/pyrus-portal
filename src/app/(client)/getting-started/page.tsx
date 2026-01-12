@@ -104,6 +104,7 @@ function isUUID(str: string): boolean {
 export default function GettingStartedPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading: clientLoading } = useClientData(viewingAs)
   usePageView({ page: '/getting-started', pageName: 'Getting Started' })
 
@@ -127,8 +128,16 @@ export default function GettingStartedPage() {
   const [formSaveMessage, setFormSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Update client display and status when hook data loads
+  // Demo mode forces 'active' status to show full dashboard
   useEffect(() => {
-    if (client.id) {
+    if (isDemo) {
+      setClientDisplay({
+        name: 'Demo Company',
+        initials: 'DC',
+        contactName: 'Demo User',
+      })
+      setClientStatus('active')
+    } else if (client.id) {
       setClientDisplay({
         name: client.name,
         initials: client.initials,
@@ -136,7 +145,7 @@ export default function GettingStartedPage() {
       })
       setClientStatus(client.status as ClientStatus)
     }
-  }, [client])
+  }, [client, isDemo])
 
   // Fetch video chapters
   useEffect(() => {

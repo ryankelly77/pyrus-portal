@@ -9,18 +9,20 @@ import { usePageView } from '@/hooks/usePageView'
 export default function ContentPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   usePageView({ page: '/content', pageName: 'Content' })
 
   // Check if client is pending (prospect only)
-  const isPending = client.status === 'pending'
+  // Demo mode bypasses these checks to show the full content dashboard
+  const isPending = !isDemo && client.status === 'pending'
 
   // Check if client has content access from their subscriptions
-  const hasContentAccess = client.access.hasContent
+  const hasContentAccess = isDemo || client.access.hasContent
 
   // Show coming soon if client has content products but no active content yet
-  const showComingSoon = !isPending && client.access.hasContentProducts && !hasContentAccess
+  const showComingSoon = !isDemo && !isPending && client.access.hasContentProducts && !hasContentAccess
 
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')

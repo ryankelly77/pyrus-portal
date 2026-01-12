@@ -42,16 +42,18 @@ const editRequests: EditRequest[] = [
 export default function WebsitePage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const isDemo = searchParams.get('demo') === 'true'
   const { client, loading } = useClientData(viewingAs)
   const router = useRouter()
   usePageView({ page: '/website', pageName: 'Website' })
 
   // Check if client is pending (prospect only) or has website services
-  const isPending = client.status === 'pending'
-  const hasWebsite = client.access.hasWebsite
-  const hasWebsiteProducts = client.access.hasWebsiteProducts
+  // Demo mode bypasses these checks to show the full website dashboard
+  const isPending = !isDemo && client.status === 'pending'
+  const hasWebsite = isDemo || client.access.hasWebsite
+  const hasWebsiteProducts = isDemo || client.access.hasWebsiteProducts
   // Show coming soon if client is active with website products but data isn't connected yet
-  const showComingSoon = !isPending && hasWebsiteProducts && !hasWebsite
+  const showComingSoon = !isDemo && !isPending && hasWebsiteProducts && !hasWebsite
 
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
