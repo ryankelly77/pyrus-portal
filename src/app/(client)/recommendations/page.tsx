@@ -86,12 +86,23 @@ const formatPrice = (amount: number): string => {
   return Math.round(amount).toLocaleString('en-US')
 }
 
+const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
+
 export default function RecommendationsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading: clientLoading } = useClientData(viewingAs)
   usePageView({ page: '/recommendations', pageName: 'Recommendations' })
+
+  const isDemo = viewingAs === DEMO_CLIENT_ID
+  const demoState = searchParams.get('demoState')
+
+  // For recommendations, "locked" means pending (prospect), "active" means accepted
+  // "coming-soon" doesn't really apply to recommendations
+  const isPending = isDemo
+    ? demoState === 'locked'
+    : client.status === 'pending'
 
   const [activeTab, setActiveTab] = useState<TabType>('original-plan')
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
@@ -222,7 +233,7 @@ export default function RecommendationsPage() {
         {/* Recommendations Content */}
         <div className="recommendations-content">
           {/* Growth Stage Hero Section - Hide for prospects */}
-          {client.status !== 'pending' && (
+          {!isPending && (
           <div className="growth-stage-hero">
             <div className="growth-stage-main">
               <div className="stage-icon-large">
@@ -326,7 +337,7 @@ export default function RecommendationsPage() {
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Your Current Services
-              {client.status === 'pending' && (
+              {isPending && (
                 <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -341,7 +352,7 @@ export default function RecommendationsPage() {
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
               Smart Recommendations
-              {client.status === 'pending' ? (
+              {isPending ? (
                 <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -354,7 +365,7 @@ export default function RecommendationsPage() {
 
           {/* Smart Recommendations Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'smart-recommendations' ? 'active' : ''}`} id="smart-recommendations-tab">
-            {client.status === 'pending' ? (
+            {isPending ? (
               <div className="locked-placeholder">
                 <div className="locked-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
@@ -1007,7 +1018,7 @@ export default function RecommendationsPage() {
 
           {/* Current Services Tab Content */}
           <div className={`recommendations-tab-content ${activeTab === 'current-services' ? 'active' : ''}`} id="current-services-tab">
-            {client.status === 'pending' ? (
+            {isPending ? (
               <div className="locked-placeholder">
                 <div className="locked-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">

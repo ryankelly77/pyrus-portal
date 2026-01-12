@@ -16,85 +16,35 @@ export default function ContentPage() {
   const router = useRouter()
   usePageView({ page: '/content', pageName: 'Content' })
 
-  // State hooks - must be declared before conditional logic that uses them
+  // State hooks
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
   const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
-  const [demoStateOverride, setDemoStateOverride] = useState<'active' | 'coming-soon' | 'locked' | 'upsell' | null>(null)
+
+  // Demo state from URL params (set by PreviewBanner)
+  const demoState = searchParams.get('demoState')
 
   // Check if client is pending (prospect only)
   // Demo mode bypasses these checks to show the full content dashboard
   // Unless there's a demo state override
   const isPending = isDemo
-    ? demoStateOverride === 'locked'
+    ? demoState === 'locked'
     : client.status === 'pending'
 
   // Check if client has content access from their subscriptions
   const hasContentAccess = isDemo
-    ? demoStateOverride === 'active' || demoStateOverride === null
+    ? !demoState || demoState === 'active'
     : client.access.hasContent
 
   // Show coming soon if client has content products but no active content yet
   const showComingSoon = isDemo
-    ? demoStateOverride === 'coming-soon'
+    ? demoState === 'coming-soon'
     : !isPending && client.access.hasContentProducts && !hasContentAccess
 
   // Show upsell/no content products state
   const showUpsell = isDemo
-    ? demoStateOverride === 'upsell'
+    ? demoState === 'upsell'
     : !isPending && !client.access.hasContentProducts
-
-  // Demo state selector component
-  const DemoStateSelector = () => {
-    if (!isDemo) return null
-    return (
-      <div className="demo-state-selector" style={{
-        background: 'linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%)',
-        border: '1px solid #C4B5FD',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexWrap: 'wrap'
-      }}>
-        <span style={{ fontSize: '13px', fontWeight: '600', color: '#6B21A8' }}>
-          Demo Mode - View Page State:
-        </span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {[
-            { value: null, label: 'Active' },
-            { value: 'coming-soon', label: 'Coming Soon' },
-            { value: 'locked', label: 'Locked' },
-            { value: 'upsell', label: 'Upsell' }
-          ].map((state) => (
-            <button
-              key={state.value ?? 'active'}
-              onClick={() => setDemoStateOverride(state.value as typeof demoStateOverride)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                background: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
-                  ? '#7C3AED'
-                  : 'white',
-                color: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
-                  ? 'white'
-                  : '#6B21A8',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-              }}
-            >
-              {state.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
 
   // Files data - Raptor Vending specific for demo
   const files = isDemo ? [
@@ -338,7 +288,6 @@ export default function ContentPage() {
           </div>
         </div>
         <div className="client-content">
-          <DemoStateSelector />
           <div className="locked-page-placeholder">
             <div className="locked-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
@@ -386,7 +335,6 @@ export default function ContentPage() {
           </div>
         </div>
         <div className="client-content">
-          <DemoStateSelector />
           {/* Content Stats - showing zeros for coming soon state */}
           <div className="content-stats">
             <div className="content-stat-card">
@@ -541,7 +489,6 @@ export default function ContentPage() {
         </div>
 
         <div className="client-content">
-          <DemoStateSelector />
           <div className="content-upsell-container">
             {/* Hero Section */}
             <div className="content-hero">
@@ -895,8 +842,6 @@ export default function ContentPage() {
       </div>
 
       <div className="client-content">
-        <DemoStateSelector />
-
         {/* Content Stats */}
         <div className="content-stats">
           <div className="content-stat-card urgent">

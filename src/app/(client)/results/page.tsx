@@ -15,68 +15,17 @@ export default function ResultsPage() {
   usePageView({ page: '/results', pageName: 'Results' })
 
   const [activeSubtab, setActiveSubtab] = useState('overview')
-  const [demoStateOverride, setDemoStateOverride] = useState<'active' | 'coming-soon' | 'locked' | null>(null)
 
   const isDemo = viewingAs === DEMO_CLIENT_ID
+  const demoState = searchParams.get('demoState')
 
   // Check if client is pending (prospect only) or doesn't have results data yet
   const isPending = isDemo
-    ? demoStateOverride === 'locked'
+    ? demoState === 'locked'
     : client.status === 'pending'
   const showComingSoon = isDemo
-    ? demoStateOverride === 'coming-soon'
+    ? demoState === 'coming-soon'
     : !isPending && !client.access.hasResults
-
-  // Demo state selector component
-  const DemoStateSelector = () => {
-    if (!isDemo) return null
-    return (
-      <div className="demo-state-selector" style={{
-        background: 'linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%)',
-        border: '1px solid #C4B5FD',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexWrap: 'wrap'
-      }}>
-        <span style={{ fontSize: '13px', fontWeight: '600', color: '#6B21A8' }}>
-          Demo Mode - View Page State:
-        </span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {[
-            { value: null, label: 'Active' },
-            { value: 'coming-soon', label: 'Coming Soon' },
-            { value: 'locked', label: 'Locked' }
-          ].map((state) => (
-            <button
-              key={state.value ?? 'active'}
-              onClick={() => setDemoStateOverride(state.value as typeof demoStateOverride)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                background: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
-                  ? '#7C3AED'
-                  : 'white',
-                color: (demoStateOverride === state.value || (state.value === null && demoStateOverride === null))
-                  ? 'white'
-                  : '#6B21A8',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-              }}
-            >
-              {state.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
 
   // KPI data - will be replaced with real data from API in the future
   const kpiData = {
@@ -133,7 +82,6 @@ export default function ResultsPage() {
       </div>
 
       <div className="client-content">
-        <DemoStateSelector />
         {/* Pending client placeholder */}
         {isPending ? (
           <div className="locked-page-placeholder">
@@ -359,8 +307,8 @@ export default function ResultsPage() {
                     {/* Score arc (21% of 180 degrees) */}
                     <path d="M 20 100 A 80 80 0 0 1 53 38" fill="none" stroke="#EF4444" strokeWidth="16" strokeLinecap="round"/>
                     {/* Industry average marker (45% position) */}
-                    <line x1="100" y1="28" x2="100" y2="38" stroke="#6B7280" strokeWidth="3" strokeLinecap="round"/>
-                    <text x="100" y="18" textAnchor="middle" fill="#6B7280" fontSize="16" fontWeight="700">Avg: 45</text>
+                    <line x1="100" y1="30" x2="100" y2="42" stroke="#6B7280" strokeWidth="3" strokeLinecap="round"/>
+                    <text x="100" y="20" textAnchor="middle" fill="#4B5563" fontSize="18" fontWeight="700">Avg: 45</text>
                   </svg>
                   <div className="ai-score-value">
                     <span className="score-number">21</span>
