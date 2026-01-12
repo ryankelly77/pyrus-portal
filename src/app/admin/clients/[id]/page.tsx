@@ -3795,6 +3795,7 @@ export default function ClientDetailPage() {
                                     const keywords = comm.metadata.keywords as { keyword: string; newPosition: number | null; previousPosition: number | null }[]
                                     return (
                                       <>
+                                        {comm.body && <span style={{ display: 'block', marginBottom: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
                                         {keywords.map((kw, idx) => (
                                           <div key={idx} style={{ marginBottom: idx < keywords.length - 1 ? '10px' : 0 }}>
                                             <strong>&quot;{kw.keyword}&quot; — Now Position #{kw.newPosition || '?'}</strong>
@@ -3803,18 +3804,17 @@ export default function ClientDetailPage() {
                                             )}
                                           </div>
                                         ))}
-                                        {comm.body && <span style={{ display: 'block', marginTop: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
                                       </>
                                     )
                                   })()}
                                   {/* Legacy single keyword format (backward compatibility) */}
                                   {!comm.metadata.keywords && comm.metadata.keyword && (
                                     <>
+                                      {comm.body && <span style={{ display: 'block', marginBottom: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
                                       <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
                                       {comm.metadata.previousPosition && (
                                         <span>Moved from position #{comm.metadata.previousPosition} to #{comm.metadata.newPosition} (up {comm.metadata.previousPosition - comm.metadata.newPosition} spots!){comm.metadata.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
                                       )}
-                                      {comm.body && <span style={{ display: 'block', marginTop: '4px', fontWeight: 'normal' }}>{comm.body}</span>}
                                     </>
                                   )}
                                   {comm.metadata.milestone && (
