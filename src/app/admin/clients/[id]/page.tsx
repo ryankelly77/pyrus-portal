@@ -439,10 +439,28 @@ export default function ClientDetailPage() {
   const [resultAlertMessage, setResultAlertMessage] = useState('')
   const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
   // Optional structured data for highlight box
-  const [resultAlertKeyword, setResultAlertKeyword] = useState('')
-  const [resultAlertNewPosition, setResultAlertNewPosition] = useState('')
-  const [resultAlertPrevPosition, setResultAlertPrevPosition] = useState('')
+  interface KeywordRow {
+    keyword: string
+    newPosition: string
+    prevPosition: string
+  }
+  const [resultAlertKeywords, setResultAlertKeywords] = useState<KeywordRow[]>([{ keyword: '', newPosition: '', prevPosition: '' }])
   const [resultAlertMilestone, setResultAlertMilestone] = useState('')
+
+  // Helper to update a specific keyword row
+  const updateKeywordRow = (index: number, field: keyof KeywordRow, value: string) => {
+    setResultAlertKeywords(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
+  }
+
+  // Add a new keyword row
+  const addKeywordRow = () => {
+    setResultAlertKeywords(prev => [...prev, { keyword: '', newPosition: '', prevPosition: '' }])
+  }
+
+  // Remove a keyword row
+  const removeKeywordRow = (index: number) => {
+    setResultAlertKeywords(prev => prev.filter((_, i) => i !== index))
+  }
 
   // Alert type options with icons and default subjects
   const alertTypes = {
@@ -946,14 +964,22 @@ export default function ClientDetailPage() {
         alertTypeLabel: alertTypes[resultAlertType].label,
       }
 
-      // Add keyword/position data if provided
-      if (resultAlertKeyword.trim()) {
-        metadata.keyword = resultAlertKeyword.trim()
-        if (resultAlertNewPosition.trim()) {
-          metadata.newPosition = parseInt(resultAlertNewPosition)
+      // Add keyword/position data if provided (supports multiple keywords)
+      const validKeywords = resultAlertKeywords.filter(row => row.keyword.trim())
+      if (validKeywords.length > 0) {
+        metadata.keywords = validKeywords.map(row => ({
+          keyword: row.keyword.trim(),
+          newPosition: row.newPosition ? parseInt(row.newPosition) : null,
+          previousPosition: row.prevPosition ? parseInt(row.prevPosition) : null,
+        }))
+        // Also store first keyword in legacy format for backward compatibility
+        const first = validKeywords[0]
+        metadata.keyword = first.keyword.trim()
+        if (first.newPosition) {
+          metadata.newPosition = parseInt(first.newPosition)
         }
-        if (resultAlertPrevPosition.trim()) {
-          metadata.previousPosition = parseInt(resultAlertPrevPosition)
+        if (first.prevPosition) {
+          metadata.previousPosition = parseInt(first.prevPosition)
         }
       }
 
@@ -987,9 +1013,7 @@ export default function ClientDetailPage() {
       setResultAlertType('ranking')
       setResultAlertSubject('')
       setResultAlertMessage('')
-      setResultAlertKeyword('')
-      setResultAlertNewPosition('')
-      setResultAlertPrevPosition('')
+      setResultAlertKeywords([{ keyword: '', newPosition: '', prevPosition: '' }])
       setResultAlertMilestone('')
 
       // Show success message
@@ -3753,20 +3777,38 @@ export default function ClientDetailPage() {
                             )}
 
                             {/* Result highlight for result alerts - keyword/milestone metadata */}
-                            {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.milestone) && (
-                              <div className={`result-highlight result-highlight-${resultAlertType}`} style={{ marginTop: '12px' }}>
+                            {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.keywords || comm.metadata.milestone) && (
+                              <div className={`result-highlight result-highlight-${comm.metadata.alertType || 'other'}`} style={{ marginTop: '12px' }}>
                                 <div className="result-icon">
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    {resultAlertType === 'ranking' && <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>}
-                                    {resultAlertType === 'traffic' && <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>}
-                                    {resultAlertType === 'leads' && <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>}
-                                    {resultAlertType === 'milestone' && <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>}
-                                    {resultAlertType === 'ai' && <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></>}
-                                    {(resultAlertType === 'other' || !resultAlertType) && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>}
+                                    {comm.metadata.alertType === 'ranking' && <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>}
+                                    {comm.metadata.alertType === 'traffic' && <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>}
+                                    {comm.metadata.alertType === 'leads' && <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>}
+                                    {comm.metadata.alertType === 'milestone' && <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>}
+                                    {comm.metadata.alertType === 'ai' && <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></>}
+                                    {(comm.metadata.alertType === 'other' || !comm.metadata.alertType) && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>}
                                   </svg>
                                 </div>
                                 <div className="result-text">
-                                  {comm.metadata.keyword && (
+                                  {/* Support multiple keywords (new format) */}
+                                  {comm.metadata.keywords && comm.metadata.keywords.length > 0 && (() => {
+                                    const keywords = comm.metadata.keywords as { keyword: string; newPosition: number | null; previousPosition: number | null }[]
+                                    return (
+                                      <>
+                                        {keywords.map((kw, idx) => (
+                                          <div key={idx} style={{ marginBottom: idx < keywords.length - 1 ? '10px' : 0 }}>
+                                            <strong>&quot;{kw.keyword}&quot; — Now Position #{kw.newPosition || '?'}</strong>
+                                            {kw.previousPosition && kw.newPosition && (
+                                              <span style={{ display: 'block' }}>Moved from position #{kw.previousPosition} to #{kw.newPosition} (up {kw.previousPosition - kw.newPosition} spots!){kw.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                        {comm.body && <span style={{ display: 'block', marginTop: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
+                                      </>
+                                    )
+                                  })()}
+                                  {/* Legacy single keyword format (backward compatibility) */}
+                                  {!comm.metadata.keywords && comm.metadata.keyword && (
                                     <>
                                       <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
                                       {comm.metadata.previousPosition && (
@@ -3781,7 +3823,7 @@ export default function ClientDetailPage() {
                                       {comm.body && <span style={{ display: 'block', marginTop: '4px', fontWeight: 'normal' }}>{comm.body}</span>}
                                     </>
                                   )}
-                                  {!comm.metadata.keyword && !comm.metadata.milestone && comm.body && (
+                                  {!comm.metadata.keyword && !comm.metadata.keywords && !comm.metadata.milestone && comm.body && (
                                     <span style={{ fontWeight: 'normal' }}>{comm.body}</span>
                                   )}
                                 </div>
@@ -5321,9 +5363,7 @@ export default function ClientDetailPage() {
                           setResultAlertSubject(alertTypes[type].defaultSubject)
                         }
                         // Clear all type-specific fields when switching to prevent cross-contamination
-                        setResultAlertKeyword('')
-                        setResultAlertNewPosition('')
-                        setResultAlertPrevPosition('')
+                        setResultAlertKeywords([{ keyword: '', newPosition: '', prevPosition: '' }])
                         setResultAlertMilestone('')
                       }}
                       style={{
@@ -5382,43 +5422,95 @@ export default function ClientDetailPage() {
               {/* Optional Keyword/Position fields for ranking alerts */}
               {(resultAlertType === 'ranking' || resultAlertType === 'traffic') && (
                 <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534', marginBottom: '12px' }}>
-                    Highlight Box (Optional)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534' }}>
+                      Keyword Rankings (Optional)
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addKeywordRow}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        color: '#166534',
+                        background: '#D1FAE5',
+                        border: '1px solid #A7F3D0',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Add Keyword
+                    </button>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Keyword</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g., wound care san antonio"
-                        value={resultAlertKeyword}
-                        onChange={(e) => setResultAlertKeyword(e.target.value)}
-                        style={{ fontSize: '13px' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>New Position</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        placeholder="7"
-                        value={resultAlertNewPosition}
-                        onChange={(e) => setResultAlertNewPosition(e.target.value)}
-                        style={{ fontSize: '13px' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Previous Position</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        placeholder="24"
-                        value={resultAlertPrevPosition}
-                        onChange={(e) => setResultAlertPrevPosition(e.target.value)}
-                        style={{ fontSize: '13px' }}
-                      />
-                    </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {resultAlertKeywords.map((row, index) => (
+                      <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>Keyword</label>}
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g., wound care san antonio"
+                            value={row.keyword}
+                            onChange={(e) => updateKeywordRow(index, 'keyword', e.target.value)}
+                            style={{ fontSize: '13px' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>New Pos.</label>}
+                          <input
+                            type="number"
+                            className="form-input"
+                            placeholder="7"
+                            value={row.newPosition}
+                            onChange={(e) => updateKeywordRow(index, 'newPosition', e.target.value)}
+                            style={{ fontSize: '13px' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>Prev Pos.</label>}
+                          <input
+                            type="number"
+                            className="form-input"
+                            placeholder="24"
+                            value={row.prevPosition}
+                            onChange={(e) => updateKeywordRow(index, 'prevPosition', e.target.value)}
+                            style={{ fontSize: '13px' }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeKeywordRow(index)}
+                          disabled={resultAlertKeywords.length === 1}
+                          style={{
+                            width: '32px',
+                            height: '38px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'transparent',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '6px',
+                            cursor: resultAlertKeywords.length === 1 ? 'not-allowed' : 'pointer',
+                            opacity: resultAlertKeywords.length === 1 ? 0.4 : 1,
+                            color: '#6B7280',
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -5564,7 +5656,7 @@ export default function ClientDetailPage() {
                   </div>
 
                   {/* Preview highlight box */}
-                  {(resultAlertKeyword || resultAlertMilestone) && (
+                  {(resultAlertKeywords.some(row => row.keyword.trim()) || resultAlertMilestone) && (
                     <div style={{
                       marginTop: '16px',
                       padding: '14px 16px',
@@ -5590,21 +5682,21 @@ export default function ClientDetailPage() {
                           {alertTypes[resultAlertType].icon}
                         </div>
                       </div>
-                      <div>
-                        {resultAlertKeyword && (
-                          <>
+                      <div style={{ flex: 1 }}>
+                        {resultAlertKeywords.filter(row => row.keyword.trim()).map((row, idx) => (
+                          <div key={idx} style={{ marginBottom: idx < resultAlertKeywords.filter(r => r.keyword.trim()).length - 1 ? '12px' : 0 }}>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
-                              &quot;{resultAlertKeyword}&quot; — Now Position #{resultAlertNewPosition || '?'}
+                              &quot;{row.keyword}&quot; — Now Position #{row.newPosition || '?'}
                             </div>
-                            {resultAlertPrevPosition && resultAlertNewPosition && (
+                            {row.prevPosition && row.newPosition && (
                               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                Moved from position #{resultAlertPrevPosition} to #{resultAlertNewPosition} (up {parseInt(resultAlertPrevPosition) - parseInt(resultAlertNewPosition)} spots!)
-                                {parseInt(resultAlertNewPosition) <= 10 && ' - First page visibility achieved'}
+                                Moved from position #{row.prevPosition} to #{row.newPosition} (up {parseInt(row.prevPosition) - parseInt(row.newPosition)} spots!)
+                                {parseInt(row.newPosition) <= 10 && ' - First page visibility achieved'}
                               </div>
                             )}
-                          </>
-                        )}
-                        {resultAlertMilestone && !resultAlertKeyword && (
+                          </div>
+                        ))}
+                        {resultAlertMilestone && (
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
                             {resultAlertMilestone}
                           </div>
