@@ -9731,7 +9731,7 @@
             font-weight: 600;
             padding: 4px 12px;
             border-radius: 20px;
-            margin-top: 8px;
+            margin-top: 16px;
         }
 
         .ai-score-label.low {
@@ -9781,9 +9781,9 @@
             align-items: center;
             gap: 6px;
             padding: 10px 18px;
-            background: var(--accent-purple);
-            color: #FFFFFF;
-            text-decoration: none;
+            background: var(--accent-purple) !important;
+            color: #FFFFFF !important;
+            text-decoration: none !important;
             border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 600;
@@ -9792,17 +9792,19 @@
 
         .ai-upgrade-link,
         .ai-upgrade-link:visited,
-        .ai-upgrade-link:link {
-            color: #FFFFFF;
+        .ai-upgrade-link:link,
+        .ai-upgrade-link:active {
+            color: #FFFFFF !important;
+            text-decoration: none !important;
         }
 
         .ai-upgrade-link svg {
-            stroke: #FFFFFF;
+            stroke: #FFFFFF !important;
         }
 
         .ai-upgrade-link:hover {
-            background: var(--accent-purple-dark, #6D28D9);
-            color: #FFFFFF;
+            background: var(--accent-purple-dark, #6D28D9) !important;
+            color: #FFFFFF !important;
             transform: translateY(-1px);
         }
 
@@ -10147,6 +10149,22 @@
 
         .view-mode-banner .btn-exit-preview:hover {
             background: var(--accent-purple-dark, #6D28D9);
+        }
+
+        /* Demo Mode Banner - Purple gradient with star icon */
+        .view-mode-banner.demo-mode {
+            background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%);
+            border-bottom: 1px solid #C4B5FD;
+        }
+
+        .view-mode-banner.demo-mode .banner-text {
+            color: #6B21A8;
+            font-weight: 600;
+        }
+
+        .view-mode-banner.demo-mode .banner-text svg {
+            fill: #7C3AED;
+            stroke: #7C3AED;
         }
 
         /* Hide admin elements in client view mode */
