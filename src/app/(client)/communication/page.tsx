@@ -1,12 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 
-type FilterType = 'all' | 'email' | 'result' | 'chat' | 'content'
+type FilterType = 'all' | 'emails' | 'alerts' | 'chat' | 'content'
+
+interface Communication {
+  id: string
+  clientId: string
+  type: string
+  title: string
+  subject: string | null
+  body: string | null
+  status: string | null
+  metadata: Record<string, any> | null
+  highlightType: string | null
+  recipientEmail: string | null
+  openedAt: string | null
+  clickedAt: string | null
+  sentAt: string | null
+  createdAt: string | null
+}
 
 export default function CommunicationPage() {
   const searchParams = useSearchParams()
@@ -15,9 +32,55 @@ export default function CommunicationPage() {
   usePageView({ page: '/communication', pageName: 'Communication' })
 
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [communications, setCommunications] = useState<Communication[]>([])
+  const [communicationsLoading, setCommunicationsLoading] = useState(true)
+
+  // Fetch communications
+  useEffect(() => {
+    async function fetchCommunications() {
+      setCommunicationsLoading(true)
+      try {
+        const url = viewingAs
+          ? `/api/client/communications?clientId=${viewingAs}`
+          : '/api/client/communications'
+        const res = await fetch(url)
+        if (res.ok) {
+          const data = await res.json()
+          setCommunications(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch communications:', error)
+      } finally {
+        setCommunicationsLoading(false)
+      }
+    }
+    fetchCommunications()
+  }, [viewingAs])
 
   // Check if client is pending (prospect only)
   const isPending = client.status === 'pending'
+
+  // Calculate stats from communications
+  const emailTypes = ['email_invite', 'email_reminder', 'email_general']
+  const emails = communications.filter(c => emailTypes.includes(c.type))
+  const deliveredEmails = emails.filter(c => c.status === 'delivered' || c.status === 'opened' || c.status === 'clicked')
+  const failedEmails = emails.filter(c => c.status === 'failed' || c.status === 'bounced')
+  const openedEmails = emails.filter(c => c.openedAt || c.status === 'opened' || c.status === 'clicked')
+  const resultAlerts = communications.filter(c => c.type === 'result_alert')
+  const viewedAlerts = resultAlerts.filter(c => c.openedAt || c.status === 'opened')
+  const chatMessages = communications.filter(c => c.type === 'chat')
+  const contentComms = communications.filter(c => c.type.startsWith('content_'))
+  const pendingContent = contentComms.filter(c => c.status === 'pending_review')
+
+  // Filter communications based on selected filter
+  const filteredComms = communications.filter(comm => {
+    if (activeFilter === 'all') return true
+    if (activeFilter === 'emails') return emailTypes.includes(comm.type)
+    if (activeFilter === 'alerts') return comm.type === 'result_alert'
+    if (activeFilter === 'chat') return comm.type === 'chat'
+    if (activeFilter === 'content') return comm.type.startsWith('content_')
+    return true
+  })
 
   // Show loading state while fetching client data
   if (loading) {
@@ -36,19 +99,6 @@ export default function CommunicationPage() {
       </>
     )
   }
-
-  const timelineItems = [
-    { id: 1, type: 'result', date: 'Jan 2, 2026', time: '2:45 PM CST' },
-    { id: 2, type: 'content', date: 'Jan 2, 2026', time: '3:30 PM CST' },
-    { id: 3, type: 'content', date: 'Jan 2, 2026', time: '11:00 AM CST' },
-    { id: 4, type: 'email', date: 'Jan 2, 2026', time: '8:00 AM CST' },
-    { id: 5, type: 'content', date: 'Dec 31, 2025', time: '2:30 PM CST' },
-    { id: 6, type: 'email', date: 'Dec 29, 2025', time: '2:30 PM CST' },
-  ]
-
-  const filteredItems = timelineItems.filter(
-    item => activeFilter === 'all' || item.type === activeFilter
-  )
 
   // If client is pending, show locked placeholder
   if (isPending) {
@@ -97,6 +147,80 @@ export default function CommunicationPage() {
     )
   }
 
+  // Helper functions for rendering timeline items
+  const getIconClass = (type: string, metadata: Record<string, any> | null) => {
+    if (type === 'result_alert') {
+      const alertType = metadata?.alertType || 'other'
+      switch (alertType) {
+        case 'ranking': return 'result-ranking'
+        case 'traffic': return 'result-traffic'
+        case 'leads': return 'result-leads'
+        case 'milestone': return 'result-milestone'
+        case 'ai': return 'result-ai'
+        default: return 'result-other'
+      }
+    }
+    switch (type) {
+      case 'email_invite': return 'email-invite'
+      case 'email_reminder': return 'email-reminder'
+      case 'email_general': return 'email-invite'
+      case 'chat': return 'chat'
+      case 'monthly_report': return 'monthly-report'
+      case 'content_approved':
+      case 'content_review':
+      case 'content_revision': return 'monthly-report'
+      default: return 'email-invite'
+    }
+  }
+
+  const getTypeLabel = (type: string, metadata: Record<string, any> | null) => {
+    if (type === 'result_alert') {
+      const alertLabel = metadata?.alertTypeLabel || 'Result Alert'
+      return { label: alertLabel, class: 'result' }
+    }
+    switch (type) {
+      case 'email_invite': return { label: 'Invitation', class: 'invitation' }
+      case 'email_reminder': return { label: 'Reminder', class: 'reminder' }
+      case 'email_general': return { label: 'Email', class: 'invitation' }
+      case 'chat': return { label: 'Chat', class: 'chat' }
+      case 'monthly_report': return { label: 'Report', class: 'report' }
+      case 'content_approved':
+      case 'content_review':
+      case 'content_revision': return { label: 'Content', class: 'report' }
+      default: return { label: type.replace(/_/g, ' '), class: 'invitation' }
+    }
+  }
+
+  const getIcon = (type: string, metadata: Record<string, any> | null) => {
+    if (type === 'result_alert') {
+      const alertType = metadata?.alertType || 'other'
+      switch (alertType) {
+        case 'ranking':
+          return <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>
+        case 'traffic':
+          return <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>
+        case 'leads':
+          return <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>
+        case 'milestone':
+          return <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>
+        case 'ai':
+          return <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></>
+        default:
+          return <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      }
+    }
+    if (type === 'chat') {
+      return <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    }
+    if (type === 'monthly_report' || type.startsWith('content_')) {
+      return <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></>
+    }
+    if (type === 'email_reminder') {
+      return <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></>
+    }
+    return <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></>
+  }
+
   return (
     <>
       {/* Top Header Bar */}
@@ -128,33 +252,33 @@ export default function CommunicationPage() {
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Total Communications</div>
-              <div className="stat-value">11</div>
-              <div className="stat-detail">Last 30 days</div>
+              <div className="stat-value">{communications.length}</div>
+              <div className="stat-detail">All time</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Emails Sent</div>
-              <div className="stat-value">4</div>
-              <div className="stat-detail">3 delivered, 1 failed</div>
+              <div className="stat-value">{emails.length}</div>
+              <div className="stat-detail">{deliveredEmails.length} delivered{failedEmails.length > 0 ? `, ${failedEmails.length} failed` : ''}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Result Alerts</div>
-              <div className="stat-value purple">2</div>
-              <div className="stat-detail">Both viewed</div>
+              <div className="stat-value purple">{resultAlerts.length}</div>
+              <div className="stat-detail">{viewedAlerts.length} viewed</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Chat Messages</div>
-              <div className="stat-value blue">2</div>
-              <div className="stat-detail">From HighLevel</div>
+              <div className="stat-value blue">{chatMessages.length}</div>
+              <div className="stat-detail">From your team</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Email Open Rate</div>
-              <div className="stat-value success">67%</div>
-              <div className="stat-detail">2 of 3 delivered</div>
+              <div className="stat-value success">{deliveredEmails.length > 0 ? Math.round((openedEmails.length / deliveredEmails.length) * 100) : 0}%</div>
+              <div className="stat-detail">{openedEmails.length} of {deliveredEmails.length} delivered</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Content Reviews</div>
-              <div className="stat-value" style={{ color: 'var(--primary)' }}>3</div>
-              <div className="stat-detail">1 pending approval</div>
+              <div className="stat-label">Content Updates</div>
+              <div className="stat-value" style={{ color: 'var(--primary)' }}>{contentComms.length}</div>
+              <div className="stat-detail">{pendingContent.length > 0 ? `${pendingContent.length} pending approval` : 'All reviewed'}</div>
             </div>
           </div>
 
@@ -168,8 +292,8 @@ export default function CommunicationPage() {
                 All
               </button>
               <button
-                className={`filter-tab ${activeFilter === 'email' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('email')}
+                className={`filter-tab ${activeFilter === 'emails' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('emails')}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -178,8 +302,8 @@ export default function CommunicationPage() {
                 Emails
               </button>
               <button
-                className={`filter-tab ${activeFilter === 'result' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('result')}
+                className={`filter-tab ${activeFilter === 'alerts' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('alerts')}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -206,25 +330,6 @@ export default function CommunicationPage() {
                 Content
               </button>
             </div>
-            <div className="filter-actions">
-              <button className="filter-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Date Range
-              </button>
-              <button className="filter-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Export
-              </button>
-            </div>
           </div>
 
           {/* Communication Timeline */}
@@ -232,305 +337,205 @@ export default function CommunicationPage() {
             <div className="timeline-header">
               <div className="timeline-title">
                 <h3>Communication Timeline</h3>
-                <p>All client communications in chronological order</p>
+                <p>All communications in chronological order</p>
               </div>
             </div>
 
             <ul className="timeline-list">
-              {/* Result Alert - Page 1 Ranking */}
-              {(activeFilter === 'all' || activeFilter === 'result') && (
-                <li className="timeline-item highlight-success" data-type="result">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">2:45 PM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon result-alert">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Result Alert Sent
-                            <span className="type-label result">Result Alert</span>
-                          </h4>
-                          <span className="subject">Your keyword is now ranking on Page 1!</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill delivered">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            Delivered
-                          </span>
-                          <span className="status-pill opened">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                              <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                            Viewed
-                          </span>
-                        </div>
+              {communicationsLoading ? (
+                <li className="timeline-empty">
+                  <div className="spinner" style={{ width: 24, height: 24 }}></div>
+                  Loading communications...
+                </li>
+              ) : filteredComms.length === 0 ? (
+                <li className="timeline-empty">
+                  No {activeFilter === 'all' ? 'communications' : activeFilter} found
+                </li>
+              ) : (
+                filteredComms.map(comm => {
+                  const sentDate = comm.sentAt ? new Date(comm.sentAt) : new Date()
+                  const dateStr = sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  const timeStr = sentDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) + ' CST'
+
+                  const isContentType = comm.type.startsWith('content_')
+                  const contentStatus = isContentType ? comm.status : null
+                  const typeInfo = getTypeLabel(comm.type, comm.metadata)
+                  const highlightClass = comm.highlightType ? `highlight-${comm.highlightType}` : ''
+
+                  return (
+                    <li key={comm.id} className={`timeline-item ${highlightClass}`} data-type={comm.type}>
+                      <div className="timeline-date">
+                        <span className="date">{dateStr}</span>
+                        <span className="time">{timeStr}</span>
                       </div>
-                      <div className="result-highlight">
-                        <div className="result-icon">
+                      <div className="timeline-content">
+                        <div className={`comm-icon ${getIconClass(comm.type, comm.metadata)}`}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                            <polyline points="17 6 23 6 23 12"></polyline>
+                            {getIcon(comm.type, comm.metadata)}
                           </svg>
                         </div>
-                        <div className="result-text">
-                          <strong>&quot;precision wound care San Antonio&quot; — Now Position #7</strong>
-                          <span>Moved from position #24 to #7 (up 17 spots!) - First page visibility achieved</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )}
+                        <div className="comm-details">
+                          <div className="comm-header">
+                            <div className="comm-title">
+                              <h4>{comm.title} <span className={`type-label ${typeInfo.class}`}>{typeInfo.label}</span></h4>
+                            </div>
+                            <div className="comm-status">
+                              {/* Email delivery statuses */}
+                              {!isContentType && comm.status !== 'failed' && comm.status !== 'bounced' && (
+                                <span className="status-pill sent">Sent</span>
+                              )}
+                              {!isContentType && (comm.status === 'delivered' || comm.status === 'opened' || comm.status === 'clicked') && (
+                                <span className="status-pill delivered">Delivered</span>
+                              )}
+                              {!isContentType && (comm.openedAt || comm.status === 'opened' || comm.status === 'clicked') && (
+                                <span className="status-pill opened">Opened</span>
+                              )}
+                              {!isContentType && (comm.clickedAt || comm.status === 'clicked') && (
+                                <span className="status-pill clicked">Clicked</span>
+                              )}
+                              {!isContentType && comm.status === 'failed' && (
+                                <span className="status-pill failed">Failed</span>
+                              )}
+                              {!isContentType && comm.status === 'bounced' && (
+                                <span className="status-pill failed">Bounced</span>
+                              )}
+                              {/* Content-specific statuses */}
+                              {contentStatus === 'published' && (
+                                <span className="status-pill published">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                  Published
+                                </span>
+                              )}
+                              {contentStatus === 'pending_review' && (
+                                <span className="status-pill pending-review">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                  </svg>
+                                  Pending Review
+                                </span>
+                              )}
+                              {contentStatus === 'needs_revision' && (
+                                <span className="status-pill needs-revision">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                  </svg>
+                                  Needs Revision
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-              {/* Content Approved Notification */}
-              {(activeFilter === 'all' || activeFilter === 'content') && (
-                <li className="timeline-item highlight-success" data-type="content">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">3:30 PM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon content-review" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <polyline points="9 15 11 17 15 13"></polyline>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Content Approved
-                            <span className="type-label" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Content</span>
-                          </h4>
-                          <span className="subject">&quot;January Services Update&quot; blog post has been approved and published</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill delivered">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            Published
-                          </span>
-                        </div>
-                      </div>
-                      <div className="comm-preview">
-                        <p>Your approved content is now live on your website. View it at tc-clinicalservices.com/blog/january-services-update</p>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )}
+                          {/* Body text for non-result communications */}
+                          {comm.body && !comm.type.startsWith('result_') && !comm.metadata?.feedback && (
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '8px' }}>{comm.body}</p>
+                          )}
 
-              {/* Content Ready for Review */}
-              {(activeFilter === 'all' || activeFilter === 'content') && (
-                <li className="timeline-item" data-type="content">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">11:00 AM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon content-review" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Content Ready for Review
-                            <span className="type-label" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>Content</span>
-                          </h4>
-                          <span className="subject">&quot;Q1 2026 Marketing Goals&quot; blog post is waiting for your approval</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            Pending Review
-                          </span>
-                        </div>
-                      </div>
-                      <div className="comm-preview">
-                        <p>New content has been submitted for your review. Please approve or request revisions.</p>
-                      </div>
-                      <div className="comm-actions" style={{ marginTop: '12px' }}>
-                        <Link href="/content" className="btn btn-sm btn-primary">Review Content</Link>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )}
+                          {/* Result highlight for result alerts */}
+                          {comm.type === 'result_alert' && comm.metadata && (comm.metadata.keyword || comm.metadata.keywords || comm.metadata.milestone) && (
+                            <div className={`result-highlight result-highlight-${comm.metadata.alertType || 'other'}`} style={{ marginTop: '12px' }}>
+                              <div className="result-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  {comm.metadata.alertType === 'ranking' && <><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></>}
+                                  {comm.metadata.alertType === 'traffic' && <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></>}
+                                  {comm.metadata.alertType === 'leads' && <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></>}
+                                  {comm.metadata.alertType === 'milestone' && <><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></>}
+                                  {comm.metadata.alertType === 'ai' && <><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></>}
+                                  {(comm.metadata.alertType === 'other' || !comm.metadata.alertType) && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>}
+                                </svg>
+                              </div>
+                              <div className="result-text">
+                                {/* Multiple keywords (new format) */}
+                                {comm.metadata.keywords && comm.metadata.keywords.length > 0 && (() => {
+                                  const keywords = comm.metadata.keywords as { keyword: string; newPosition: number | null; previousPosition: number | null }[]
+                                  return (
+                                    <>
+                                      {comm.body && <span style={{ display: 'block', marginBottom: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
+                                      {keywords.map((kw, idx) => (
+                                        <div key={idx} style={{ marginBottom: idx < keywords.length - 1 ? '10px' : 0 }}>
+                                          <strong>&quot;{kw.keyword}&quot; — Now Position #{kw.newPosition || '?'}</strong>
+                                          {kw.previousPosition && kw.newPosition && (
+                                            <span style={{ display: 'block' }}>Moved from position #{kw.previousPosition} to #{kw.newPosition} (up {kw.previousPosition - kw.newPosition} spots!){kw.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </>
+                                  )
+                                })()}
+                                {/* Legacy single keyword */}
+                                {!comm.metadata.keywords && comm.metadata.keyword && (
+                                  <>
+                                    {comm.body && <span style={{ display: 'block', marginBottom: '8px', fontWeight: 'normal' }}>{comm.body}</span>}
+                                    <strong>&quot;{comm.metadata.keyword}&quot; — Now Position #{comm.metadata.newPosition}</strong>
+                                    {comm.metadata.previousPosition && (
+                                      <span>Moved from position #{comm.metadata.previousPosition} to #{comm.metadata.newPosition} (up {comm.metadata.previousPosition - comm.metadata.newPosition} spots!){comm.metadata.newPosition <= 10 ? ' - First page visibility achieved' : ''}</span>
+                                    )}
+                                  </>
+                                )}
+                                {/* Milestone */}
+                                {comm.metadata.milestone && (
+                                  <>
+                                    <strong>{comm.metadata.milestone}</strong>
+                                    {comm.body && <span style={{ display: 'block', marginTop: '4px', fontWeight: 'normal' }}>{comm.body}</span>}
+                                  </>
+                                )}
+                                {/* Body only (no keyword/milestone) */}
+                                {!comm.metadata.keyword && !comm.metadata.keywords && !comm.metadata.milestone && comm.body && (
+                                  <span style={{ fontWeight: 'normal' }}>{comm.body}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
-              {/* Invitation Reminder - Opened & Clicked */}
-              {(activeFilter === 'all' || activeFilter === 'email') && (
-                <li className="timeline-item highlight-success" data-type="email">
-                  <div className="timeline-date">
-                    <span className="date">Jan 2, 2026</span>
-                    <span className="time">8:00 AM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon email-reminder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Invitation Reminder
-                            <span className="type-label reminder">Reminder</span>
-                          </h4>
-                          <span className="subject">Your Pyrus Digital portal is waiting for you</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill delivered">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            Delivered
-                          </span>
-                          <span className="status-pill opened">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                              <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                            Opened
-                          </span>
-                          <span className="status-pill clicked">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                              <polyline points="10 17 15 12 10 7"></polyline>
-                              <line x1="15" y1="12" x2="3" y2="12"></line>
-                            </svg>
-                            Clicked
-                          </span>
-                        </div>
-                      </div>
-                      <div className="click-inline">
-                        <div className="click-icon">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                            <polyline points="10 17 15 12 10 7"></polyline>
-                            <line x1="15" y1="12" x2="3" y2="12"></line>
-                          </svg>
-                        </div>
-                        <span className="click-text">Clicked <strong>&quot;Create Account&quot;</strong> button</span>
-                        <span className="click-time">9:24 AM CST</span>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )}
+                          {/* Clicked button indicator */}
+                          {comm.clickedAt && comm.metadata?.clickedButton && (
+                            <div className="click-inline">
+                              <div className="click-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                  <polyline points="10 17 15 12 10 7"></polyline>
+                                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                                </svg>
+                              </div>
+                              <span className="click-text">Clicked &quot;<strong>{comm.metadata.clickedButton}</strong>&quot; button</span>
+                              {comm.metadata.clickedAt && <span className="click-time">{comm.metadata.clickedAt}</span>}
+                            </div>
+                          )}
 
-              {/* Content Revision Requested */}
-              {(activeFilter === 'all' || activeFilter === 'content') && (
-                <li className="timeline-item" data-type="content">
-                  <div className="timeline-date">
-                    <span className="date">Dec 31, 2025</span>
-                    <span className="time">2:30 PM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon content-review" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="12" y1="18" x2="12" y2="12"></line>
-                        <line x1="12" y1="9" x2="12.01" y2="9"></line>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Revision Requested
-                            <span className="type-label" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Content</span>
-                          </h4>
-                          <span className="subject">&quot;Holiday Promotion Post&quot; requires changes before publishing</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 20h9"></path>
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            Needs Revision
-                          </span>
-                        </div>
-                      </div>
-                      <div className="comm-preview">
-                        <p><strong>Feedback:</strong> Please update the pricing information to reflect January rates and adjust the call-to-action button text.</p>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )}
+                          {/* Error message for failed emails */}
+                          {comm.status === 'failed' && comm.metadata?.errorMessage && (
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--error-text)', background: 'var(--error-bg)', padding: '8px 12px', borderRadius: '6px' }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                              </svg>
+                              <span>{comm.metadata.errorMessage}</span>
+                            </div>
+                          )}
 
-              {/* Portal Invitation - Failed */}
-              {(activeFilter === 'all' || activeFilter === 'email') && (
-                <li className="timeline-item highlight-failed" data-type="email">
-                  <div className="timeline-date">
-                    <span className="date">Dec 29, 2025</span>
-                    <span className="time">2:30 PM CST</span>
-                  </div>
-                  <div className="timeline-content">
-                    <div className="comm-icon email-failed">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                    </div>
-                    <div className="comm-details">
-                      <div className="comm-header">
-                        <div className="comm-title">
-                          <h4>
-                            Portal Invitation
-                            <span className="type-label invitation">Invitation</span>
-                          </h4>
-                          <span className="subject">Welcome to Your Pyrus Digital Portal</span>
-                        </div>
-                        <div className="comm-status">
-                          <span className="status-pill failed">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <line x1="15" y1="9" x2="9" y2="15"></line>
-                              <line x1="9" y1="9" x2="15" y2="15"></line>
-                            </svg>
-                            Failed
-                          </span>
+                          {/* Content feedback */}
+                          {comm.type === 'content_revision' && comm.metadata?.feedback && (
+                            <div style={{ marginTop: '8px' }}>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '13px' }}>Feedback:</strong>
+                              <span style={{ color: 'var(--text-secondary)', fontSize: '13px', marginLeft: '4px' }}>{comm.metadata.feedback}</span>
+                            </div>
+                          )}
+
+                          {/* Review button for pending content */}
+                          {comm.type === 'content_review' && comm.status === 'pending_review' && (
+                            <div style={{ marginTop: '12px' }}>
+                              <Link href="/content" className="btn btn-sm btn-primary">Review Content</Link>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="failure-note">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <line x1="12" y1="8" x2="12" y2="12"></line>
-                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <span>Delivery failed: Mailbox full / temporary error</span>
-                        <a href="#">Resent Dec 31</a>
-                      </div>
-                    </div>
-                  </div>
-                </li>
+                    </li>
+                  )
+                })
               )}
             </ul>
           </div>
