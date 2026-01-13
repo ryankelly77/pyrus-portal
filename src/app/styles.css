@@ -306,6 +306,7 @@
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 24px;
+            align-items: start;
         }
 
         .checklist-card {
@@ -335,7 +336,7 @@
 
         .progress-bar-container {
             margin-top: 16px;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .progress-bar-label {
@@ -2186,7 +2187,7 @@
             gap: 8px;
         }
 
-        .progress-bar-container {
+        .coming-soon-progress .progress-bar-container {
             width: 200px;
             height: 8px;
             background: var(--bg-page);
@@ -2194,7 +2195,7 @@
             overflow: hidden;
         }
 
-        .progress-bar-fill {
+        .coming-soon-progress .progress-bar-fill {
             height: 100%;
             background: var(--pyrus-green);
             border-radius: 4px;

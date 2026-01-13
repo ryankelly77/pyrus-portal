@@ -986,9 +986,20 @@ export default function RecommendationsPage() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
-                            Your Selected Plan
+                            Selected Plan
+                            {recommendation.purchased_at && (
+                              <span style={{ fontWeight: 400, marginLeft: '8px', opacity: 0.8 }}>
+                                ({new Date(recommendation.purchased_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})
+                              </span>
+                            )}
                           </button>
+                        ) : recommendation.purchased_tier ? (
+                          // Another tier was purchased - show greyed out placeholder
+                          <div className="pricing-tier-btn-placeholder" style={{ height: '44px', borderRadius: '8px', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>
+                            {tierName === 'good' ? 'Starter Option' : tierName === 'better' ? 'Popular Choice' : 'Premium Option'}
+                          </div>
                         ) : (
+                          // No tier purchased yet - show clickable button
                           <button
                             className="pricing-tier-btn primary"
                             onClick={() => router.push(`/checkout?tier=${tierName}${viewingAs ? `&viewingAs=${viewingAs}` : ''}${couponCode ? `&coupon=${couponCode}` : ''}`)}
