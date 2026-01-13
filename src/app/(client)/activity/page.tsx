@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
@@ -9,7 +9,7 @@ import { usePageView } from '@/hooks/usePageView'
 type ActivityType = 'all' | 'task' | 'update' | 'alert' | 'content'
 
 interface ActivityItem {
-  id: number
+  id: number | string
   type: 'task' | 'update' | 'alert' | 'content'
   title: string
   description: string
@@ -299,9 +299,35 @@ export default function ActivityPage() {
   usePageView({ page: '/activity', pageName: 'Activity' })
 
   const [activeFilter, setActiveFilter] = useState<ActivityType>('all')
+  const [realActivities, setRealActivities] = useState<ActivityItem[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
 
   const isDemo = viewingAs === DEMO_CLIENT_ID
   const demoState = searchParams.get('demoState')
+
+  // Fetch real activities for non-demo clients
+  useEffect(() => {
+    async function fetchActivities() {
+      if (isDemo) return // Skip for demo
+
+      setActivitiesLoading(true)
+      try {
+        const url = viewingAs
+          ? `/api/client/activity?clientId=${viewingAs}`
+          : '/api/client/activity'
+        const res = await fetch(url)
+        if (res.ok) {
+          const data = await res.json()
+          setRealActivities(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch activities:', error)
+      } finally {
+        setActivitiesLoading(false)
+      }
+    }
+    fetchActivities()
+  }, [viewingAs, isDemo])
 
   // Check if client is pending (prospect only) or doesn't have activity data yet
   const isPending = isDemo
@@ -311,8 +337,8 @@ export default function ActivityPage() {
     ? demoState === 'coming-soon'
     : !isPending && !client.access.hasActivity
 
-  // Activity data - will be replaced with real data from API in the future
-  const activities = tcClinicalActivities
+  // Use demo data for demo clients, real data for real clients
+  const activities = isDemo ? tcClinicalActivities : realActivities
 
   const filteredActivities = activities.filter(
     activity => activeFilter === 'all' || activity.type === activeFilter
@@ -443,16 +469,27 @@ export default function ActivityPage() {
 
           <div className="activity-card">
             <ul className="activity-list">
-              {filteredActivities.map(activity => (
-                <li key={activity.id} className="activity-item" data-type={activity.type}>
-                  {getActivityIcon(activity.type, activity.iconStyle)}
-                  <div className="activity-details">
-                    <div className="activity-title">{activity.title}</div>
-                    <div className="activity-desc">{activity.description}</div>
-                  </div>
-                  <div className="activity-time">{activity.time}</div>
+              {activitiesLoading && !isDemo ? (
+                <li className="activity-item" style={{ justifyContent: 'center', padding: '40px' }}>
+                  <div className="spinner" style={{ width: 24, height: 24 }}></div>
+                  <span style={{ marginLeft: '12px', color: 'var(--text-secondary)' }}>Loading activities...</span>
                 </li>
-              ))}
+              ) : filteredActivities.length === 0 ? (
+                <li className="activity-item" style={{ justifyContent: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                  {activeFilter === 'all' ? 'No activities yet' : `No ${activeFilter} activities`}
+                </li>
+              ) : (
+                filteredActivities.map(activity => (
+                  <li key={activity.id} className="activity-item" data-type={activity.type}>
+                    {getActivityIcon(activity.type, activity.iconStyle)}
+                    <div className="activity-details">
+                      <div className="activity-title">{activity.title}</div>
+                      <div className="activity-desc">{activity.description}</div>
+                    </div>
+                    <div className="activity-time">{activity.time}</div>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
         </div>

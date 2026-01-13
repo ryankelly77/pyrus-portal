@@ -28,6 +28,7 @@ model clients {
   notes                     String?
   referred_by               String?
   referral_source           String?
+  onboarding_completed_at   DateTime? @db.Timestamptz(6)
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
