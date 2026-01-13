@@ -1,15 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
 interface Activity {
   id: string
-  type: 'content' | 'client' | 'revenue' | 'recommendation'
+  type: string
   title: string
   description: string
   time: string
-  icon: 'document' | 'user' | 'dollar' | 'star'
 }
 
 interface Transaction {
@@ -22,87 +22,276 @@ interface Transaction {
   date: string
 }
 
-const recentActivity: Activity[] = [
-  { id: '1', type: 'content', title: 'Content Submitted for Review', description: 'DLG Medical Services submitted "Holiday Hours Update"', time: '5 min ago', icon: 'document' },
-  { id: '2', type: 'client', title: 'New Client Onboarding', description: 'Gohfr completed their onboarding questionnaire', time: '1 hour ago', icon: 'user' },
-  { id: '3', type: 'revenue', title: 'Subscription Upgraded', description: 'Raptor Services upgraded to Enterprise Package (+$400/mo)', time: '2 hours ago', icon: 'dollar' },
-  { id: '4', type: 'recommendation', title: 'Recommendation Accepted', description: 'Summit Dental approved SEO Content Package recommendation', time: '3 hours ago', icon: 'star' },
-  { id: '5', type: 'content', title: 'Content Published', description: '"Fall Lawn Care Tips" published for Green Valley Landscaping', time: '4 hours ago', icon: 'document' },
-  { id: '6', type: 'client', title: 'Client Campaign Paused', description: 'American Fence & Deck paused their campaign', time: '5 hours ago', icon: 'user' },
-  { id: '7', type: 'content', title: 'Content Approved', description: 'Peak Performance Gym approved "New Year Fitness Goals" post', time: '6 hours ago', icon: 'document' },
-  { id: '8', type: 'revenue', title: 'Payment Received', description: 'TC Clinical Services paid invoice #1247 ($1,299.00)', time: '7 hours ago', icon: 'dollar' },
-  { id: '9', type: 'recommendation', title: 'Recommendation Sent', description: 'New growth plan sent to Horizon Real Estate', time: '8 hours ago', icon: 'star' },
-  { id: '10', type: 'client', title: 'Client Reactivated', description: 'Coastal Insurance reactivated their campaign', time: '9 hours ago', icon: 'user' },
-  { id: '11', type: 'content', title: 'Content Revision Requested', description: 'Sunrise Dental requested changes to blog post', time: '10 hours ago', icon: 'document' },
-  { id: '12', type: 'revenue', title: 'New Subscription', description: 'Green Thumb Landscaping started Growth Package ($599/mo)', time: '12 hours ago', icon: 'dollar' },
-  { id: '13', type: 'client', title: 'Onboarding Started', description: 'New client "Metro Electric" began onboarding', time: '1 day ago', icon: 'user' },
-  { id: '14', type: 'content', title: 'Content Scheduled', description: '3 posts scheduled for Raptor Vending next week', time: '1 day ago', icon: 'document' },
-  { id: '15', type: 'recommendation', title: 'Recommendation Declined', description: 'Espronceda Law declined Social Media add-on', time: '1 day ago', icon: 'star' },
-  { id: '16', type: 'revenue', title: 'Payment Failed', description: 'Payment retry scheduled for Metro Plumbing', time: '1 day ago', icon: 'dollar' },
-  { id: '17', type: 'content', title: 'Content Draft Saved', description: 'New blog draft for Peak Performance Gym', time: '2 days ago', icon: 'document' },
-  { id: '18', type: 'client', title: 'Contract Renewed', description: 'TC Clinical Services renewed for 12 months', time: '2 days ago', icon: 'user' },
-  { id: '19', type: 'recommendation', title: 'Recommendation Created', description: 'New upsell opportunity identified for Raptor Services', time: '2 days ago', icon: 'star' },
-  { id: '20', type: 'revenue', title: 'Refund Processed', description: 'Partial refund issued to former client', time: '3 days ago', icon: 'dollar' },
-]
+interface DashboardStats {
+  mrr: number
+  mrrChange: number
+  activeClients: number
+  pendingContent: number
+  pendingRecommendations: number
+  avgGrowthPercent: number
+}
 
-const recentTransactions: Transaction[] = [
-  { id: '1', client: 'TC Clinical Services', initials: 'TC', color: '#885430', amount: 1299, type: 'payment', date: 'Today' },
-  { id: '2', client: 'Raptor Services', initials: 'RS', color: '#7C3AED', amount: 400, type: 'upgrade', date: 'Today' },
-  { id: '3', client: 'Green Thumb Landscaping', initials: 'GT', color: '#16A34A', amount: 599, type: 'payment', date: 'Yesterday' },
-  { id: '4', client: 'Raptor Vending', initials: 'RV', color: '#2563EB', amount: 899, type: 'payment', date: 'Yesterday' },
-  { id: '5', client: 'Gohfr', initials: 'GO', color: '#0B7277', amount: 599, type: 'payment', date: 'Jan 3' },
-  { id: '6', client: 'Peak Performance Gym', initials: 'PP', color: '#EA580C', amount: 799, type: 'payment', date: 'Jan 2' },
-  { id: '7', client: 'Sunrise Dental', initials: 'SD', color: '#0891B2', amount: 699, type: 'payment', date: 'Jan 2' },
-  { id: '8', client: 'Horizon Real Estate', initials: 'HR', color: '#9333EA', amount: -100, type: 'downgrade', date: 'Jan 1' },
-]
+interface MRRDataPoint {
+  month: string
+  label: string
+  mrr: number
+}
 
-export default function SuperAdminDashboard() {
-  const stats = {
-    mrr: 7892,
-    mrrChange: 914,
-    activeClients: 10,
-    pendingContent: 3,
-    pendingRecommendations: 5,
+// MRR Chart Component - renders cumulative line graph
+function MRRChart({ data }: { data: MRRDataPoint[] }) {
+  if (data.length === 0) return null
+
+  // Chart dimensions
+  const width = 400
+  const height = 220
+  const padding = { top: 20, right: 20, bottom: 40, left: 50 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+
+  // Calculate min/max for scaling
+  const mrrValues = data.map(d => d.mrr)
+  const maxMRR = Math.max(...mrrValues, 100) // At least 100 to avoid empty chart
+  const minMRR = Math.min(...mrrValues, 0)
+
+  // Add 10% padding to the top
+  const yMax = maxMRR * 1.1
+  const yMin = Math.max(0, minMRR * 0.9)
+  const yRange = yMax - yMin || 1
+
+  // Calculate points for the line
+  const points = data.map((d, i) => {
+    const x = padding.left + (i / (data.length - 1 || 1)) * chartWidth
+    const y = padding.top + chartHeight - ((d.mrr - yMin) / yRange) * chartHeight
+    return { x, y, mrr: d.mrr, label: d.label }
+  })
+
+  // Create line path
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+
+  // Create area path (fill under the line)
+  const areaPath = linePath + ` L${points[points.length - 1].x},${padding.top + chartHeight} L${points[0].x},${padding.top + chartHeight} Z`
+
+  // Y-axis labels (4 values)
+  const yAxisLabels = [0, 1, 2, 3].map(i => {
+    const value = yMin + (yRange * (3 - i)) / 3
+    const y = padding.top + (i / 3) * chartHeight
+    return { value: Math.round(value), y }
+  })
+
+  // Format currency for axis
+  const formatCurrency = (value: number) => {
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`
+    }
+    return `$${value}`
   }
 
-  const getActivityIcon = (icon: Activity['icon']) => {
-    switch (icon) {
-      case 'document':
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="sa-dash-chart-svg">
+      {/* Grid lines */}
+      {yAxisLabels.map((label, i) => (
+        <line
+          key={i}
+          x1={padding.left}
+          y1={label.y}
+          x2={width - padding.right}
+          y2={label.y}
+          stroke="#E5E7EB"
+          strokeWidth="1"
+          strokeDasharray={i === yAxisLabels.length - 1 ? undefined : "4"}
+        />
+      ))}
+
+      {/* Gradient definition */}
+      <defs>
+        <linearGradient id="mrrGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#059669" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+
+      {/* Area fill */}
+      <path d={areaPath} fill="url(#mrrGradient)" />
+
+      {/* Line */}
+      <path
+        d={linePath}
+        fill="none"
+        stroke="#059669"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Data points */}
+      {points.map((p, i) => (
+        <circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={i === points.length - 1 ? 5 : 3}
+          fill="#059669"
+        />
+      ))}
+
+      {/* Y-axis labels */}
+      {yAxisLabels.map((label, i) => (
+        <text
+          key={i}
+          x={padding.left - 8}
+          y={label.y + 4}
+          fill="#9CA3AF"
+          fontSize="10"
+          textAnchor="end"
+        >
+          {formatCurrency(label.value)}
+        </text>
+      ))}
+
+      {/* X-axis labels */}
+      {points.map((p, i) => (
+        <text
+          key={i}
+          x={p.x}
+          y={height - 10}
+          fill="#9CA3AF"
+          fontSize="11"
+          textAnchor="middle"
+        >
+          {p.label}
+        </text>
+      ))}
+    </svg>
+  )
+}
+
+export default function SuperAdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    mrr: 0,
+    mrrChange: 0,
+    activeClients: 0,
+    pendingContent: 0,
+    pendingRecommendations: 0,
+    avgGrowthPercent: 0,
+  })
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([])
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
+  const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        // Fetch dashboard data and MRR data in parallel
+        const [dashboardRes, mrrRes] = await Promise.all([
+          fetch('/api/admin/dashboard'),
+          fetch('/api/admin/dashboard/mrr')
+        ])
+
+        if (dashboardRes.ok) {
+          const data = await dashboardRes.json()
+          setStats(data.stats)
+          setRecentActivity(data.recentActivity)
+          setRecentTransactions(data.recentTransactions)
+        }
+
+        if (mrrRes.ok) {
+          const mrrData = await mrrRes.json()
+          setMrrChartData(mrrData.chartData || [])
+          // Update stats with Stripe MRR data
+          setStats(prev => ({
+            ...prev,
+            mrr: mrrData.currentMRR || prev.mrr,
+            mrrChange: mrrData.mrrChange || prev.mrrChange,
+            avgGrowthPercent: mrrData.avgGrowthPercent || 0
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  // Match notifications page icon rendering
+  function getTypeIcon(type: string) {
+    switch (type) {
+      case 'email':
         return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
         )
-      case 'user':
+      case 'proposal_view':
         return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
           </svg>
         )
-      case 'dollar':
+      case 'proposal_sent':
         return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-            <line x1="12" y1="1" x2="12" y2="23"></line>
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
         )
-      case 'star':
+      case 'login':
         return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+        )
+      case 'registration':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+        )
+      case 'purchase':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+        )
+      case 'onboarding':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        )
+      default:
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
         )
     }
   }
 
-  const getActivityColor = (type: Activity['type']) => {
+  function getIconClass(type: string) {
     switch (type) {
-      case 'content': return { bg: '#DBEAFE', color: '#2563EB' }
-      case 'client': return { bg: '#D1FAE5', color: '#059669' }
-      case 'revenue': return { bg: '#FEF3C7', color: '#D97706' }
-      case 'recommendation': return { bg: '#EDE9FE', color: '#7C3AED' }
+      case 'email': return 'email'
+      case 'proposal_view': return 'view'
+      case 'proposal_sent': return 'action'
+      case 'login': return 'login'
+      case 'registration': return 'registration'
+      case 'purchase': return 'purchase'
+      case 'onboarding': return 'onboarding'
+      default: return 'action'
     }
   }
 
@@ -139,7 +328,7 @@ export default function SuperAdminDashboard() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{stats.activeClients}</span>
+              <span className="stat-value">{loading ? '...' : stats.activeClients}</span>
               <span className="stat-label">Active Clients</span>
             </div>
           </Link>
@@ -151,7 +340,7 @@ export default function SuperAdminDashboard() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{stats.pendingContent}</span>
+              <span className="stat-value">{loading ? '...' : stats.pendingContent}</span>
               <span className="stat-label">Pending Content</span>
             </div>
           </Link>
@@ -164,7 +353,7 @@ export default function SuperAdminDashboard() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{stats.pendingRecommendations}</span>
+              <span className="stat-value">{loading ? '...' : stats.pendingRecommendations}</span>
               <span className="stat-label">Open Recommendations</span>
             </div>
           </Link>
@@ -176,7 +365,7 @@ export default function SuperAdminDashboard() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">+12%</span>
+              <span className="stat-value">{loading ? '...' : `${stats.avgGrowthPercent >= 0 ? '+' : ''}${stats.avgGrowthPercent}%`}</span>
               <span className="stat-label">Avg. Growth</span>
             </div>
           </div>
@@ -191,21 +380,29 @@ export default function SuperAdminDashboard() {
               <Link href="/admin/notifications" className="btn btn-sm btn-secondary">View All</Link>
             </div>
             <div className="sa-dash-activity-stream">
-              {recentActivity.map((activity) => {
-                const colorStyle = getActivityColor(activity.type)
-                return (
-                  <div key={activity.id} className="sa-dash-activity-item">
-                    <div className="sa-dash-activity-icon" style={{ background: colorStyle.bg, color: colorStyle.color }}>
-                      {getActivityIcon(activity.icon)}
+              {loading ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                  <div className="spinner" style={{ width: 24, height: 24, margin: '0 auto 12px' }}></div>
+                  Loading activity...
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                  No recent activity
+                </div>
+              ) : (
+                recentActivity.map((activity) => (
+                  <div key={activity.id} className={`activity-item ${activity.type === 'purchase' ? 'purchase-highlight' : ''} ${activity.type === 'onboarding' ? 'onboarding-highlight' : ''}`}>
+                    <div className={`activity-icon ${getIconClass(activity.type)}`}>
+                      {getTypeIcon(activity.type)}
                     </div>
-                    <div className="sa-dash-activity-content">
-                      <p className="sa-dash-activity-title">{activity.title}</p>
-                      <p className="sa-dash-activity-desc">{activity.description}</p>
+                    <div className="activity-content">
+                      <span className="activity-title">{activity.title}</span>
+                      <p className="activity-description">{activity.description}</p>
                     </div>
-                    <span className="sa-dash-activity-time">{activity.time}</span>
+                    <div className="activity-time">{activity.time}</div>
                   </div>
-                )
-              })}
+                ))
+              )}
             </div>
           </div>
 
@@ -215,58 +412,24 @@ export default function SuperAdminDashboard() {
               <div>
                 <h3>Monthly Recurring Revenue</h3>
                 <div className="sa-dash-mrr-value">
-                  <span className="sa-dash-mrr-amount">${stats.mrr.toLocaleString()}</span>
-                  <span className="sa-dash-mrr-change positive">+${stats.mrrChange.toLocaleString()}</span>
+                  <span className="sa-dash-mrr-amount">${loading ? '...' : stats.mrr.toLocaleString()}</span>
+                  {stats.mrrChange !== 0 && (
+                    <span className={`sa-dash-mrr-change ${stats.mrrChange >= 0 ? 'positive' : 'negative'}`}>
+                      {stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
               <Link href="/admin/revenue" className="btn btn-sm btn-secondary">Details</Link>
             </div>
             <div className="sa-dash-chart">
-              <svg viewBox="0 0 400 220" className="sa-dash-chart-svg">
-                {/* Grid lines */}
-                <line x1="30" y1="180" x2="380" y2="180" stroke="#E5E7EB" strokeWidth="1" />
-                <line x1="30" y1="140" x2="380" y2="140" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4" />
-                <line x1="30" y1="100" x2="380" y2="100" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4" />
-                <line x1="30" y1="60" x2="380" y2="60" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4" />
-                <line x1="30" y1="20" x2="380" y2="20" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4" />
-
-                {/* Area fill */}
-                <path
-                  d="M30,160 L80,152 L130,140 L180,125 L230,110 L280,90 L330,65 L380,35 L380,180 L30,180 Z"
-                  fill="url(#mrrGradient)"
-                />
-
-                {/* Line */}
-                <polyline
-                  points="30,160 80,152 130,140 180,125 230,110 280,90 330,65 380,35"
-                  fill="none"
-                  stroke="#059669"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                {/* End dot */}
-                <circle cx="380" cy="35" r="5" fill="#059669" />
-
-                {/* Gradient definition */}
-                <defs>
-                  <linearGradient id="mrrGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#059669" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
-                  </linearGradient>
-                </defs>
-
-                {/* X-axis Labels */}
-                <text x="30" y="198" fill="#9CA3AF" fontSize="11">Jun</text>
-                <text x="80" y="198" fill="#9CA3AF" fontSize="11">Jul</text>
-                <text x="130" y="198" fill="#9CA3AF" fontSize="11">Aug</text>
-                <text x="180" y="198" fill="#9CA3AF" fontSize="11">Sep</text>
-                <text x="230" y="198" fill="#9CA3AF" fontSize="11">Oct</text>
-                <text x="280" y="198" fill="#9CA3AF" fontSize="11">Nov</text>
-                <text x="330" y="198" fill="#9CA3AF" fontSize="11">Dec</text>
-                <text x="370" y="198" fill="#9CA3AF" fontSize="11">Jan</text>
-              </svg>
+              {mrrChartData.length > 0 ? (
+                <MRRChart data={mrrChartData} />
+              ) : (
+                <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+                  {loading ? 'Loading chart data...' : 'No MRR data available'}
+                </div>
+              )}
             </div>
           </div>
 
@@ -277,22 +440,33 @@ export default function SuperAdminDashboard() {
               <Link href="/admin/revenue" className="btn btn-sm btn-secondary">View All</Link>
             </div>
             <div className="sa-dash-transactions-list">
-              {recentTransactions.map((tx) => (
-                <div key={tx.id} className="sa-dash-tx-item">
-                  <div className="sa-dash-tx-client">
-                    <div className="sa-dash-tx-avatar" style={{ background: tx.color }}>
-                      {tx.initials}
-                    </div>
-                    <div className="sa-dash-tx-info">
-                      <span className="sa-dash-tx-name">{tx.client}</span>
-                      <span className="sa-dash-tx-date">{tx.date}</span>
-                    </div>
-                  </div>
-                  <div className={`sa-dash-tx-amount ${tx.amount >= 0 ? 'positive' : 'negative'}`}>
-                    {tx.amount >= 0 ? '+' : ''}{tx.amount < 0 ? '-' : ''}${Math.abs(tx.amount).toLocaleString()}
-                  </div>
+              {loading ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                  <div className="spinner" style={{ width: 24, height: 24, margin: '0 auto 12px' }}></div>
+                  Loading transactions...
                 </div>
-              ))}
+              ) : recentTransactions.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
+                  No recent transactions
+                </div>
+              ) : (
+                recentTransactions.map((tx) => (
+                  <div key={tx.id} className="sa-dash-tx-item">
+                    <div className="sa-dash-tx-client">
+                      <div className="sa-dash-tx-avatar" style={{ background: tx.color }}>
+                        {tx.initials}
+                      </div>
+                      <div className="sa-dash-tx-info">
+                        <span className="sa-dash-tx-name">{tx.client}</span>
+                        <span className="sa-dash-tx-date">{tx.date}</span>
+                      </div>
+                    </div>
+                    <div className={`sa-dash-tx-amount ${tx.amount >= 0 ? 'positive' : 'negative'}`}>
+                      {tx.amount >= 0 ? '+' : ''}{tx.amount < 0 ? '-' : ''}${Math.abs(tx.amount).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

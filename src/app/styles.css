@@ -913,6 +913,11 @@
             color: var(--accent-orange);
         }
 
+        .activity-icon.content {
+            background: var(--info-bg);
+            color: var(--info);
+        }
+
         .activity-details {
             flex: 1;
         }
@@ -957,7 +962,9 @@
             padding: 20px;
             transition: box-shadow 0.15s ease;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: center;
+            gap: 16px;
         }
 
         .stat-card:hover {
@@ -15428,8 +15435,10 @@ input[type="date"].form-control {
     gap: 16px;
 }
 
-.stats-grid-5 {
+.stats-grid.stats-grid-5 {
+    display: grid;
     grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
 }
 
 .stat-card.clickable {
@@ -15486,8 +15495,8 @@ input[type="date"].form-control {
 }
 
 @media (max-width: 1400px) {
-    .stats-grid-5 {
-        grid-template-columns: repeat(3, 1fr);
+    .stats-grid.stats-grid-5 {
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 
@@ -15496,7 +15505,13 @@ input[type="date"].form-control {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .stats-grid-5 {
+    .stats-grid.stats-grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .stats-grid.stats-grid-5 {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -16925,10 +16940,23 @@ input[type="date"].form-control {
 .sa-dash-activity-stream {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
     overflow-y: auto;
     max-height: 400px;
     padding-right: 8px;
+}
+
+.sa-dash-activity-stream .activity-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.sa-dash-activity-stream .activity-item:last-child {
+    border-bottom: none;
+}
+
+.sa-dash-activity-stream .activity-item:hover {
+    background: #F9FAFB;
 }
 
 .sa-dash-activity-stream::-webkit-scrollbar {
@@ -16999,6 +17027,25 @@ input[type="date"].form-control {
     gap: 12px;
     overflow-y: auto;
     max-height: 400px;
+    padding-right: 8px;
+}
+
+.sa-dash-transactions-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sa-dash-transactions-list::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 3px;
+}
+
+.sa-dash-transactions-list::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 3px;
+}
+
+.sa-dash-transactions-list::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
 }
 
 .sa-dash-tx-item {
