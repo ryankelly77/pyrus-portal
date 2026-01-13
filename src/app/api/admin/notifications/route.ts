@@ -284,6 +284,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch onboarding completion events from activity_log
+    if (!type || type === 'all' || type === 'onboarding') {
+      const onboardingResult = await dbPool.query(
+        `SELECT
+          al.id,
+          al.description,
+          al.metadata,
+          al.created_at,
+          c.id as client_id,
+          c.name as client_name,
+          c.contact_name
+        FROM activity_log al
+        JOIN clients c ON c.id = al.client_id
+        WHERE al.activity_type = 'onboarding_completed'
+        ORDER BY al.created_at DESC
+        LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      )
+
+      for (const onboarding of onboardingResult.rows) {
+        notifications.push({
+          id: onboarding.id,
+          type: 'onboarding',
+          title: 'Onboarding Completed',
+          description: `${onboarding.contact_name || onboarding.client_name} completed their onboarding questionnaire`,
+          clientName: onboarding.client_name,
+          clientId: onboarding.client_id,
+          metadata: onboarding.metadata,
+          status: 'completed',
+          timestamp: onboarding.created_at,
+        })
+      }
+    }
+
     // Sort all notifications by timestamp (newest first)
     notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
@@ -298,7 +332,8 @@ export async function GET(request: NextRequest) {
         (SELECT COUNT(*) FROM recommendation_invites WHERE sent_at IS NOT NULL) as proposals_sent,
         (SELECT COUNT(*) FROM activity_log WHERE activity_type IN ('login', 'client_login', 'prospect_login')) as total_logins,
         (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'page_view') as total_page_views,
-        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'purchase') as total_purchases
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'purchase') as total_purchases,
+        (SELECT COUNT(*) FROM activity_log WHERE activity_type = 'onboarding_completed') as total_onboardings
     `)
 
     const counts = countsResult.rows[0]
@@ -315,6 +350,7 @@ export async function GET(request: NextRequest) {
         totalLogins: parseInt(counts.total_logins) || 0,
         totalPageViews: parseInt(counts.total_page_views) || 0,
         totalPurchases: parseInt(counts.total_purchases) || 0,
+        totalOnboardings: parseInt(counts.total_onboardings) || 0,
       },
     })
   } catch (error) {

@@ -181,6 +181,13 @@ export default function AdminNotificationsPage() {
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
           </svg>
         )
+      case 'onboarding':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        )
       default:
         return (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -306,6 +313,21 @@ export default function AdminNotificationsPage() {
         </span>
       )
     }
+    if (type === 'onboarding') {
+      return (
+        <span style={{
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          background: '#8B5CF6',
+          color: '#FFFFFF',
+        }}>
+          milestone
+        </span>
+      )
+    }
     return null
   }
 
@@ -339,6 +361,7 @@ export default function AdminNotificationsPage() {
       case 'page_view': return 'page-view'
       case 'registration': return 'registration'
       case 'purchase': return 'purchase'
+      case 'onboarding': return 'onboarding'
       default: return 'action'
     }
   }
@@ -460,6 +483,16 @@ export default function AdminNotificationsPage() {
               </svg>
               Purchases
             </button>
+            <button
+              className={`filter-tab ${filter === 'onboarding' ? 'active' : ''}`}
+              onClick={() => setFilter('onboarding')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              Onboarding
+            </button>
           </div>
           <div className="filter-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -523,7 +556,7 @@ export default function AdminNotificationsPage() {
               <div key={date} className="activity-date-group">
                 <div className="activity-date-header">{date}</div>
                 {items.map((notification) => (
-                  <div key={notification.id} className={`activity-item ${isUnread(notification) ? 'unread' : ''} ${notification.type === 'purchase' ? 'purchase-highlight' : ''}`}>
+                  <div key={notification.id} className={`activity-item ${isUnread(notification) ? 'unread' : ''} ${notification.type === 'purchase' ? 'purchase-highlight' : ''} ${notification.type === 'onboarding' ? 'onboarding-highlight' : ''}`}>
                     {isUnread(notification) && <span className="unread-dot"></span>}
                     <div className={`activity-icon ${getIconClass(notification.type)}`}>
                       {getTypeIcon(notification.type)}

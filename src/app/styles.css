@@ -27664,3 +27664,20 @@ input[type="date"].form-control {
 .activity-item.purchase-highlight:hover {
     background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
 }
+
+.activity-icon.onboarding {
+    background: #8B5CF6;
+    color: #FFFFFF;
+}
+
+/* Onboarding notifications stand out with purple background */
+.activity-item.onboarding-highlight {
+    background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+    border: 1px solid #C4B5FD;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.activity-item.onboarding-highlight:hover {
+    background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+}
