@@ -103,25 +103,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create subscription using default price
-    // The subscription will use the customer's default payment method
+    // Create product and price separately (Stripe API doesn't support inline product_data)
+    const productName = selectedTier ? `${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} Plan` : 'Monthly Plan'
+    const product = await stripe.products.create({
+      name: productName,
+      metadata: {
+        pyrus_client_id: clientId,
+        tier: selectedTier || '',
+      },
+    })
+
+    const price = await stripe.prices.create({
+      product: product.id,
+      currency: 'usd',
+      unit_amount: Math.round(monthlyTotal * 100),
+      recurring: {
+        interval: billingCycle === 'annual' ? 'year' : 'month',
+      },
+    })
+
     const subscriptionParams: any = {
       customer: stripeCustomerId,
       items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: selectedTier ? `${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)} Plan` : 'Monthly Plan',
-            metadata: {
-              pyrus_client_id: clientId,
-              tier: selectedTier || '',
-            },
-          },
-          unit_amount: Math.round(monthlyTotal * 100),
-          recurring: {
-            interval: billingCycle === 'annual' ? 'year' : 'month',
-          },
-        },
+        price: price.id,
       }],
       default_payment_method: paymentMethodId,
       metadata: {
@@ -163,6 +167,15 @@ export async function POST(request: NextRequest) {
       recommendationItems = items
     }
 
+    // Safely parse dates from Stripe response
+    const now = new Date()
+    const periodStart = (subscription as any).current_period_start
+      ? new Date((subscription as any).current_period_start * 1000)
+      : now
+    const periodEnd = (subscription as any).current_period_end
+      ? new Date((subscription as any).current_period_end * 1000)
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
     // Save subscription to database
     const dbSubscription = await prisma.subscriptions.create({
       data: {
@@ -171,8 +184,8 @@ export async function POST(request: NextRequest) {
         stripe_subscription_id: subscription.id,
         stripe_customer_id: stripeCustomerId,
         status: subscription.status,
-        current_period_start: new Date((subscription as any).current_period_start * 1000),
-        current_period_end: new Date((subscription as any).current_period_end * 1000),
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
       },
     })
 
