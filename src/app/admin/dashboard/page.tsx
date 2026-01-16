@@ -39,6 +39,8 @@ interface MRRDataPoint {
 
 // MRR Chart Component - renders cumulative line graph
 function MRRChart({ data }: { data: MRRDataPoint[] }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string; mrr: number } | null>(null)
+
   if (data.length === 0) return null
 
   // Chart dimensions
@@ -87,8 +89,32 @@ function MRRChart({ data }: { data: MRRDataPoint[] }) {
   }
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="sa-dash-chart-svg">
-      {/* Grid lines */}
+    <div style={{ position: 'relative' }}>
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${(tooltip.x / width) * 100}%`,
+            top: `${(tooltip.y / height) * 100}%`,
+            transform: 'translate(-50%, -130%)',
+            background: '#1F2937',
+            color: 'white',
+            padding: '6px 10px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 500,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 10,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
+          {tooltip.label}: ${tooltip.mrr.toLocaleString()}
+        </div>
+      )}
+      <svg viewBox={`0 0 ${width} ${height}`} className="sa-dash-chart-svg">
+        {/* Grid lines */}
       {yAxisLabels.map((label, i) => (
         <line
           key={i}
@@ -123,15 +149,29 @@ function MRRChart({ data }: { data: MRRDataPoint[] }) {
         strokeLinejoin="round"
       />
 
-      {/* Data points */}
+      {/* Data points with hover */}
       {points.map((p, i) => (
-        <circle
+        <g
           key={i}
-          cx={p.x}
-          cy={p.y}
-          r={i === points.length - 1 ? 5 : 3}
-          fill="#059669"
-        />
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={() => setTooltip({ x: p.x, y: p.y, label: p.label, mrr: p.mrr })}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          {/* Larger invisible hit area for easier hovering */}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={12}
+            fill="transparent"
+          />
+          {/* Visible dot */}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={i === points.length - 1 ? 5 : 3}
+            fill="#059669"
+          />
+        </g>
       ))}
 
       {/* Y-axis labels */}
@@ -161,7 +201,8 @@ function MRRChart({ data }: { data: MRRDataPoint[] }) {
           {p.label}
         </text>
       ))}
-    </svg>
+      </svg>
+    </div>
   )
 }
 

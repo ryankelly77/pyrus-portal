@@ -445,6 +445,21 @@ export default function ClientDetailPage() {
 
   // Subscription state
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+
+  // Basecamp activities state
+  interface BasecampActivity {
+    id: string
+    taskId: string
+    kind: string
+    title: string | null
+    status: string
+    todolist: string | null
+    content: string | null
+    position: number | null
+    createdAt: string | null
+  }
+  const [basecampActivities, setBasecampActivities] = useState<BasecampActivity[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
 
   // Content state
@@ -874,6 +889,27 @@ export default function ClientDetailPage() {
     refreshCommunications()
   }, [clientId])
 
+  // Fetch Basecamp activities
+  const fetchBasecampActivities = async () => {
+    if (!clientId) return
+    setActivitiesLoading(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/activities`)
+      if (res.ok) {
+        const data = await res.json()
+        setBasecampActivities(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error)
+    } finally {
+      setActivitiesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBasecampActivities()
+  }, [clientId])
+
   // Close date dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1154,7 +1190,7 @@ export default function ClientDetailPage() {
 
   // Determine which tabs should be active based on integrations and purchased products
   const hasResultsAccess = !!dbClient?.agency_dashboard_share_key
-  const hasActivityAccess = !!dbClient?.basecamp_id
+  const hasActivityAccess = !!dbClient?.basecamp_project_id
   const hasWebsiteAccess = !!dbClient?.landingsite_preview_url
 
   // Check purchased products from ACTIVE subscriptions only
@@ -2374,51 +2410,64 @@ export default function ClientDetailPage() {
             {hasActivityAccess ? (
               <>
                 <div className="activity-filters">
-                  <button className={`filter-chip ${activityFilter === 'all' ? 'active' : ''}`} onClick={() => setActivityFilter('all')}>All Activity</button>
-                  <button className={`filter-chip ${activityFilter === 'task' ? 'active' : ''}`} onClick={() => setActivityFilter('task')}>Tasks</button>
-                  <button className={`filter-chip ${activityFilter === 'update' ? 'active' : ''}`} onClick={() => setActivityFilter('update')}>Updates</button>
-                  <button className={`filter-chip ${activityFilter === 'alert' ? 'active' : ''}`} onClick={() => setActivityFilter('alert')}>Result Alerts</button>
-                  <button className={`filter-chip ${activityFilter === 'content' ? 'active' : ''}`} onClick={() => setActivityFilter('content')}>Content</button>
+                  <button className={`filter-chip ${activityFilter === 'all' ? 'active' : ''}`} onClick={() => setActivityFilter('all')}>All Tasks</button>
+                  <button className={`filter-chip ${activityFilter === 'task' ? 'active' : ''}`} onClick={() => setActivityFilter('task')}>Active</button>
+                  <button className={`filter-chip ${activityFilter === 'update' ? 'active' : ''}`} onClick={() => setActivityFilter('update')}>Completed</button>
                 </div>
 
-                <div className="activity-card">
-                  <ul className="activity-list">
-                    {filteredActivities.map(activity => (
-                      <li key={activity.id} className="activity-item" data-type={activity.type}>
-                        <div className={`activity-icon ${activity.type}`}>
-                          {activity.type === 'content' && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                              <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                          )}
-                          {activity.type === 'alert' && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                            </svg>
-                          )}
-                          {activity.type === 'task' && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="9 11 12 14 22 4"></polyline>
-                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                            </svg>
-                          )}
-                          {activity.type === 'update' && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="23 4 23 10 17 10"></polyline>
-                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                            </svg>
-                          )}
-                        </div>
-                        <div className="activity-details">
-                          <div className="activity-title">{activity.title}</div>
-                          <div className="activity-desc">{activity.description}</div>
-                        </div>
-                        <div className="activity-time">{activity.time}</div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {activitiesLoading ? (
+                  <div className="activity-card">
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Loading activities...
+                    </div>
+                  </div>
+                ) : basecampActivities.length > 0 ? (
+                  <div className="activity-card">
+                    <ul className="activity-list">
+                      {basecampActivities
+                        .filter(activity => {
+                          if (activityFilter === 'all') return true
+                          if (activityFilter === 'task') return activity.status === 'active'
+                          if (activityFilter === 'update') return activity.status === 'completed'
+                          return true
+                        })
+                        .map(activity => (
+                          <li key={activity.id} className="activity-item" data-type="task">
+                            <div className={`activity-icon ${activity.status === 'completed' ? 'task' : 'update'}`}>
+                              {activity.status === 'completed' ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                </svg>
+                              )}
+                            </div>
+                            <div className="activity-details">
+                              <div className="activity-title">{activity.title || 'Untitled task'}</div>
+                              <div className="activity-desc">
+                                {activity.todolist && <span style={{ color: 'var(--text-secondary)' }}>{activity.todolist}</span>}
+                              </div>
+                            </div>
+                            <div className="activity-time">
+                              {activity.createdAt ? new Date(activity.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="activity-card">
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48" style={{ margin: '0 auto 16px', opacity: 0.5 }}>
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                      </svg>
+                      <p style={{ margin: 0 }}>No Basecamp activities yet. Tasks will appear here when webhooks are received.</p>
+                    </div>
+                  </div>
+                )}
               </>
             ) : checklistItems.length > 0 ? (
               /* Service purchased but not yet activated */

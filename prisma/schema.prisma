@@ -41,6 +41,7 @@ model clients {
   checklist_items      client_checklist_items[]
   onboarding_responses client_onboarding_responses[]
   communications       client_communications[]
+  basecamp_activities  basecamp_activities[]
 }
 
 model profiles {
@@ -522,4 +523,33 @@ model onboarding_video_chapters {
   is_active   Boolean   @default(true)
   created_at  DateTime? @default(now()) @db.Timestamptz(6)
   updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+// ============ Basecamp Integration ============
+
+model basecamp_activities {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id             String?   @db.Uuid
+  kind                  String    // 'todo_created', 'todo_completed'
+  basecamp_request_id   String?   // webhook request id
+  task_id               String    // basecamp todo id
+  project_id            String?   // basecamp project/bucket id
+  project_title         String?
+  recording_status      String?   // 'active', 'completed', etc.
+  recording_title       String?   // todo title
+  recording_type        String?   // 'Todo'
+  recording_position    Int?      @default(0)
+  parent_id             String?   // todolist id
+  parent_title          String?   // todolist name
+  parent_type           String?   // 'Todolist'
+  recording_content     String?   // todo description/content
+  basecamp_created_at   DateTime? @db.Timestamptz(6)
+  created_at            DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients? @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([client_id])
+  @@index([project_id])
 }

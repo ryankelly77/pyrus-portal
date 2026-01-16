@@ -48,8 +48,8 @@ async function debug() {
 
     // Check for discount
     console.log(`  Discount data:`, JSON.stringify(sub.discounts, null, 2))
-    const discount = sub.discounts?.[0]
-    if (discount && typeof discount !== 'string' && discount.coupon) {
+    const discount = sub.discounts?.[0] as { coupon?: { id: string; percent_off: number | null } } | undefined
+    if (discount && discount.coupon) {
       const coupon = discount.coupon
       console.log(`  Discount: ${coupon.id} (${coupon.percent_off}% off)`)
       if (coupon.percent_off) {

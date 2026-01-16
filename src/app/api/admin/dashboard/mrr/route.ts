@@ -7,6 +7,13 @@ interface MRRDataPoint {
   mrr: number
 }
 
+interface VolumeDataPoint {
+  month: string
+  label: string
+  volume: number
+  cumulative: number
+}
+
 export async function GET() {
   try {
     // Get all subscriptions (active and canceled) for historical data
@@ -82,8 +89,11 @@ export async function GET() {
     // Generate all months from start to now
     for (let i = 0; i < monthsDiff; i++) {
       const date = new Date(startMonth.getFullYear(), startMonth.getMonth() + i, 1)
+      // Use local year-month format to avoid timezone issues
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
       months.push({
-        month: date.toISOString().slice(0, 7),
+        month: `${year}-${month}`,
         label: date.toLocaleDateString('en-US', { month: 'short' }),
         mrr: 0
       })
@@ -96,8 +106,10 @@ export async function GET() {
       const monthlyAmount = subMonthlyAmounts.get(sub.id) || 0
 
       for (const monthData of months) {
-        const monthStart = new Date(monthData.month + '-01')
-        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999)
+        // Parse year-month and create local date (avoid UTC parsing issues)
+        const [year, month] = monthData.month.split('-').map(Number)
+        const monthStart = new Date(year, month - 1, 1)
+        const monthEnd = new Date(year, month, 0, 23, 59, 59, 999)
 
         // Subscription was active during this month if it started before month end
         // and ended after month start
@@ -143,12 +155,77 @@ export async function GET() {
       }
     }
 
+    // Get all paid invoices for net volume
+    const allInvoices = await stripe.invoices.list({
+      status: 'paid',
+      limit: 100,
+    })
+
+    // Build volume data by month
+    const volumeByMonth: Map<string, number> = new Map()
+    let totalNetVolume = 0
+
+    for (const invoice of allInvoices.data) {
+      const invoiceDate = new Date(invoice.created * 1000)
+      const year = invoiceDate.getFullYear()
+      const month = String(invoiceDate.getMonth() + 1).padStart(2, '0')
+      const monthKey = `${year}-${month}`
+
+      const amount = invoice.amount_paid / 100
+      volumeByMonth.set(monthKey, (volumeByMonth.get(monthKey) || 0) + amount)
+      totalNetVolume += amount
+    }
+
+    // Build volume chart data (cumulative)
+    const volumeData: VolumeDataPoint[] = []
+    let cumulativeVolume = 0
+    for (const monthData of months) {
+      const monthVolume = volumeByMonth.get(monthData.month) || 0
+      cumulativeVolume += monthVolume
+      volumeData.push({
+        month: monthData.month,
+        label: monthData.label,
+        volume: Math.round(monthVolume),
+        cumulative: Math.round(cumulativeVolume)
+      })
+    }
+
+    // Calculate churn using actual invoice amounts (real MRR lost)
+    // This accounts for discounts/coupons that reduced actual billing
+    const canceledSubs = allSubscriptions.data.filter(s =>
+      s.status === 'canceled' &&
+      subMonthlyAmounts.get(s.id)! > 0 // Only count paid subscriptions
+    )
+    const totalPaidSubs = allSubscriptions.data.filter(s =>
+      subMonthlyAmounts.get(s.id)! > 0
+    )
+
+    // Churn rate = canceled / total (as percentage)
+    const churnRate = totalPaidSubs.length > 0
+      ? (canceledSubs.length / totalPaidSubs.length) * 100
+      : 0
+
+    // Lost MRR from churned customers (using actual invoice amounts)
+    let churnedMRR = 0
+    for (const sub of canceledSubs) {
+      churnedMRR += subMonthlyAmounts.get(sub.id) || 0
+    }
+
+    const churnedCount = canceledSubs.length
+
     return NextResponse.json({
       chartData: months,
       currentMRR: Math.round(currentMRR),
       mrrChange: Math.round(mrrChange),
-      avgGrowthPercent: Math.round(avgGrowthPercent * 10) / 10, // Round to 1 decimal
-      totalSubscriptions: allSubscriptions.data.filter(s => s.status === 'active').length
+      avgGrowthPercent: Math.round(avgGrowthPercent * 10) / 10,
+      totalSubscriptions: allSubscriptions.data.filter(s => s.status === 'active').length,
+      // Net volume data
+      volumeData,
+      totalNetVolume: Math.round(totalNetVolume * 100) / 100,
+      // Churn data
+      churnRate: Math.round(churnRate * 10) / 10,
+      churnedSubscriptions: churnedCount,
+      churnedMRR: Math.round(churnedMRR)
     })
   } catch (error) {
     console.error('MRR API error:', error)
