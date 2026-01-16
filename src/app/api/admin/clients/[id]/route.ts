@@ -51,10 +51,15 @@ export async function PATCH(
       avatarColor,
       // Integration fields
       agencyDashboardShareKey,
+      dashboardToken, // alias for agencyDashboardShareKey
       basecampId,
       basecampProjectId,
       landsitePreviewUrl,
+      stripeCustomerId,
     } = body
+
+    // Use dashboardToken if provided, otherwise use agencyDashboardShareKey
+    const dashboardKey = dashboardToken !== undefined ? dashboardToken : agencyDashboardShareKey
 
     const client = await prisma.clients.update({
       where: { id },
@@ -69,10 +74,11 @@ export async function PATCH(
         ...(referralSource !== undefined && { referral_source: referralSource || null }),
         ...(avatarColor !== undefined && { avatar_color: avatarColor || null }),
         // Integration fields
-        ...(agencyDashboardShareKey !== undefined && { agency_dashboard_share_key: agencyDashboardShareKey || null }),
+        ...(dashboardKey !== undefined && { agency_dashboard_share_key: dashboardKey || null }),
         ...(basecampId !== undefined && { basecamp_id: basecampId || null }),
         ...(basecampProjectId !== undefined && { basecamp_project_id: basecampProjectId || null }),
         ...(landsitePreviewUrl !== undefined && { landingsite_preview_url: landsitePreviewUrl || null }),
+        ...(stripeCustomerId !== undefined && { stripe_customer_id: stripeCustomerId || null }),
         updated_at: new Date(),
       },
     })

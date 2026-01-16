@@ -90,6 +90,9 @@ export default function ClientsPage() {
     name: '',
     contactName: '',
     contactEmail: '',
+    basecampProjectId: '',
+    dashboardToken: '',
+    stripeCustomerId: '',
   })
   const [isSavingClient, setIsSavingClient] = useState(false)
 
@@ -101,6 +104,9 @@ export default function ClientsPage() {
     contactName: string
     contactEmail: string
     growthStage: string
+    basecampProjectId: string
+    dashboardToken: string
+    stripeCustomerId: string
   } | null>(null)
   const [isUpdatingClient, setIsUpdatingClient] = useState(false)
 
@@ -218,7 +224,7 @@ export default function ClientsPage() {
 
       // Close modal and reset form
       setShowAddClientModal(false)
-      setNewClientForm({ name: '', contactName: '', contactEmail: '' })
+      setNewClientForm({ name: '', contactName: '', contactEmail: '', basecampProjectId: '', dashboardToken: '', stripeCustomerId: '' })
     } catch (error) {
       console.error('Failed to create client:', error)
       alert('Failed to create client')
@@ -239,6 +245,9 @@ export default function ClientsPage() {
           contactName: client.contact_name || '',
           contactEmail: client.contact_email || '',
           growthStage: client.growth_stage || 'prospect',
+          basecampProjectId: client.basecamp_project_id || '',
+          dashboardToken: client.agency_dashboard_share_key || '',
+          stripeCustomerId: client.stripe_customer_id || '',
         })
         setShowEditClientModal(true)
       }
@@ -262,6 +271,9 @@ export default function ClientsPage() {
           contactName: editingClient.contactName,
           contactEmail: editingClient.contactEmail,
           growthStage: editingClient.growthStage,
+          basecampProjectId: editingClient.basecampProjectId,
+          dashboardToken: editingClient.dashboardToken,
+          stripeCustomerId: editingClient.stripeCustomerId,
         }),
       })
 
@@ -660,26 +672,66 @@ export default function ClientsPage() {
                   autoFocus
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="contactName">Contact Name</label>
-                <input
-                  type="text"
-                  id="contactName"
-                  className="form-control"
-                  placeholder="e.g., John Smith"
-                  value={newClientForm.contactName}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, contactName: e.target.value })}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="contactName">Contact Name</label>
+                  <input
+                    type="text"
+                    id="contactName"
+                    className="form-control"
+                    placeholder="e.g., John Smith"
+                    value={newClientForm.contactName}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, contactName: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="contactEmail">Contact Email</label>
+                  <input
+                    type="email"
+                    id="contactEmail"
+                    className="form-control"
+                    placeholder="e.g., john@acme.com"
+                    value={newClientForm.contactEmail}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, contactEmail: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-divider">
+                <span>Integrations</span>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="basecampProjectId">Basecamp Project ID</label>
+                  <input
+                    type="text"
+                    id="basecampProjectId"
+                    className="form-control"
+                    placeholder="e.g., 12345678"
+                    value={newClientForm.basecampProjectId}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, basecampProjectId: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="dashboardToken">Dashboard Token</label>
+                  <input
+                    type="text"
+                    id="dashboardToken"
+                    className="form-control"
+                    placeholder="e.g., abc123xyz"
+                    value={newClientForm.dashboardToken}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, dashboardToken: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="form-group">
-                <label htmlFor="contactEmail">Contact Email</label>
+                <label htmlFor="stripeCustomerId">Stripe Customer ID</label>
                 <input
-                  type="email"
-                  id="contactEmail"
+                  type="text"
+                  id="stripeCustomerId"
                   className="form-control"
-                  placeholder="e.g., john@acme.com"
-                  value={newClientForm.contactEmail}
-                  onChange={(e) => setNewClientForm({ ...newClientForm, contactEmail: e.target.value })}
+                  placeholder="e.g., cus_xxxxxxxxxxxxx"
+                  value={newClientForm.stripeCustomerId}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, stripeCustomerId: e.target.value })}
                 />
               </div>
             </div>
@@ -726,27 +778,29 @@ export default function ClientsPage() {
                   onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="editContactName">Contact Name</label>
-                <input
-                  type="text"
-                  id="editContactName"
-                  className="form-control"
-                  placeholder="e.g., John Smith"
-                  value={editingClient.contactName}
-                  onChange={(e) => setEditingClient({ ...editingClient, contactName: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="editContactEmail">Contact Email</label>
-                <input
-                  type="email"
-                  id="editContactEmail"
-                  className="form-control"
-                  placeholder="e.g., john@company.com"
-                  value={editingClient.contactEmail}
-                  onChange={(e) => setEditingClient({ ...editingClient, contactEmail: e.target.value })}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="editContactName">Contact Name</label>
+                  <input
+                    type="text"
+                    id="editContactName"
+                    className="form-control"
+                    placeholder="e.g., John Smith"
+                    value={editingClient.contactName}
+                    onChange={(e) => setEditingClient({ ...editingClient, contactName: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="editContactEmail">Contact Email</label>
+                  <input
+                    type="email"
+                    id="editContactEmail"
+                    className="form-control"
+                    placeholder="e.g., john@company.com"
+                    value={editingClient.contactEmail}
+                    onChange={(e) => setEditingClient({ ...editingClient, contactEmail: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="form-group">
                 <label htmlFor="editGrowthStage">Client Stage</label>
@@ -762,6 +816,44 @@ export default function ClientsPage() {
                   <option value="blooming">Blooming</option>
                   <option value="harvesting">Harvesting</option>
                 </select>
+              </div>
+              <div className="form-divider">
+                <span>Integrations</span>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="editBasecampProjectId">Basecamp Project ID</label>
+                  <input
+                    type="text"
+                    id="editBasecampProjectId"
+                    className="form-control"
+                    placeholder="e.g., 12345678"
+                    value={editingClient.basecampProjectId}
+                    onChange={(e) => setEditingClient({ ...editingClient, basecampProjectId: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="editDashboardToken">Dashboard Token</label>
+                  <input
+                    type="text"
+                    id="editDashboardToken"
+                    className="form-control"
+                    placeholder="e.g., abc123xyz"
+                    value={editingClient.dashboardToken}
+                    onChange={(e) => setEditingClient({ ...editingClient, dashboardToken: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="editStripeCustomerId">Stripe Customer ID</label>
+                <input
+                  type="text"
+                  id="editStripeCustomerId"
+                  className="form-control"
+                  placeholder="e.g., cus_xxxxxxxxxxxxx"
+                  value={editingClient.stripeCustomerId}
+                  onChange={(e) => setEditingClient({ ...editingClient, stripeCustomerId: e.target.value })}
+                />
               </div>
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
                 {editingClient.growthStage === 'prospect' ? (

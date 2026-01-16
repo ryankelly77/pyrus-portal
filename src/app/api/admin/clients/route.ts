@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
       growthStage,
       status,
       notes,
+      basecampProjectId,
+      dashboardToken,
+      stripeCustomerId,
     } = body
 
     const client = await prisma.clients.create({
@@ -40,6 +43,9 @@ export async function POST(request: NextRequest) {
         growth_stage: growthStage || null,
         status: status || 'active',
         notes: notes || null,
+        basecamp_project_id: basecampProjectId || null,
+        agency_dashboard_share_key: dashboardToken || null,
+        stripe_customer_id: stripeCustomerId || null,
       },
     })
 

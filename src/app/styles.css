@@ -18603,6 +18603,31 @@ input[type="date"].form-control {
     gap: 16px;
 }
 
+/* Form Divider */
+.form-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0 16px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-divider::before,
+.form-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+.form-divider::before {
+    margin-right: 12px;
+}
+.form-divider::after {
+    margin-left: 12px;
+}
+
 /* Input with Addon */
 .input-with-addon {
     display: flex;
