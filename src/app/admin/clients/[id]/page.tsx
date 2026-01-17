@@ -1546,7 +1546,9 @@ export default function ClientDetailPage() {
   }
 
   // Derived client data from database or fallback
-  const isActiveClient = dbClient && dbClient.growth_stage && dbClient.growth_stage !== 'prospect'
+  // isActiveClient is true if client has active status OR has active subscriptions
+  const hasSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
+  const isActiveClient = (dbClient && (dbClient.status === 'active' || dbClient.status === 'onboarding')) || hasSubscriptions
 
   // Determine which tabs should be active based on integrations and purchased products
   const hasResultsAccess = !!dbClient?.agency_dashboard_share_key
@@ -4656,7 +4658,19 @@ export default function ClientDetailPage() {
             {/* Current Services Subtab */}
             {recommendationsSubtab === 'current-services' && (
               <div className="current-services-content">
-                {(stripeSubscriptionsLoading || subscriptionsLoading || manualProductsLoading) ? (
+                {/* Show locked state for prospects/pending clients - matches what client sees */}
+                {dbClient?.status === 'prospect' || dbClient?.status === 'pending' ? (
+                  <div className="locked-placeholder" style={{ textAlign: 'center', padding: '3rem', background: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+                    <div className="locked-icon" style={{ marginBottom: '1rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ color: '#9CA3AF' }}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </div>
+                    <h3 style={{ marginBottom: '0.5rem', color: '#374151' }}>Your Current Services</h3>
+                    <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>After this client chooses a plan and completes checkout, their active services will appear here with progress tracking and growth metrics.</p>
+                  </div>
+                ) : (stripeSubscriptionsLoading || subscriptionsLoading || manualProductsLoading) ? (
                   <div className="loading-state">Loading services...</div>
                 ) : (() => {
                   // Get active Stripe subscriptions
@@ -4751,12 +4765,67 @@ export default function ClientDetailPage() {
                     )
                   }
 
+                  // Calculate display items count and months active
+                  const displayItemsCount = stripeItems.length + dbItems.length + fallbackItems.length
+
+                  // Get the start date from subscription or purchase
+                  const firstStripeCreated = activeStripeSubscriptions.length > 0
+                    ? Math.min(...activeStripeSubscriptions.map(s => s.created * 1000))
+                    : null
+                  const startDate = firstStripeCreated
+                    ? new Date(firstStripeCreated)
+                    : (subscriptions[0]?.created_at ? new Date(subscriptions[0].created_at) : null)
+
+                  const displayDate = startDate
+                    ? startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Recently'
+
+                  // Calculate months active
+                  const monthsActive = startDate
+                    ? Math.max(1, Math.floor((Date.now() - startDate.getTime()) / (30 * 24 * 60 * 60 * 1000)))
+                    : 1
+
                   return (
-                    <div className="current-services-list">
-                      <div className="current-services-list-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <h3 style={{ margin: 0 }}>Your Current Services</h3>
-                        <span style={{ color: '#6B7280', fontSize: '0.875rem' }}>Monthly Investment</span>
+                    <>
+                      {/* Your Progress Since Signup */}
+                      <div className="progress-since-signup" style={{ background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #BBF7D0' }}>
+                        <div className="progress-since-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                          <div className="progress-since-icon" style={{ width: '48px', height: '48px', background: '#22C55E', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                              <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="progress-since-title" style={{ fontWeight: 600, color: '#166534', fontSize: '1.125rem' }}>Your Progress Since Signup</div>
+                            <div className="progress-since-subtitle" style={{ color: '#15803D', fontSize: '0.875rem' }}>Here&apos;s how far you&apos;ve come since {displayDate}</div>
+                          </div>
+                        </div>
+                        <div className="progress-since-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                          <div className="progress-stat" style={{ textAlign: 'center' }}>
+                            <div className="progress-stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>{monthsActive}</div>
+                            <div className="progress-stat-label" style={{ fontSize: '0.75rem', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Month{monthsActive !== 1 ? 's' : ''} Active</div>
+                          </div>
+                          <div className="progress-stat" style={{ textAlign: 'center' }}>
+                            <div className="progress-stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>{displayItemsCount}</div>
+                            <div className="progress-stat-label" style={{ fontSize: '0.75rem', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Services</div>
+                          </div>
+                          <div className="progress-stat" style={{ textAlign: 'center' }}>
+                            <div className="progress-stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>--</div>
+                            <div className="progress-stat-label" style={{ fontSize: '0.75rem', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Traffic Growth</div>
+                          </div>
+                          <div className="progress-stat" style={{ textAlign: 'center' }}>
+                            <div className="progress-stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: '#166534' }}>--</div>
+                            <div className="progress-stat-label" style={{ fontSize: '0.75rem', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Leads</div>
+                          </div>
+                        </div>
                       </div>
+
+                      <div className="current-services-list">
+                        <div className="current-services-list-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <h3 style={{ margin: 0 }}>Your Current Services</h3>
+                          <span style={{ color: '#6B7280', fontSize: '0.875rem' }}>Monthly Investment</span>
+                        </div>
 
                       {/* Stripe Subscriptions - Primary source */}
                       {hasStripeSubscriptions && (
@@ -5000,6 +5069,7 @@ export default function ClientDetailPage() {
                         )}
                       </div>
                     </div>
+                    </>
                   )
                 })()}
               </div>
