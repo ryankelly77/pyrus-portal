@@ -119,8 +119,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           )
 
           // Find added products
-          const addedIds = [...currentProductIds].filter(id => id && !previousProductIds.has(id))
-          const removedIds = [...previousProductIds].filter(id => id && !currentProductIds.has(id))
+          const addedIds = Array.from(currentProductIds).filter(id => id && !previousProductIds.has(id))
+          const removedIds = Array.from(previousProductIds).filter(id => id && !currentProductIds.has(id))
 
           if (addedIds.length > 0) {
             const addedNames = await Promise.all(addedIds.map(id => getProductName(id as string)))

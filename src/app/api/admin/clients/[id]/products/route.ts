@@ -63,19 +63,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     // Format manual products
-    const manualProductsList = manualProducts.map(cp => ({
-      id: cp.id,
-      productId: cp.product.id,
-      name: cp.product.name,
-      category: cp.product.category,
-      description: cp.product.short_description,
-      source: 'manual' as const,
-      assignedAt: cp.created_at,
-      notes: cp.notes,
-      // Use override price if set, otherwise fall back to product default
-      monthlyPrice: cp.monthly_price !== null ? Number(cp.monthly_price) : Number(cp.product.monthly_price || 0),
-      hasCustomPrice: cp.monthly_price !== null,
-    }))
+    const manualProductsList = manualProducts.map(cp => {
+      const product = (cp as any).product
+      return {
+        id: cp.id,
+        productId: product?.id || cp.product_id,
+        name: product?.name || 'Unknown',
+        category: product?.category || 'service',
+        description: product?.short_description || null,
+        source: 'manual' as const,
+        assignedAt: cp.created_at,
+        notes: cp.notes,
+        // Use override price if set, otherwise fall back to product default
+        monthlyPrice: cp.monthly_price !== null ? Number(cp.monthly_price) : Number(product?.monthly_price || 0),
+        hasCustomPrice: cp.monthly_price !== null,
+      }
+    })
 
     // Format subscription products
     const subscriptionProductsList = subscriptions.flatMap(sub =>

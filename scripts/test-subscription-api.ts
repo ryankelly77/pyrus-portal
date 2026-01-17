@@ -53,7 +53,7 @@ async function main() {
     // Check the upcoming invoice instead
     console.log('\nFetching upcoming invoice...')
     try {
-      const upcoming = await stripe.invoices.retrieveUpcoming({
+      const upcoming = await (stripe.invoices as any).retrieveUpcoming({
         customer: client.stripe_customer_id,
         subscription: sub.id,
       })

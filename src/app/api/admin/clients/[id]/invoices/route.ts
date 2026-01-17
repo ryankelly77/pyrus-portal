@@ -61,7 +61,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       amountRemaining: invoice.amount_remaining / 100,
       subtotal: invoice.subtotal / 100,
       total: invoice.total / 100,
-      tax: invoice.tax ? invoice.tax / 100 : null,
+      tax: (invoice as any).tax ? (invoice as any).tax / 100 : null,
       currency: invoice.currency.toUpperCase(),
       created: invoice.created ? new Date(invoice.created * 1000).toISOString() : null,
       dueDate: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
@@ -73,9 +73,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       hostedInvoiceUrl: invoice.hosted_invoice_url,
       invoicePdf: invoice.invoice_pdf,
       description: invoice.description,
-      subscriptionId: typeof invoice.subscription === 'string'
-        ? invoice.subscription
-        : invoice.subscription?.id,
+      subscriptionId: typeof (invoice as any).subscription === 'string'
+        ? (invoice as any).subscription
+        : (invoice as any).subscription?.id,
       lines: invoice.lines.data.map(line => ({
         id: line.id,
         description: line.description,

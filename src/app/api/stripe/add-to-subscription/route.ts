@@ -177,8 +177,9 @@ export async function POST(request: NextRequest) {
     })
 
     // Calculate when the new item will take effect
-    const effectiveDate = subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toISOString()
+    const periodEnd = (subscription as any).current_period_end
+    const effectiveDate = periodEnd
+      ? new Date(periodEnd * 1000).toISOString()
       : null
 
     return NextResponse.json({
