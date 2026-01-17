@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,22 +63,90 @@ export async function GET(request: NextRequest) {
       orderBy: { updated_at: 'desc' },
     })
 
-    // Fetch active subscriptions for the client (their actual current services)
-    const subscriptions = await prisma.subscriptions.findMany({
-      where: {
-        client_id: client.id,
-        status: { in: ['active', 'trialing'] },
-      },
-      include: {
-        subscription_items: {
-          include: {
-            product: true,
-            bundle: true,
+    // Fetch active subscriptions - try Stripe first, fall back to database
+    let subscriptions: any[] = []
+
+    if (client.stripe_customer_id) {
+      try {
+        // Fetch from Stripe directly for accurate data
+        const stripeSubscriptions = await stripe.subscriptions.list({
+          customer: client.stripe_customer_id,
+          status: 'active',
+        })
+
+        // Collect product IDs and fetch product details
+        const productIds = new Set<string>()
+        for (const sub of stripeSubscriptions.data) {
+          for (const item of sub.items.data) {
+            const productId = typeof item.price.product === 'string'
+              ? item.price.product
+              : (item.price.product as any)?.id
+            if (productId) productIds.add(productId)
+          }
+        }
+
+        // Fetch product details
+        const productMap = new Map<string, { name: string; description: string | null }>()
+        await Promise.all(
+          Array.from(productIds).map(async (id) => {
+            try {
+              const product = await stripe.products.retrieve(id)
+              productMap.set(id, { name: product.name, description: product.description })
+            } catch {
+              productMap.set(id, { name: id, description: null })
+            }
+          })
+        )
+
+        // Format subscriptions for frontend (match existing structure)
+        subscriptions = stripeSubscriptions.data.map(sub => ({
+          id: sub.id,
+          stripe_subscription_id: sub.id,
+          status: sub.status,
+          created_at: new Date(sub.created * 1000).toISOString(),
+          subscription_items: sub.items.data.map(item => {
+            const productId = typeof item.price.product === 'string'
+              ? item.price.product
+              : (item.price.product as any)?.id || 'unknown'
+            const productData = productMap.get(productId) || { name: productId, description: null }
+
+            return {
+              id: item.id,
+              unit_amount: item.price.unit_amount ? item.price.unit_amount / 100 : 0,
+              quantity: item.quantity || 1,
+              product: {
+                id: productId,
+                name: productData.name,
+                short_description: productData.description,
+                monthly_price: item.price.unit_amount ? item.price.unit_amount / 100 : 0,
+              },
+              bundle: null,
+            }
+          }),
+        }))
+      } catch (stripeError) {
+        console.error('Failed to fetch Stripe subscriptions, falling back to database:', stripeError)
+      }
+    }
+
+    // Fall back to database subscriptions if Stripe fetch failed or no Stripe customer
+    if (subscriptions.length === 0) {
+      subscriptions = await prisma.subscriptions.findMany({
+        where: {
+          client_id: client.id,
+          status: { in: ['active', 'trialing'] },
+        },
+        include: {
+          subscription_items: {
+            include: {
+              product: true,
+              bundle: true,
+            },
           },
         },
-      },
-      orderBy: { created_at: 'desc' },
-    })
+        orderBy: { created_at: 'desc' },
+      })
+    }
 
     if (!recommendation) {
       return NextResponse.json({ client, recommendation: null, subscriptions })

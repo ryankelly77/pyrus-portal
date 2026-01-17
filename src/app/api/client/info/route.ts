@@ -82,7 +82,8 @@ export async function GET(request: NextRequest) {
         start_date,
         agency_dashboard_share_key,
         landingsite_preview_url,
-        basecamp_id
+        basecamp_id,
+        basecamp_project_id
       FROM clients
       WHERE id = $1`,
       [clientId]
@@ -104,16 +105,38 @@ export async function GET(request: NextRequest) {
       [clientId]
     )
 
-    const activeProducts = subscriptionResult.rows.map((r: { name: string }) => r.name.toLowerCase())
+    // Also fetch manually assigned products (handle case where table doesn't exist)
+    let manualProductsResult = { rows: [] as { name: string; category: string }[] }
+    try {
+      manualProductsResult = await dbPool.query(
+        `SELECT DISTINCT p.name, p.category
+         FROM client_products cp
+         JOIN products p ON p.id = cp.product_id
+         WHERE cp.client_id = $1`,
+        [clientId]
+      )
+    } catch (e) {
+      // Table may not exist yet - that's ok
+      console.log('client_products table may not exist yet')
+    }
 
-    // A client is "pending" (prospect) if they have no active subscriptions
-    const hasActiveSubscriptions = activeProducts.length > 0
-    const clientStatus = hasActiveSubscriptions ? (client.status || 'active') : 'pending'
+    // Combine subscription products and manually assigned products
+    const subscriptionProducts = subscriptionResult.rows.map((r: { name: string }) => r.name.toLowerCase())
+    const manualProductNames = manualProductsResult.rows.map((r: { name: string }) => r.name.toLowerCase())
+    const activeProducts = Array.from(new Set([...subscriptionProducts, ...manualProductNames]))
 
-    // Determine access flags
-    const isActiveClient = hasActiveSubscriptions
+    // Check if admin has manually set the client as active
+    // A client is "active" if:
+    // 1. They have active subscriptions, OR
+    // 2. They have manually assigned products, OR
+    // 3. Admin has set status to 'active' AND growth_stage is NOT 'prospect'
+    const hasActiveSubscriptions = subscriptionProducts.length > 0
+    const hasManualProducts = manualProductNames.length > 0
+    const isManuallyActive = client.status === 'active' && client.growth_stage && client.growth_stage !== 'prospect'
+    const isActiveClient = hasActiveSubscriptions || hasManualProducts || isManuallyActive
+    const clientStatus = isActiveClient ? (client.status || 'active') : 'pending'
     const hasResultsAccess = !!client.agency_dashboard_share_key
-    const hasActivityAccess = !!client.basecamp_id
+    const hasActivityAccess = !!client.basecamp_id || !!client.basecamp_project_id
     const hasWebsiteAccess = !!client.landingsite_preview_url
     const hasWebsiteProducts = activeProducts.some((name: string) =>
       name.includes('site') || name.includes('website') || name.includes('care plan')

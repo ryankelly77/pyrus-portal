@@ -42,6 +42,24 @@ model clients {
   onboarding_responses client_onboarding_responses[]
   communications       client_communications[]
   basecamp_activities  basecamp_activities[]
+  client_products      client_products[]
+}
+
+// Manual product assignments (for clients not going through purchase flow)
+model client_products {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id     String    @db.Uuid
+  product_id    String    @db.Uuid
+  monthly_price Decimal?  @db.Decimal  // Override price (null = use product default)
+  notes         String?
+  assigned_by   String?   @db.Uuid  // Profile ID of admin who assigned
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  client  clients  @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  product products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([client_id, product_id])
+  @@index([client_id])
 }
 
 model profiles {
@@ -92,6 +110,7 @@ model products {
   subscription_items   subscription_items[]
   checklist_templates  onboarding_checklist_templates[]
   question_templates   onboarding_question_templates[]
+  client_products      client_products[]
 }
 
 model bundles {
