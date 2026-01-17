@@ -150,6 +150,7 @@ interface RecommendationsViewProps {
   isAdmin?: boolean
   isDemo?: boolean
   clientName?: string
+  defaultTab?: TabType
   // For admin view - pass pre-loaded data
   dbClient?: DBClient | null
   recommendation?: Recommendation | null
@@ -258,6 +259,7 @@ export function RecommendationsView({
   isAdmin = false,
   isDemo = false,
   clientName,
+  defaultTab = 'original-plan',
   dbClient: propDbClient,
   recommendation: propRecommendation,
   recommendationLoading: propRecommendationLoading,
@@ -280,7 +282,12 @@ export function RecommendationsView({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState<TabType>('original-plan')
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
+
+  // Sync activeTab when defaultTab changes (e.g., from parent navigation)
+  useEffect(() => {
+    setActiveTab(defaultTab)
+  }, [defaultTab])
 
   // Client-side data fetching (when not admin)
   const [localDbClient, setLocalDbClient] = useState<DBClient | null>(null)

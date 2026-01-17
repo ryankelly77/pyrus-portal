@@ -1547,8 +1547,8 @@ export default function ClientDetailPage() {
   }
 
   // Derived client data from database or fallback
-  // isActiveClient is true if client has active status OR has active subscriptions
-  const hasSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
+  // isActiveClient is true if client has active status OR has active Stripe subscriptions
+  const hasSubscriptions = stripeSubscriptions.some(s => s.status === 'active' && s.items.length > 0)
   const isActiveClient = (dbClient && (dbClient.status === 'active' || dbClient.status === 'onboarding')) || hasSubscriptions
 
   // Determine which tabs should be active based on integrations and purchased products
@@ -1556,12 +1556,12 @@ export default function ClientDetailPage() {
   const hasActivityAccess = !!dbClient?.basecamp_project_id
   const hasWebsiteAccess = !!dbClient?.landingsite_preview_url
 
-  // Check purchased products from ACTIVE subscriptions only
+  // Check purchased products from ACTIVE Stripe subscriptions
   const activeSubscriptionProducts = Array.from(new Set(
-    subscriptions
-      .filter(sub => sub.status === 'active' && sub.subscription_items.length > 0)
-      .flatMap(sub => sub.subscription_items)
-      .map(item => (item.product?.name || item.bundle?.name || '').toLowerCase())
+    stripeSubscriptions
+      .filter(sub => sub.status === 'active' && sub.items.length > 0)
+      .flatMap(sub => sub.items)
+      .map(item => (item.product?.name || '').toLowerCase())
       .filter(Boolean)
   ))
 
@@ -1576,12 +1576,13 @@ export default function ClientDetailPage() {
   )
 
   // Recommendation state - determines which template to show
-  const hasActiveSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
-  const activeSubscriptions = subscriptions.filter(s => s.status === 'active' && s.subscription_items.length > 0)
-  const firstPurchaseDate = activeSubscriptions.length > 0
-    ? activeSubscriptions.reduce((oldest, sub) =>
-        new Date(sub.created_at || '') < new Date(oldest.created_at || '') ? sub : oldest
-      ).created_at
+  // Use Stripe subscriptions for accurate active status
+  const hasActiveSubscriptions = stripeSubscriptions.some(s => s.status === 'active' && s.items.length > 0)
+  const activeStripeSubscriptions = stripeSubscriptions.filter(s => s.status === 'active' && s.items.length > 0)
+  const firstPurchaseDate = activeStripeSubscriptions.length > 0
+    ? activeStripeSubscriptions.reduce((oldest, sub) =>
+        new Date(sub.created) < new Date(oldest.created) ? sub : oldest
+      ).created
     : null
   const daysSincePurchase = firstPurchaseDate
     ? Math.floor((new Date().getTime() - new Date(firstPurchaseDate).getTime()) / (1000 * 60 * 60 * 24))
@@ -1811,12 +1812,14 @@ export default function ClientDetailPage() {
                 <p className="client-meta">
                   {client.email}
                   {(() => {
-                    const activeSubscriptions = subscriptions.filter(s => s.status === 'active' && s.subscription_items.length > 0)
-                    if (activeSubscriptions.length > 0) {
-                      const oldestSub = activeSubscriptions.reduce((oldest, sub) =>
-                        new Date(sub.created_at || 0) < new Date(oldest.created_at || 0) ? sub : oldest
+                    // Use Stripe subscriptions for accurate "Client since" date
+                    const activeStripeSubs = stripeSubscriptions.filter(s => s.status === 'active' && s.items.length > 0)
+                    if (activeStripeSubs.length > 0) {
+                      // Find the oldest subscription creation date from Stripe
+                      const oldestSub = activeStripeSubs.reduce((oldest, sub) =>
+                        new Date(sub.created) < new Date(oldest.created) ? sub : oldest
                       )
-                      const date = new Date(oldestSub.created_at || 0)
+                      const date = new Date(oldestSub.created)
                       const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                       return ` • Client since ${monthYear}`
                     } else if (dbClient?.created_at) {
@@ -1834,7 +1837,7 @@ export default function ClientDetailPage() {
                       setActiveTab('recommendations')
                       setRecommendationsSubtab('current-services')
                     }}
-                  >{subscriptions.flatMap(s => s.subscription_items).length} services</span>
+                  >{stripeSubscriptions.filter(s => s.status === 'active').flatMap(s => s.items).length} services</span>
                 </p>
               </div>
             </div>
@@ -3116,6 +3119,7 @@ export default function ClientDetailPage() {
             clientId={clientId}
             isAdmin={true}
             clientName={dbClient?.name}
+            defaultTab={recommendationsSubtab}
             dbClient={dbClient}
             recommendation={recommendation}
             recommendationLoading={recommendationLoading}
