@@ -98,6 +98,7 @@ interface DBClient {
   basecamp_id: string | null
   basecamp_project_id: string | null
   landingsite_preview_url: string | null
+  stripe_customer_id: string | null
 }
 
 type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
@@ -232,6 +233,43 @@ interface Subscription {
   created_at: string | null
   subscription_items: SubscriptionItem[]
   subscription_history?: SubscriptionHistory[]
+}
+
+// Stripe subscription directly from Stripe API
+interface StripeSubscriptionItem {
+  id: string
+  priceId: string
+  product: {
+    id: string
+    name: string
+    description?: string
+  }
+  quantity: number | null
+  unitAmount: number
+  currency: string
+  interval: string
+  intervalCount: number
+}
+
+interface StripeSubscription {
+  id: string
+  status: string
+  currentPeriodStart: string | null
+  currentPeriodEnd: string | null
+  cancelAtPeriodEnd: boolean
+  canceledAt: string | null
+  created: string
+  items: StripeSubscriptionItem[]
+}
+
+// Stripe subscription history event
+interface StripeHistoryEvent {
+  id: string
+  type: string
+  action: string
+  details: string
+  date: string
+  products?: string[]
 }
 
 interface ClientData {
@@ -376,9 +414,9 @@ export default function ClientDetailPage() {
     avatarColor: '#885430',
     // Integrations
     agencyDashboardShareKey: '',
-    basecampId: '',
     basecampProjectId: '',
     landsitePreviewUrl: '',
+    stripeCustomerId: '',
     // Billing
     billingEmail: '',
     paymentMethod: '**** **** **** 4242',
@@ -443,8 +481,41 @@ export default function ClientDetailPage() {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [recommendationLoading, setRecommendationLoading] = useState(false)
 
-  // Subscription state
+  // Subscription state (from database)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+
+  // Stripe subscriptions (directly from Stripe API)
+  const [stripeSubscriptions, setStripeSubscriptions] = useState<StripeSubscription[]>([])
+  const [stripeSubscriptionsLoading, setStripeSubscriptionsLoading] = useState(false)
+
+  // Stripe subscription history
+  const [stripeHistory, setStripeHistory] = useState<StripeHistoryEvent[]>([])
+  const [stripeHistoryLoading, setStripeHistoryLoading] = useState(false)
+
+  // Manual products state
+  interface ManualProduct {
+    id: string
+    productId: string
+    name: string
+    category: string
+    description: string | null
+    source: 'manual'
+    assignedAt: string | null
+    notes: string | null
+    monthlyPrice: number
+    hasCustomPrice: boolean
+  }
+  const [manualProducts, setManualProducts] = useState<ManualProduct[]>([])
+  const [manualProductsLoading, setManualProductsLoading] = useState(false)
+  const [showAddProductModal, setShowAddProductModal] = useState(false)
+  const [availableProducts, setAvailableProducts] = useState<{ id: string; name: string; category: string }[]>([])
+  const [selectedProductId, setSelectedProductId] = useState('')
+  const [productNotes, setProductNotes] = useState('')
+  const [addingProduct, setAddingProduct] = useState(false)
+  const [removingProductId, setRemovingProductId] = useState<string | null>(null)
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+  const [editingPriceValue, setEditingPriceValue] = useState('')
+  const [savingPrice, setSavingPrice] = useState(false)
 
   // Basecamp activities state
   interface BasecampActivity {
@@ -461,6 +532,31 @@ export default function ClientDetailPage() {
   const [basecampActivities, setBasecampActivities] = useState<BasecampActivity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
+
+  // Payment methods state
+  interface PaymentMethod {
+    id: string
+    type: string
+    card?: {
+      brand: string
+      last4: string
+      expMonth: number
+      expYear: number
+    }
+    usBankAccount?: {
+      bankName: string
+      last4: string
+      accountType: string
+    }
+    link?: {
+      email: string
+    }
+    isDefault: boolean
+    created: string
+  }
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
+  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(false)
+  const [stripeBillingEmail, setStripeBillingEmail] = useState<string | null>(null)
 
   // Content state
   const [contentStats, setContentStats] = useState<{
@@ -635,6 +731,51 @@ export default function ClientDetailPage() {
   const [isResendingInvite, setIsResendingInvite] = useState(false)
   const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Billing/Invoices state
+  interface InvoiceLine {
+    id: string
+    description: string | null
+    amount: number
+    quantity: number | null
+    period: { start: string; end: string } | null
+  }
+  interface Invoice {
+    id: string
+    number: string | null
+    status: string | null
+    amountDue: number
+    amountPaid: number
+    amountRemaining: number
+    subtotal: number
+    total: number
+    tax: number | null
+    currency: string
+    created: string | null
+    dueDate: string | null
+    paidAt: string | null
+    periodStart: string | null
+    periodEnd: string | null
+    hostedInvoiceUrl: string | null
+    invoicePdf: string | null
+    description: string | null
+    subscriptionId: string | null
+    lines: InvoiceLine[]
+  }
+  interface StripeCustomer {
+    id: string
+    email: string | null
+    name: string | null
+    phone: string | null
+    created: string | null
+    balance: number
+    currency: string
+    defaultPaymentMethod: string | null
+  }
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [stripeCustomer, setStripeCustomer] = useState<StripeCustomer | null>(null)
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null)
+  const [invoicesLoading, setInvoicesLoading] = useState(false)
+
   // Handle saving client changes
   const handleSaveClient = async () => {
     if (!dbClient) return
@@ -656,9 +797,9 @@ export default function ClientDetailPage() {
           avatarColor: editFormData.avatarColor,
           // Integration fields
           agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
-          basecampId: editFormData.basecampId,
           basecampProjectId: editFormData.basecampProjectId,
           landsitePreviewUrl: editFormData.landsitePreviewUrl,
+          stripeCustomerId: editFormData.stripeCustomerId,
         }),
       })
 
@@ -703,9 +844,9 @@ export default function ClientDetailPage() {
             avatarColor: data.avatar_color || getAvatarColor(data.name),
             // Integration fields
             agencyDashboardShareKey: data.agency_dashboard_share_key || '',
-            basecampId: data.basecamp_id || '',
             basecampProjectId: data.basecamp_project_id || '',
             landsitePreviewUrl: data.landingsite_preview_url || '',
+            stripeCustomerId: data.stripe_customer_id || '',
           }))
         }
       } catch (error) {
@@ -735,6 +876,43 @@ export default function ClientDetailPage() {
     }
     fetchChecklist()
   }, [clientId])
+
+  // Fetch payment methods
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      if (!dbClient?.stripe_customer_id) return
+      setPaymentMethodsLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/payment-methods`)
+        if (res.ok) {
+          const data = await res.json()
+          setPaymentMethods(data.paymentMethods || [])
+          // Store billing email from Stripe
+          if (data.billingEmail) {
+            setStripeBillingEmail(data.billingEmail)
+            setEditFormData(prev => ({
+              ...prev,
+              billingEmail: data.billingEmail,
+            }))
+          }
+          // Update edit form with default payment method display
+          const defaultMethod = data.paymentMethods?.find((pm: PaymentMethod) => pm.isDefault)
+          if (defaultMethod?.card) {
+            const brandDisplay = defaultMethod.card.brand.charAt(0).toUpperCase() + defaultMethod.card.brand.slice(1)
+            setEditFormData(prev => ({
+              ...prev,
+              paymentMethod: `${brandDisplay} •••• ${defaultMethod.card.last4}`,
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch payment methods:', error)
+      } finally {
+        setPaymentMethodsLoading(false)
+      }
+    }
+    fetchPaymentMethods()
+  }, [clientId, dbClient?.stripe_customer_id])
 
   // Fetch video chapters
   useEffect(() => {
@@ -818,7 +996,7 @@ export default function ClientDetailPage() {
     fetchRecommendation()
   }, [clientId])
 
-  // Fetch subscription data
+  // Fetch subscription data (from database)
   useEffect(() => {
     const fetchSubscriptions = async () => {
       setSubscriptionsLoading(true)
@@ -836,6 +1014,164 @@ export default function ClientDetailPage() {
     }
     fetchSubscriptions()
   }, [clientId])
+
+  // Fetch Stripe subscriptions (directly from Stripe API)
+  useEffect(() => {
+    const fetchStripeSubscriptions = async () => {
+      setStripeSubscriptionsLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`)
+        if (res.ok) {
+          const data = await res.json()
+          setStripeSubscriptions(data.subscriptions || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch Stripe subscriptions:', error)
+      } finally {
+        setStripeSubscriptionsLoading(false)
+      }
+    }
+    fetchStripeSubscriptions()
+  }, [clientId])
+
+  // Fetch Stripe subscription history
+  useEffect(() => {
+    const fetchStripeHistory = async () => {
+      setStripeHistoryLoading(true)
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/stripe-subscription-history`)
+        if (res.ok) {
+          const data = await res.json()
+          setStripeHistory(data.history || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch Stripe history:', error)
+      } finally {
+        setStripeHistoryLoading(false)
+      }
+    }
+    fetchStripeHistory()
+  }, [clientId])
+
+  // Fetch manual products
+  const fetchManualProducts = async () => {
+    setManualProductsLoading(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`)
+      if (res.ok) {
+        const data = await res.json()
+        setManualProducts(data.manual || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch manual products:', error)
+    } finally {
+      setManualProductsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchManualProducts()
+  }, [clientId])
+
+  // Fetch all products for the add product modal
+  const fetchAvailableProducts = async () => {
+    try {
+      const res = await fetch('/api/admin/products')
+      if (res.ok) {
+        const data = await res.json()
+        // Filter out products already assigned
+        const assignedIds = new Set(manualProducts.map(p => p.productId))
+        const subProductIds = new Set(subscriptions.flatMap(s => s.subscription_items.map(i => i.product?.id)))
+        const available = data
+          .filter((p: { id: string }) => !assignedIds.has(p.id) && !subProductIds.has(p.id))
+          .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+        setAvailableProducts(available)
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+    }
+  }
+
+  // Add product to client
+  const handleAddProduct = async () => {
+    if (!selectedProductId) return
+    setAddingProduct(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: selectedProductId,
+          notes: productNotes || null,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setManualProducts(prev => [data, ...prev])
+        setShowAddProductModal(false)
+        setSelectedProductId('')
+        setProductNotes('')
+      } else {
+        alert(data.error || 'Failed to add product')
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error)
+      alert('Failed to add product. Check console for details.')
+    } finally {
+      setAddingProduct(false)
+    }
+  }
+
+  // Remove product from client
+  const handleRemoveProduct = async (clientProductId: string) => {
+    if (!confirm('Remove this product from the client?')) return
+    setRemovingProductId(clientProductId)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products?clientProductId=${clientProductId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setManualProducts(prev => prev.filter(p => p.id !== clientProductId))
+      }
+    } catch (error) {
+      console.error('Failed to remove product:', error)
+    } finally {
+      setRemovingProductId(null)
+    }
+  }
+
+  // Update product price
+  const handleUpdatePrice = async (clientProductId: string) => {
+    const price = parseFloat(editingPriceValue)
+    if (isNaN(price) || price < 0) {
+      alert('Please enter a valid price')
+      return
+    }
+    setSavingPrice(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientProductId,
+          monthlyPrice: price,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setManualProducts(prev => prev.map(p => p.id === clientProductId ? data : p))
+        setEditingPriceId(null)
+        setEditingPriceValue('')
+      } else {
+        alert(data.error || 'Failed to update price')
+      }
+    } catch (error) {
+      console.error('Failed to update price:', error)
+      alert('Failed to update price')
+    } finally {
+      setSavingPrice(false)
+    }
+  }
 
   // Fetch content stats
   useEffect(() => {
@@ -909,6 +1245,30 @@ export default function ClientDetailPage() {
   useEffect(() => {
     fetchBasecampActivities()
   }, [clientId])
+
+  // Fetch invoices from Stripe
+  const fetchInvoices = async () => {
+    setInvoicesLoading(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/invoices`)
+      if (res.ok) {
+        const data = await res.json()
+        setInvoices(data.invoices || [])
+        setStripeCustomer(data.customer || null)
+        setStripeCustomerId(data.stripeCustomerId || null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error)
+    } finally {
+      setInvoicesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'recommendations' && recommendationsSubtab === 'current-services') {
+      fetchInvoices()
+    }
+  }, [clientId, activeTab, recommendationsSubtab])
 
   // Close date dropdown when clicking outside
   useEffect(() => {
@@ -1421,11 +1781,26 @@ export default function ClientDetailPage() {
                 <h1>
                   {client.name}
                   {(() => {
-                    const hasActiveSubscriptions = subscriptions.some(s => s.status === 'active' && s.subscription_items.length > 0)
-                    const displayStatus = hasActiveSubscriptions ? 'active' : 'prospect'
+                    // Use same logic as client list page - based on db status/growth_stage
+                    const growthStage = dbClient?.growth_stage || 'prospect'
+                    const isProspect = growthStage === 'prospect'
+                    let displayStatus: 'active' | 'inactive' | 'paused' | 'prospect' = 'active'
+                    if (dbClient?.status === 'inactive') {
+                      displayStatus = 'inactive'
+                    } else if (dbClient?.status === 'paused') {
+                      displayStatus = 'paused'
+                    } else if (dbClient?.status === 'pending' || isProspect) {
+                      displayStatus = 'prospect'
+                    }
+                    const labels: Record<string, string> = {
+                      active: 'Active',
+                      inactive: 'Inactive',
+                      paused: 'Paused',
+                      prospect: 'Prospect',
+                    }
                     return (
                       <span className={`status-badge ${displayStatus}`}>
-                        {displayStatus === 'prospect' ? 'Prospect' : 'Active'}
+                        {labels[displayStatus]}
                       </span>
                     )
                   })()}
@@ -4281,24 +4656,31 @@ export default function ClientDetailPage() {
             {/* Current Services Subtab */}
             {recommendationsSubtab === 'current-services' && (
               <div className="current-services-content">
-                {subscriptionsLoading ? (
+                {(stripeSubscriptionsLoading || subscriptionsLoading || manualProductsLoading) ? (
                   <div className="loading-state">Loading services...</div>
                 ) : (() => {
-                  // Get all subscription items
-                  const allItems = subscriptions.flatMap(sub => sub.subscription_items)
+                  // Get active Stripe subscriptions
+                  const activeStripeSubscriptions = stripeSubscriptions.filter(sub => sub.status === 'active' || sub.status === 'trialing')
+                  const stripeItems = activeStripeSubscriptions.flatMap(sub => sub.items)
+                  const hasStripeSubscriptions = stripeItems.length > 0
+
+                  // Fallback to database subscriptions if no Stripe data
+                  const dbItems = subscriptions.flatMap(sub => sub.subscription_items)
+                  const hasDbSubscription = dbItems.length > 0
 
                   // If no subscriptions but has purchased tier, fall back to recommendation items
-                  const hasSubscription = allItems.length > 0
-                  const fallbackItems = !hasSubscription && recommendation?.purchased_tier
+                  const fallbackItems = !hasStripeSubscriptions && !hasDbSubscription && recommendation?.purchased_tier
                     ? recommendation.recommendation_items.filter(item => item.tier === recommendation.purchased_tier)
                     : []
 
-                  const displayItems = hasSubscription ? allItems : fallbackItems
+                  // Check if we have any products to show
+                  const hasAnyProducts = hasStripeSubscriptions || hasDbSubscription || fallbackItems.length > 0
 
-                  // Calculate total
-                  const totalMonthly = hasSubscription
-                    ? allItems.reduce((sum, item) => sum + Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0), 0)
-                    : fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+                  // Calculate total from Stripe subscriptions
+                  const stripeTotal = stripeItems.reduce((sum, item) => sum + (item.unitAmount * (item.quantity || 1)), 0)
+                  const dbTotal = hasStripeSubscriptions ? 0 : dbItems.reduce((sum, item) => sum + Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0), 0)
+                  const fallbackTotal = (hasStripeSubscriptions || hasDbSubscription) ? 0 : fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+                  const totalMonthly = stripeTotal + dbTotal + fallbackTotal
 
                   // Icon helper function
                   const getServiceIcon = (name: string) => {
@@ -4356,7 +4738,7 @@ export default function ClientDetailPage() {
                     }
                   }
 
-                  if (displayItems.length === 0) {
+                  if (!hasAnyProducts) {
                     return (
                       <div className="no-services-message" style={{ textAlign: 'center', padding: '3rem', color: '#6B7280' }}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ margin: '0 auto 1rem', opacity: 0.5 }}>
@@ -4364,110 +4746,120 @@ export default function ClientDetailPage() {
                           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                         </svg>
                         <h3 style={{ marginBottom: '0.5rem', color: '#374151' }}>No Active Services</h3>
-                        <p>Services will appear here once a plan is purchased.</p>
+                        <p>Active Stripe subscriptions will appear here automatically.</p>
                       </div>
                     )
                   }
 
                   return (
                     <div className="current-services-list">
-                      <div className="current-services-list-header">
-                        <h3>Your Current Services</h3>
-                        <span>Monthly Investment</span>
+                      <div className="current-services-list-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <h3 style={{ margin: 0 }}>Your Current Services</h3>
+                        <span style={{ color: '#6B7280', fontSize: '0.875rem' }}>Monthly Investment</span>
                       </div>
-                      {hasSubscription ? (
-                        // Show subscription items
-                        allItems.map(item => {
-                          const itemName = item.product?.name || item.bundle?.name || 'Service'
-                          const itemDesc = item.product?.short_description || item.bundle?.description || ''
-                          const monthlyPrice = Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0)
-                          const isContentWriting = itemName.toLowerCase().includes('content writing')
-                          const quantity = item.quantity || 1
 
-                          const handleAddMoreContent = () => {
-                            // Get the product details for Content Writing
-                            const product = item.product
-                            if (!product) return
+                      {/* Stripe Subscriptions - Primary source */}
+                      {hasStripeSubscriptions && (
+                        <>
+                          {stripeItems.map(item => {
+                            const itemName = item.product.name
+                            const itemDesc = item.product.description || ''
+                            const monthlyPrice = item.unitAmount * (item.quantity || 1)
+                            const isContentWriting = itemName.toLowerCase().includes('content writing')
+                            const quantity = item.quantity || 1
+                            const intervalText = item.interval === 'month' ? '/month' : item.interval === 'year' ? '/year' : ''
 
-                            const cartItem = {
-                              id: product.id,
-                              productId: product.id,
-                              name: product.name,
-                              quantity: 1, // Adding 1 more
-                              monthlyPrice: Number(product.monthly_price || 0),
-                              onetimePrice: 0,
-                              pricingType: 'monthly' as const,
-                              category: 'content',
-                              supportsQuantity: true, // Content writing supports quantity
-                            }
-
-                            // Store in sessionStorage
-                            sessionStorage.setItem(`checkout_${clientId}_addon`, JSON.stringify([cartItem]))
-                            router.push(`/admin/checkout/${clientId}?tier=addon`)
-                          }
-
-                          return (
-                            <div key={item.id} className="current-service-row">
-                              <div className="current-service-icon">
-                                {getServiceIcon(itemName)}
-                              </div>
-                              <div className="current-service-info">
-                                <div className="current-service-name">
-                                  {isContentWriting && quantity > 1 ? `(${quantity}) ` : ''}{itemName}
+                            return (
+                              <div key={item.id} className="current-service-row">
+                                <div className="current-service-icon">
+                                  {getServiceIcon(itemName)}
                                 </div>
-                                {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
-                              </div>
-                              {isContentWriting && (
-                                <button
-                                  className="btn btn-outline btn-sm"
-                                  onClick={handleAddMoreContent}
-                                  style={{ marginRight: '1rem', whiteSpace: 'nowrap' }}
-                                >
-                                  Add More
-                                </button>
-                              )}
-                              <div className="current-service-price">
-                                <strong>${monthlyPrice.toLocaleString()}</strong><br />
-                                <span>/month</span>
-                              </div>
-                            </div>
-                          )
-                        })
-                      ) : (
-                        // Fallback to recommendation items
-                        fallbackItems.map(item => {
-                          const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
-                          const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
-                          const monthlyPrice = Number(item.monthly_price || 0)
-                          const isFree = item.is_free
-
-                          return (
-                            <div key={item.id} className="current-service-row">
-                              <div className="current-service-icon">
-                                {getServiceIcon(itemName)}
-                              </div>
-                              <div className="current-service-info">
-                                <div className="current-service-name">
-                                  {itemName}
-                                  {isFree && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: '#DEF7EC', color: '#03543F', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>FREE</span>}
+                                <div className="current-service-info">
+                                  <div className="current-service-name">
+                                    {isContentWriting && quantity > 1 ? `(${quantity}) ` : ''}{itemName}
+                                    <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', background: '#DEF7EC', color: '#03543F', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Active</span>
+                                  </div>
+                                  {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
                                 </div>
-                                {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                                <div className="current-service-price">
+                                  <strong>${monthlyPrice.toLocaleString()}</strong><br />
+                                  <span>{intervalText}</span>
+                                </div>
                               </div>
-                              <div className="current-service-price">
-                                {isFree ? (
-                                  <><strong>$0</strong><br /><span>included</span></>
-                                ) : (
-                                  <><strong>${monthlyPrice.toLocaleString()}</strong><br /><span>/month</span></>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })
+                            )
+                          })}
+                        </>
                       )}
+
+                      {/* Database Subscriptions - Fallback if no Stripe data */}
+                      {!hasStripeSubscriptions && hasDbSubscription && (
+                        <>
+                          {dbItems.map(item => {
+                            const itemName = item.product?.name || item.bundle?.name || 'Service'
+                            const itemDesc = item.product?.short_description || item.bundle?.description || ''
+                            const monthlyPrice = Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0)
+                            const quantity = item.quantity || 1
+
+                            return (
+                              <div key={item.id} className="current-service-row">
+                                <div className="current-service-icon">
+                                  {getServiceIcon(itemName)}
+                                </div>
+                                <div className="current-service-info">
+                                  <div className="current-service-name">
+                                    {quantity > 1 ? `(${quantity}) ` : ''}{itemName}
+                                  </div>
+                                  {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                                </div>
+                                <div className="current-service-price">
+                                  <strong>${monthlyPrice.toLocaleString()}</strong><br />
+                                  <span>/month</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </>
+                      )}
+
+                      {/* Recommendation Items - Fallback if no subscriptions */}
+                      {!hasStripeSubscriptions && !hasDbSubscription && fallbackItems.length > 0 && (
+                        <>
+                          {fallbackItems.map(item => {
+                            const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
+                            const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                            const monthlyPrice = Number(item.monthly_price || 0)
+                            const isFree = item.is_free
+
+                            return (
+                              <div key={item.id} className="current-service-row">
+                                <div className="current-service-icon">
+                                  {getServiceIcon(itemName)}
+                                </div>
+                                <div className="current-service-info">
+                                  <div className="current-service-name">
+                                    {itemName}
+                                    {isFree && <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: '#DEF7EC', color: '#03543F', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>FREE</span>}
+                                  </div>
+                                  {itemDesc && <div className="current-service-desc">{itemDesc}</div>}
+                                </div>
+                                <div className="current-service-price">
+                                  {isFree ? (
+                                    <><strong>$0</strong><br /><span>included</span></>
+                                  ) : (
+                                    <><strong>${monthlyPrice.toLocaleString()}</strong><br /><span>/month</span></>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </>
+                      )}
+
+                      {/* Total */}
                       <div className="current-services-total">
                         <div className="current-services-total-label">
                           Total Monthly Investment
-                          <span>{displayItems.length} active service{displayItems.length !== 1 ? 's' : ''}</span>
+                          <span>{stripeItems.length + dbItems.length + fallbackItems.length} active service{(stripeItems.length + dbItems.length + fallbackItems.length) !== 1 ? 's' : ''}</span>
                         </div>
                         <div className="current-services-total-value">
                           ${totalMonthly.toLocaleString()}<span> per month</span>
@@ -4475,38 +4867,138 @@ export default function ClientDetailPage() {
                       </div>
 
                       {/* Subscription History */}
-                      {(() => {
-                        const allHistory = subscriptions.flatMap(sub => sub.subscription_history || [])
-                        return (
-                          <div className="recommendation-history" style={{ marginTop: '2rem' }}>
-                            <h4>Subscription History</h4>
-                            {allHistory.length === 0 ? (
-                              <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>No history yet</p>
-                            ) : (
-                              <ul className="history-list">
-                                {allHistory.map((entry) => (
-                                  <li key={entry.id} className="history-item">
-                                    <div className="history-date">
-                                      {entry.created_at ? new Date(entry.created_at).toLocaleString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        timeZone: 'America/Chicago'
-                                      }) : 'Unknown date'}
-                                    </div>
-                                    <div className="history-content">
-                                      <span className="history-action">{entry.action}</span>
-                                      {entry.details && <span className="history-details">{entry.details}</span>}
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
+                      <div className="recommendation-history" style={{ marginTop: '2rem' }}>
+                        <h4>Subscription History</h4>
+                        {stripeHistoryLoading ? (
+                          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>Loading subscription history...</p>
+                        ) : stripeHistory.length === 0 ? (
+                          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>No subscription history available.</p>
+                        ) : (
+                          <ul className="history-list">
+                            {stripeHistory.map((event) => (
+                              <li key={event.id} className="history-item">
+                                <div className="history-date">
+                                  {new Date(event.date).toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    timeZone: 'America/Chicago'
+                                  })}
+                                </div>
+                                <div className="history-content">
+                                  <span className="history-action">{event.action}</span>
+                                  <span className="history-details">{event.details}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      {/* Invoices Section */}
+                      <div className="invoices-section" style={{ marginTop: '2rem', padding: '1.5rem', background: '#FAFAFA', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <h4 style={{ margin: 0 }}>Invoices</h4>
+                        </div>
+
+                        {invoicesLoading ? (
+                          <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>Loading invoices...</p>
+                        ) : !stripeCustomerId ? (
+                          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>No Stripe customer linked</p>
+                        ) : invoices.length === 0 ? (
+                          <p style={{ color: '#6B7280', fontSize: '0.875rem', margin: '0.5rem 0' }}>No invoices found</p>
+                        ) : (
+                          <>
+                            <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                <thead>
+                                  <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Invoice</th>
+                                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Date</th>
+                                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 500, color: '#6B7280' }}>Status</th>
+                                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 500, color: '#6B7280' }}>Amount</th>
+                                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontWeight: 500, color: '#6B7280' }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {invoices.slice(0, 10).map((invoice, index) => (
+                                    <tr key={invoice.id} style={{ borderBottom: index < Math.min(invoices.length, 10) - 1 ? '1px solid #E5E7EB' : undefined }}>
+                                      <td style={{ padding: '0.5rem 0.75rem' }}>
+                                        <div style={{ fontWeight: 500, color: '#111827' }}>{invoice.number || invoice.id.slice(0, 10)}</div>
+                                      </td>
+                                      <td style={{ padding: '0.5rem 0.75rem', color: '#6B7280' }}>
+                                        {invoice.created ? new Date(invoice.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                      </td>
+                                      <td style={{ padding: '0.5rem 0.75rem' }}>
+                                        <span style={{
+                                          display: 'inline-block',
+                                          padding: '0.125rem 0.375rem',
+                                          borderRadius: '9999px',
+                                          fontSize: '0.7rem',
+                                          fontWeight: 500,
+                                          background: invoice.status === 'paid' ? '#D1FAE5' : invoice.status === 'open' ? '#FEF3C7' : '#E5E7EB',
+                                          color: invoice.status === 'paid' ? '#065F46' : invoice.status === 'open' ? '#92400E' : '#374151',
+                                        }}>
+                                          {invoice.status}
+                                        </span>
+                                      </td>
+                                      <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 500 }}>
+                                        ${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                      </td>
+                                      <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
+                                        {invoice.invoicePdf && (
+                                          <a
+                                            href={invoice.invoicePdf}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-outline btn-sm"
+                                            style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                                          >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" style={{ marginRight: '0.25rem' }}>
+                                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                              <polyline points="7 10 12 15 17 10"></polyline>
+                                              <line x1="12" y1="15" x2="12" y2="3"></line>
+                                            </svg>
+                                            Download
+                                          </a>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            {invoices.length > 10 && (
+                              <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.5rem', textAlign: 'center' }}>
+                                Showing 10 of {invoices.length} invoices
+                              </p>
                             )}
-                          </div>
-                        )
-                      })()}
+                            {/* Invoice Summary */}
+                            <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                              <div style={{ background: '#F9FAFB', padding: '0.75rem', borderRadius: '6px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '0.25rem' }}>Total Invoiced</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
+                                  ${invoices.reduce((sum, inv) => sum + inv.total, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                              </div>
+                              <div style={{ background: '#D1FAE5', padding: '0.75rem', borderRadius: '6px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#065F46', marginBottom: '0.25rem' }}>Total Paid</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 600, color: '#065F46' }}>
+                                  ${invoices.reduce((sum, inv) => sum + inv.amountPaid, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                              </div>
+                              <div style={{ background: invoices.some(inv => inv.status === 'open') ? '#FEF3C7' : '#F9FAFB', padding: '0.75rem', borderRadius: '6px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: invoices.some(inv => inv.status === 'open') ? '#92400E' : '#6B7280', marginBottom: '0.25rem' }}>Outstanding</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 600, color: invoices.some(inv => inv.status === 'open') ? '#92400E' : '#111827' }}>
+                                  ${invoices.reduce((sum, inv) => sum + inv.amountRemaining, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 })()}
@@ -4514,6 +5006,7 @@ export default function ClientDetailPage() {
             )}
           </div>
         )}
+
       </div>
 
       {/* Edit Client Modal */}
@@ -4747,35 +5240,34 @@ export default function ClientDetailPage() {
                     </small>
                   </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="basecampId">Basecamp Client ID</label>
-                      <input
-                        type="text"
-                        id="basecampId"
-                        className="form-control"
-                        placeholder="e.g., 12345678"
-                        value={editFormData.basecampId}
-                        onChange={(e) => setEditFormData({ ...editFormData, basecampId: e.target.value })}
-                      />
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        Enables the Activity tab.
-                      </small>
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="basecampProjectId">Basecamp Project ID</label>
-                      <input
-                        type="text"
-                        id="basecampProjectId"
-                        className="form-control"
-                        placeholder="e.g., 87654321"
-                        value={editFormData.basecampProjectId}
-                        onChange={(e) => setEditFormData({ ...editFormData, basecampProjectId: e.target.value })}
-                      />
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        For content service integration.
-                      </small>
-                    </div>
+                  <div className="form-group">
+                    <label htmlFor="basecampProjectId">Basecamp Project ID</label>
+                    <input
+                      type="text"
+                      id="basecampProjectId"
+                      className="form-control"
+                      placeholder="e.g., 43126663"
+                      value={editFormData.basecampProjectId}
+                      onChange={(e) => setEditFormData({ ...editFormData, basecampProjectId: e.target.value })}
+                    />
+                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                      From URL: 3.basecamp.com/5202430/projects/<strong>[this number]</strong>. Enables Activity tab.
+                    </small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="stripeCustomerId">Stripe Customer ID</label>
+                    <input
+                      type="text"
+                      id="stripeCustomerId"
+                      className="form-control"
+                      placeholder="e.g., cus_ABC123..."
+                      value={editFormData.stripeCustomerId}
+                      onChange={(e) => setEditFormData({ ...editFormData, stripeCustomerId: e.target.value })}
+                    />
+                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                      Links invoices and billing from Stripe. Find in Stripe Dashboard → Customers.
+                    </small>
                   </div>
 
                   <div className="form-group">
@@ -4805,21 +5297,115 @@ export default function ClientDetailPage() {
                       className="form-control"
                       value={editFormData.billingEmail}
                       onChange={(e) => setEditFormData({ ...editFormData, billingEmail: e.target.value })}
+                      readOnly={!!stripeBillingEmail}
+                      style={stripeBillingEmail ? { backgroundColor: '#F9FAFB' } : {}}
                     />
+                    {stripeBillingEmail && (
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        From Stripe customer record.{' '}
+                        <a
+                          href={`https://dashboard.stripe.com/customers/${dbClient?.stripe_customer_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#2563EB' }}
+                        >
+                          Edit in Stripe
+                        </a>
+                      </small>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label>Payment Method</label>
-                    <div className="payment-method-display">
-                      <div className="payment-method-info">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                          <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                        <span>{editFormData.paymentMethod}</span>
+                    <label>Payment Methods</label>
+                    {paymentMethodsLoading ? (
+                      <div className="payment-method-display" style={{ opacity: 0.6 }}>
+                        <div className="payment-method-info">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                          </svg>
+                          <span>Loading...</span>
+                        </div>
                       </div>
-                      <button type="button" className="payment-update-btn">Update</button>
-                    </div>
+                    ) : !dbClient?.stripe_customer_id ? (
+                      <div className="payment-method-display" style={{ background: '#F9FAFB', border: '1px dashed #D1D5DB' }}>
+                        <div className="payment-method-info" style={{ color: '#6B7280' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                          </svg>
+                          <span>No Stripe customer linked</span>
+                        </div>
+                      </div>
+                    ) : paymentMethods.length === 0 ? (
+                      <div className="payment-method-display" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }}>
+                        <div className="payment-method-info" style={{ color: '#92400E' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                          </svg>
+                          <span>No payment method on file</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {paymentMethods.map(pm => (
+                          <div key={pm.id} className="payment-method-display" style={pm.isDefault ? { borderColor: '#10B981' } : {}}>
+                            <div className="payment-method-info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                              </svg>
+                              <span>
+                                {pm.card ? (
+                                  <>
+                                    {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
+                                    <span style={{ color: '#6B7280', marginLeft: '0.5rem' }}>
+                                      Exp {pm.card.expMonth.toString().padStart(2, '0')}/{pm.card.expYear.toString().slice(-2)}
+                                    </span>
+                                  </>
+                                ) : pm.usBankAccount ? (
+                                  <>
+                                    {pm.usBankAccount.bankName} •••• {pm.usBankAccount.last4}
+                                    <span style={{ color: '#6B7280', marginLeft: '0.5rem' }}>
+                                      {pm.usBankAccount.accountType.charAt(0).toUpperCase() + pm.usBankAccount.accountType.slice(1)}
+                                    </span>
+                                  </>
+                                ) : pm.link ? (
+                                  <>
+                                    Stripe Link ({pm.link.email})
+                                  </>
+                                ) : (
+                                  pm.type
+                                )}
+                              </span>
+                              {pm.isDefault && (
+                                <span style={{
+                                  background: '#D1FAE5',
+                                  color: '#065F46',
+                                  padding: '0.125rem 0.5rem',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.75rem',
+                                  marginLeft: '0.5rem',
+                                }}>Default</span>
+                              )}
+                            </div>
+                            {dbClient?.stripe_customer_id && (
+                              <a
+                                href={`https://dashboard.stripe.com/customers/${dbClient.stripe_customer_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="payment-update-btn"
+                                style={{ textDecoration: 'none' }}
+                              >
+                                Manage in Stripe
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -5653,6 +6239,67 @@ export default function ClientDetailPage() {
                     Send {alertTypes[resultAlertType].label} Alert
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Product Modal */}
+      {showAddProductModal && (
+        <div className="modal-overlay active" onClick={() => setShowAddProductModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2>Add Product to Client</h2>
+              <button className="modal-close" onClick={() => setShowAddProductModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: '#6B7280', marginBottom: '1rem' }}>
+                Manually assign a product to this client. This is for clients who haven&apos;t gone through the standard purchase flow.
+              </p>
+              <div className="form-group">
+                <label htmlFor="product-select">Select Product</label>
+                <select
+                  id="product-select"
+                  className="form-input"
+                  value={selectedProductId}
+                  onChange={e => setSelectedProductId(e.target.value)}
+                >
+                  <option value="">Choose a product...</option>
+                  {availableProducts.map(product => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} ({product.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="product-notes">Notes (optional)</label>
+                <textarea
+                  id="product-notes"
+                  className="form-input"
+                  value={productNotes}
+                  onChange={e => setProductNotes(e.target.value)}
+                  placeholder="e.g., Transferred from legacy system, Comp'd for beta testing"
+                  rows={2}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAddProductModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleAddProduct}
+                disabled={!selectedProductId || addingProduct}
+              >
+                {addingProduct ? 'Adding...' : 'Add Product'}
               </button>
             </div>
           </div>

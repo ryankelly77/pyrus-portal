@@ -23143,6 +23143,95 @@ input[type="date"].form-control {
     margin-bottom: 16px;
 }
 
+/* Saved Payment Methods */
+.saved-payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.payment-method-option {
+    position: relative;
+    display: block;
+    padding: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--bg-white);
+}
+
+.payment-method-option:hover {
+    border-color: var(--text-secondary);
+}
+
+.payment-method-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.payment-method-option.selected {
+    border-color: var(--client-green);
+    background: rgba(50, 68, 56, 0.05);
+}
+
+.payment-method-option-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.payment-method-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.payment-method-option.selected .payment-method-icon {
+    background: var(--client-green);
+    color: white;
+}
+
+.payment-method-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.payment-method-brand {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.payment-method-last4 {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.payment-method-exp {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.payment-method-default-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success);
+    background: var(--success-bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
 .stripe-placeholder {
     display: flex;
     flex-direction: column;

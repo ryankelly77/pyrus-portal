@@ -34,10 +34,14 @@ interface SubscriptionData {
   }>
   paymentMethods: Array<{
     id: string
+    type: string
     brand: string
     last4: string
     expMonth: number
     expYear: number
+    bankName?: string
+    accountType?: string
+    linkEmail?: string
     isDefault: boolean
   }>
   invoices: Array<{
@@ -599,14 +603,22 @@ export default function SettingsPage() {
                           textTransform: 'uppercase',
                           color: '#5A6358'
                         }}>
-                          {pm.brand}
+                          {pm.type === 'us_bank_account' ? 'ACH' : pm.type === 'link' ? 'LINK' : pm.brand}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 500, color: '#1A1F18' }}>
-                            •••• •••• •••• {pm.last4}
+                            {pm.type === 'us_bank_account'
+                              ? `${pm.bankName || 'Bank'} •••• ${pm.last4}`
+                              : pm.type === 'link'
+                              ? `Stripe Link (${pm.linkEmail || 'email'})`
+                              : `•••• •••• •••• ${pm.last4}`}
                           </div>
                           <div style={{ fontSize: '0.875rem', color: '#5A6358' }}>
-                            Expires {pm.expMonth.toString().padStart(2, '0')}/{pm.expYear.toString().slice(-2)}
+                            {pm.type === 'us_bank_account'
+                              ? `${(pm.accountType || 'checking').charAt(0).toUpperCase() + (pm.accountType || 'checking').slice(1)} Account`
+                              : pm.type === 'link'
+                              ? 'Saved with Stripe Link'
+                              : `Expires ${pm.expMonth.toString().padStart(2, '0')}/${pm.expYear.toString().slice(-2)}`}
                           </div>
                         </div>
                         {pm.isDefault && (

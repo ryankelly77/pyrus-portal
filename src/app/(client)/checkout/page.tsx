@@ -154,6 +154,22 @@ export default function CheckoutPage() {
   const [isFreeOrderProcessing, setIsFreeOrderProcessing] = useState(false)
   const [freeOrderError, setFreeOrderError] = useState<string | null>(null)
 
+  // Saved payment methods state
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<Array<{
+    id: string
+    type: string
+    brand: string
+    last4: string
+    expMonth: number
+    expYear: number
+    bankName?: string
+    accountType?: string
+    linkEmail?: string
+    isDefault: boolean
+  }>>([])
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true)
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | 'new'>('new')
+
   // Handle $0 order submission (no payment needed)
   const handleFreeOrderSubmit = async () => {
     setIsFreeOrderProcessing(true)
@@ -199,6 +215,57 @@ export default function CheckoutPage() {
       console.error('Free order error:', err)
       setFreeOrderError('An unexpected error occurred')
       setIsFreeOrderProcessing(false)
+    }
+  }
+
+  // Handle order submission with saved payment method
+  const handleSavedPaymentMethodSubmit = async () => {
+    if (selectedPaymentMethodId === 'new') return
+
+    setIsPaymentProcessing(true)
+    setStripeError(null)
+
+    try {
+      const effectiveClientId = viewingAs || client.id
+      const response = await fetch('/api/stripe/create-subscription-from-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: effectiveClientId,
+          paymentMethodId: selectedPaymentMethodId,
+          recommendationId,
+          selectedTier,
+          cartItems: cartItems.filter(item => !item.isFree).map(item => ({
+            name: item.name,
+            price: item.price,
+            billingPeriod: item.billingPeriod,
+          })),
+          couponCode: appliedCoupon,
+          billingCycle,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setStripeError(data.error || 'Failed to create subscription')
+        setIsPaymentProcessing(false)
+        return
+      }
+
+      // Subscription created successfully, redirect to success page
+      const successUrl = new URL('/checkout/success', window.location.origin)
+      successUrl.searchParams.set('tier', selectedTier || '')
+      if (viewingAs) {
+        successUrl.searchParams.set('viewingAs', viewingAs)
+      }
+      successUrl.searchParams.set('redirect_status', 'succeeded')
+
+      window.location.href = successUrl.toString()
+    } catch (err) {
+      console.error('Saved payment method error:', err)
+      setStripeError('An unexpected error occurred')
+      setIsPaymentProcessing(false)
     }
   }
 
@@ -276,6 +343,40 @@ export default function CheckoutPage() {
     fetchRecommendationItems()
   }, [tier, viewingAs, client.id, itemId, clientLoading])
 
+  // Fetch saved payment methods
+  useEffect(() => {
+    const effectiveClientId = viewingAs || client.id
+    if (!effectiveClientId || clientLoading) {
+      return
+    }
+
+    async function fetchPaymentMethods() {
+      try {
+        const res = await fetch(`/api/client/subscription?clientId=${effectiveClientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.paymentMethods && data.paymentMethods.length > 0) {
+            setSavedPaymentMethods(data.paymentMethods)
+            // Auto-select the default payment method if one exists
+            const defaultMethod = data.paymentMethods.find((pm: { isDefault: boolean }) => pm.isDefault)
+            if (defaultMethod) {
+              setSelectedPaymentMethodId(defaultMethod.id)
+            } else {
+              // Select the first payment method as default
+              setSelectedPaymentMethodId(data.paymentMethods[0].id)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch payment methods:', error)
+      } finally {
+        setLoadingPaymentMethods(false)
+      }
+    }
+
+    fetchPaymentMethods()
+  }, [viewingAs, client.id, clientLoading])
+
   // Calculate base monthly total (excluding Analytics which is always free)
   const baseMonthlyTotal = cartItems.reduce((sum, item) => {
     if (item.billingPeriod === 'monthly' && !item.name.includes('Analytics Tracking')) {
@@ -349,6 +450,7 @@ export default function CheckoutPage() {
   // Fetch SetupIntent client secret for Stripe Elements
   // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
   // Skip for $0 orders (no payment needed)
+  // Skip if using a saved payment method
   useEffect(() => {
     const effectiveClientId = viewingAs || client.id
     console.log('[Stripe] Effect triggered:', {
@@ -356,7 +458,8 @@ export default function CheckoutPage() {
       effectiveClientId,
       viewingAs,
       clientId: client.id,
-      clientLoading
+      clientLoading,
+      selectedPaymentMethodId
     })
 
     if (cartItems.length === 0) {
@@ -365,6 +468,19 @@ export default function CheckoutPage() {
     }
     if (!effectiveClientId) {
       console.log('[Stripe] Early return: no client ID')
+      return
+    }
+
+    // Wait for payment methods to finish loading
+    if (loadingPaymentMethods) {
+      console.log('[Stripe] Waiting for payment methods to load')
+      return
+    }
+
+    // Don't create SetupIntent if using a saved payment method
+    if (selectedPaymentMethodId !== 'new') {
+      console.log('[Stripe] Skipping SetupIntent: using saved payment method')
+      setClientSecret(null)
       return
     }
 
@@ -426,7 +542,7 @@ export default function CheckoutPage() {
     }
 
     createSetupIntent()
-  }, [cartItems, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading, appliedCoupon])
+  }, [cartItems, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading, appliedCoupon, selectedPaymentMethodId, loadingPaymentMethods])
 
   // Calculate discount
   const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
@@ -632,50 +748,173 @@ export default function CheckoutPage() {
                 </h2>
 
                 <div className="payment-form">
-                  {!stripePromise ? (
-                    <div className="stripe-error">
-                      <p>Payment system is not configured. Please contact support.</p>
-                    </div>
-                  ) : stripeError ? (
-                    <div className="stripe-error">
-                      <p>{stripeError}</p>
-                    </div>
-                  ) : !clientSecret ? (
+                  {loadingPaymentMethods ? (
                     <div className="stripe-loading">
                       <div className="spinner" style={{ width: 24, height: 24 }}></div>
-                      <p>Loading payment form...</p>
-                      <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                        Client ID: {client.id ? 'Ready' : 'Loading...'}
-                      </p>
+                      <p>Loading payment methods...</p>
                     </div>
                   ) : (
-                    <Elements
-                      key={`${clientSecret}-${billingCycle}`}
-                      stripe={stripePromise}
-                      options={{
-                        clientSecret,
-                        appearance: {
-                          theme: 'stripe',
-                          variables: {
-                            colorPrimary: '#324438',
-                            fontFamily: 'Inter, system-ui, sans-serif',
-                          },
-                        },
-                      }}
-                    >
-                      <PaymentForm
-                        clientId={viewingAs || client.id}
-                        recommendationId={recommendationId}
-                        selectedTier={selectedTier}
-                        cartItems={cartItems}
-                        couponCode={appliedCoupon}
-                        billingCycle={billingCycle}
-                        viewingAs={viewingAs}
-                        onError={(error) => setStripeError(error)}
-                        onProcessingChange={setIsPaymentProcessing}
-                        onReadyChange={setIsPaymentReady}
-                      />
-                    </Elements>
+                    <>
+                      {/* Saved Payment Methods */}
+                      {savedPaymentMethods.length > 0 && (
+                        <div className="saved-payment-methods">
+                          {savedPaymentMethods.map((pm) => (
+                            <label
+                              key={pm.id}
+                              className={`payment-method-option ${selectedPaymentMethodId === pm.id ? 'selected' : ''}`}
+                            >
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value={pm.id}
+                                checked={selectedPaymentMethodId === pm.id}
+                                onChange={() => setSelectedPaymentMethodId(pm.id)}
+                              />
+                              <div className="payment-method-option-content">
+                                {pm.type === 'card' ? (
+                                  <>
+                                    <div className="payment-method-icon">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                      </svg>
+                                    </div>
+                                    <div className="payment-method-details">
+                                      <span className="payment-method-brand">{pm.brand.charAt(0).toUpperCase() + pm.brand.slice(1)}</span>
+                                      <span className="payment-method-last4">ending in {pm.last4}</span>
+                                      {pm.expMonth > 0 && pm.expYear > 0 && (
+                                        <span className="payment-method-exp">Expires {pm.expMonth}/{pm.expYear}</span>
+                                      )}
+                                    </div>
+                                  </>
+                                ) : pm.type === 'us_bank_account' ? (
+                                  <>
+                                    <div className="payment-method-icon">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                        <path d="M3 21h18"></path>
+                                        <path d="M3 10h18"></path>
+                                        <path d="M5 6l7-3 7 3"></path>
+                                        <path d="M4 10v11"></path>
+                                        <path d="M20 10v11"></path>
+                                        <path d="M8 14v3"></path>
+                                        <path d="M12 14v3"></path>
+                                        <path d="M16 14v3"></path>
+                                      </svg>
+                                    </div>
+                                    <div className="payment-method-details">
+                                      <span className="payment-method-brand">{pm.bankName || 'Bank Account'}</span>
+                                      <span className="payment-method-last4">ending in {pm.last4}</span>
+                                      {pm.accountType && (
+                                        <span className="payment-method-exp">{pm.accountType.charAt(0).toUpperCase() + pm.accountType.slice(1)}</span>
+                                      )}
+                                    </div>
+                                  </>
+                                ) : pm.type === 'link' ? (
+                                  <>
+                                    <div className="payment-method-icon">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                      </svg>
+                                    </div>
+                                    <div className="payment-method-details">
+                                      <span className="payment-method-brand">Link</span>
+                                      <span className="payment-method-last4">{pm.linkEmail}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="payment-method-icon">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                      </svg>
+                                    </div>
+                                    <div className="payment-method-details">
+                                      <span className="payment-method-brand">{pm.type}</span>
+                                      <span className="payment-method-last4">ending in {pm.last4}</span>
+                                    </div>
+                                  </>
+                                )}
+                                {pm.isDefault && <span className="payment-method-default-badge">Default</span>}
+                              </div>
+                            </label>
+                          ))}
+
+                          {/* Add New Payment Method Option */}
+                          <label
+                            className={`payment-method-option ${selectedPaymentMethodId === 'new' ? 'selected' : ''}`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="new"
+                              checked={selectedPaymentMethodId === 'new'}
+                              onChange={() => setSelectedPaymentMethodId('new')}
+                            />
+                            <div className="payment-method-option-content">
+                              <div className="payment-method-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                              </div>
+                              <div className="payment-method-details">
+                                <span className="payment-method-brand">Add new payment method</span>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Stripe PaymentElement - only show when adding new payment method */}
+                      {(selectedPaymentMethodId === 'new' || savedPaymentMethods.length === 0) && (
+                        <>
+                          {!stripePromise ? (
+                            <div className="stripe-error">
+                              <p>Payment system is not configured. Please contact support.</p>
+                            </div>
+                          ) : stripeError ? (
+                            <div className="stripe-error">
+                              <p>{stripeError}</p>
+                            </div>
+                          ) : !clientSecret ? (
+                            <div className="stripe-loading">
+                              <div className="spinner" style={{ width: 24, height: 24 }}></div>
+                              <p>Loading payment form...</p>
+                            </div>
+                          ) : (
+                            <Elements
+                              key={`${clientSecret}-${billingCycle}`}
+                              stripe={stripePromise}
+                              options={{
+                                clientSecret,
+                                appearance: {
+                                  theme: 'stripe',
+                                  variables: {
+                                    colorPrimary: '#324438',
+                                    fontFamily: 'Inter, system-ui, sans-serif',
+                                  },
+                                },
+                              }}
+                            >
+                              <PaymentForm
+                                clientId={viewingAs || client.id}
+                                recommendationId={recommendationId}
+                                selectedTier={selectedTier}
+                                cartItems={cartItems}
+                                couponCode={appliedCoupon}
+                                billingCycle={billingCycle}
+                                viewingAs={viewingAs}
+                                onError={(error) => setStripeError(error)}
+                                onProcessingChange={setIsPaymentProcessing}
+                                onReadyChange={setIsPaymentReady}
+                              />
+                            </Elements>
+                          )}
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -881,7 +1120,7 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              {/* Complete Purchase Button - Different for $0 vs paid orders */}
+              {/* Complete Purchase Button - Different for $0 vs paid orders vs saved payment method */}
               {isZeroOrder ? (
                 <>
                   {freeOrderError && (
@@ -911,7 +1150,32 @@ export default function CheckoutPage() {
                     )}
                   </button>
                 </>
+              ) : selectedPaymentMethodId !== 'new' ? (
+                // Using saved payment method
+                <button
+                  type="button"
+                  onClick={handleSavedPaymentMethodSubmit}
+                  className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
+                  disabled={isPaymentProcessing}
+                  style={{ width: '100%', marginTop: '1rem' }}
+                >
+                  {isPaymentProcessing ? (
+                    <>
+                      <span className="spinner"></span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      Complete Purchase
+                    </>
+                  )}
+                </button>
               ) : (
+                // Using new payment method via Stripe Elements
                 <button
                   type="submit"
                   form="checkout-payment-form"
