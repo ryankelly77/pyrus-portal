@@ -12,7 +12,8 @@ This document catalogs all page templates in the Pyrus Portal application, their
 2. [Client Portal Pages](#client-portal-pages)
 3. [Admin Pages](#admin-pages)
 4. [Public Pages](#public-pages)
-5. [Database Tables Summary](#database-tables-summary)
+5. [Shared View Components](#shared-view-components)
+6. [Database Tables Summary](#database-tables-summary)
 
 ---
 
@@ -121,6 +122,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 2. Recommendations (`/recommendations`)
 **File:** `src/app/(client)/recommendations/page.tsx`
+**Shared Component:** `RecommendationsView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -145,6 +147,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 3. Content (`/content`)
 **File:** `src/app/(client)/content/page.tsx`
+**Shared Component:** `ContentView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -167,6 +170,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 4. Website (`/website`)
 **File:** `src/app/(client)/website/page.tsx`
+**Shared Component:** `WebsiteView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -188,6 +192,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 5. Activity (`/activity`)
 **File:** `src/app/(client)/activity/page.tsx`
+**Shared Component:** `ActivityView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -208,6 +213,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 6. Results (`/results`)
 **File:** `src/app/(client)/results/page.tsx`
+**Shared Component:** `ResultsView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -290,6 +296,7 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 10. Communication (`/communication`)
 **File:** `src/app/(client)/communication/page.tsx`
+**Shared Component:** `CommunicationView` (see [Shared View Components](#shared-view-components))
 
 | State | Description |
 |-------|-------------|
@@ -350,6 +357,16 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ### 3. Client Detail (`/admin/clients/[id]`)
 **File:** `src/app/admin/clients/[id]/page.tsx`
+
+**Shared Components Used:**
+| Tab | Shared Component |
+|-----|------------------|
+| Results | `ResultsView` |
+| Activity | `ActivityView` |
+| Website | `WebsiteView` |
+| Content | `ContentView` |
+| Communication | `CommunicationView` |
+| Recommendations | `RecommendationsView` |
 
 **Main Tabs:**
 | Tab | Subtabs | Description |
@@ -655,6 +672,67 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ---
 
+## Shared View Components
+
+To ensure data consistency between admin and client views, the following shared components are used across both portals. These components live in `src/components/client-views/` and accept an `isAdmin` prop to conditionally render admin-specific features.
+
+### Component Overview
+
+| Component | File | Admin Tab | Client Page |
+|-----------|------|-----------|-------------|
+| `ResultsView` | `ResultsView.tsx` | Results | `/results` |
+| `WebsiteView` | `WebsiteView.tsx` | Website | `/website` |
+| `ActivityView` | `ActivityView.tsx` | Activity | `/activity` |
+| `ContentView` | `ContentView.tsx` | Content | `/content` |
+| `RecommendationsView` | `RecommendationsView.tsx` | Recommendations | `/recommendations` |
+| `CommunicationView` | `CommunicationView.tsx` | Communication | `/communication` |
+
+### Common Props Pattern
+
+All shared view components follow a consistent props pattern:
+
+```typescript
+interface ViewProps {
+  clientId: string           // Required: Client ID for data fetching
+  isAdmin?: boolean          // Optional: Enables admin-specific features
+  isDemo?: boolean           // Optional: Shows demo/coming-soon states
+  clientName?: string        // Optional: Client name for display
+  // Component-specific props...
+}
+```
+
+### Admin vs Client Differences
+
+| Feature | Admin | Client |
+|---------|-------|--------|
+| Data Loading | Props passed from parent | Fetches own data |
+| Edit Actions | Available (edit buttons, resend links) | Hidden |
+| Review Actions | Hidden | Available (approve/reject buttons) |
+| Subscription History | Visible | Hidden |
+| Invoice Management | Visible | Hidden |
+| Export Controls | Visible | Context-dependent |
+
+### Usage Example
+
+**Admin Page (data passed via props):**
+```tsx
+<CommunicationView
+  clientId={clientId}
+  isAdmin={true}
+  clientName={dbClient?.name}
+  communications={communications}
+  communicationsLoading={communicationsLoading}
+  onRefresh={refreshCommunications}
+/>
+```
+
+**Client Page (fetches own data):**
+```tsx
+<CommunicationView clientId={client.id} />
+```
+
+---
+
 ## Database Tables Summary
 
 | Table | Used By |
@@ -684,4 +762,4 @@ This document catalogs all page templates in the Pyrus Portal application, their
 
 ---
 
-*Last updated: January 2026*
+*Last updated: January 17, 2026*

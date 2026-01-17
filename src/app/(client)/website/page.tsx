@@ -5,6 +5,13 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
+import { WebsiteView } from '@/components/client-views'
+
+// Product info for the add-to-subscription modal
+const PRODUCT_INFO: Record<string, { name: string; price: number; description: string }> = {
+  'seed-site': { name: 'Seed Site', price: 249, description: 'AI-built professional website with hosting included' },
+  'website-care': { name: 'Website Care Plan', price: 149, description: 'Content updates, design changes & ongoing requests' },
+}
 
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
 
@@ -69,7 +76,34 @@ export default function WebsitePage() {
   const [requestDescription, setRequestDescription] = useState('')
   const [showBookingModal, setShowBookingModal] = useState(false)
 
+  // Add to subscription modal state
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addingProduct, setAddingProduct] = useState<string | null>(null)
+  const [addModalLoading, setAddModalLoading] = useState(false)
+  const [addModalSuccess, setAddModalSuccess] = useState<{ productName: string; effectiveDate: string } | null>(null)
+  const [addModalError, setAddModalError] = useState<string | null>(null)
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null)
+
   const isDemo = viewingAs === DEMO_CLIENT_ID
+
+  // Fetch subscription info to get next billing date
+  useEffect(() => {
+    async function fetchSubscriptionInfo() {
+      if (!client.id || isDemo) return
+      try {
+        const res = await fetch(`/api/client/subscription?clientId=${client.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.subscription?.currentPeriodEnd) {
+            setNextBillingDate(data.subscription.currentPeriodEnd)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching subscription:', err)
+      }
+    }
+    fetchSubscriptionInfo()
+  }, [client.id, isDemo])
   const demoState = searchParams.get('demoState')
 
   // Check if client is pending (prospect only) or has website services
@@ -92,10 +126,72 @@ export default function WebsitePage() {
     : !isPending && !hasWebsiteProducts
 
   const handleAddToCart = (itemId: string) => {
-    const params = new URLSearchParams()
-    params.set('item', itemId)
-    if (viewingAs) params.set('viewingAs', viewingAs)
-    router.push(`/checkout?${params.toString()}`)
+    // If client has an active subscription, show the add modal
+    // Otherwise, redirect to checkout for a new subscription
+    if (nextBillingDate && !isDemo) {
+      setAddingProduct(itemId)
+      setAddModalError(null)
+      setAddModalSuccess(null)
+      setShowAddModal(true)
+    } else {
+      // No active subscription - redirect to full checkout
+      const params = new URLSearchParams()
+      params.set('item', itemId)
+      if (viewingAs) params.set('viewingAs', viewingAs)
+      router.push(`/checkout?${params.toString()}`)
+    }
+  }
+
+  const handleConfirmAdd = async () => {
+    if (!addingProduct || !client.id) return
+
+    setAddModalLoading(true)
+    setAddModalError(null)
+
+    try {
+      const res = await fetch('/api/stripe/add-to-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: client.id,
+          productSlug: addingProduct,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.error === 'no_active_subscription') {
+          // Redirect to checkout
+          setShowAddModal(false)
+          const params = new URLSearchParams()
+          params.set('item', addingProduct)
+          if (viewingAs) params.set('viewingAs', viewingAs)
+          router.push(`/checkout?${params.toString()}`)
+          return
+        }
+        setAddModalError(data.message || 'Failed to add product')
+        return
+      }
+
+      // Success!
+      setAddModalSuccess({
+        productName: data.productName,
+        effectiveDate: data.effectiveDate,
+      })
+    } catch (err) {
+      console.error('Error adding to subscription:', err)
+      setAddModalError('An error occurred. Please try again.')
+    } finally {
+      setAddModalLoading(false)
+    }
+  }
+
+  const closeAddModal = () => {
+    setShowAddModal(false)
+    setAddingProduct(null)
+    setAddModalSuccess(null)
+    setAddModalError(null)
   }
 
   const handleSubmitRequest = (e: React.FormEvent) => {
@@ -495,184 +591,125 @@ export default function WebsitePage() {
             </div>
           </div>
         ) : (
-          <>
-        {/* Website Preview and Info Grid */}
-        <div className="website-hero-grid">
-          {/* Website Preview */}
-          <div className="website-preview-card">
-            <div className="website-preview-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                  <line x1="8" y1="21" x2="16" y2="21"></line>
-                  <line x1="12" y1="17" x2="12" y2="21"></line>
-                </svg>
-                Website Preview
-              </h3>
-              <a href={`https://${clientWebsiteData.domain}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-                Visit Site
-              </a>
-            </div>
-            <div className="website-preview-container">
-              <iframe
-                src={clientWebsiteData.previewUrl}
-                title="Website Preview"
-                frameBorder="0"
-                allowFullScreen
-              ></iframe>
-            </div>
-          </div>
-
-          {/* Website Info Card */}
-          <div className="website-info-card">
-            <div className="website-info-header">
-              <div className="website-status-badge active">
-                <span className="status-dot"></span>
-                Active
-              </div>
-            </div>
-
-            <div className="website-domain">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
-              <span>{clientWebsiteData.domain}</span>
-            </div>
-
-            <div className="website-info-details">
-              <div className="info-row">
-                <span className="info-label">Website Plan</span>
-                <span className="info-value">{clientWebsiteData.plan}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Care Plan</span>
-                <span className="info-value">{clientWebsiteData.carePlan}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Launched</span>
-                <span className="info-value">{clientWebsiteData.launchDate}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Hosting</span>
-                <span className="info-value">{clientWebsiteData.hosting.provider}</span>
-              </div>
-            </div>
-
-            <div className="website-stats-mini">
-              <div className="stat-mini">
-                <div className="stat-mini-value success">{clientWebsiteData.hosting.uptime}</div>
-                <div className="stat-mini-label">Uptime</div>
-              </div>
-              <div className="stat-mini">
-                <div className="stat-mini-value">{clientWebsiteData.hosting.lastUpdated}</div>
-                <div className="stat-mini-label">Last Updated</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Edit Requests Section - Split Layout */}
-        <div className="edit-requests-split">
-          {/* Left: Request History */}
-          <div className="edit-requests-card">
-            <div className="edit-requests-header">
-              <div className="edit-requests-title">
-                <h3>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                  Request History
-                </h3>
-                <p>Track your website change requests</p>
-              </div>
-            </div>
-
-            {/* Requests List */}
-            <div className="edit-requests-list">
-              {editRequests.map((request) => (
-                <div key={request.id} className={`edit-request-item ${request.status}`}>
-                  <div className={`request-status-icon ${request.status}`}>
-                    {getStatusIcon(request.status)}
-                  </div>
-                  <div className="request-details">
-                    <div className="request-title">{request.title}</div>
-                    <div className="request-meta">
-                      <span className="request-type">{request.type}</span>
-                    </div>
-                  </div>
-                  <div className="request-info">
-                    <span className={`request-status-badge ${request.status}`}>
-                      {request.status === 'in-progress' ? 'In Progress' : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </span>
-                    <span className="request-date">{request.date}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: New Request Form */}
-          <div className="new-request-card">
-            <div className="new-request-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Request an Edit
-              </h3>
-              <p>Submit a new change request</p>
-            </div>
-            <form className="new-request-form" onSubmit={handleSubmitRequest}>
-              <div className="form-group">
-                <label htmlFor="requestType">Request Type</label>
-                <select
-                  id="requestType"
-                  value={requestType}
-                  onChange={(e) => setRequestType(e.target.value)}
-                  required
-                >
-                  <option value="">Select type...</option>
-                  <option value="content-update">Content Update</option>
-                  <option value="bug-fix">Bug Fix</option>
-                  <option value="new-feature">New Feature</option>
-                  <option value="design-change">Design Change</option>
-                </select>
-              </div>
-              <div className="form-group description-group">
-                <label htmlFor="requestDescription">Description</label>
-                <textarea
-                  id="requestDescription"
-                  value={requestDescription}
-                  onChange={(e) => setRequestDescription(e.target.value)}
-                  placeholder="Describe the changes you'd like to make..."
-                  rows={4}
-                  required
-                ></textarea>
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                  Submit Request
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-          </>
+          /* Active Website - use shared WebsiteView component */
+          <WebsiteView clientId={client.id} isDemo={isDemo} onAddToCart={handleAddToCart} />
         )}
       </div>
+
+      {/* Add to Subscription Modal */}
+      {showAddModal && addingProduct && (
+        <div className="edit-modal-overlay" onClick={closeAddModal}>
+          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <div className="modal-icon" style={{ background: '#D1FAE5' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="20" height="20">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2>{addModalSuccess ? 'Added to Your Plan!' : 'Add to Your Plan'}</h2>
+                  <p className="modal-subtitle">
+                    {addModalSuccess
+                      ? 'Your subscription has been updated'
+                      : 'This will be added to your current subscription'}
+                  </p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={closeAddModal}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '1.5rem' }}>
+              {addModalSuccess ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="32" height="32">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem' }}>{addModalSuccess.productName}</h3>
+                  <p style={{ color: '#6B7280', margin: 0 }}>
+                    Will be active starting{' '}
+                    {new Date(addModalSuccess.effectiveDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'America/Chicago'
+                    })}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                      {PRODUCT_INFO[addingProduct]?.name || addingProduct}
+                    </div>
+                    <div style={{ color: '#6B7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      {PRODUCT_INFO[addingProduct]?.description}
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#059669' }}>
+                      ${PRODUCT_INFO[addingProduct]?.price}/month
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#FEF3C7', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="20" height="20" style={{ flexShrink: 0, marginTop: 2 }}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <div style={{ fontSize: '0.875rem', color: '#92400E' }}>
+                        <strong>Billing starts on your next cycle</strong>
+                        <br />
+                        {nextBillingDate ? (
+                          <>Your next billing date is {new Date(nextBillingDate).toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric',
+                            timeZone: 'America/Chicago'
+                          })}. This service will be included starting then.</>
+                        ) : (
+                          <>This service will be added to your next billing cycle.</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {addModalError && (
+                    <div style={{ background: '#FEE2E2', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: '#DC2626', fontSize: '0.875rem' }}>
+                      {addModalError}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              {addModalSuccess ? (
+                <button className="btn btn-primary" onClick={closeAddModal}>
+                  Done
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn-outline" onClick={closeAddModal} disabled={addModalLoading}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={handleConfirmAdd} disabled={addModalLoading}>
+                    {addModalLoading ? 'Adding...' : 'Add to My Plan'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
+import { ContentView } from '@/components/client-views'
+
+// Product info for the add-to-subscription modal
+const PRODUCT_INFO: Record<string, { name: string; price: number; description: string }> = {
+  'content-writing': { name: 'Content Writing', price: 99, description: 'SEO and AI-optimized content up to 1,000 words' },
+  'ai-creative-assets': { name: 'AI Creative Assets', price: 299, description: 'Monthly package of custom visuals for social, ads & website' },
+  'business-branding': { name: 'Business Branding Foundation', price: 99, description: 'Strategic brand positioning and messaging documents' },
+}
 
 const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -18,15 +26,38 @@ export default function ContentPage() {
 
   // State hooks
   const [showBookingModal, setShowBookingModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
-  const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
+
+  // Add to subscription modal state
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addingProduct, setAddingProduct] = useState<string | null>(null)
+  const [addModalLoading, setAddModalLoading] = useState(false)
+  const [addModalSuccess, setAddModalSuccess] = useState<{ productName: string; effectiveDate: string } | null>(null)
+  const [addModalError, setAddModalError] = useState<string | null>(null)
+  const [nextBillingDate, setNextBillingDate] = useState<string | null>(null)
+
+  // Fetch subscription info to get next billing date
+  useEffect(() => {
+    async function fetchSubscriptionInfo() {
+      if (!client.id || isDemo) return
+      try {
+        const res = await fetch(`/api/client/subscription?clientId=${client.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.subscription?.currentPeriodEnd) {
+            setNextBillingDate(data.subscription.currentPeriodEnd)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching subscription:', err)
+      }
+    }
+    fetchSubscriptionInfo()
+  }, [client.id, isDemo])
 
   // Demo state from URL params (set by PreviewBanner)
   const demoState = searchParams.get('demoState')
 
   // Check if client is pending (prospect only)
-  // Demo mode bypasses these checks to show the full content dashboard
-  // Unless there's a demo state override
   const isPending = isDemo
     ? demoState === 'locked'
     : client.status === 'pending'
@@ -45,197 +76,6 @@ export default function ContentPage() {
   const showUpsell = isDemo
     ? demoState === 'upsell'
     : !isPending && !client.access.hasContentProducts
-
-  // Files data - Raptor Vending specific for demo
-  const files = isDemo ? [
-    { id: 1, name: 'Raptor Vending Brand Strategy.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Jan 5, 2026' },
-    { id: 2, name: 'Micromarket Sales Playbook.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Jan 3, 2026' },
-    { id: 3, name: 'San Antonio Market Analysis.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 28, 2025' },
-    { id: 4, name: 'Raptor Brand Guidelines.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 20, 2025' },
-    { id: 5, name: 'Micromarket Promo Banner.png', type: 'images' as const, category: 'AI Creative', date: 'Jan 8, 2026' },
-    { id: 6, name: 'Workplace Dining Solutions.jpg', type: 'images' as const, category: 'AI Creative', date: 'Jan 6, 2026' },
-    { id: 7, name: 'Break Room Showcase Video.mp4', type: 'video' as const, category: 'AI Creative', date: 'Dec 15, 2025' },
-  ] : [
-    { id: 1, name: 'Brand Strategy Framework.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 15, 2025' },
-    { id: 2, name: 'Go-To-Market Playbook.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 15, 2025' },
-    { id: 3, name: 'Competitive Analysis.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 12, 2025' },
-    { id: 4, name: 'Brand Color Guidelines.pdf', type: 'docs' as const, category: 'Branding Foundation', date: 'Dec 10, 2025' },
-    { id: 5, name: 'Holiday Promo Banner.png', type: 'images' as const, category: 'AI Creative', date: 'Dec 20, 2025' },
-    { id: 6, name: 'Social Post - Services.jpg', type: 'images' as const, category: 'AI Creative', date: 'Dec 18, 2025' },
-    { id: 7, name: 'Animated Logo Intro.mp4', type: 'video' as const, category: 'AI Creative', date: 'Dec 5, 2025' },
-  ]
-
-  const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
-
-  // Demo content data for Raptor Vending
-  const demoContentData = {
-    urgentReviews: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        timeRemaining: '23 hours',
-        title: 'Why San Antonio Businesses Are Switching to Micromarkets',
-        type: 'Blog Post',
-        date: 'Jan 8',
-        preview: 'Discover why forward-thinking San Antonio companies are replacing traditional vending with 24/7 micromarket solutions...'
-      },
-      {
-        platform: 'gbp',
-        platformLabel: 'Google Business Profile',
-        timeRemaining: '18 hours',
-        title: 'New Micromarket Installation in Stone Oak',
-        type: 'Google Post',
-        date: 'Jan 10',
-        preview: 'Excited to announce our latest micromarket installation! Employees now enjoy fresh food, healthy snacks, and premium coffee 24/7...'
-      }
-    ],
-    pendingApproval: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        timeRemaining: '4 days',
-        title: '5 Ways Micromarkets Boost Employee Productivity',
-        type: 'Blog Post',
-        date: 'Jan 6',
-        preview: 'Research shows that convenient access to healthy food options can improve workplace productivity by up to 25%...'
-      },
-      {
-        platform: 'social',
-        platformLabel: 'Social Posts',
-        timeRemaining: '5 days',
-        title: 'January Social Media Calendar',
-        type: '8 Posts',
-        date: 'Jan 5',
-        preview: 'Your complete January social media package: New Year workplace wellness tips, micromarket features, and employee appreciation content...'
-      },
-      {
-        platform: 'ai-creative',
-        platformLabel: 'AI Creative',
-        timeRemaining: '6 days',
-        title: 'Micromarket Feature Graphics Package',
-        type: '4 Graphics',
-        date: 'Jan 4',
-        preview: 'AI-generated visuals showcasing your micromarket amenities: fresh food displays, coffee stations, and convenient checkout...'
-      }
-    ],
-    approved: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        title: 'The Complete Guide to Workplace Dining Solutions',
-        type: 'Blog Post',
-        date: 'Jan 3',
-        preview: 'Everything San Antonio businesses need to know about modernizing their break room with vending and micromarket options...',
-        scheduledDate: 'Jan 12'
-      }
-    ],
-    published: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        title: 'Micromarket vs Traditional Vending: Which Is Right for Your Office?',
-        type: 'Blog Post',
-        date: 'Dec 28',
-        preview: 'Compare the benefits of modern micromarkets against traditional vending machines for your San Antonio workplace...',
-        daysAgo: '14 days ago'
-      },
-      {
-        platform: 'gbp',
-        platformLabel: 'Google Business Profile',
-        title: 'Holiday Hours & New Year Services',
-        type: 'Google Post',
-        date: 'Dec 23',
-        preview: 'Happy Holidays from Raptor Vending! Our micromarkets keep running 24/7 so your team always has access to fresh food and drinks...',
-        daysAgo: '19 days ago'
-      }
-    ]
-  }
-
-  // Default content data for non-demo clients
-  const defaultContentData = {
-    urgentReviews: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        timeRemaining: '23 hours',
-        title: 'Black Friday Sale Announcement',
-        type: 'Blog Post',
-        date: 'Nov 15',
-        preview: 'Get ready for our biggest sale of the year! This Black Friday, enjoy up to 50% off on all our digital marketing services...'
-      },
-      {
-        platform: 'gbp',
-        platformLabel: 'Google Business Profile',
-        timeRemaining: '18 hours',
-        title: 'Limited Time Offer Post',
-        type: 'Google Post',
-        date: 'Nov 18',
-        preview: 'This week only! Get a free SEO audit with any web design package. Limited slots available...'
-      }
-    ],
-    pendingApproval: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        timeRemaining: '4 days',
-        title: '2025 Marketing Trends You Need to Know',
-        type: 'Blog Post',
-        date: 'Nov 20',
-        preview: 'Stay ahead of the curve with these 10 marketing trends that will dominate 2025...'
-      },
-      {
-        platform: 'social',
-        platformLabel: 'Social Posts',
-        timeRemaining: '5 days',
-        title: 'December Social Media Calendar',
-        type: '8 Posts',
-        date: 'Nov 22',
-        preview: 'Your complete December social media content package: holiday promotions, year-end highlights, and New Year preview...'
-      },
-      {
-        platform: 'ai-creative',
-        platformLabel: 'AI Creative',
-        timeRemaining: '6 days',
-        title: 'Holiday Promotion Graphics Package',
-        type: '4 Graphics',
-        date: 'Nov 23',
-        preview: 'AI-generated promotional graphics for your holiday campaign: social banners, email headers, and website hero images...'
-      }
-    ],
-    approved: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        title: 'Complete Guide to Digital Marketing in 2024',
-        type: 'Blog Post',
-        date: 'Nov 19',
-        preview: 'Get ready to take your business to the next level with our comprehensive guide to digital marketing...',
-        scheduledDate: 'Nov 21'
-      }
-    ],
-    published: [
-      {
-        platform: 'website',
-        platformLabel: 'Website Content',
-        title: 'How to Improve Your Local SEO Rankings',
-        type: 'Blog Post',
-        date: 'Nov 10',
-        preview: 'Learn the essential strategies for boosting your local search visibility and attracting more customers...',
-        daysAgo: '10 days ago'
-      },
-      {
-        platform: 'gbp',
-        platformLabel: 'Google Business Profile',
-        title: 'Veterans Day Special Offer',
-        type: 'Google Post',
-        date: 'Nov 11',
-        preview: 'This Veterans Day, we\'re proud to offer 20% off all services for veterans and active military...',
-        daysAgo: '9 days ago'
-      }
-    ]
-  }
-
-  const contentData = isDemo ? demoContentData : defaultContentData
 
   // Show loading state while fetching client data
   if (loading) {
@@ -256,10 +96,72 @@ export default function ContentPage() {
   }
 
   const handleAddToCart = (itemId: string) => {
-    const params = new URLSearchParams()
-    params.set('item', itemId)
-    if (viewingAs) params.set('viewingAs', viewingAs)
-    router.push(`/checkout?${params.toString()}`)
+    // If client has an active subscription, show the add modal
+    // Otherwise, redirect to checkout for a new subscription
+    if (nextBillingDate && !isDemo) {
+      setAddingProduct(itemId)
+      setAddModalError(null)
+      setAddModalSuccess(null)
+      setShowAddModal(true)
+    } else {
+      // No active subscription - redirect to full checkout
+      const params = new URLSearchParams()
+      params.set('item', itemId)
+      if (viewingAs) params.set('viewingAs', viewingAs)
+      router.push(`/checkout?${params.toString()}`)
+    }
+  }
+
+  const handleConfirmAdd = async () => {
+    if (!addingProduct || !client.id) return
+
+    setAddModalLoading(true)
+    setAddModalError(null)
+
+    try {
+      const res = await fetch('/api/stripe/add-to-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: client.id,
+          productSlug: addingProduct,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.error === 'no_active_subscription') {
+          // Redirect to checkout
+          setShowAddModal(false)
+          const params = new URLSearchParams()
+          params.set('item', addingProduct)
+          if (viewingAs) params.set('viewingAs', viewingAs)
+          router.push(`/checkout?${params.toString()}`)
+          return
+        }
+        setAddModalError(data.message || 'Failed to add product')
+        return
+      }
+
+      // Success!
+      setAddModalSuccess({
+        productName: data.productName,
+        effectiveDate: data.effectiveDate,
+      })
+    } catch (err) {
+      console.error('Error adding to subscription:', err)
+      setAddModalError('An error occurred. Please try again.')
+    } finally {
+      setAddModalLoading(false)
+    }
+  }
+
+  const closeAddModal = () => {
+    setShowAddModal(false)
+    setAddingProduct(null)
+    setAddModalSuccess(null)
+    setAddModalError(null)
   }
 
   // If client is pending, show locked placeholder
@@ -335,126 +237,30 @@ export default function ContentPage() {
           </div>
         </div>
         <div className="client-content">
-          {/* Content Stats - showing zeros for coming soon state */}
-          <div className="content-stats">
-            <div className="content-stat-card">
-              <div className="stat-label">Urgent Reviews</div>
-              <div className="stat-value">0</div>
-              <div className="stat-desc">Less than 24 hours</div>
-            </div>
-            <div className="content-stat-card">
-              <div className="stat-label">Pending Approval</div>
-              <div className="stat-value">0</div>
-              <div className="stat-desc">Awaiting your review</div>
-            </div>
-            <div className="content-stat-card">
-              <div className="stat-label">Approved</div>
-              <div className="stat-value">0</div>
-              <div className="stat-desc">Ready for publishing</div>
-            </div>
-            <div className="content-stat-card">
-              <div className="stat-label">Published</div>
-              <div className="stat-value">0</div>
-              <div className="stat-desc">Live content</div>
-            </div>
-          </div>
-
-          {/* Content Actions Bar */}
-          <div className="content-actions-bar" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <button className="btn btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                </svg>
-                View Content Requirements
-              </button>
-              <div className="content-plan-inline">
-                <span className="plan-inline-label">Your Plan:</span>
-                <span className="plan-inline-item">Business Branding Foundation</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn" style={{ background: '#7C3AED', borderColor: '#7C3AED', color: 'white' }} onClick={() => handleAddToCart('content-writing')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M12 20h9"></path>
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-                Add Content Writing
-              </button>
-              <button className="btn" style={{ background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }} onClick={() => handleAddToCart('ai-creative-assets')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-                Add AI Creative
-              </button>
-            </div>
-          </div>
-
-          {/* Content Tabs */}
-          <div className="results-subtabs">
-            <button
-              className={`results-subtab ${activeTab === 'review' ? 'active' : ''}`}
-              onClick={() => setActiveTab('review')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              Content Review
-            </button>
-            <button
-              className={`results-subtab ${activeTab === 'files' ? 'active' : ''}`}
-              onClick={() => setActiveTab('files')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              Files
-            </button>
-          </div>
-
-          {/* Content Filters - aligned right */}
-          <div className="content-filters" style={{ marginBottom: '1rem', justifyContent: 'flex-end' }}>
-            <button className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              Search
-            </button>
-            <button className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              Sort by Date
-            </button>
-          </div>
-
-          {/* Coming Soon Message */}
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
-            <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
+          <div className="coming-soon-placeholder">
+            <div className="coming-soon-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
                 <line x1="16" y1="17" x2="8" y2="17"></line>
               </svg>
             </div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>Content Coming Soon</h3>
-            <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
-              Your content team is getting started on your first pieces. You&apos;ll be notified when content is ready for review.
-            </p>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#DEF7EC', color: '#03543F', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: '500' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Content service active
+            <h2>Content Coming Soon</h2>
+            <p>Your content team is getting started on your first pieces. You&apos;ll be notified when content is ready for review.</p>
+            <div className="coming-soon-timeline">
+              <div className="timeline-item">
+                <div className="timeline-dot active"></div>
+                <span>Content service activated</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>First content in production</span>
+              </div>
+              <div className="timeline-item">
+                <div className="timeline-dot pending"></div>
+                <span>Ready for your review</span>
+              </div>
             </div>
           </div>
         </div>
@@ -525,7 +331,6 @@ export default function ContentPage() {
 
                 {/* Connecting Lines */}
                 <svg className="hub-connections" viewBox="0 0 400 320">
-                  {/* Lines from center to spokes */}
                   <path d="M 200 150 Q 120 100 60 70" stroke="#8B5CF6" strokeWidth="3" fill="none" strokeDasharray="8 4" className="hub-line" />
                   <path d="M 200 150 Q 280 100 340 70" stroke="#22C55E" strokeWidth="3" fill="none" strokeDasharray="8 4" className="hub-line" />
                   <path d="M 200 150 L 200 295" stroke="#F59E0B" strokeWidth="3" fill="none" strokeDasharray="8 4" className="hub-line" />
@@ -812,6 +617,121 @@ export default function ContentPage() {
             </div>
           </div>
         )}
+
+        {/* Add to Subscription Modal */}
+        {showAddModal && addingProduct && (
+          <div className="edit-modal-overlay" onClick={closeAddModal}>
+            <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+              <div className="modal-header">
+                <div className="modal-header-left">
+                  <div className="modal-icon" style={{ background: '#D1FAE5' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="20" height="20">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2>{addModalSuccess ? 'Added to Your Plan!' : 'Add to Your Plan'}</h2>
+                    <p className="modal-subtitle">
+                      {addModalSuccess
+                        ? 'Your subscription has been updated'
+                        : 'This will be added to your current subscription'}
+                    </p>
+                  </div>
+                </div>
+                <button className="modal-close" onClick={closeAddModal}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="modal-body" style={{ padding: '1.5rem' }}>
+                {addModalSuccess ? (
+                  <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="32" height="32">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem' }}>{addModalSuccess.productName}</h3>
+                    <p style={{ color: '#6B7280', margin: 0 }}>
+                      Will be active starting{' '}
+                      {new Date(addModalSuccess.effectiveDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        timeZone: 'America/Chicago'
+                      })}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                        {PRODUCT_INFO[addingProduct]?.name || addingProduct}
+                      </div>
+                      <div style={{ color: '#6B7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {PRODUCT_INFO[addingProduct]?.description}
+                      </div>
+                      <div style={{ fontWeight: 600, color: '#059669' }}>
+                        ${PRODUCT_INFO[addingProduct]?.price}/month
+                      </div>
+                    </div>
+
+                    <div style={{ background: '#FEF3C7', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="20" height="20" style={{ flexShrink: 0, marginTop: 2 }}>
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="8" x2="12" y2="12"></line>
+                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <div style={{ fontSize: '0.875rem', color: '#92400E' }}>
+                          <strong>Billing starts on your next cycle</strong>
+                          <br />
+                          {nextBillingDate ? (
+                            <>Your next billing date is {new Date(nextBillingDate).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                              timeZone: 'America/Chicago'
+                            })}. This service will be included starting then.</>
+                          ) : (
+                            <>This service will be added to your next billing cycle.</>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {addModalError && (
+                      <div style={{ background: '#FEE2E2', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: '#DC2626', fontSize: '0.875rem' }}>
+                        {addModalError}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                {addModalSuccess ? (
+                  <button className="btn btn-primary" onClick={closeAddModal}>
+                    Done
+                  </button>
+                ) : (
+                  <>
+                    <button className="btn btn-outline" onClick={closeAddModal} disabled={addModalLoading}>
+                      Cancel
+                    </button>
+                    <button className="btn btn-primary" onClick={handleConfirmAdd} disabled={addModalLoading}>
+                      {addModalLoading ? 'Adding...' : 'Add to My Plan'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </>
     )
   }
@@ -842,578 +762,8 @@ export default function ContentPage() {
       </div>
 
       <div className="client-content">
-        {/* Content Stats */}
-        <div className="content-stats">
-          <div className="content-stat-card urgent">
-            <div className="stat-label">Urgent Reviews</div>
-            <div className="stat-value">2</div>
-            <div className="stat-desc">Less than 24 hours</div>
-          </div>
-          <div className="content-stat-card">
-            <div className="stat-label">Pending Approval</div>
-            <div className="stat-value">5</div>
-            <div className="stat-desc">Awaiting your review</div>
-          </div>
-          <div className="content-stat-card">
-            <div className="stat-label">Approved</div>
-            <div className="stat-value">2</div>
-            <div className="stat-desc">Ready for publishing</div>
-          </div>
-          <div className="content-stat-card">
-            <div className="stat-label">Published</div>
-            <div className="stat-value">6</div>
-            <div className="stat-desc">Live content</div>
-          </div>
-        </div>
-
-        {/* Content Actions Bar */}
-        <div className="content-actions-bar">
-          <button className="btn btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-            </svg>
-            View Content Requirements
-          </button>
-          <div className="content-plan-inline">
-            <span className="plan-inline-label">Your Plan:</span>
-            <span className="plan-inline-item">(2) Blog posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(2) GBP posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(8) Social posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(4) AI graphics</span>
-            <span className="plan-inline-suffix">per month</span>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <div className="results-subtabs">
-          <button
-            className={`results-subtab ${activeTab === 'review' ? 'active' : ''}`}
-            onClick={() => setActiveTab('review')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Content Review
-            <span className="subtab-badge">7</span>
-          </button>
-          <button
-            className={`results-subtab ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => setActiveTab('files')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
-            Files
-            <span className="subtab-badge">7</span>
-          </button>
-        </div>
-
-        {/* Files Tab Content */}
-        {activeTab === 'files' && (
-          <div className="content-tab-content">
-            <div className="files-header">
-              <select
-                className="file-filter-select"
-                value={fileFilter}
-                onChange={(e) => setFileFilter(e.target.value as 'all' | 'docs' | 'images' | 'video')}
-              >
-                <option value="all">All Files ({files.length})</option>
-                <option value="docs">Documents ({files.filter(f => f.type === 'docs').length})</option>
-                <option value="images">Images ({files.filter(f => f.type === 'images').length})</option>
-                <option value="video">Video ({files.filter(f => f.type === 'video').length})</option>
-              </select>
-            </div>
-
-            <div className="files-grid">
-              {filteredFiles.map((file) => (
-                <div key={file.id} className="file-card">
-                  <div className={`file-icon ${file.type === 'docs' ? 'pdf' : file.type === 'images' ? 'image' : 'video'}`}>
-                    {file.type === 'docs' && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                      </svg>
-                    )}
-                    {file.type === 'images' && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                      </svg>
-                    )}
-                    {file.type === 'video' && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                      </svg>
-                    )}
-                  </div>
-                  <div className="file-info">
-                    <h4 className="file-name">{file.name}</h4>
-                    <div className="file-meta">
-                      <span className="file-category">{file.category}</span>
-                      <span className="file-date">{file.date}</span>
-                    </div>
-                  </div>
-                  <div className="file-actions">
-                    <button className="btn btn-sm btn-outline" title="Download">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                      </svg>
-                    </button>
-                    <button className="btn btn-sm btn-outline" title="View">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Content Review Tab Content */}
-        {activeTab === 'review' && (
-          <>
-        {/* Urgent Reviews Section */}
-        <div className="content-section">
-          <div className="content-section-header">
-            <h3 className="urgent-title">Urgent Reviews</h3>
-            <div className="content-filters">
-              <button className="btn btn-outline btn-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                Search
-              </button>
-              <button className="btn btn-outline btn-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Sort by Date
-              </button>
-            </div>
-          </div>
-
-          <div className="content-list">
-            {contentData.urgentReviews.map((item, index) => (
-              <div key={index} className="content-item urgent">
-                <div className="content-item-header">
-                  <span className={`platform-badge ${item.platform}`}>
-                    {item.platform === 'website' && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                      </svg>
-                    )}
-                    {item.platform === 'gbp' && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                      </svg>
-                    )}
-                    {item.platformLabel}
-                  </span>
-                  <div className="time-remaining urgent">
-                    <span className="time-label">Time remaining</span>
-                    <span className="time-value">{item.timeRemaining}</span>
-                  </div>
-                </div>
-                <h4 className="content-title">{item.title}</h4>
-                <div className="content-meta">
-                  <span className="content-type">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    {item.type}
-                  </span>
-                  <span className="content-date">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    Added {item.date}
-                  </span>
-                </div>
-                <p className="content-preview">{item.preview}</p>
-                <div className="content-actions">
-                  <button className="btn btn-primary btn-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <path d="M12 20h9"></path>
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                    </svg>
-                    Review &amp; Edit
-                  </button>
-                  <button className="btn btn-outline btn-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Quick Approve
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Pending Approval Section */}
-        <div className="content-section">
-          <div className="content-section-header">
-            <h3>Pending Approval</h3>
-          </div>
-          <div className="content-list">
-            <div className="content-item">
-              <div className="content-item-header">
-                <span className="platform-badge website">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  Website Content
-                </span>
-                <div className="time-remaining">
-                  <span className="time-label">Time remaining</span>
-                  <span className="time-value">4 days</span>
-                </div>
-              </div>
-              <h4 className="content-title">2025 Marketing Trends You Need to Know</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  Blog Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Added Nov 20
-                </span>
-              </div>
-              <p className="content-preview">Stay ahead of the curve with these 10 marketing trends that will dominate 2025...</p>
-              <div className="content-actions">
-                <button className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Review &amp; Edit
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Quick Approve
-                </button>
-              </div>
-            </div>
-
-            <div className="content-item">
-              <div className="content-item-header">
-                <span className="platform-badge social">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
-                  Social Posts
-                </span>
-                <div className="time-remaining">
-                  <span className="time-label">Time remaining</span>
-                  <span className="time-value">5 days</span>
-                </div>
-              </div>
-              <h4 className="content-title">December Social Media Calendar</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  8 Posts
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Added Nov 22
-                </span>
-              </div>
-              <p className="content-preview">Your complete December social media content package: holiday promotions, year-end highlights, and New Year&apos;s preview...</p>
-              <div className="content-actions">
-                <button className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Review &amp; Edit
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Quick Approve
-                </button>
-              </div>
-            </div>
-
-            <div className="content-item">
-              <div className="content-item-header">
-                <span className="platform-badge ai-creative">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                  AI Creative
-                </span>
-                <div className="time-remaining">
-                  <span className="time-label">Time remaining</span>
-                  <span className="time-value">6 days</span>
-                </div>
-              </div>
-              <h4 className="content-title">Holiday Promotion Graphics Package</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
-                  4 Graphics
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  Added Nov 23
-                </span>
-              </div>
-              <p className="content-preview">AI-generated promotional graphics for your holiday campaign: social banners, email headers, and website hero images...</p>
-              <div className="content-actions">
-                <button className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Review &amp; Edit
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Quick Approve
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Approved Section */}
-        <div className="content-section">
-          <div className="content-section-header">
-            <h3>Approved - Awaiting Publishing</h3>
-          </div>
-          <div className="content-list">
-            <div className="content-item approved">
-              <div className="content-item-header">
-                <span className="platform-badge website">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  Website Content
-                </span>
-                <div className="status-approved">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Awaiting Publishing
-                </div>
-              </div>
-              <h4 className="content-title">Complete Guide to Digital Marketing in 2024</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  Blog Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Approved Nov 19
-                </span>
-              </div>
-              <p className="content-preview">Get ready to take your business to the next level with our comprehensive guide to digital marketing...</p>
-              <div className="publishing-info">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Scheduled for publishing on Nov 21
-              </div>
-              <div className="content-actions">
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  View Approved Version
-                </button>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                  </svg>
-                  Rush Publishing
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Published Section */}
-        <div className="content-section">
-          <div className="content-section-header">
-            <h3>Published Content</h3>
-          </div>
-          <div className="content-list">
-            <div className="content-item published">
-              <div className="content-item-header">
-                <span className="platform-badge website">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  Website Content
-                </span>
-                <div className="status-published">
-                  <span className="published-label">Published</span>
-                  <span className="published-date">10 days ago</span>
-                </div>
-              </div>
-              <h4 className="content-title">How to Improve Your Local SEO Rankings</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  Blog Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Published Nov 10
-                </span>
-              </div>
-              <p className="content-preview">Learn the essential strategies for boosting your local search visibility and attracting more customers...</p>
-              <div className="content-actions">
-                <a href="https://example.com/blog/local-seo-rankings" target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                  View on Website
-                </a>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Request Update
-                </button>
-              </div>
-            </div>
-
-            <div className="content-item published">
-              <div className="content-item-header">
-                <span className="platform-badge gbp">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  Google Business Profile
-                </span>
-                <div className="status-published">
-                  <span className="published-label">Published</span>
-                  <span className="published-date">9 days ago</span>
-                </div>
-              </div>
-              <h4 className="content-title">Veterans Day Special Offer</h4>
-              <div className="content-meta">
-                <span className="content-type">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  Google Post
-                </span>
-                <span className="content-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Published Nov 11
-                </span>
-              </div>
-              <p className="content-preview">This Veterans Day, we&apos;re proud to offer 20% off all services for veterans and active military...</p>
-              <div className="content-actions">
-                <a href="https://business.google.com/posts" target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  View on GBP
-                </a>
-                <button className="btn btn-outline btn-sm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                  </svg>
-                  Create Similar Post
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        </>
-        )}
+        {/* Active Content - use shared ContentView component */}
+        <ContentView clientId={client.id} isDemo={isDemo} onAddToCart={handleAddToCart} />
       </div>
     </>
   )
