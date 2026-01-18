@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { GET, POST } from '@/app/api/admin/clients/route';
@@ -20,8 +20,7 @@ describe('Admin Clients API Routes', () => {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       });
 
-      const req = new Request('http://localhost/api/admin/clients', { method: 'GET' });
-      const res = await GET(req);
+      const res = await GET(); // Removed request parameter as GET does not take any arguments
 
       expect(res.status).toBe(401);
       const body = await res.json();
@@ -39,8 +38,7 @@ describe('Admin Clients API Routes', () => {
       ];
       (prisma.clients.findMany as jest.Mock).mockResolvedValue(mockClients);
 
-      const req = new Request('http://localhost/api/admin/clients', { method: 'GET' });
-      const res = await GET(req);
+      const res = await GET(); // Removed request parameter as GET does not take any arguments
 
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -54,7 +52,7 @@ describe('Admin Clients API Routes', () => {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       });
 
-      const req = new Request('http://localhost/api/admin/clients', { method: 'POST' });
+      const req = new NextRequest('http://localhost/api/admin/clients', { method: 'POST' });
       const res = await POST(req);
 
       expect(res.status).toBe(401);
@@ -67,7 +65,7 @@ describe('Admin Clients API Routes', () => {
         return { user: { id: 'admin-id' }, profile: { role: 'admin' } };
       });
 
-      const req = new Request('http://localhost/api/admin/clients', {
+      const req = new NextRequest('http://localhost/api/admin/clients', {
         method: 'POST',
         body: JSON.stringify({}), // Missing required fields
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +86,7 @@ describe('Admin Clients API Routes', () => {
       const createdClient = { id: '3', ...newClient };
       (prisma.clients.create as jest.Mock).mockResolvedValue(createdClient);
 
-      const req = new Request('http://localhost/api/admin/clients', {
+      const req = new NextRequest('http://localhost/api/admin/clients', {
         method: 'POST',
         body: JSON.stringify(newClient),
         headers: { 'Content-Type': 'application/json' },
