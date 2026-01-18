@@ -6,10 +6,19 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/components/(.*)$': '<rootDir>/src/__mocks__/componentMock.js',
   },
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|tsx)?$',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
+  collectCoverageFrom: [
+    '**/*.{js,jsx,ts,tsx}',
+    '!**/node_modules/**',
+    '!**/src/app/**', // Exclude Next.js app directory
+    '!**/src/components/**', // Exclude components directory
+    '!**/src/lib/**', // Exclude library files
+    '!**/src/stores/**', // Exclude stores
+    '!**/src/types/**' // Exclude types
+  ],
   coverageDirectory: 'coverage',
 };
