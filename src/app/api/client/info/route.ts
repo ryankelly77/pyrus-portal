@@ -83,7 +83,8 @@ export async function GET(request: NextRequest) {
         agency_dashboard_share_key,
         landingsite_preview_url,
         basecamp_id,
-        basecamp_project_id
+        basecamp_project_id,
+        onboarding_completed_at
       FROM clients
       WHERE id = $1`,
       [clientId]
@@ -138,8 +139,10 @@ export async function GET(request: NextRequest) {
     const hasResultsAccess = !!client.agency_dashboard_share_key
     const hasActivityAccess = !!client.basecamp_id || !!client.basecamp_project_id
     const hasWebsiteAccess = !!client.landingsite_preview_url
+    // Website products are actual websites (not just care/maintenance plans)
+    const websiteProductKeywords = ['seed site', 'seedling site', 'sprout site', 'bloom site', 'harvest site']
     const hasWebsiteProducts = activeProducts.some((name: string) =>
-      name.includes('site') || name.includes('website') || name.includes('care plan')
+      websiteProductKeywords.some(kw => name.includes(kw))
     )
     const hasContentProducts = activeProducts.some((name: string) =>
       name.includes('content') || name.includes('ai creative') || name.includes('branding')
@@ -172,6 +175,7 @@ export async function GET(request: NextRequest) {
       clientSince: startDate,
       agencyDashboardKey: client.agency_dashboard_share_key,
       landingsitePreviewUrl: client.landingsite_preview_url,
+      onboardingCompletedAt: client.onboarding_completed_at,
       // Access flags for sidebar badges
       access: {
         isActive: isActiveClient,

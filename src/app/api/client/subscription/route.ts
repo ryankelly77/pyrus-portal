@@ -260,6 +260,8 @@ export async function GET(request: NextRequest) {
       amount: number
       status: string
       pdfUrl: string | null
+      receiptUrl: string | null
+      hostedUrl: string | null
     }> = []
 
     let stripeBillingEmail: string | null = null
@@ -287,20 +289,41 @@ export async function GET(request: NextRequest) {
           isDefault: pm.id === defaultPaymentMethodId,
         }))
 
-        // Fetch invoices (last 10)
+        // Fetch invoices (last 10) - only paid invoices (receipts)
         const stripeInvoices = await stripe.invoices.list({
           customer: client.stripe_customer_id,
           limit: 10,
+          status: 'paid', // Only show paid invoices (receipts)
         })
 
-        invoices = stripeInvoices.data.map((inv) => ({
-          id: inv.id,
-          number: inv.number,
-          date: new Date(inv.created * 1000).toISOString(),
-          amount: inv.amount_paid / 100, // Convert from cents
-          status: inv.status || 'unknown',
-          pdfUrl: inv.invoice_pdf || null,
-        }))
+        // Get receipt URLs from charges for paid invoices
+        invoices = await Promise.all(
+          stripeInvoices.data.map(async (inv) => {
+            let receiptUrl: string | null = null
+
+            // Try to get receipt URL from the charge
+            if (inv.charge) {
+              try {
+                const chargeId = typeof inv.charge === 'string' ? inv.charge : inv.charge.id
+                const charge = await stripe.charges.retrieve(chargeId)
+                receiptUrl = charge.receipt_url || null
+              } catch {
+                // Fall back to invoice PDF
+              }
+            }
+
+            return {
+              id: inv.id,
+              number: inv.number,
+              date: new Date(inv.created * 1000).toISOString(),
+              amount: inv.amount_paid / 100, // Convert from cents
+              status: inv.status || 'unknown',
+              pdfUrl: inv.invoice_pdf || null,
+              receiptUrl, // Receipt from the charge
+              hostedUrl: inv.hosted_invoice_url || null, // Hosted page showing paid status
+            }
+          })
+        )
       } catch (stripeError) {
         console.error('Error fetching Stripe data:', stripeError)
         // Continue without Stripe data

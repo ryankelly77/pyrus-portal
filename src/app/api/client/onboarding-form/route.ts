@@ -111,6 +111,19 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // From manually assigned products (client_products table)
+    try {
+      const manualProducts = await prisma.client_products.findMany({
+        where: { client_id: clientId },
+        select: { product_id: true },
+      })
+      manualProducts.forEach((mp) => {
+        if (mp.product_id) productIds.add(mp.product_id)
+      })
+    } catch {
+      // Table may not exist yet - that's ok
+    }
+
     // If no products found, return empty
     if (productIds.size === 0) {
       return NextResponse.json({

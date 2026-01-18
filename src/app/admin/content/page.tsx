@@ -1,194 +1,105 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 
-type ContentStatus = 'draft' | 'awaiting' | 'revision' | 'approved' | 'published'
-type ContentType = 'blog' | 'gbp' | 'service' | 'social' | 'ai'
+type ContentStatus = 'draft' | 'pending_review' | 'revision' | 'approved' | 'published'
 
 interface ContentItem {
   id: string
   title: string
-  client: string
-  clientId: string
-  type: ContentType
-  typeLabel: string
+  client_name: string
+  client_id: string
+  content_type: string | null
+  platform: string | null
   status: ContentStatus
-  statusLabel: string
-  submitted: string
   urgent?: boolean
-  excerpt?: string
-  liveUrl?: string
+  excerpt?: string | null
+  published_url?: string | null
+  created_at: string
+  updated_at?: string
+  deadline?: string | null
+  scheduled_date?: string | null
+  published_at?: string | null
 }
 
-const contentItems: ContentItem[] = [
-  {
-    id: '1',
-    title: 'Black Friday Sale Announcement',
-    client: 'DLG Medical Services',
-    clientId: 'dlg',
-    type: 'gbp',
-    typeLabel: 'GBP Post',
-    status: 'revision',
-    statusLabel: 'Needs Revision',
-    submitted: 'Nov 20, 2024',
-    urgent: true,
-    excerpt: 'Get ready for our biggest sale of the year! This Black Friday, enjoy exclusive discounts on all our medical services...',
-  },
-  {
-    id: '2',
-    title: 'Complete Guide to Teeth Whitening',
-    client: 'Summit Dental',
-    clientId: 'summit',
-    type: 'blog',
-    typeLabel: 'Blog Post',
-    status: 'awaiting',
-    statusLabel: 'Awaiting Review',
-    submitted: 'Nov 19, 2024',
-    excerpt: 'A bright, white smile can boost your confidence and make a great first impression. In this comprehensive guide, we explore the various teeth whitening options available...',
-  },
-  {
-    id: '3',
-    title: 'Holiday Hours Update',
-    client: 'DLG Medical Services',
-    clientId: 'dlg',
-    type: 'gbp',
-    typeLabel: 'GBP Post',
-    status: 'awaiting',
-    statusLabel: 'Awaiting Review',
-    submitted: 'Nov 19, 2024',
-    urgent: true,
-    excerpt: 'Please note our updated hours for the holiday season. We will be closed on Thanksgiving Day and Christmas Day...',
-  },
-  {
-    id: '4',
-    title: '5 Tips for First-Time Home Buyers',
-    client: 'Coastal Realty Group',
-    clientId: 'coastal',
-    type: 'blog',
-    typeLabel: 'Blog Post',
-    status: 'draft',
-    statusLabel: 'Draft',
-    submitted: 'Nov 18, 2024',
-    excerpt: 'Buying your first home is an exciting milestone. Here are five essential tips to help you navigate the process...',
-  },
-  {
-    id: '5',
-    title: 'Winter Car Care Checklist',
-    client: 'Precision Auto Care',
-    clientId: 'precision',
-    type: 'blog',
-    typeLabel: 'Blog Post',
-    status: 'approved',
-    statusLabel: 'Approved',
-    submitted: 'Nov 17, 2024',
-    excerpt: 'As winter approaches, it\'s important to prepare your vehicle for cold weather conditions. Follow this checklist to ensure your car is ready...',
-  },
-  {
-    id: '6',
-    title: 'Fall Lawn Care Tips',
-    client: 'Green Valley Landscaping',
-    clientId: 'green',
-    type: 'blog',
-    typeLabel: 'Blog Post',
-    status: 'published',
-    statusLabel: 'Published',
-    submitted: 'Nov 15, 2024',
-    excerpt: 'Fall is the perfect time to prepare your lawn for the coming winter. Learn the essential steps to keep your yard healthy...',
-    liveUrl: 'https://greenvalleylandscaping.com/blog/fall-lawn-care-tips',
-  },
-  {
-    id: '7',
-    title: 'Invisalign vs Traditional Braces',
-    client: 'Summit Dental',
-    clientId: 'summit',
-    type: 'service',
-    typeLabel: 'Service Page',
-    status: 'revision',
-    statusLabel: 'Needs Revision',
-    submitted: 'Nov 14, 2024',
-    excerpt: 'Choosing between Invisalign and traditional braces? Both options can help you achieve a straighter smile, but they differ in several key ways...',
-  },
-  {
-    id: '8',
-    title: 'New Listing: Oceanfront Condo',
-    client: 'Coastal Realty Group',
-    clientId: 'coastal',
-    type: 'social',
-    typeLabel: 'Social Post',
-    status: 'awaiting',
-    statusLabel: 'Awaiting Review',
-    submitted: 'Nov 14, 2024',
-    excerpt: 'Just listed! Stunning oceanfront condo with panoramic views. 3 bed, 2 bath, modern finishes throughout...',
-  },
-  {
-    id: '9',
-    title: 'AI-Generated Patient Education Video',
-    client: 'Summit Dental',
-    clientId: 'summit',
-    type: 'ai',
-    typeLabel: 'AI Creative',
-    status: 'awaiting',
-    statusLabel: 'Awaiting Review',
-    submitted: 'Nov 21, 2024',
-    excerpt: 'An AI-generated educational video explaining the benefits of regular dental checkups and proper oral hygiene techniques...',
-  },
-  {
-    id: '10',
-    title: 'AI Product Showcase Animation',
-    client: 'Precision Auto Care',
-    clientId: 'precision',
-    type: 'ai',
-    typeLabel: 'AI Creative',
-    status: 'draft',
-    statusLabel: 'Draft',
-    submitted: 'Nov 22, 2024',
-    excerpt: 'Dynamic AI-generated animation showcasing our premium detailing services and before/after transformations...',
-  },
-]
+interface ClientOption {
+  id: string
+  name: string
+}
 
-const clients = [
-  { id: 'dlg', name: 'DLG Medical Services' },
-  { id: 'summit', name: 'Summit Dental' },
-  { id: 'coastal', name: 'Coastal Realty Group' },
-  { id: 'precision', name: 'Precision Auto Care' },
-  { id: 'green', name: 'Green Valley Landscaping' },
-]
+interface Stats {
+  drafts: number
+  pending_review: number
+  revision: number
+  approved: number
+  published: number
+  clients_with_content: number
+}
 
 export default function AdminContentPage() {
+  const [contentItems, setContentItems] = useState<ContentItem[]>([])
+  const [clients, setClients] = useState<ClientOption[]>([])
+  const [stats, setStats] = useState<Stats>({
+    drafts: 0,
+    pending_review: 0,
+    revision: 0,
+    approved: 0,
+    published: 0,
+    clients_with_content: 0
+  })
+  const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [clientFilter, setClientFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
+  const [platformFilter, setPlatformFilter] = useState('')
 
-  const filteredContent = useMemo(() => {
-    return contentItems.filter((item) => {
-      if (statusFilter && item.status !== statusFilter) return false
-      if (clientFilter && item.clientId !== clientFilter) return false
-      if (typeFilter && item.type !== typeFilter) return false
-      return true
-    })
-  }, [statusFilter, clientFilter, typeFilter])
+  // Fetch content and clients
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch content
+        const params = new URLSearchParams()
+        if (statusFilter) params.set('status', statusFilter)
+        if (clientFilter) params.set('clientId', clientFilter)
+        if (platformFilter) params.set('platform', platformFilter)
+
+        const contentRes = await fetch(`/api/admin/content?${params.toString()}`)
+        if (contentRes.ok) {
+          const data = await contentRes.json()
+          setContentItems(data.content || [])
+          setStats(data.stats || stats)
+        }
+
+        // Fetch clients for filter dropdown
+        const clientsRes = await fetch('/api/admin/clients')
+        if (clientsRes.ok) {
+          const data = await clientsRes.json()
+          setClients(data.clients?.map((c: { id: string; name: string }) => ({
+            id: c.id,
+            name: c.name
+          })) || [])
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [statusFilter, clientFilter, platformFilter])
 
   const clearFilters = () => {
     setStatusFilter('')
     setClientFilter('')
-    setTypeFilter('')
-  }
-
-  // Stats
-  const stats = {
-    drafts: contentItems.filter((i) => i.status === 'draft').length,
-    awaiting: contentItems.filter((i) => i.status === 'awaiting').length,
-    revisions: contentItems.filter((i) => i.status === 'revision').length,
-    published: contentItems.filter((i) => i.status === 'published').length,
+    setPlatformFilter('')
   }
 
   const getStatusClass = (status: ContentStatus) => {
     switch (status) {
       case 'draft':
         return 'status-draft'
-      case 'awaiting':
+      case 'pending_review':
         return 'status-awaiting'
       case 'revision':
         return 'status-revision'
@@ -196,22 +107,49 @@ export default function AdminContentPage() {
         return 'status-approved'
       case 'published':
         return 'status-published'
+      default:
+        return 'status-draft'
     }
   }
 
-  const getPlatformClass = (type: ContentType) => {
-    switch (type) {
-      case 'blog':
+  const getStatusLabel = (status: ContentStatus) => {
+    switch (status) {
+      case 'draft':
+        return 'Draft'
+      case 'pending_review':
+        return 'Awaiting Review'
+      case 'revision':
+        return 'Needs Revision'
+      case 'approved':
+        return 'Approved'
+      case 'published':
+        return 'Published'
+      default:
+        return status
+    }
+  }
+
+  const getPlatformClass = (platform: string) => {
+    switch (platform) {
+      case 'website':
         return 'website'
       case 'gbp':
         return 'gbp'
-      case 'service':
-        return 'website'
       case 'social':
         return 'social'
-      case 'ai':
+      case 'ai-creative':
         return 'ai-creative'
+      default:
+        return 'website'
     }
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
   }
 
   return (
@@ -273,7 +211,7 @@ export default function AdminContentPage() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{stats.awaiting}</span>
+              <span className="stat-value">{stats.pending_review}</span>
               <span className="stat-label">Awaiting Review</span>
             </div>
           </div>
@@ -286,7 +224,7 @@ export default function AdminContentPage() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{stats.revisions}</span>
+              <span className="stat-value">{stats.revision}</span>
               <span className="stat-label">Need Revisions</span>
             </div>
           </div>
@@ -338,19 +276,18 @@ export default function AdminContentPage() {
             </select>
           </div>
           <div className="filter-group">
-            <label htmlFor="typeFilter">Type</label>
+            <label htmlFor="platformFilter">Platform</label>
             <select
-              id="typeFilter"
+              id="platformFilter"
               className="form-control"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
             >
-              <option value="">All Types</option>
-              <option value="blog">Blog Post</option>
-              <option value="gbp">GBP Post</option>
-              <option value="service">Service Page</option>
-              <option value="social">Social Post</option>
-              <option value="ai">AI Creative</option>
+              <option value="">All Platforms</option>
+              <option value="website">Website</option>
+              <option value="gbp">Google Business</option>
+              <option value="social">Social</option>
+              <option value="ai-creative">AI Creative</option>
             </select>
           </div>
           <div className="filter-actions">
@@ -360,7 +297,15 @@ export default function AdminContentPage() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="loading-state" style={{ textAlign: 'center', padding: '48px' }}>
+            <p>Loading content...</p>
+          </div>
+        )}
+
         {/* Content Table */}
+        {!loading && (
         <div className="content-table-wrapper">
           <table className="content-table">
             <thead>
@@ -374,7 +319,7 @@ export default function AdminContentPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredContent.map((item) => (
+              {contentItems.map((item) => (
                 <tr key={item.id} className="content-row" data-status={item.status}>
                   <td>
                     <div className="content-title-cell">
@@ -393,18 +338,18 @@ export default function AdminContentPage() {
                       </Link>
                     </div>
                   </td>
-                  <td>{item.client}</td>
+                  <td>{item.client_name}</td>
                   <td>
-                    <span className={`platform-badge ${getPlatformClass(item.type)}`}>
-                      {item.typeLabel}
+                    <span className={`platform-badge ${getPlatformClass(item.platform)}`}>
+                      {item.content_type || item.platform}
                     </span>
                   </td>
                   <td>
                     <span className={`status-badge ${getStatusClass(item.status)}`}>
-                      {item.statusLabel}
+                      {getStatusLabel(item.status)}
                     </span>
                   </td>
-                  <td>{item.submitted}</td>
+                  <td>{formatDate(item.created_at)}</td>
                   <td>
                     <div className="action-buttons">
                       {item.status === 'revision' && (
@@ -417,12 +362,12 @@ export default function AdminContentPage() {
                           Continue
                         </Link>
                       )}
-                      {(item.status === 'awaiting' || item.status === 'approved') && (
+                      {(item.status === 'pending_review' || item.status === 'approved') && (
                         <>
                           <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-secondary">
                             View
                           </Link>
-                          {item.status === 'awaiting' && (
+                          {item.status === 'pending_review' && (
                             <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-outline">
                               Edit
                             </Link>
@@ -434,9 +379,9 @@ export default function AdminContentPage() {
                           <Link href={`/admin/content/${item.id}`} className="btn btn-sm btn-secondary">
                             View
                           </Link>
-                          {item.liveUrl && (
+                          {item.published_url && (
                             <a
-                              href={item.liveUrl}
+                              href={item.published_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn btn-sm btn-outline"
@@ -453,18 +398,19 @@ export default function AdminContentPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* No Results */}
-        {filteredContent.length === 0 && (
+        {!loading && contentItems.length === 0 && (
           <div className="no-results">
             <p>No content found matching your filters.</p>
           </div>
         )}
 
         {/* Pagination */}
-        {filteredContent.length > 0 && (
+        {contentItems.length > 0 && (
           <div className="table-pagination">
-            <span className="pagination-info">Showing 1-{filteredContent.length} of 23 items</span>
+            <span className="pagination-info">Showing 1-{contentItems.length} items</span>
             <div className="pagination-buttons">
               <button className="btn btn-sm btn-secondary" disabled>
                 Previous

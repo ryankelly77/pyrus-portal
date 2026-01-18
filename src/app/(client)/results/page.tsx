@@ -114,7 +114,7 @@ export default function ResultsPage() {
           </div>
         ) : (
           /* Active Results - use shared ResultsView component */
-          <ResultsView clientId={client.id} isDemo={isDemo} />
+          <ResultsView clientId={client.id} isDemo={isDemo} proDashboardUrl={client.agencyDashboardKey} />
         )}
       </div>
     </>

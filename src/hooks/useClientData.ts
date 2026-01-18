@@ -26,6 +26,7 @@ export interface ClientInfo {
   clientSince: string | null
   agencyDashboardKey: string | null
   landingsitePreviewUrl: string | null
+  onboardingCompletedAt: string | null
   access: ClientAccess
 }
 
@@ -44,6 +45,7 @@ const defaultClient: ClientInfo = {
   clientSince: null,
   agencyDashboardKey: null,
   landingsitePreviewUrl: null,
+  onboardingCompletedAt: null,
   access: {
     isActive: true,
     hasResults: false,

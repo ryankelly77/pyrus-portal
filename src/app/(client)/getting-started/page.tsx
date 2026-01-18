@@ -118,6 +118,7 @@ export default function GettingStartedPage() {
   const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
   const [clientStatus, setClientStatus] = useState<ClientStatus | null>(null)
+  const [onboardingCompletedAt, setOnboardingCompletedAt] = useState<string | null>(null)
 
   // Onboarding form state
   const [formData, setFormData] = useState<OnboardingFormData | null>(null)
@@ -135,6 +136,7 @@ export default function GettingStartedPage() {
         contactName: client.contactName,
       })
       setClientStatus(client.status as ClientStatus)
+      setOnboardingCompletedAt(client.onboardingCompletedAt)
     }
   }, [client])
 
@@ -492,68 +494,93 @@ export default function GettingStartedPage() {
             {/* Checklist Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'checklist' ? 'active' : ''}`} id="checklist">
           <div className="onboarding-grid">
-            <div className="checklist-card">
-              <div className="checklist-header">
-                <h3>Onboarding Checklist</h3>
-                <p>Complete these steps to get the most from your marketing</p>
-                <div className="progress-bar-container">
-                  <div className="progress-bar-label">
-                    <span>Progress</span>
-                    <span>
-                      {loading ? '...' : checklist ? `${checklist.progress.completed} of ${checklist.progress.total} completed` : '0 of 0 completed'}
-                    </span>
+            {onboardingCompletedAt ? (
+              <div className="checklist-card">
+                <div className="onboarding-complete-banner">
+                  <div className="complete-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
                   </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-bar-fill"
-                      style={{ width: `${checklist?.progress.percent || 0}%` }}
-                    ></div>
-                  </div>
+                  <h3>Onboarding Complete</h3>
+                  <p>All onboarding tasks have been completed. Your account is ready to go!</p>
+                  <p style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '0.5rem' }}>
+                    Completed on {new Date(onboardingCompletedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setActiveSubtab('onboarding-summary')}
+                    style={{ marginTop: '1rem' }}
+                  >
+                    View Summary
+                  </button>
                 </div>
               </div>
-              <div className="checklist-items">
-                {loading ? (
-                  <div className="checklist-loading">Loading checklist...</div>
-                ) : checklist && checklist.items.length > 0 ? (
-                  checklist.items.map((item) => (
-                    <div key={item.id} className={`checklist-item ${item.isCompleted ? 'completed' : ''}`}>
-                      <div className={`checklist-checkbox ${item.isCompleted ? 'completed' : ''}`}>
-                        {item.isCompleted && (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                      <div className="checklist-item-content">
-                        <div className="checklist-item-title">{item.title}</div>
-                        <div className="checklist-item-desc">
-                          {item.isCompleted && item.completedAt
-                            ? `Completed ${new Date(item.completedAt).toLocaleDateString()}`
-                            : item.description || `Related to ${item.product.name}`}
-                        </div>
-                      </div>
-                      {!item.isCompleted && item.actionType && item.actionUrl && (
-                        <div className="checklist-item-action">
-                          {item.actionType === 'link' ? (
-                            <a href={item.actionUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-                              {item.actionLabel || 'View'}
-                            </a>
-                          ) : (
-                            <button className="btn btn-secondary">
-                              {item.actionLabel || 'Complete'}
-                            </button>
+            ) : (
+              <div className="checklist-card">
+                <div className="checklist-header">
+                  <h3>Onboarding Checklist</h3>
+                  <p>Complete these steps to get the most from your marketing</p>
+                  <div className="progress-bar-container">
+                    <div className="progress-bar-label">
+                      <span>Progress</span>
+                      <span>
+                        {loading ? '...' : checklist ? `${checklist.progress.completed} of ${checklist.progress.total} completed` : '0 of 0 completed'}
+                      </span>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${checklist?.progress.percent || 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="checklist-items">
+                  {loading ? (
+                    <div className="checklist-loading">Loading checklist...</div>
+                  ) : checklist && checklist.items.length > 0 ? (
+                    checklist.items.map((item) => (
+                      <div key={item.id} className={`checklist-item ${item.isCompleted ? 'completed' : ''}`}>
+                        <div className={`checklist-checkbox ${item.isCompleted ? 'completed' : ''}`}>
+                          {item.isCompleted && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                           )}
                         </div>
-                      )}
+                        <div className="checklist-item-content">
+                          <div className="checklist-item-title">{item.title}</div>
+                          <div className="checklist-item-desc">
+                            {item.isCompleted && item.completedAt
+                              ? `Completed ${new Date(item.completedAt).toLocaleDateString()}`
+                              : item.description || `Related to ${item.product.name}`}
+                          </div>
+                        </div>
+                        {!item.isCompleted && item.actionType && item.actionUrl && (
+                          <div className="checklist-item-action">
+                            {item.actionType === 'link' ? (
+                              <a href={item.actionUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                                {item.actionLabel || 'View'}
+                              </a>
+                            ) : (
+                              <button className="btn btn-secondary">
+                                {item.actionLabel || 'Complete'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="checklist-empty">
+                      <p>No checklist items yet. Complete your onboarding form to see your personalized checklist.</p>
                     </div>
-                  ))
-                ) : (
-                  <div className="checklist-empty">
-                    <p>No checklist items yet. Complete your onboarding form to see your personalized checklist.</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <div className="sidebar-card video-sidebar">
                 <h4>
@@ -622,6 +649,29 @@ export default function GettingStartedPage() {
             {formLoading ? (
               <div className="questions-loading" style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
                 <div className="spinner" style={{ width: 40, height: 40 }}></div>
+              </div>
+            ) : onboardingCompletedAt ? (
+              <div className="questions-card">
+                <div className="onboarding-complete-banner">
+                  <div className="complete-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <h3>Onboarding Complete</h3>
+                  <p>Your onboarding information has been submitted. You can view your responses in the Summary tab.</p>
+                  <p style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '0.5rem' }}>
+                    Completed on {new Date(onboardingCompletedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setActiveSubtab('onboarding-summary')}
+                    style={{ marginTop: '1rem' }}
+                  >
+                    View Summary
+                  </button>
+                </div>
               </div>
             ) : !formData?.hasProducts || formData.questions.length === 0 ? (
               <div className="questions-card">
@@ -842,29 +892,33 @@ export default function GettingStartedPage() {
               <div className="summary-loading">Loading onboarding summary...</div>
             ) : Object.keys(summary).length > 0 ? (
               Object.entries(summary).map(([section, responses]) => (
-                <div key={section} className="summary-section">
-                  <h3 className="summary-section-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    {section}
-                  </h3>
-                  <div className="summary-content">
+                <div key={section} className="summary-card">
+                  <div className="summary-card-header">
+                    <h3>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      {section}
+                    </h3>
+                  </div>
+                  <div className="summary-card-content">
                     {responses.map((r) => (
-                      <div key={r.id} className="summary-field full-width">
+                      <div key={r.id} className="summary-field">
                         <label>{r.question}</label>
-                        {r.answer ? (
-                          r.questionType === 'url' ? (
-                            <a href={formatAnswer(r.answer)} target="_blank" rel="noopener noreferrer">
-                              {formatAnswer(r.answer)}
-                            </a>
+                        <div className={`answer-box ${r.answer ? 'answered' : 'unanswered'}`}>
+                          {r.answer ? (
+                            r.questionType === 'url' ? (
+                              <a href={formatAnswer(r.answer)} target="_blank" rel="noopener noreferrer">
+                                {formatAnswer(r.answer)}
+                              </a>
+                            ) : (
+                              formatAnswer(r.answer)
+                            )
                           ) : (
-                            <span>{formatAnswer(r.answer)}</span>
-                          )
-                        ) : (
-                          <span className="empty">Not provided</span>
-                        )}
+                            'Not answered yet'
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -915,6 +969,53 @@ export default function GettingStartedPage() {
 
         .summary-empty-icon {
           color: #d1d5db;
+        }
+
+        /* Onboarding Complete Banner */
+        .onboarding-complete-banner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          padding: 3rem 2rem;
+        }
+
+        .onboarding-complete-banner .complete-icon {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          margin-bottom: 1.5rem;
+        }
+
+        .onboarding-complete-banner h3 {
+          margin: 0 0 0.5rem;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #1A1F16;
+        }
+
+        .onboarding-complete-banner p {
+          margin: 0;
+          font-size: 0.875rem;
+          color: #5A6358;
+          max-width: 400px;
+        }
+
+        /* Checklist Tab Styles */
+        .onboarding-grid {
+          display: grid;
+          grid-template-columns: 800px 800px;
+          gap: 1.5rem;
+        }
+
+        /* Summary Tab Styles */
+        .onboarding-summary {
+          max-width: 800px;
         }
 
         /* Questions Tab Styles */

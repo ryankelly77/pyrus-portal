@@ -47,22 +47,27 @@ export async function GET(request: NextRequest) {
         content_type,
         platform,
         status,
-        preview_text,
+        excerpt,
+        SUBSTRING(body, 1, 200) as preview,
+        urgent,
+        deadline,
         due_date,
-        published_date,
+        published_at,
+        published_url,
         scheduled_date,
         created_at,
         updated_at
        FROM content
        WHERE client_id = $1
        ORDER BY
+         CASE WHEN urgent = true THEN 0 ELSE 1 END,
          CASE
-           WHEN status = 'pending_approval' THEN 1
+           WHEN status = 'pending_review' THEN 1
            WHEN status = 'approved' THEN 2
            WHEN status = 'published' THEN 3
            ELSE 4
          END,
-         due_date ASC NULLS LAST,
+         deadline ASC NULLS LAST,
          created_at DESC`,
       [clientId]
     )
@@ -70,45 +75,55 @@ export async function GET(request: NextRequest) {
     const allContent = contentResult.rows
 
     const now = new Date()
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
     // Categorize content
     const urgentReviews = allContent.filter(
-      (c: any) =>
-        c.status === 'pending_approval' &&
-        c.due_date &&
-        new Date(c.due_date) <= twentyFourHoursFromNow
+      (c: { status: string; urgent: boolean }) =>
+        c.status === 'pending_review' && c.urgent
     )
 
     const pendingApproval = allContent.filter(
-      (c: any) =>
-        c.status === 'pending_approval' &&
-        (!c.due_date || new Date(c.due_date) > twentyFourHoursFromNow)
+      (c: { status: string; urgent: boolean }) =>
+        c.status === 'pending_review' && !c.urgent
     )
 
     const approved = allContent.filter(
-      (c: any) => c.status === 'approved'
+      (c: { status: string }) => c.status === 'approved'
     )
 
     const published = allContent.filter(
-      (c: any) => c.status === 'published'
+      (c: { status: string }) => c.status === 'published'
     )
 
     // Helper to format content items
-    const formatContentItem = (item: any) => {
-      const dueDate = item.due_date ? new Date(item.due_date) : null
-      const publishedDate = item.published_date ? new Date(item.published_date) : null
+    const formatContentItem = (item: {
+      id: string
+      title: string
+      content_type: string | null
+      platform: string | null
+      excerpt: string | null
+      preview: string | null
+      deadline: string | null
+      published_at: string | null
+      published_url: string | null
+      scheduled_date: string | null
+      created_at: string | null
+    }) => {
+      const deadline = item.deadline ? new Date(item.deadline) : null
+      const publishedAt = item.published_at ? new Date(item.published_at) : null
       const scheduledDate = item.scheduled_date ? new Date(item.scheduled_date) : null
-      const createdAt = new Date(item.created_at)
+      const createdAt = item.created_at ? new Date(item.created_at) : new Date()
 
-      // Calculate time remaining for due items
+      // Calculate time remaining for deadline
       let timeRemaining: string | null = null
-      if (dueDate) {
-        const diffMs = dueDate.getTime() - now.getTime()
+      if (deadline) {
+        const diffMs = deadline.getTime() - now.getTime()
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+        const diffDays = Math.floor(diffHours / 24)
 
-        if (diffHours < 24) {
+        if (diffMs < 0) {
+          timeRemaining = 'Overdue'
+        } else if (diffHours < 24) {
           timeRemaining = `${diffHours} hours`
         } else {
           timeRemaining = `${diffDays} days`
@@ -117,10 +132,16 @@ export async function GET(request: NextRequest) {
 
       // Calculate days ago for published content
       let daysAgo: string | null = null
-      if (publishedDate) {
-        const diffMs = now.getTime() - publishedDate.getTime()
+      if (publishedAt) {
+        const diffMs = now.getTime() - publishedAt.getTime()
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-        daysAgo = `${diffDays} days ago`
+        if (diffDays === 0) {
+          daysAgo = 'Today'
+        } else if (diffDays === 1) {
+          daysAgo = '1 day ago'
+        } else {
+          daysAgo = `${diffDays} days ago`
+        }
       }
 
       // Map platform to display label
@@ -134,15 +155,16 @@ export async function GET(request: NextRequest) {
       return {
         id: item.id,
         platform: item.platform || 'website',
-        platformLabel: platformLabels[item.platform] || 'Website Content',
+        platformLabel: platformLabels[item.platform || 'website'] || 'Website Content',
         title: item.title,
         type: item.content_type || 'Blog Post',
-        preview: item.preview_text || '',
+        preview: item.excerpt || item.preview || '',
         timeRemaining,
         daysAgo,
         date: createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         scheduledDate: scheduledDate?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        publishedDate: publishedDate?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        publishedDate: publishedAt?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        publishedUrl: item.published_url,
       }
     }
 

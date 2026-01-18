@@ -7,6 +7,7 @@ interface ResultsViewProps {
   clientId: string
   isAdmin?: boolean
   isDemo?: boolean
+  proDashboardUrl?: string
 }
 
 interface KpiMetric {
@@ -137,38 +138,18 @@ function KpiCard({ icon, label, value, changeFormatted, trend }: {
   )
 }
 
-export function ResultsView({ clientId, isAdmin = false, isDemo = false }: ResultsViewProps) {
+export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDashboardUrl }: ResultsViewProps) {
   const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard'>('overview')
   const [loading, setLoading] = useState(true)
   const [resultsData, setResultsData] = useState<ResultsData | null>(null)
 
-  // Fetch results data
+  // For demo mode, load demo data. For real clients, we don't have APIs yet for overview.
   useEffect(() => {
-    async function fetchResults() {
-      if (isDemo) {
-        setResultsData(demoResultsData)
-        setLoading(false)
-        return
-      }
-
-      try {
-        const res = await fetch(`/api/client/results?clientId=${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setResultsData(data)
-        } else {
-          // Fall back to demo data if API fails
-          setResultsData(demoResultsData)
-        }
-      } catch (err) {
-        console.error('Error fetching results:', err)
-        setResultsData(demoResultsData)
-      } finally {
-        setLoading(false)
-      }
+    if (isDemo) {
+      setResultsData(demoResultsData)
     }
-    fetchResults()
-  }, [clientId, isDemo])
+    setLoading(false)
+  }, [isDemo])
 
   if (loading) {
     return (
@@ -178,7 +159,11 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false }: Resul
     )
   }
 
+  // Demo mode uses demo data, real clients will see Coming Soon for Overview tab
   const data = resultsData || demoResultsData
+  const showOverviewComingSoon = !isDemo
+  // Use provided proDashboardUrl prop, or fall back to data URL for demo mode
+  const dashboardUrl = proDashboardUrl || data.proDashboardUrl
 
   return (
     <div className="results-view-container">
@@ -212,6 +197,38 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false }: Resul
       {/* Overview Content */}
       {activeSubtab === 'overview' && (
         <div className="results-content results-tab-content active" id="overview">
+          {showOverviewComingSoon ? (
+            /* Coming Soon state for Overview - APIs not built yet */
+            <div className="coming-soon-placeholder" style={{ margin: '2rem 0' }}>
+              <div className="coming-soon-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </div>
+              <h2>Overview Coming Soon</h2>
+              <p>
+                {isAdmin
+                  ? "The performance overview dashboard is being developed. Use the Pro Dashboard tab to view detailed analytics in the meantime."
+                  : "We're building your performance overview dashboard. Use the Pro Dashboard tab to view your detailed analytics in the meantime."
+                }
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => setActiveSubtab('pro-dashboard')}
+                style={{ marginTop: '1rem' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                View Pro Dashboard
+              </button>
+            </div>
+          ) : (
+          <>
           <div className="results-header">
             <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Performance Overview</h3>
             <div className="results-period">
@@ -464,6 +481,8 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false }: Resul
               <a href="#">View all keywords →</a>
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -482,7 +501,7 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false }: Resul
               </h3>
               <p>Deep-dive analytics with real-time data from all your marketing channels</p>
             </div>
-            <a href={data.proDashboardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+            <a href={dashboardUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -493,7 +512,7 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false }: Resul
           </div>
           <div className="pro-dashboard-embed">
             <iframe
-              src={data.proDashboardUrl}
+              src={dashboardUrl}
               frameBorder="0"
               allowFullScreen
             ></iframe>

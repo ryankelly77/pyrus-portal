@@ -100,6 +100,8 @@ interface DBClient {
   basecamp_project_id: string | null
   landingsite_preview_url: string | null
   stripe_customer_id: string | null
+  // Onboarding
+  onboarding_completed_at: string | null
 }
 
 type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
@@ -1695,8 +1697,9 @@ export default function ClientDetailPage() {
     }
   }
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state - wait for both client AND stripe subscriptions to load
+  // This prevents a flash of incorrect tab states while stripe data loads
+  if (isLoading || stripeSubscriptionsLoading) {
     return (
       <>
         <AdminHeader
@@ -2122,15 +2125,41 @@ export default function ClientDetailPage() {
 
             {/* Questions Tab Content */}
             <div className={`gs-tab-content ${activeSubtab === 'questions' ? 'active' : ''}`} id="questions">
-              {onboardingFormLoading ? (
+              {dbClient?.onboarding_completed_at ? (
+                /* Onboarding Complete State */
+                <div className="onboarding-questions">
+                  <div className="questions-card">
+                    <div className="onboarding-complete-banner">
+                      <div className="complete-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                      </div>
+                      <h3>Onboarding Complete</h3>
+                      <p>All onboarding questions have been completed.</p>
+                      <p style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '0.5rem' }}>
+                        Completed on {new Date(dbClient.onboarding_completed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setActiveSubtab('onboarding-summary')}
+                        style={{ marginTop: '1rem' }}
+                      >
+                        View Summary
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : onboardingFormLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
                   <div className="spinner" style={{ width: 40, height: 40 }}></div>
                 </div>
               ) : onboardingForm?.hasProducts && onboardingForm.questions.length > 0 ? (
-                <div className="onboarding-questions" style={{ maxWidth: '800px' }}>
+                <div className="onboarding-questions">
                   {/* Progress Header */}
-                  <div className="questions-card" style={{ background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
-                    <div style={{ padding: '1.5rem' }}>
+                  <div className="questions-card">
+                    <div className="questions-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <div>
                           <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.125rem', fontWeight: 600, color: '#1A1F16' }}>Onboarding Questions</h3>
@@ -2153,9 +2182,9 @@ export default function ClientDetailPage() {
 
                   {/* Questions by Section */}
                   {Object.entries(onboardingForm.grouped).map(([section, questions]) => (
-                    <div key={section} className="questions-card" style={{ background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
-                      <div style={{ padding: '1.5rem', borderBottom: '1px solid #E5E7EB' }}>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1A1F16' }}>
+                    <div key={section} className="questions-card">
+                      <div className="questions-header">
+                        <h3>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -2163,28 +2192,21 @@ export default function ClientDetailPage() {
                           {section}
                         </h3>
                       </div>
-                      <div style={{ padding: '1.5rem' }}>
+                      <div className="questions-content">
                         {questions.map((q) => (
-                          <div key={q.id} style={{ marginBottom: '1.25rem', paddingBottom: '1.25rem', borderBottom: '1px solid #F3F4F6' }}>
-                            <label style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block', color: '#374151' }}>
+                          <div key={q.id} className="summary-field">
+                            <label>
                               {q.questionText}
                               {q.isRequired && <span style={{ color: '#DC2626', marginLeft: '4px' }}>*</span>}
                             </label>
                             {q.helpText && (
-                              <p style={{ fontSize: '0.8125rem', color: '#6b7280', marginBottom: '0.5rem' }}>{q.helpText}</p>
+                              <p className="help-text">{q.helpText}</p>
                             )}
-                            <div style={{
-                              padding: '0.75rem',
-                              background: q.response ? '#F0FDF4' : '#F9FAFB',
-                              borderRadius: '8px',
-                              border: q.response ? '1px solid #BBF7D0' : '1px solid #E5E7EB',
-                            }}>
+                            <div className={`answer-box ${q.response ? 'answered' : 'unanswered'}`}>
                               {q.response ? (
-                                <span style={{ color: '#166534', fontSize: '0.875rem' }}>
-                                  {q.response.text || (q.response.options && q.response.options.join(', ')) || 'Answered'}
-                                </span>
+                                q.response.text || (q.response.options && q.response.options.join(', ')) || 'Answered'
                               ) : (
-                                <span style={{ color: '#9CA3AF', fontSize: '0.875rem', fontStyle: 'italic' }}>Not answered yet</span>
+                                'Not answered yet'
                               )}
                             </div>
                           </div>
@@ -2247,6 +2269,31 @@ export default function ClientDetailPage() {
             {/* Checklist Tab Content */}
             <div className={`gs-tab-content ${activeSubtab === 'checklist' ? 'active' : ''}`} id="checklist">
               <div className="onboarding-grid">
+                {dbClient?.onboarding_completed_at ? (
+                  /* Onboarding Complete State */
+                  <div className="checklist-card">
+                    <div className="onboarding-complete-banner">
+                      <div className="complete-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                      </div>
+                      <h3>Onboarding Complete</h3>
+                      <p>All onboarding tasks have been completed. The account is ready to go!</p>
+                      <p style={{ fontSize: '0.8125rem', color: '#6B7280', marginTop: '0.5rem' }}>
+                        Completed on {new Date(dbClient.onboarding_completed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setActiveSubtab('onboarding-summary')}
+                        style={{ marginTop: '1rem' }}
+                      >
+                        View Summary
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="checklist-card">
                   <div className="checklist-header">
                     <h3>Onboarding Checklist</h3>
@@ -2318,6 +2365,7 @@ export default function ClientDetailPage() {
                     )}
                   </div>
                 </div>
+                )}
                 <div>
                   <div className="sidebar-card video-sidebar">
                     <h4>
@@ -2407,59 +2455,69 @@ export default function ClientDetailPage() {
             <div className={`gs-tab-content ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`} id="onboarding-summary">
               <div className="onboarding-summary">
                 {/* Client Info Section - from database */}
-                <div className="summary-section">
-                  <h3 className="summary-section-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    Client Info
-                  </h3>
-                  <div className="summary-grid">
+                <div className="summary-card">
+                  <div className="summary-card-header">
+                    <h3>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      Client Info
+                    </h3>
+                  </div>
+                  <div className="summary-card-content">
                     <div className="summary-field">
                       <label>Contact Name</label>
-                      <span>{dbClient?.contact_name || 'Not provided'}</span>
+                      <div className={`answer-box ${dbClient?.contact_name ? 'answered' : 'unanswered'}`}>
+                        {dbClient?.contact_name || 'Not provided'}
+                      </div>
                     </div>
                     <div className="summary-field">
                       <label>Company</label>
-                      <span>{dbClient?.name || 'Not provided'}</span>
+                      <div className={`answer-box ${dbClient?.name ? 'answered' : 'unanswered'}`}>
+                        {dbClient?.name || 'Not provided'}
+                      </div>
                     </div>
                     <div className="summary-field">
                       <label>Email</label>
-                      <span>{dbClient?.contact_email || 'Not provided'}</span>
+                      <div className={`answer-box ${dbClient?.contact_email ? 'answered' : 'unanswered'}`}>
+                        {dbClient?.contact_email || 'Not provided'}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Dynamic Onboarding Responses */}
                 {summaryLoading ? (
-                  <div className="summary-section">
+                  <div className="summary-card" style={{ padding: '1.5rem' }}>
                     <p>Loading onboarding responses...</p>
                   </div>
                 ) : onboardingSummary && Object.keys(onboardingSummary).length > 0 ? (
                   Object.entries(onboardingSummary).map(([section, responses]) => (
-                    <div key={section} className="summary-section">
-                      <h3 className="summary-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                        {section}
-                      </h3>
-                      <div className="summary-content">
+                    <div key={section} className="summary-card">
+                      <div className="summary-card-header">
+                        <h3>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                          {section}
+                        </h3>
+                      </div>
+                      <div className="summary-card-content">
                         {responses.map((response) => (
-                          <div key={response.id} className="summary-field full-width">
+                          <div key={response.id} className="summary-field">
                             <label>{response.question}</label>
-                            <span>{response.answer || 'Not answered'}</span>
+                            <div className={`answer-box ${response.answer ? 'answered' : 'unanswered'}`}>
+                              {response.answer || 'Not answered yet'}
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="summary-section">
+                  <div className="summary-card" style={{ padding: '1.5rem' }}>
                     <p style={{ color: '#6B7280', fontStyle: 'italic' }}>No onboarding responses yet. The client will complete the onboarding form after checkout.</p>
                   </div>
                 )}
@@ -2475,7 +2533,7 @@ export default function ClientDetailPage() {
           <div className="results-content">
             {hasResultsAccess ? (
               /* Active Results - use shared ResultsView component */
-              <ResultsView clientId={clientId} isAdmin={true} />
+              <ResultsView clientId={clientId} isAdmin={true} proDashboardUrl={dbClient?.agency_dashboard_share_key || undefined} />
             ) : checklistItems.length > 0 ? (
               /* Service purchased but not yet activated */
               <div className="coming-soon-placeholder">

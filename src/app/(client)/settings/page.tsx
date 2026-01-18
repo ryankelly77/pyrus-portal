@@ -51,6 +51,8 @@ interface SubscriptionData {
     amount: number
     status: string
     pdfUrl: string | null
+    receiptUrl: string | null
+    hostedUrl: string | null
   }>
   billingEmail: string | null
   clientName: string
@@ -745,10 +747,20 @@ export default function SettingsPage() {
                         <div style={{ fontWeight: 500, color: '#1A1F18' }}>
                           ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <div>
-                          {invoice.pdfUrl ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#E8F5E9',
+                            color: '#2E7D32',
+                            borderRadius: '4px',
+                            fontWeight: 500
+                          }}>
+                            Paid
+                          </span>
+                          {(invoice.receiptUrl || invoice.hostedUrl || invoice.pdfUrl) && (
                             <a
-                              href={invoice.pdfUrl}
+                              href={invoice.receiptUrl || invoice.hostedUrl || invoice.pdfUrl || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{
@@ -765,19 +777,8 @@ export default function SettingsPage() {
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                               </svg>
-                              PDF
+                              Receipt
                             </a>
-                          ) : (
-                            <span style={{
-                              fontSize: '0.75rem',
-                              padding: '0.25rem 0.5rem',
-                              backgroundColor: invoice.status === 'paid' ? '#E8F5E9' : '#FFF3E0',
-                              color: invoice.status === 'paid' ? '#2E7D32' : '#E65100',
-                              borderRadius: '4px',
-                              textTransform: 'capitalize'
-                            }}>
-                              {invoice.status}
-                            </span>
                           )}
                         </div>
                       </div>

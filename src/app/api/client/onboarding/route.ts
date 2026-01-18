@@ -81,6 +81,19 @@ async function getClientProductIds(clientId: string): Promise<string[]> {
     }
   })
 
+  // Also get products manually assigned via client_products table
+  try {
+    const manualProducts = await prisma.client_products.findMany({
+      where: { client_id: clientId },
+      select: { product_id: true },
+    })
+    manualProducts.forEach((mp) => {
+      if (mp.product_id) productIds.add(mp.product_id)
+    })
+  } catch {
+    // Table may not exist yet - that's ok
+  }
+
   return Array.from(productIds)
 }
 

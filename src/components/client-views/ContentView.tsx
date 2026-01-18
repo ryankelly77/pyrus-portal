@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 interface ContentViewProps {
   clientId: string
@@ -21,6 +22,7 @@ interface ContentItem {
   date: string
   scheduledDate?: string | null
   publishedDate?: string | null
+  publishedUrl?: string | null
 }
 
 interface ContentStats {
@@ -57,16 +59,6 @@ const demoFiles: FileItem[] = [
   { id: 7, name: 'Break Room Showcase Video.mp4', type: 'video', category: 'AI Creative', date: 'Dec 15, 2025' },
 ]
 
-// Default files for non-demo clients
-const defaultFiles: FileItem[] = [
-  { id: 1, name: 'Brand Strategy Framework.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 15, 2025' },
-  { id: 2, name: 'Go-To-Market Playbook.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 15, 2025' },
-  { id: 3, name: 'Competitive Analysis.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 12, 2025' },
-  { id: 4, name: 'Brand Color Guidelines.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 10, 2025' },
-  { id: 5, name: 'Holiday Promo Banner.png', type: 'images', category: 'AI Creative', date: 'Dec 20, 2025' },
-  { id: 6, name: 'Social Post - Services.jpg', type: 'images', category: 'AI Creative', date: 'Dec 18, 2025' },
-  { id: 7, name: 'Animated Logo Intro.mp4', type: 'video', category: 'AI Creative', date: 'Dec 5, 2025' },
-]
 
 // Demo content data
 const demoContentData: ContentData = {
@@ -281,30 +273,30 @@ function ContentItemCard({
       <div className="content-actions">
         {(variant === 'urgent' || variant === 'pending') && (
           <>
-            <button className="btn btn-primary btn-sm">
+            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-primary btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
               </svg>
               Review &amp; Edit
-            </button>
-            <button className="btn btn-outline btn-sm">
+            </Link>
+            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               Quick Approve
-            </button>
+            </Link>
           </>
         )}
         {variant === 'approved' && (
           <>
-            <button className="btn btn-outline btn-sm">
+            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
               </svg>
               View Approved Version
-            </button>
+            </Link>
             <button className="btn btn-outline btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -315,17 +307,24 @@ function ContentItemCard({
         )}
         {variant === 'published' && (
           <>
-            <button className="btn btn-primary btn-sm">
-              <PlatformIcon platform={item.platform} />
-              View on {item.platform === 'gbp' ? 'GBP' : 'Website'}
-            </button>
-            <button className="btn btn-outline btn-sm">
+            {item.publishedUrl ? (
+              <a href={item.publishedUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
+                <PlatformIcon platform={item.platform} />
+                View on {item.platform === 'gbp' ? 'GBP' : 'Website'}
+              </a>
+            ) : (
+              <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-primary btn-sm">
+                <PlatformIcon platform={item.platform} />
+                View Content
+              </Link>
+            )}
+            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
               </svg>
               {item.platform === 'gbp' ? 'Create Similar Post' : 'Request Update'}
-            </button>
+            </Link>
           </>
         )}
       </div>
@@ -340,8 +339,8 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
   const [contentStats, setContentStats] = useState<ContentStats | null>(null)
   const [contentData, setContentData] = useState<ContentData | null>(null)
 
-  // Use demo or default files based on isDemo
-  const files = isDemo ? demoFiles : defaultFiles
+  // Only show demo files in demo mode, otherwise empty (real files would come from API)
+  const files = isDemo ? demoFiles : []
   const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
 
   // Fetch content data
@@ -384,7 +383,13 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
     )
   }
 
-  const displayData = contentData || demoContentData
+  // Only use demo data for demo mode, otherwise show empty state
+  const displayData = isDemo ? (contentData || demoContentData) : (contentData || {
+    urgentReviews: [],
+    pendingApproval: [],
+    approved: [],
+    published: []
+  })
   const stats = contentStats || {
     urgentReviews: displayData.urgentReviews.length,
     pendingApproval: displayData.pendingApproval.length,
@@ -568,6 +573,19 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
           </div>
 
           <div className="files-grid">
+            {files.length === 0 && (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
+                <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>No Files Yet</h3>
+                <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
+                  Brand documents, graphics, and video files will appear here once created.
+                </p>
+              </div>
+            )}
             {filteredFiles.map((file) => (
               <div key={file.id} className="file-card">
                 <div className={`file-icon ${file.type === 'docs' ? 'pdf' : file.type === 'images' ? 'image' : 'video'}`}>
