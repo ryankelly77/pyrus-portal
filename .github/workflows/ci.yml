@@ -27,6 +27,26 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          HIGHLEVEL_API_KEY: ${{ secrets.HIGHLEVEL_API_KEY }}
+          HIGHLEVEL_LOCATION_ID: ${{ secrets.HIGHLEVEL_LOCATION_ID }}
+          HIGHLEVEL_CLIENT_ID: ${{ secrets.HIGHLEVEL_CLIENT_ID }}
+          HIGHLEVEL_CLIENT_SECRET: ${{ secrets.HIGHLEVEL_CLIENT_SECRET }}
+          HIGHLEVEL_REDIRECT_URI: ${{ secrets.HIGHLEVEL_REDIRECT_URI }}
+          MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+          MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
+          MAILGUN_FROM_EMAIL: ${{ secrets.MAILGUN_FROM_EMAIL }}
+          MAILGUN_WEBHOOK_SIGNING_KEY: ${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          HIGHLEVEL_CLIENT_SECRET: ${{ secrets.HIGHLEVEL_CLIENT_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         run: npm test
