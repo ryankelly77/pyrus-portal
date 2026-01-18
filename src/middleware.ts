@@ -10,6 +10,13 @@ const superAdminRoutes = ['/products', '/rewards', '/settings']
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   const path = request.nextUrl.pathname
+  // Protect admin API routes: return 401 JSON for unauthenticated requests
+  if (path.startsWith('/api/admin')) {
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return supabaseResponse
+  }
 
   // Allow public routes
   if (publicRoutes.some(route => path.startsWith(route))) {
