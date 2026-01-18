@@ -82,3 +82,21 @@ export function isValidUuid(id: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   return typeof id === 'string' && uuidRegex.test(id)
 }
+
+export class CustomError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+    this.name = 'CustomError' // Ensure the name is set for instanceof checks
+    Object.setPrototypeOf(this, CustomError.prototype)
+  }
+}
+
+/**
+ * Create a standardized error object with a status code and message.
+ */
+export function createError(status: number, message: string) {
+  return new CustomError(status, message)
+}

@@ -1,23 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 import type { User } from '@supabase/supabase-js'
 
 type Profile = { role: string }
 
-export async function requireAdmin(): Promise<NextResponse | { user: User; profile: Profile }> {
+export async function requireAdmin(): Promise<NextResponse | { user: User; profile: { role: string } }> {
   const supabase = await createClient()
-
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser()
 
-  if (error) {
-    console.error('Supabase getUser error', error)
-  }
-
-  if (!user) {
+  if (error || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
