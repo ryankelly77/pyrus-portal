@@ -11,6 +11,7 @@ function isAuth(obj: any): obj is { user: any; profile: any } { return obj && ty
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
     if (!isAuth(auth)) return auth
     const { user } = auth
 
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
     if (!isAuth(auth)) return auth
     const { user } = auth
 
