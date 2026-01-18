@@ -45,8 +45,6 @@ jobs:
           MAILGUN_FROM_EMAIL: ${{ secrets.MAILGUN_FROM_EMAIL }}
           MAILGUN_WEBHOOK_SIGNING_KEY: ${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          HIGHLEVEL_CLIENT_SECRET: ${{ secrets.HIGHLEVEL_CLIENT_SECRET }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         run: npm test
