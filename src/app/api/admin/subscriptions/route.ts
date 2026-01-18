@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { subscriptionCreateSchema } from '@/lib/validation/schemas'
 
 interface CartItem {
   id: string
@@ -18,8 +21,13 @@ interface CartItem {
 // POST /api/admin/subscriptions - Create a subscription from checkout
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { clientId, items, tier, totalMonthly, stripeSubscriptionId, paymentIntentId, userName, userRole } = body
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
+    const validated = await validateRequest(subscriptionCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
+
+    const { clientId, items, tier, totalMonthly, stripeSubscriptionId, paymentIntentId, userName, userRole } = (validated as any).data
 
     // Build user display string for history
     const userDisplay = userName && userRole

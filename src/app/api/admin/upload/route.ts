@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { uploadSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/admin/upload - Upload a file to Supabase Storage
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
+
+    // For multipart form uploads we still parse the form, but validate metadata fields if present
     const formData = await request.formData()
     const file = formData.get('file') as File
     const bucket = (formData.get('bucket') as string) || 'uploads'
@@ -13,6 +21,20 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    // If client provided metadata fields, validate them
+    const metadataCandidate = {
+      filename: file.name,
+      contentType: file.type,
+      size: file.size,
+      metadata: formData.get('metadata') ? JSON.parse(String(formData.get('metadata'))) : undefined,
+    }
+
+    // Validate metadataCandidate directly with Zod to avoid creating a new Request
+    const parsed = uploadSchema.safeParse(metadataCandidate)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid upload metadata', details: parsed.error.flatten() }, { status: 400 })
     }
 
     // Validate file size (max 10MB)
@@ -83,6 +105,9 @@ export async function POST(request: NextRequest) {
 // DELETE /api/admin/upload - Delete a file from Supabase Storage
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const path = searchParams.get('path')
     const bucket = searchParams.get('bucket') || 'uploads'

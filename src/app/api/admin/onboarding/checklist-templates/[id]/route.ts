@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // GET /api/admin/onboarding/checklist-templates/[id] - Get single checklist template
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
 
     const template = await prisma.onboarding_checklist_templates.findUnique({
@@ -45,6 +49,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
     const body = await request.json()
 
@@ -111,6 +118,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
 
     await prisma.onboarding_checklist_templates.delete({

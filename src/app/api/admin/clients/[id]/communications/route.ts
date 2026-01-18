@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { communicationCreateSchema } from '@/lib/validation/schemas'
 import { sendEmail, isMailgunConfigured } from '@/lib/email/mailgun'
 import { getResultAlertEmail } from '@/lib/email/templates/result-alert'
 import {
@@ -61,6 +64,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Get query params for filtering
@@ -202,8 +207,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
-    const body = await request.json()
+    const validated = await validateRequest(communicationCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       type,
@@ -215,14 +223,7 @@ export async function POST(
       highlightType,
       recipientEmail,
       createdBy,
-    } = body
-
-    if (!type || !title) {
-      return NextResponse.json(
-        { error: 'Type and title are required' },
-        { status: 400 }
-      )
-    }
+    } = (validated as any).data
 
     // Get client info for email
     const client = await prisma.clients.findUnique({

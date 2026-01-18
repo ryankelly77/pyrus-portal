@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // POST /api/admin/subscriptions/backfill - Create subscription from existing recommendation purchase
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const body = await request.json()
     const { clientId } = body
 

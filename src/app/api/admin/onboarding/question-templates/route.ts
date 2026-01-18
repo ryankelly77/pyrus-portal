@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { questionTemplateSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/admin/onboarding/question-templates - List all question templates
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
 
@@ -43,7 +49,12 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/onboarding/question-templates - Create a new question template
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
+
+    const validated = await validateRequest(questionTemplateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       productId,
@@ -57,23 +68,7 @@ export async function POST(request: NextRequest) {
       isRequired,
       section,
       sortOrder,
-    } = body
-
-    if (!productId || !questionText || !questionType) {
-      return NextResponse.json(
-        { error: 'Product ID, question text, and question type are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate question type
-    const validTypes = ['text', 'textarea', 'select', 'multiselect', 'radio', 'checkbox', 'url', 'email', 'phone']
-    if (!validTypes.includes(questionType)) {
-      return NextResponse.json(
-        { error: `Invalid question type. Must be one of: ${validTypes.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    } = (validated as any).data
 
     // Get max sort_order for the product and section
     const maxSortOrder = await prisma.onboarding_question_templates.aggregate({

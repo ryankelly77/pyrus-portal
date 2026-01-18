@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { addonCreateSchema } from '@/lib/validation/schemas'
 
 // GET /api/admin/addons - List all addons
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const addons = await prisma.addons.findMany({
       include: {
         addon_products: {
@@ -30,7 +36,12 @@ export async function GET() {
 // POST /api/admin/addons - Create a new addon
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
+
+    const validated = await validateRequest(addonCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       name,
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest) {
       stripeProductId,
       stripePriceId,
       products,
-    } = body
+    } = (validated as any).data
 
     const addon = await prisma.addons.create({
       data: {

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { checklistGenerateSchema } from '@/lib/validation/schemas'
 
 // GET /api/admin/clients/[id]/checklist - Get client's checklist items
 export async function GET(
@@ -7,6 +10,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Verify client exists
@@ -74,9 +79,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
+
     const { id: clientId } = await params
-    const body = await request.json()
-    const { productIds } = body
+    const validated = await validateRequest(checklistGenerateSchema, request)
+    if ((validated as any).error) return (validated as any).error
+    const { productIds } = (validated as any).data
 
     // Verify client exists
     const client = await prisma.clients.findUnique({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -8,6 +9,8 @@ interface RouteParams {
 // GET /api/admin/clients/[id]/products - Get all products assigned to a client
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Get manually assigned products (handle case where table doesn't exist yet)
@@ -110,6 +113,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // POST /api/admin/clients/[id]/products - Add a product to a client
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const body = await request.json()
     const { productId, notes, monthlyPrice } = body
@@ -206,6 +211,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/admin/clients/[id]/products - Remove a product from a client
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const { searchParams } = new URL(request.url)
     const clientProductId = searchParams.get('clientProductId')
@@ -250,6 +257,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 // PATCH /api/admin/clients/[id]/products - Update a client product (e.g., price)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const body = await request.json()
     const { clientProductId, monthlyPrice } = body

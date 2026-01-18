@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,9 @@ interface NotificationItem {
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')

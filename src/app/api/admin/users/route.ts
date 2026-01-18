@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/admin/users - Get all users (admin and client)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Check if admin
-    const profileResult = await dbPool.query(
-      `SELECT role FROM profiles WHERE id = $1`,
-      [user.id]
-    )
-    const role = profileResult.rows[0]?.role
-    if (role !== 'admin' && role !== 'super_admin') {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
-    }
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    // Auth already verified by requireAdmin - user and profile available if needed
 
     // Fetch admin users
     const adminsResult = await dbPool.query(

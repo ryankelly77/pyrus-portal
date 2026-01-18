@@ -301,10 +301,11 @@ export async function GET(request: NextRequest) {
           stripeInvoices.data.map(async (inv) => {
             let receiptUrl: string | null = null
 
+            // TODO: Pre-existing type error - fix in P2
             // Try to get receipt URL from the charge
-            if (inv.charge) {
+            if ((inv as any).charge) {
               try {
-                const chargeId = typeof inv.charge === 'string' ? inv.charge : inv.charge.id
+                const chargeId = typeof (inv as any).charge === 'string' ? (inv as any).charge : (inv as any).charge.id
                 const charge = await stripe.charges.retrieve(chargeId)
                 receiptUrl = charge.receipt_url || null
               } catch {

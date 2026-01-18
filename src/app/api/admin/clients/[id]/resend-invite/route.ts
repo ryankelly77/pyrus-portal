@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
@@ -10,6 +11,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Get client info

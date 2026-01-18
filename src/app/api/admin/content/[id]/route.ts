@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
 
     const result = await dbPool.query(
@@ -63,6 +67,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
     const body = await request.json()
     const {
@@ -173,6 +180,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
 
     // Delete related records first
@@ -201,6 +211,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
     const body = await request.json()
     const { action, feedback, publishedUrl } = body

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -9,6 +10,8 @@ interface RouteParams {
 // GET /api/admin/clients/[id]/stripe-subscription-history - Get subscription history from Stripe
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Get client to find stripe_customer_id

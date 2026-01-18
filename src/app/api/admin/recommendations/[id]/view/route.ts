@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { recommendationViewSchema } from '@/lib/validation/schemas'
 
 // POST /api/admin/recommendations/[id]/view - Track when client views recommendation
 export async function POST(
@@ -7,9 +10,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
-    const body = await request.json().catch(() => ({}))
-    const { viewerName, viewerEmail } = body as { viewerName?: string; viewerEmail?: string }
+    const validated = await validateRequest(recommendationViewSchema, request)
+    if ((validated as any).error) return (validated as any).error
+
+    const { viewerName, viewerEmail } = (validated as any).data as { viewerName?: string; viewerEmail?: string }
 
     // Check if recommendation exists
     const recommendation = await prisma.recommendations.findUnique({

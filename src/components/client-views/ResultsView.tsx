@@ -7,7 +7,7 @@ interface ResultsViewProps {
   clientId: string
   isAdmin?: boolean
   isDemo?: boolean
-  proDashboardUrl?: string
+  proDashboardUrl?: string | null
 }
 
 interface KpiMetric {

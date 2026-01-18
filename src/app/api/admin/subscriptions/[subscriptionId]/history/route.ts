@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { subscriptionHistorySchema } from '@/lib/validation/schemas'
 
 // GET /api/admin/subscriptions/[subscriptionId]/history - Get history for a subscription
 export async function GET(
@@ -7,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { subscriptionId } = await params
 
     const history = await prisma.subscription_history.findMany({
@@ -30,23 +36,21 @@ export async function POST(
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { subscriptionId } = await params
-    const body = await request.json()
-    const { action, details, created_by } = body
+    const validated = await validateRequest(subscriptionHistorySchema, request)
+    if ((validated as any).error) return (validated as any).error
 
-    if (!action) {
-      return NextResponse.json(
-        { error: 'Action is required' },
-        { status: 400 }
-      )
-    }
+    const { action, details } = (validated as any).data
 
     const historyEntry = await prisma.subscription_history.create({
       data: {
         subscription_id: subscriptionId,
         action,
         details: details || null,
-        created_by: created_by || null,
+        created_by: user?.id || null,
       },
     })
 

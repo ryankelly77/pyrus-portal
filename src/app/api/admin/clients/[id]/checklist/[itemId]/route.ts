@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // PATCH /api/admin/clients/[id]/checklist/[itemId] - Toggle completion or update notes
 export async function PATCH(
@@ -7,6 +8,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId, itemId } = await params
     const body = await request.json()
     const { isCompleted, notes } = body
@@ -84,6 +87,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId, itemId } = await params
 
     // Verify the item exists and belongs to this client

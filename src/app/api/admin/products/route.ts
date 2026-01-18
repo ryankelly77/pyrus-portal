@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { productCreateSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/admin/products - List all products
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const search = searchParams.get('search')
@@ -46,7 +51,11 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/products - Create a new product
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
+
+    const validated = await validateRequest(productCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       name,
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest) {
       stripeOnetimePriceId,
       dependencies,
       sortOrder,
-    } = body
+    } = (validated as any).data
 
     // Get the max sort_order for the category
     const maxSortOrder = await prisma.products.aggregate({

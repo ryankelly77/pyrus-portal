@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { recommendationInviteSchema } from '@/lib/validation/schemas'
 import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
@@ -12,6 +15,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
 
     const invites = await prisma.recommendation_invites.findMany({
@@ -35,26 +41,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
-    const body = await request.json()
+    const validated = await validateRequest(recommendationInviteSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
-    const { firstName, lastName, email } = body
-
-    if (!firstName || !lastName || !email) {
-      return NextResponse.json(
-        { error: 'First name, last name, and email are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
+    const { firstName, lastName, email, message } = (validated as any).data
 
     // Check if recommendation exists and get client info
     const recommendation = await prisma.recommendations.findUnique({
@@ -189,6 +183,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const inviteId = searchParams.get('inviteId')

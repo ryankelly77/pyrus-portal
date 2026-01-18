@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // Force dynamic rendering - this route uses request.url
 export const dynamic = 'force-dynamic'
@@ -7,6 +8,8 @@ export const dynamic = 'force-dynamic'
 // GET /api/admin/products/content - Get all content-related products
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get('clientId')
 

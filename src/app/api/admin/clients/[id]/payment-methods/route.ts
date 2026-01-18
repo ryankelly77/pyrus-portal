@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -30,6 +31,8 @@ export interface PaymentMethodData {
 // GET /api/admin/clients/[id]/payment-methods - Get payment methods for a client
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
     // Get client to find stripe_customer_id

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const { searchParams } = new URL(request.url)
     const productIds = searchParams.get('productIds')?.split(',').filter(Boolean)
@@ -115,6 +118,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const body = await request.json()
     const { responses } = body

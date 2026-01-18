@@ -1,30 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { linkUserSchema } from '@/lib/validation/schemas'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/admin/link-user - Link a user to a client (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
 
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+    const validated = await validateRequest(linkUserSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
-    // Check if admin
-    const profileResult = await dbPool.query(
-      `SELECT role FROM profiles WHERE id = $1`,
-      [user.id]
-    )
-    const role = profileResult.rows[0]?.role
-    if (role !== 'admin' && role !== 'super_admin') {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
-    }
-
-    const { userEmail, clientId, clientName } = await request.json()
+    const { userEmail, clientId, clientName } = (validated as any).data
 
     if (!userEmail) {
       return NextResponse.json({ error: 'userEmail is required' }, { status: 400 })
@@ -73,22 +66,9 @@ export async function POST(request: NextRequest) {
 // GET /api/admin/link-user?search=xxx - Search for clients
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Check if admin
-    const profileResult = await dbPool.query(
-      `SELECT role FROM profiles WHERE id = $1`,
-      [user.id]
-    )
-    const role = profileResult.rows[0]?.role
-    if (role !== 'admin' && role !== 'super_admin') {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
-    }
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''

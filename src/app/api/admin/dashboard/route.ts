@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     // Fetch recent activities from multiple sources
     const [
       activityLogs,

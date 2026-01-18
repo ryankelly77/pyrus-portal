@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { recommendationCreateSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
 // DELETE /api/admin/recommendations?id=xxx - Delete a recommendation
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -49,6 +55,9 @@ export async function DELETE(request: NextRequest) {
 // GET /api/admin/recommendations - Get all recommendations
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const recommendations = await prisma.recommendations.findMany({
       include: {
         client: true,
@@ -99,24 +108,12 @@ export async function GET() {
 // POST /api/admin/recommendations - Create or update a recommendation
 export async function POST(request: NextRequest) {
   try {
-    // Get current user with profile info
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
 
-    // Get user's full name and role from profiles table
-    let userInfo: { full_name: string | null; role: string | null } | null = null
-    if (user?.id) {
-      try {
-        userInfo = await prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: { full_name: true, role: true },
-        })
-      } catch (profileError) {
-        console.warn('Could not fetch user profile:', profileError)
-      }
-    }
-
-    const body = await request.json()
+    const validated = await validateRequest(recommendationCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       clientId,
@@ -126,7 +123,7 @@ export async function POST(request: NextRequest) {
       totalOnetime,
       discountApplied,
       notes,
-    } = body
+    } = (validated as any).data
 
     if (!clientId) {
       return NextResponse.json(
@@ -233,10 +230,10 @@ export async function POST(request: NextRequest) {
 
       // Add history entry for update with user info
       if (changes.length > 0) {
-        const userName = userInfo?.full_name || 'Unknown User'
+        const userName = (auth as any).profile?.full_name || 'Unknown User'
         // Format role nicely (super_admin -> Super Admin, sales -> Sales)
-        const rawRole = userInfo?.role || 'user'
-        const userRole = rawRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+        const rawRole = (auth as any).profile?.role || 'user'
+        const userRole = rawRole.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
         const actionLabel = `Recommendation updated by ${userName} - ${userRole}`
 
         try {
@@ -245,7 +242,7 @@ export async function POST(request: NextRequest) {
               recommendation_id: recommendation.id,
               action: actionLabel,
               details: changes.join('; '),
-              created_by: user?.id || null,
+              created_by: (auth as any).user?.id || null,
             },
           })
         } catch (historyError) {
@@ -258,7 +255,7 @@ export async function POST(request: NextRequest) {
       recommendation = await prisma.recommendations.create({
         data: {
           client_id: clientId,
-          created_by: user?.id || null,
+          created_by: (auth as any).user?.id || null,
           status: 'draft',
           pricing_type: pricingType,
           total_monthly: totalMonthly || 0,
@@ -269,10 +266,10 @@ export async function POST(request: NextRequest) {
       })
 
       // Add history entry for creation with user info
-      const userName = userInfo?.full_name || 'Unknown User'
+      const userName = (auth as any).profile?.full_name || 'Unknown User'
       // Format role nicely (super_admin -> Super Admin, sales -> Sales)
-      const rawRole = userInfo?.role || 'user'
-      const userRole = rawRole.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+      const rawRole = (auth as any).profile?.role || 'user'
+      const userRole = rawRole.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
 
       try {
         await prisma.recommendation_history.create({
@@ -280,7 +277,7 @@ export async function POST(request: NextRequest) {
             recommendation_id: recommendation.id,
             action: `Recommendation created by ${userName} - ${userRole}`,
             details: `Recommendation created with ${items?.length || 0} items`,
-            created_by: user?.id || null,
+            created_by: (auth as any).user?.id || null,
           },
         })
       } catch (historyError) {

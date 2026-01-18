@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
 
 // GET - Fetch all video chapters
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const result = await dbPool.query(`
       SELECT id, title, description, video_url, sort_order
       FROM onboarding_video_chapters
@@ -23,6 +27,9 @@ export async function GET() {
 // POST - Create a new chapter
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const body = await request.json()
     const { title, description, videoUrl } = body
 
@@ -46,6 +53,9 @@ export async function POST(request: Request) {
 // PUT - Update all chapters (for reordering and bulk updates)
 export async function PUT(request: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const body = await request.json()
     const { chapters } = body
 
@@ -69,6 +79,9 @@ export async function PUT(request: Request) {
 // PATCH - Update a single chapter
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const body = await request.json()
     const { id, title, description, videoUrl } = body
 
@@ -89,6 +102,9 @@ export async function PATCH(request: Request) {
 // DELETE - Delete a chapter
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

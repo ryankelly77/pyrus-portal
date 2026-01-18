@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // GET /api/admin/recommendations/client/[clientId] - Get recommendation for a client
 export async function GET(
@@ -7,6 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
     const { clientId } = await params
 
     // Find the most recent recommendation for this client (draft, sent, or accepted)

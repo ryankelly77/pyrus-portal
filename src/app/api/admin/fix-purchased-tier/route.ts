@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // POST /api/admin/fix-purchased-tier - Fix a client's purchased_tier
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { clientId, tier = 'better' } = await request.json()
 
     if (!clientId) {

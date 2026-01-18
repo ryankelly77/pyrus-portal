@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { clientCreateSchema } from '@/lib/validation/schemas'
+import { validateRequest } from '@/lib/validation/validateRequest'
 
 // GET /api/admin/clients - Get all clients
 export async function GET() {
   try {
     const auth = await requireAdmin()
-    if ((auth as any)?.user === undefined) return auth as any
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
 
     const clients = await prisma.clients.findMany({
       orderBy: { name: 'asc' },
@@ -29,15 +31,8 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdmin()
     if ((auth as any)?.user === undefined) return auth as any
 
-    const body = await request.json()
-
-    const result = clientCreateSchema.safeParse(body)
-    if (!result.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: result.error.flatten() },
-        { status: 400 }
-      )
-    }
+    const validated = await validateRequest(clientCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       name,
@@ -49,7 +44,7 @@ export async function POST(request: NextRequest) {
       basecampProjectId,
       dashboardToken,
       stripeCustomerId,
-    } = result.data
+    } = (validated as any).data
 
     const client = await prisma.clients.create({
       data: {

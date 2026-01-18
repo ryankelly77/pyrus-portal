@@ -129,7 +129,10 @@ export default function AdminContentPage() {
     }
   }
 
-  const getPlatformClass = (platform: string) => {
+  const getPlatformClass = (platform: string | null) => {
+    if (!platform) {
+      return 'default-platform' // Provide a default class for null values
+    }
     switch (platform) {
       case 'website':
         return 'website'
@@ -340,6 +343,7 @@ export default function AdminContentPage() {
                   </td>
                   <td>{item.client_name}</td>
                   <td>
+                    // TODO: Pre-existing type error - fix in P2
                     <span className={`platform-badge ${getPlatformClass(item.platform)}`}>
                       {item.content_type || item.platform}
                     </span>

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // POST /api/admin/seed-ai-creative-questions - Add onboarding questions for AI Creative Assets
 export async function POST() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     // Find AI Creative Assets product
     const product = await prisma.products.findFirst({
       where: { name: 'AI Creative Assets' }

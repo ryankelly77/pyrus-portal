@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { bundleCreateSchema } from '@/lib/validation/schemas'
 
 // GET /api/admin/bundles - List all bundles
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const bundles = await prisma.bundles.findMany({
       include: {
         bundle_products: {
@@ -33,7 +39,11 @@ export async function GET() {
 // POST /api/admin/bundles - Create a new bundle
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
+
+    const validated = await validateRequest(bundleCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
 
     const {
       name,
@@ -44,7 +54,7 @@ export async function POST(request: NextRequest) {
       stripeProductId,
       stripePriceId,
       products,
-    } = body
+    } = (validated as any).data
 
     const bundle = await prisma.bundles.create({
       data: {

@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { validateRequest } from '@/lib/validation/validateRequest'
+import { contentCreateSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
 // GET - List all content with filters
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const clientId = searchParams.get('clientId')
@@ -110,7 +116,13 @@ export async function GET(request: NextRequest) {
 // POST - Create new content
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
+
+    const validated = await validateRequest(contentCreateSchema, request)
+    if ((validated as any).error) return (validated as any).error
+
     const {
       clientId,
       title,
@@ -126,7 +138,7 @@ export async function POST(request: NextRequest) {
       seoOptimized,
       aiOptimized,
       status = 'draft'
-    } = body
+    } = (validated as any).data
 
     if (!clientId || !title) {
       return NextResponse.json({ error: 'Client and title are required' }, { status: 400 })

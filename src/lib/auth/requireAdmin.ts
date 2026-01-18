@@ -1,8 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { User } from '@supabase/supabase-js'
 
-export async function requireAdmin() {
+type Profile = { role: string }
+
+export async function requireAdmin(): Promise<NextResponse | { user: User; profile: Profile }> {
   const supabase = await createClient()
 
   const {

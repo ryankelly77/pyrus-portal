@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 interface MRRDataPoint {
   month: string
@@ -16,6 +17,9 @@ interface VolumeDataPoint {
 
 export async function GET() {
   try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+    const { user, profile } = auth
     // Get all subscriptions (active and canceled) for historical data
     const allSubscriptions = await stripe.subscriptions.list({
       status: 'all',
