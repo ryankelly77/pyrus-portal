@@ -1,3 +1,12 @@
+
+interface ExpandedInvoice extends Stripe.Invoice {
+  payment_intent?: Stripe.PaymentIntent | string | null
+}
+import type Stripe from 'stripe'
+
+interface InvoiceWithPaymentIntent extends Stripe.Invoice {
+  payment_intent?: Stripe.PaymentIntent | string | null
+}
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
@@ -294,23 +303,22 @@ export async function GET(request: NextRequest) {
           customer: client.stripe_customer_id,
           limit: 10,
           status: 'paid', // Only show paid invoices (receipts)
+          expand: ['data.payment_intent.latest_charge'],
         })
 
         // Get receipt URLs from charges for paid invoices
         invoices = await Promise.all(
-          stripeInvoices.data.map(async (inv) => {
+          stripeInvoices.data.map(async (invoice) => {
+            const inv = invoice as ExpandedInvoice
             let receiptUrl: string | null = null
 
-            // TODO: Pre-existing type error - fix in P2
-            // Try to get receipt URL from the charge
-            if ((inv as any).charge) {
-              try {
-                const chargeId = typeof (inv as any).charge === 'string' ? (inv as any).charge : (inv as any).charge.id
-                const charge = await stripe.charges.retrieve(chargeId)
-                receiptUrl = charge.receipt_url || null
-              } catch {
-                // Fall back to invoice PDF
-              }
+            if (
+              inv.payment_intent &&
+              typeof inv.payment_intent !== 'string' &&
+              inv.payment_intent.latest_charge &&
+              typeof inv.payment_intent.latest_charge !== 'string'
+            ) {
+              receiptUrl = inv.payment_intent.latest_charge.receipt_url ?? null
             }
 
             return {

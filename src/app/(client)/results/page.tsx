@@ -115,7 +115,7 @@ export default function ResultsPage() {
         ) : (
           /* Active Results - use shared ResultsView component */
           // TODO: Pre-existing type error - fix in P2
-          <ResultsView clientId={client.id} isDemo={isDemo} proDashboardUrl={client.agencyDashboardKey} />
+          <ResultsView clientId={client.id} isDemo={isDemo} proDashboardUrl={client.agencyDashboardKey ?? undefined} />
         )}
       </div>
     </>

@@ -344,7 +344,7 @@ export default function AdminContentPage() {
                   <td>{item.client_name}</td>
                   <td>
                     // TODO: Pre-existing type error - fix in P2
-                    <span className={`platform-badge ${getPlatformClass(item.platform)}`}>
+                    <span className={`platform-badge ${getPlatformClass(item.platform ?? '')}`}>
                       {item.content_type || item.platform}
                     </span>
                   </td>
