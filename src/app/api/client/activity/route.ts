@@ -37,63 +37,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
     }
 
-    // Fetch activity log entries for this client
+    // Get client's basecamp_project_id
+    const clientResult = await dbPool.query(
+      `SELECT basecamp_project_id FROM clients WHERE id = $1`,
+      [clientId]
+    )
+    const basecampProjectId = clientResult.rows[0]?.basecamp_project_id
+
+    // Fetch Basecamp activities for this client
     const result = await dbPool.query(`
       SELECT
         id,
-        activity_type,
-        description,
-        metadata,
+        kind,
+        recording_title,
+        recording_status,
+        parent_title,
+        recording_content,
+        basecamp_created_at,
         created_at
-      FROM activity_log
-      WHERE client_id = $1
-      ORDER BY created_at DESC
+      FROM basecamp_activities
+      WHERE client_id = $1 OR project_id = $2
+      ORDER BY COALESCE(basecamp_created_at, created_at) DESC
       LIMIT 100
-    `, [clientId])
+    `, [clientId, basecampProjectId])
 
-    // Map database records to frontend format
+    // Map Basecamp activities to frontend format
     const activities = result.rows.map((row: any) => {
-      const activityType = row.activity_type
-      let type: 'task' | 'update' | 'alert' | 'content' = 'task'
-      let iconStyle: { background: string; color: string } | undefined
+      const isCompleted = row.kind === 'todo_completed'
+      const type: 'task' | 'update' | 'alert' | 'content' = 'task'
 
-      // Map activity_type to display type
-      switch (activityType) {
-        case 'onboarding_completed':
-        case 'purchase':
-        case 'checklist_completed':
-          type = 'task'
-          iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
-          break
-        case 'content_published':
-        case 'content_approved':
-          type = 'content'
-          iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
-          break
-        case 'content_review':
-        case 'content_submitted':
-          type = 'content'
-          iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
-          break
-        case 'content_revision':
-          type = 'content'
-          iconStyle = { background: 'var(--warning-bg)', color: 'var(--warning)' }
-          break
-        case 'keyword_ranking':
-        case 'traffic_milestone':
-        case 'lead_generated':
-          type = 'alert'
-          break
-        case 'campaign_update':
-        case 'settings_change':
-          type = 'update'
-          break
-        default:
-          type = 'task'
-      }
+      // Style based on completion status
+      const iconStyle = isCompleted
+        ? { background: 'var(--success-bg)', color: 'var(--success)' }
+        : { background: 'var(--info-bg)', color: 'var(--info)' }
 
       // Format the date
-      const date = new Date(row.created_at)
+      const date = new Date(row.basecamp_created_at || row.created_at)
       const now = new Date()
       const isToday = date.toDateString() === now.toDateString()
       const yesterday = new Date(now)
@@ -110,27 +89,26 @@ export async function GET(request: NextRequest) {
           ', ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
       }
 
-      // Generate title based on activity type
-      let title = row.description || activityType.replace(/_/g, ' ')
+      // Generate title based on task status
+      const title = isCompleted
+        ? `Completed: ${row.recording_title}`
+        : `New task: ${row.recording_title}`
 
-      // Use more user-friendly titles
-      switch (activityType) {
-        case 'onboarding_completed':
-          title = 'Onboarding completed!'
-          break
-        case 'purchase':
-          title = 'Plan purchased'
-          break
-      }
+      // Description shows the todolist name if available
+      const description = row.parent_title ? `In: ${row.parent_title}` : ''
 
       return {
         id: row.id,
         type,
         title,
-        description: row.description || '',
+        description,
         time: timeStr,
         iconStyle,
-        metadata: row.metadata,
+        metadata: {
+          kind: row.kind,
+          status: row.recording_status,
+          content: row.recording_content,
+        },
       }
     })
 
