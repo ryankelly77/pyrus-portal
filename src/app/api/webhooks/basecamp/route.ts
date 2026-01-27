@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         data: {
           client_id: client?.id || null,
           kind: payload.kind,
-          basecamp_request_id: payload.id,
+          basecamp_request_id: String(payload.id),
           task_id: taskId,
           project_id: projectId || null,
           project_title: payload.recording.bucket?.name || null,
