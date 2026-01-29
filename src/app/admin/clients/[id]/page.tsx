@@ -163,11 +163,13 @@ interface RecommendationItem {
     monthly_price: string | null
     onetime_price: string | null
     short_description: string | null
+    long_description: string | null
   } | null
   bundle: {
     id: string
     name: string
     description: string | null
+    long_description: string | null
     monthly_price: string | null
     onetime_price: string | null
   } | null
@@ -175,6 +177,7 @@ interface RecommendationItem {
     id: string
     name: string
     description: string | null
+    long_description: string | null
     price: string | null
   } | null
 }
