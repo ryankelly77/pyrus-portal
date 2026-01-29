@@ -12,8 +12,10 @@ interface ServiceInfoModalProps {
 export function ServiceInfoModal({ product, isOpen, onClose }: ServiceInfoModalProps) {
   if (!isOpen || !product) return null
 
-  const detailContent = product.detailContent ? serviceDetailContent[product.detailContent] : null
-  const isDetailedModal = !!detailContent
+  // Check for database long_description first, then fall back to hardcoded content
+  const hasLongDescription = !!product.longDescription
+  const detailContent = !hasLongDescription && product.detailContent ? serviceDetailContent[product.detailContent] : null
+  const isDetailedModal = hasLongDescription || !!detailContent
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -75,7 +77,35 @@ export function ServiceInfoModal({ product, isOpen, onClose }: ServiceInfoModalP
     )
   }
 
-  // Detailed modal content
+  // Render long_description HTML from database
+  const renderLongDescriptionContent = () => {
+    if (!product.longDescription) return null
+
+    return (
+      <>
+        <div className="modal-header">
+          <h2 className="modal-title" style={{ display: 'none' }}>{product.name}</h2>
+          <button className="modal-close" onClick={onClose}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div className="modal-body">
+          <div
+            className="service-detail long-description-content"
+            dangerouslySetInnerHTML={{ __html: product.longDescription }}
+          />
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Close</button>
+        </div>
+      </>
+    )
+  }
+
+  // Detailed modal content (legacy hardcoded)
   const renderDetailedContent = () => {
     if (!detailContent) return null
 
@@ -187,7 +217,7 @@ export function ServiceInfoModal({ product, isOpen, onClose }: ServiceInfoModalP
   return (
     <div className="modal-overlay active" onClick={handleOverlayClick}>
       <div className={`modal${isDetailedModal ? ' modal-xl' : ''}`} onClick={(e) => e.stopPropagation()}>
-        {isDetailedModal ? renderDetailedContent() : renderSimpleContent()}
+        {hasLongDescription ? renderLongDescriptionContent() : isDetailedModal ? renderDetailedContent() : renderSimpleContent()}
       </div>
     </div>
   )

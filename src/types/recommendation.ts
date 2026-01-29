@@ -25,7 +25,8 @@ export interface Product {
   onetimePrice: number
   hasQuantity?: boolean
   requires?: string // Name of product this depends on
-  detailContent?: string // Key for detailed modal content
+  detailContent?: string // Key for detailed modal content (legacy hardcoded)
+  longDescription?: string // HTML content from database for modal
   bundleProducts?: BundleProduct[] // Products included in this bundle (for bundle category)
   fullPrice?: number // Sum of individual product prices (for bundles)
 }

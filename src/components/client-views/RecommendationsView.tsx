@@ -22,9 +22,9 @@ interface RecommendationItem {
   monthly_price: string | null
   onetime_price: string | null
   is_free: boolean | null
-  product: { id: string; name: string; category: string; short_description: string | null; monthly_price: string | null; onetime_price: string | null } | null
-  bundle: { id: string; name: string; description: string | null; monthly_price: string | null; onetime_price: string | null } | null
-  addon: { id: string; name: string; description: string | null; price?: string | null; monthly_price?: string | null; onetime_price?: string | null } | null
+  product: { id: string; name: string; category: string; short_description: string | null; long_description: string | null; monthly_price: string | null; onetime_price: string | null } | null
+  bundle: { id: string; name: string; description: string | null; long_description: string | null; monthly_price: string | null; onetime_price: string | null } | null
+  addon: { id: string; name: string; description: string | null; long_description: string | null; price?: string | null; monthly_price?: string | null; onetime_price?: string | null } | null
 }
 
 interface RecommendationHistory {
@@ -283,6 +283,7 @@ export function RecommendationsView({
   const searchParams = useSearchParams()
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
+  const [modalContent, setModalContent] = useState<{ name: string; html: string } | null>(null)
 
   // Sync activeTab when defaultTab changes (e.g., from parent navigation)
   useEffect(() => {
@@ -674,6 +675,7 @@ export function RecommendationsView({
                           tierItems.map(item => {
                             const itemName = item.product?.name || item.bundle?.name || item.addon?.name || 'Service'
                             const itemDesc = item.product?.short_description || item.bundle?.description || item.addon?.description || ''
+                            const itemLongDesc = item.product?.long_description || item.bundle?.long_description || item.addon?.long_description || ''
                             const monthlyPrice = Number(item.monthly_price || 0)
                             const onetimePrice = Number(item.onetime_price || 0)
                             const isFree = item.is_free
@@ -689,6 +691,23 @@ export function RecommendationsView({
                                   <div className="pricing-service-name">
                                     {itemName}
                                     {isFree && <span className="free-badge">FREE</span>}
+                                    {itemLongDesc && (
+                                      <button
+                                        type="button"
+                                        className="product-info-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setModalContent({ name: itemName, html: itemLongDesc })
+                                        }}
+                                        aria-label={`More info about ${itemName}`}
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                          <circle cx="12" cy="12" r="10"></circle>
+                                          <line x1="12" y1="16" x2="12" y2="12"></line>
+                                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                      </button>
+                                    )}
                                   </div>
                                   {itemDesc && <div className="pricing-service-desc">{itemDesc}</div>}
                                 </div>
@@ -1103,6 +1122,28 @@ export function RecommendationsView({
               </div>
             )
           })()}
+        </div>
+      )}
+
+      {/* Product Info Modal */}
+      {modalContent && (
+        <div className="product-info-modal-overlay" onClick={() => setModalContent(null)}>
+          <div className="product-info-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="product-info-modal-close"
+              onClick={() => setModalContent(null)}
+              aria-label="Close modal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div
+              className="product-info-modal-content"
+              dangerouslySetInnerHTML={{ __html: modalContent.html }}
+            />
+          </div>
         </div>
       )}
     </div>
