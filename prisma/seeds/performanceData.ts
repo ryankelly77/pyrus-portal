@@ -59,18 +59,18 @@ async function main() {
   console.log(`Found ${clients.length} active clients\n`)
 
   // Assign performance profiles and client types with explicit distribution
-  // Balanced distribution across all status levels
+  // 2 critical, 2 middle, 6 healthy/thriving
   const profileDistribution: PerfProfile[] = [
     'critical',        // 0 - Critical
     'critical',        // 1 - Critical
-    'at_risk',         // 2 - At Risk
-    'at_risk',         // 3 - At Risk
-    'needs_attention', // 4 - Needs Attention
-    'needs_attention', // 5 - Needs Attention
+    'needs_attention', // 2 - Needs Attention
+    'needs_attention', // 3 - Needs Attention
+    'healthy',         // 4 - Healthy
+    'healthy',         // 5 - Healthy
     'healthy',         // 6 - Healthy
-    'healthy',         // 7 - Healthy
+    'thriving',        // 7 - Thriving
     'thriving',        // 8 - Thriving
-    'thriving',        // 9 - Thriving (if 10 clients)
+    'thriving',        // 9 - Thriving
   ]
 
   const typeDistribution: ClientType[] = ['seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media']

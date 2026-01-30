@@ -25,8 +25,8 @@ export function GrowthStageCards({ summary }: GrowthStageCardsProps) {
                 <div
                   className="perf-stage-bar-fill"
                   style={{
-                    width: `${stageData.avg_score}%`,
-                    background: getScoreColor(stageData.avg_score),
+                    width: stageData.count === 0 ? '0%' : `${Math.max(stageData.avg_score, 5)}%`,
+                    background: stageData.count === 0 ? '#E5E7EB' : getScoreColor(stageData.avg_score),
                   }}
                 />
               </div>
