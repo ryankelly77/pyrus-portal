@@ -8,6 +8,7 @@ import {
   ClientFilters,
   ClientList,
   ClientDetailModal,
+  ScoringExplainerModal,
   ALERT_TEMPLATES,
 } from '@/components/admin/performance'
 import type { PerformanceData, ClientDetailData } from '@/components/admin/performance'
@@ -34,6 +35,10 @@ export default function PerformanceDashboardPage() {
   const [alertType, setAlertType] = useState<string>('performance_focus')
   const [alertMessage, setAlertMessage] = useState(ALERT_TEMPLATES.performance_focus)
   const [publishingAlert, setPublishingAlert] = useState(false)
+  const [focusAlert, setFocusAlert] = useState(false)
+
+  // Scoring explainer modal
+  const [showExplainer, setShowExplainer] = useState(false)
 
   // Fetch dashboard data
   const fetchData = useCallback(async () => {
@@ -87,17 +92,23 @@ export default function PerformanceDashboardPage() {
     }
   }
 
-  const openClientDetail = (clientId: string) => {
+  const openClientDetail = (clientId: string, shouldFocusAlert = false) => {
     setSelectedClientId(clientId)
     fetchClientDetail(clientId)
+    setFocusAlert(shouldFocusAlert)
     // Reset alert composer
     setAlertType('performance_focus')
     setAlertMessage(ALERT_TEMPLATES.performance_focus)
   }
 
+  const openAlertComposer = (clientId: string) => {
+    openClientDetail(clientId, true)
+  }
+
   const closeClientDetail = () => {
     setSelectedClientId(null)
     setClientDetail(null)
+    setFocusAlert(false)
   }
 
   // Publish alert
@@ -178,6 +189,32 @@ export default function PerformanceDashboardPage() {
       <AdminHeader title="Performance Dashboard" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
 
       <div className="admin-content">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <button
+            onClick={() => setShowExplainer(true)}
+            style={{
+              padding: '8px 16px',
+              background: '#F3F4F6',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            How Scoring Works
+          </button>
+        </div>
+
         <SummaryCards summary={summary} />
 
         <GrowthStageCards summary={summary} />
@@ -195,7 +232,7 @@ export default function PerformanceDashboardPage() {
           onCriticalOnlyChange={setCriticalOnly}
         />
 
-        <ClientList clients={clients} onViewClient={openClientDetail} />
+        <ClientList clients={clients} onViewClient={openClientDetail} onSendAlert={openAlertComposer} />
       </div>
 
       {selectedClientId && (
@@ -205,11 +242,16 @@ export default function PerformanceDashboardPage() {
           alertType={alertType}
           alertMessage={alertMessage}
           publishingAlert={publishingAlert}
+          focusAlert={focusAlert}
           onClose={closeClientDetail}
           onAlertTypeChange={setAlertType}
           onAlertMessageChange={setAlertMessage}
           onPublishAlert={publishAlert}
         />
+      )}
+
+      {showExplainer && (
+        <ScoringExplainerModal onClose={() => setShowExplainer(false)} />
       )}
     </>
   )

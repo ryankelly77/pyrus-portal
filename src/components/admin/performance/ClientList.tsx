@@ -4,9 +4,10 @@ import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel, getPlanLabe
 interface ClientListProps {
   clients: ClientData[]
   onViewClient: (clientId: string) => void
+  onSendAlert?: (clientId: string) => void
 }
 
-export function ClientList({ clients, onViewClient }: ClientListProps) {
+export function ClientList({ clients, onViewClient, onSendAlert }: ClientListProps) {
   if (clients.length === 0) {
     return (
       <>
@@ -111,7 +112,7 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
               </button>
               <button
                 className="perf-btn perf-btn-alert"
-                onClick={() => onViewClient(client.id)}
+                onClick={() => onSendAlert ? onSendAlert(client.id) : onViewClient(client.id)}
               >
                 Alert
               </button>

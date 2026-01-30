@@ -59,18 +59,18 @@ async function main() {
   console.log(`Found ${clients.length} active clients\n`)
 
   // Assign performance profiles and client types with explicit distribution
-  // Ensure we have good representation of each status
+  // Balanced distribution across all status levels
   const profileDistribution: PerfProfile[] = [
-    'critical',      // 0 - First client is critical
-    'critical',      // 1 - Second is also critical
-    'critical',      // 2 - Third is critical too
-    'at_risk',       // 3
-    'at_risk',       // 4
-    'needs_attention', // 5
-    'needs_attention', // 6
-    'healthy',       // 7
-    'healthy',       // 8
-    'thriving',      // 9
+    'critical',        // 0 - Critical
+    'critical',        // 1 - Critical
+    'at_risk',         // 2 - At Risk
+    'at_risk',         // 3 - At Risk
+    'needs_attention', // 4 - Needs Attention
+    'needs_attention', // 5 - Needs Attention
+    'healthy',         // 6 - Healthy
+    'healthy',         // 7 - Healthy
+    'thriving',        // 8 - Thriving
+    'thriving',        // 9 - Thriving (if 10 clients)
   ]
 
   const typeDistribution: ClientType[] = ['seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media']
@@ -135,56 +135,121 @@ async function main() {
       return r === 1 ? 1 : r === 2 ? -1 : 0
     }
 
+    // Get delta magnitude based on profile severity
+    // Critical needs -40% to -60% deltas, At Risk needs -20% to -40%, etc.
+    const getDeltaMagnitude = (prof: PerfProfile): number => {
+      switch (prof) {
+        case 'critical': return rand(40, 60) / 100  // 40-60% change
+        case 'at_risk': return rand(20, 40) / 100   // 20-40% change
+        case 'needs_attention': return rand(5, 15) / 100  // 5-15% change
+        case 'healthy': return rand(15, 30) / 100   // 15-30% change
+        case 'thriving': return rand(30, 50) / 100  // 30-50% change
+        default: return rand(10, 20) / 100
+      }
+    }
+
     for (const metricType of metricTypes) {
       let currentValue: number
       let previousValue: number
-      const deltaMultiplier = getMetricDirection(trending)
+      const direction = getMetricDirection(trending)
+      const magnitude = getDeltaMagnitude(profile)
 
       switch (metricType) {
         case 'visitors':
           currentValue = rand(500, 5000)
-          previousValue = currentValue + (rand(100, 500) * deltaMultiplier * -1)
+          // For down trending: previous should be higher (current = previous * (1 - magnitude))
+          // So previous = current / (1 - magnitude)
+          if (direction === -1) {
+            previousValue = Math.round(currentValue / (1 - magnitude))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue / (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
           break
         case 'keyword_avg_position':
           currentValue = rand(5, 30) // Lower is better for positions
-          previousValue = currentValue + (rand(2, 8) * deltaMultiplier) // Opposite for position
+          // Inverted: down direction means position got worse (higher number)
+          if (direction === -1) {
+            previousValue = Math.max(1, Math.round(currentValue * (1 - magnitude)))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue * (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
           break
         case 'leads':
           currentValue = rand(5, 50)
-          previousValue = currentValue + (rand(2, 10) * deltaMultiplier * -1)
+          if (direction === -1) {
+            previousValue = Math.round(currentValue / (1 - magnitude))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue / (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
           break
         case 'ai_visibility':
           currentValue = rand(30, 90)
-          previousValue = currentValue + (rand(5, 15) * deltaMultiplier * -1)
+          if (direction === -1) {
+            previousValue = Math.min(100, Math.round(currentValue / (1 - magnitude)))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue / (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
           break
         case 'conversions':
           currentValue = rand(1, 20)
-          previousValue = currentValue + (rand(1, 5) * deltaMultiplier * -1)
+          if (direction === -1) {
+            previousValue = Math.round(currentValue / (1 - magnitude))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue / (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
           break
         default:
           currentValue = rand(10, 100)
-          previousValue = currentValue + (rand(5, 20) * deltaMultiplier * -1)
+          if (direction === -1) {
+            previousValue = Math.round(currentValue / (1 - magnitude))
+          } else if (direction === 1) {
+            previousValue = Math.round(currentValue / (1 + magnitude))
+          } else {
+            previousValue = currentValue
+          }
       }
 
-      // Current period (last 30 days)
+      // Current period (last 30 days) - use generous date ranges
+      // Start a day earlier and end tomorrow to ensure API queries match
+      const currentStart = daysAgo(31)
+      currentStart.setHours(0, 0, 0, 0)
+      const currentEnd = new Date()
+      currentEnd.setDate(currentEnd.getDate() + 1)
+      currentEnd.setHours(23, 59, 59, 999)
+
       await prisma.metric_snapshots.create({
         data: {
           client_id: client.id,
           metric_type: metricType,
           value: Math.max(0, currentValue),
-          period_start: daysAgo(30),
-          period_end: new Date(),
+          period_start: currentStart,
+          period_end: currentEnd,
         },
       })
 
-      // Previous period (30-60 days ago)
+      // Previous period (30-60 days ago) - also with generous ranges
+      const prevStart = daysAgo(61)
+      prevStart.setHours(0, 0, 0, 0)
+      const prevEnd = daysAgo(29)
+      prevEnd.setHours(23, 59, 59, 999)
+
       await prisma.metric_snapshots.create({
         data: {
           client_id: client.id,
           metric_type: metricType,
           value: Math.max(0, previousValue),
-          period_start: daysAgo(60),
-          period_end: daysAgo(30),
+          period_start: prevStart,
+          period_end: prevEnd,
         },
       })
     }

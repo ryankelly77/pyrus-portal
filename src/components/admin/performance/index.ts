@@ -4,6 +4,7 @@ export { ClientFilters } from './ClientFilters'
 export { ClientList } from './ClientList'
 export { ClientDetailModal } from './ClientDetailModal'
 export { AlertComposer } from './AlertComposer'
+export { ScoringExplainerModal } from './ScoringExplainerModal'
 
 export * from './types'
 export * from './utils'

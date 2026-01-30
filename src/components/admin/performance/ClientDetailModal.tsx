@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { ClientDetailData } from './types'
 import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel } from './utils'
 import { AlertComposer } from './AlertComposer'
@@ -8,6 +9,7 @@ interface ClientDetailModalProps {
   alertType: string
   alertMessage: string
   publishingAlert: boolean
+  focusAlert?: boolean
   onClose: () => void
   onAlertTypeChange: (type: string) => void
   onAlertMessageChange: (message: string) => void
@@ -20,11 +22,19 @@ export function ClientDetailModal({
   alertType,
   alertMessage,
   publishingAlert,
+  focusAlert,
   onClose,
   onAlertTypeChange,
   onAlertMessageChange,
   onPublishAlert,
 }: ClientDetailModalProps) {
+  const alertSectionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (focusAlert && !loading && clientDetail && alertSectionRef.current) {
+      alertSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [focusAlert, loading, clientDetail])
   return (
     <>
       <div className="perf-modal-overlay" onClick={onClose}>
@@ -112,14 +122,16 @@ export function ClientDetailModal({
                 )}
 
                 {/* Alert Composer */}
-                <AlertComposer
-                  alertType={alertType}
-                  alertMessage={alertMessage}
-                  publishing={publishingAlert}
-                  onTypeChange={onAlertTypeChange}
-                  onMessageChange={onAlertMessageChange}
-                  onPublish={onPublishAlert}
-                />
+                <div ref={alertSectionRef}>
+                  <AlertComposer
+                    alertType={alertType}
+                    alertMessage={alertMessage}
+                    publishing={publishingAlert}
+                    onTypeChange={onAlertTypeChange}
+                    onMessageChange={onAlertMessageChange}
+                    onPublish={onPublishAlert}
+                  />
+                </div>
 
                 {/* Alert History */}
                 {clientDetail.alerts_history.length > 0 && (
