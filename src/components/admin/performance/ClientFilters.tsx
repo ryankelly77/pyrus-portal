@@ -9,6 +9,7 @@ interface ClientFiltersProps {
   onPlanChange: (value: string) => void
   onSortChange: (value: string) => void
   onCriticalOnlyChange: (value: boolean) => void
+  onShowExplainer?: () => void
 }
 
 export function ClientFilters({
@@ -22,6 +23,7 @@ export function ClientFilters({
   onPlanChange,
   onSortChange,
   onCriticalOnlyChange,
+  onShowExplainer,
 }: ClientFiltersProps) {
   return (
     <>
@@ -83,6 +85,17 @@ export function ClientFilters({
           />
           <span>Show Critical Only</span>
         </label>
+
+        {onShowExplainer && (
+          <button className="perf-explainer-btn" onClick={onShowExplainer}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            How Scoring Works
+          </button>
+        )}
       </div>
 
       <style jsx>{`
@@ -117,6 +130,24 @@ export function ClientFilters({
           color: #374151;
           cursor: pointer;
           margin-left: auto;
+        }
+
+        .perf-explainer-btn {
+          padding: 8px 12px;
+          background: #F3F4F6;
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #374151;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .perf-explainer-btn:hover {
+          background: #E5E7EB;
         }
 
         @media (max-width: 600px) {

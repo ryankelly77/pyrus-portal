@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ClientDetailData } from './types'
 import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel } from './utils'
 import { AlertComposer } from './AlertComposer'
+import { Sparkline } from './Sparkline'
 
 interface ClientDetailModalProps {
   clientDetail: ClientDetailData | null
@@ -29,12 +30,29 @@ export function ClientDetailModal({
   onPublishAlert,
 }: ClientDetailModalProps) {
   const alertSectionRef = useRef<HTMLDivElement>(null)
+  const [scoreHistory, setScoreHistory] = useState<number[]>([])
 
   useEffect(() => {
     if (focusAlert && !loading && clientDetail && alertSectionRef.current) {
       alertSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [focusAlert, loading, clientDetail])
+
+  // Fetch score history when client detail loads
+  useEffect(() => {
+    if (clientDetail?.client.id) {
+      fetch(`/api/admin/performance/${clientDetail.client.id}/history`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.history) {
+            setScoreHistory(data.history.map((h: { score: number }) => h.score))
+          }
+        })
+        .catch(err => console.error('Failed to fetch score history:', err))
+    } else {
+      setScoreHistory([])
+    }
+  }, [clientDetail?.client.id])
   return (
     <>
       <div className="perf-modal-overlay" onClick={onClose}>
@@ -76,6 +94,10 @@ export function ClientDetailModal({
                     <div className="perf-detail-plan">
                       Plan: {clientDetail.client.plan_type.replace('_', ' ')} | MRR: ${clientDetail.client.mrr.toLocaleString()}
                     </div>
+                  </div>
+                  <div className="perf-detail-sparkline">
+                    <div className="perf-sparkline-label">Score History</div>
+                    <Sparkline data={scoreHistory} width={140} height={40} />
                   </div>
                 </div>
 
@@ -281,6 +303,21 @@ export function ClientDetailModal({
         .perf-detail-plan {
           font-size: 13px;
           color: #6B7280;
+        }
+
+        .perf-detail-sparkline {
+          margin-left: auto;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+        }
+
+        .perf-sparkline-label {
+          font-size: 11px;
+          color: #9CA3AF;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         /* Sections */

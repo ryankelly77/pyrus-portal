@@ -594,6 +594,7 @@ export async function calculateClientPerformance(
 
 /**
  * Update the cached performance score on a client record
+ * Also records score history for sparkline charts
  */
 export async function updateClientPerformanceScore(clientId: string): Promise<number | null> {
   const result = await calculateClientPerformance(clientId)
@@ -602,6 +603,7 @@ export async function updateClientPerformanceScore(clientId: string): Promise<nu
     return null
   }
 
+  // Update cached score
   await prisma.clients.update({
     where: { id: clientId },
     data: {
@@ -611,6 +613,29 @@ export async function updateClientPerformanceScore(clientId: string): Promise<nu
       stage_updated_at: new Date(),
     },
   })
+
+  // Record score history (only if score changed or last record is older than 24 hours)
+  const oneDayAgo = new Date()
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
+  const lastHistory = await prisma.score_history.findFirst({
+    where: { client_id: clientId },
+    orderBy: { recorded_at: 'desc' },
+  })
+
+  const shouldRecord = !lastHistory ||
+    lastHistory.score !== result.score ||
+    lastHistory.recorded_at < oneDayAgo
+
+  if (shouldRecord) {
+    await prisma.score_history.create({
+      data: {
+        client_id: clientId,
+        score: result.score,
+        growth_stage: result.growthStage,
+      },
+    })
+  }
 
   return result.score
 }

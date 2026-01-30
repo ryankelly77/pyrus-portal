@@ -189,32 +189,6 @@ export default function PerformanceDashboardPage() {
       <AdminHeader title="Performance Dashboard" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
 
       <div className="admin-content">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button
-            onClick={() => setShowExplainer(true)}
-            style={{
-              padding: '8px 16px',
-              background: '#F3F4F6',
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            How Scoring Works
-          </button>
-        </div>
-
         <SummaryCards summary={summary} />
 
         <GrowthStageCards summary={summary} />
@@ -230,6 +204,7 @@ export default function PerformanceDashboardPage() {
           onPlanChange={setPlanFilter}
           onSortChange={setSortBy}
           onCriticalOnlyChange={setCriticalOnly}
+          onShowExplainer={() => setShowExplainer(true)}
         />
 
         <ClientList clients={clients} onViewClient={openClientDetail} onSendAlert={openAlertComposer} />

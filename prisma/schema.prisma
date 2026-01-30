@@ -51,6 +51,7 @@ model clients {
   leads                leads[]
   ai_visibility_scores ai_visibility_scores[]
   client_alerts        client_alerts[]
+  score_history        score_history[]
 }
 
 // Manual product assignments (for clients not going through purchase flow)
@@ -686,4 +687,18 @@ model client_alerts {
 
   @@index([client_id])
   @@index([status])
+}
+
+model score_history {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id    String    @db.Uuid
+  score        Int       // Performance score 0-100
+  growth_stage String?   // Growth stage at time of recording
+  recorded_at  DateTime  @default(now()) @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([recorded_at])
 }

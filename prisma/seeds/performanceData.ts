@@ -59,18 +59,18 @@ async function main() {
   console.log(`Found ${clients.length} active clients\n`)
 
   // Assign performance profiles and client types with explicit distribution
-  // 2 critical, 2 middle, 6 healthy/thriving
+  // 2 critical, 6 healthy, 2 thriving
   const profileDistribution: PerfProfile[] = [
-    'critical',        // 0 - Critical
-    'critical',        // 1 - Critical
-    'needs_attention', // 2 - Needs Attention
-    'needs_attention', // 3 - Needs Attention
-    'healthy',         // 4 - Healthy
-    'healthy',         // 5 - Healthy
-    'healthy',         // 6 - Healthy
-    'thriving',        // 7 - Thriving
-    'thriving',        // 8 - Thriving
-    'thriving',        // 9 - Thriving
+    'critical',  // 0 - Critical
+    'critical',  // 1 - Critical
+    'healthy',   // 2 - Healthy
+    'healthy',   // 3 - Healthy
+    'healthy',   // 4 - Healthy
+    'healthy',   // 5 - Healthy
+    'healthy',   // 6 - Healthy
+    'healthy',   // 7 - Healthy
+    'thriving',  // 8 - Thriving
+    'thriving',  // 9 - Thriving
   ]
 
   const typeDistribution: ClientType[] = ['seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media']
@@ -99,6 +99,12 @@ async function main() {
   await prisma.leads.deleteMany()
   await prisma.keyword_rankings.deleteMany()
   await prisma.metric_snapshots.deleteMany()
+  await prisma.score_history.deleteMany()
+  // Clear cached scores so they recalculate
+  await prisma.clients.updateMany({
+    where: { status: 'active' },
+    data: { performance_score: null, score_updated_at: null },
+  })
   console.log('✓ Cleared existing data\n')
 
   // Metric types we track
