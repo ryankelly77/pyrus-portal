@@ -1,0 +1,205 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { AdminHeader } from '@/components/layout'
+import {
+  SummaryCards,
+  GrowthStageCards,
+  ClientFilters,
+  ClientList,
+  ClientDetailModal,
+  ALERT_TEMPLATES,
+} from '@/components/admin/performance'
+import type { PerformanceData, ClientDetailData } from '@/components/admin/performance'
+
+export default function PerformanceDashboardPage() {
+  const [data, setData] = useState<PerformanceData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Filters
+  const [stageFilter, setStageFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [planFilter, setPlanFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('score_desc')
+  const [criticalOnly, setCriticalOnly] = useState(false)
+
+  // Client detail modal
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [clientDetail, setClientDetail] = useState<ClientDetailData | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  // Alert composer
+  const [alertType, setAlertType] = useState<string>('performance_focus')
+  const [alertMessage, setAlertMessage] = useState(ALERT_TEMPLATES.performance_focus)
+  const [publishingAlert, setPublishingAlert] = useState(false)
+
+  // Fetch dashboard data
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (stageFilter !== 'all') params.set('stage', stageFilter)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (planFilter !== 'all') params.set('plan', planFilter)
+      if (sortBy) params.set('sort', sortBy)
+      if (criticalOnly) params.set('critical_only', 'true')
+
+      const res = await fetch(`/api/admin/performance?${params.toString()}`)
+      if (!res.ok) throw new Error('Failed to fetch performance data')
+      const result = await res.json()
+      setData(result)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }, [stageFilter, statusFilter, planFilter, sortBy, criticalOnly])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Fetch client detail
+  const fetchClientDetail = async (clientId: string) => {
+    try {
+      setDetailLoading(true)
+      const res = await fetch(`/api/admin/performance/${clientId}`)
+      if (!res.ok) throw new Error('Failed to fetch client detail')
+      const result = await res.json()
+      setClientDetail(result)
+    } catch (err) {
+      console.error('Failed to fetch client detail:', err)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
+  const openClientDetail = (clientId: string) => {
+    setSelectedClientId(clientId)
+    fetchClientDetail(clientId)
+    // Reset alert composer
+    setAlertType('performance_focus')
+    setAlertMessage(ALERT_TEMPLATES.performance_focus)
+  }
+
+  const closeClientDetail = () => {
+    setSelectedClientId(null)
+    setClientDetail(null)
+  }
+
+  // Publish alert
+  const publishAlert = async () => {
+    if (!selectedClientId || !alertMessage.trim()) return
+
+    try {
+      setPublishingAlert(true)
+      const res = await fetch('/api/admin/performance/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: selectedClientId,
+          message: alertMessage,
+          alert_type: alertType,
+          publish: true,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to publish alert')
+
+      // Refresh client detail
+      await fetchClientDetail(selectedClientId)
+      alert('Alert published successfully!')
+    } catch (err) {
+      alert('Failed to publish alert')
+    } finally {
+      setPublishingAlert(false)
+    }
+  }
+
+  if (loading && !data) {
+    return (
+      <>
+        <AdminHeader title="Performance" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+        <div className="admin-content">
+          <div style={{ padding: '60px', textAlign: 'center', color: '#6B7280' }}>
+            <div className="spinner" style={{ width: 32, height: 32, margin: '0 auto 16px' }}></div>
+            Loading performance data...
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <AdminHeader title="Performance" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+        <div className="admin-content">
+          <div style={{ padding: '60px', textAlign: 'center', color: '#dc2626' }}>
+            Error: {error}
+            <br />
+            <button onClick={fetchData} style={{ marginTop: '16px', padding: '8px 16px' }}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  const summary = data?.summary || {
+    total_clients: 0,
+    average_score: 0,
+    by_status: { critical: 0, at_risk: 0, needs_attention: 0, healthy: 0, thriving: 0 },
+    by_stage: {
+      seedling: { count: 0, avg_score: 0 },
+      sprouting: { count: 0, avg_score: 0 },
+      blooming: { count: 0, avg_score: 0 },
+      harvesting: { count: 0, avg_score: 0 },
+    },
+  }
+  const clients = data?.clients || []
+
+  return (
+    <>
+      <AdminHeader title="Performance Dashboard" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+
+      <div className="admin-content">
+        <SummaryCards summary={summary} />
+
+        <GrowthStageCards summary={summary} />
+
+        <ClientFilters
+          stageFilter={stageFilter}
+          statusFilter={statusFilter}
+          planFilter={planFilter}
+          sortBy={sortBy}
+          criticalOnly={criticalOnly}
+          onStageChange={setStageFilter}
+          onStatusChange={setStatusFilter}
+          onPlanChange={setPlanFilter}
+          onSortChange={setSortBy}
+          onCriticalOnlyChange={setCriticalOnly}
+        />
+
+        <ClientList clients={clients} onViewClient={openClientDetail} />
+      </div>
+
+      {selectedClientId && (
+        <ClientDetailModal
+          clientDetail={clientDetail}
+          loading={detailLoading}
+          alertType={alertType}
+          alertMessage={alertMessage}
+          publishingAlert={publishingAlert}
+          onClose={closeClientDetail}
+          onAlertTypeChange={setAlertType}
+          onAlertMessageChange={setAlertMessage}
+          onPublishAlert={publishAlert}
+        />
+      )}
+    </>
+  )
+}

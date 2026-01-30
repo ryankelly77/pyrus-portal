@@ -9,7 +9,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "seed:admin": "tsx scripts/seed-admin.ts",
-    "test": "jest"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -65,10 +66,12 @@
     "@babel/preset-typescript": "^7.28.5",
     "@types/jest": "^30.0.0",
     "@types/pg": "^8.16.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "dotenv": "^17.2.3",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitest": "^4.0.18"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

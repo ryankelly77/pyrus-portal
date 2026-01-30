@@ -15,7 +15,10 @@ model clients {
   contact_email      String?
   avatar_url         String?
   avatar_color       String?   @db.VarChar(7)
-  growth_stage       String?
+  growth_stage       String?   // 'seedling', 'sprouting', 'blooming', 'harvesting'
+  stage_updated_at   DateTime? @db.Timestamptz(6)
+  performance_score  Int?      // Cached score 0-100
+  score_updated_at   DateTime? @db.Timestamptz(6)
   status             String?   @default("active")
   monthly_spend      Decimal?  @default(0) @db.Decimal
   start_date         DateTime? @db.Date
@@ -43,6 +46,11 @@ model clients {
   communications       client_communications[]
   basecamp_activities  basecamp_activities[]
   client_products      client_products[]
+  metric_snapshots     metric_snapshots[]
+  keyword_rankings     keyword_rankings[]
+  leads                leads[]
+  ai_visibility_scores ai_visibility_scores[]
+  client_alerts        client_alerts[]
 }
 
 // Manual product assignments (for clients not going through purchase flow)
@@ -593,4 +601,89 @@ model basecamp_activities {
   @@index([task_id])
   @@index([client_id])
   @@index([project_id])
+}
+
+// ============ Performance Scoring ============
+
+model metric_snapshots {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id    String    @db.Uuid
+  metric_type  String    // 'visitors', 'keyword_avg_position', 'leads', 'ai_visibility', 'conversions'
+  value        Decimal   @db.Decimal
+  period_start DateTime  @db.Date
+  period_end   DateTime  @db.Date
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([metric_type])
+  @@index([period_start])
+}
+
+model keyword_rankings {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id     String    @db.Uuid
+  keyword       String
+  position      Int
+  search_engine String    // 'google', 'bing', 'chatgpt', 'perplexity', 'gemini', 'copilot'
+  recorded_at   DateTime  @db.Timestamptz(6)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([keyword])
+  @@index([recorded_at])
+}
+
+model leads {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id  String    @db.Uuid
+  source     String    // 'organic', 'paid', 'referral', 'direct', 'social'
+  lead_score Int?      // Optional quality score 1-100
+  converted  Boolean?  @default(false)
+  metadata   Json?     // Additional lead data (name, email, etc.)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([source])
+  @@index([created_at])
+}
+
+model ai_visibility_scores {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id        String    @db.Uuid
+  platform         String    // 'chatgpt', 'perplexity', 'gemini', 'copilot', 'claude'
+  query            String
+  visibility_score Int       // Score 0-100
+  mentioned        Boolean?  @default(false)
+  position         Int?      // Position in AI response (if listed)
+  recorded_at      DateTime  @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([platform])
+  @@index([recorded_at])
+}
+
+model client_alerts {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id    String    @db.Uuid
+  message      String
+  alert_type   String    // 'performance_focus', 'general_update', 'milestone', 'intervention'
+  status       String?   @default("draft") // 'draft', 'published', 'dismissed'
+  published_at DateTime? @db.Timestamptz(6)
+  dismissed_at DateTime? @db.Timestamptz(6)
+  created_by   String?   @db.Uuid
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([status])
 }
