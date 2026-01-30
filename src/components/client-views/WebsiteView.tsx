@@ -6,7 +6,7 @@ import Link from 'next/link'
 type RequestStatus = 'completed' | 'in-progress' | 'pending'
 
 interface EditRequest {
-  id: number
+  id: string
   title: string
   type: string
   status: RequestStatus
@@ -15,16 +15,19 @@ interface EditRequest {
 
 interface WebsiteData {
   domain: string
-  previewUrl: string
+  websiteUrl: string
+  previewUrl: string | null
   plan: string
   carePlan: string
   status: 'active'
   launchDate: string
+  hostingType: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
   hosting: {
     provider: string
     uptime: string
     lastUpdated: string
   }
+  blocksIframe?: boolean
 }
 
 interface WebsiteApiResponse {
@@ -47,11 +50,13 @@ interface WebsiteViewProps {
 // Demo website data
 const demoWebsiteData: WebsiteData = {
   domain: 'raptor-vending.com',
+  websiteUrl: 'https://raptor-vending.com',
   previewUrl: 'https://raptor-vending.com',
   plan: 'Bloom Site (WordPress)',
   carePlan: 'Website Care Plan',
   status: 'active',
   launchDate: 'Jun 20, 2024',
+  hostingType: 'pyrus_hosted',
   hosting: {
     provider: 'WPEngine',
     uptime: '99.9%',
@@ -60,10 +65,10 @@ const demoWebsiteData: WebsiteData = {
 }
 
 const demoEditRequests: EditRequest[] = [
-  { id: 1, title: 'Update contact page hours', type: 'Content Update', status: 'completed', date: 'Jan 3, 2026' },
-  { id: 2, title: 'Add new wound care service page', type: 'New Feature', status: 'in-progress', date: 'Jan 2, 2026' },
-  { id: 3, title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed', date: 'Dec 28, 2025' },
-  { id: 4, title: 'Update footer contact info', type: 'Content Update', status: 'completed', date: 'Dec 20, 2025' },
+  { id: '1', title: 'Update contact page hours', type: 'Content Update', status: 'completed', date: 'Jan 3, 2026' },
+  { id: '2', title: 'Add new wound care service page', type: 'New Feature', status: 'in-progress', date: 'Jan 2, 2026' },
+  { id: '3', title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed', date: 'Dec 28, 2025' },
+  { id: '4', title: 'Update footer contact info', type: 'Content Update', status: 'completed', date: 'Dec 20, 2025' },
 ]
 
 function getStatusIcon(status: RequestStatus) {
@@ -134,11 +139,48 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
     fetchWebsiteData()
   }, [clientId, isDemo])
 
-  const handleSubmitRequest = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('New request:', { type: requestType, description: requestDescription })
-    setRequestType('')
-    setRequestDescription('')
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const res = await fetch('/api/client/website/edit-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId,
+          title: requestDescription.substring(0, 100), // Use first 100 chars as title
+          description: requestDescription,
+          requestType: requestType.replace('-', '_'), // Convert 'content-update' to 'content_update'
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to submit request')
+      }
+
+      const newRequest = await res.json()
+      // Add the new request to the list
+      setEditRequests(prev => [{
+        id: newRequest.id,
+        title: newRequest.title,
+        type: newRequest.request_type,
+        status: newRequest.status as RequestStatus,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      }, ...prev])
+
+      setRequestType('')
+      setRequestDescription('')
+    } catch (err) {
+      console.error('Error submitting request:', err)
+      setSubmitError('Failed to submit request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleAddToCart = (productSlug: string) => {
@@ -172,7 +214,7 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                 </svg>
                 Website Preview
               </h3>
-              <a href={`https://${websiteData.domain}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+              <a href={websiteData.websiteUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                   <polyline points="15 3 21 3 21 9"></polyline>
@@ -182,12 +224,34 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
               </a>
             </div>
             <div className="website-preview-container">
-              <iframe
-                src={websiteData.previewUrl}
-                title="Website Preview"
-                frameBorder="0"
-                allowFullScreen
-              ></iframe>
+              {websiteData.blocksIframe || !websiteData.previewUrl ? (
+                <div className="preview-blocked">
+                  <div className="preview-blocked-content">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    <h4>Preview Not Available</h4>
+                    <p>Your website hosting provider ({websiteData.hosting.provider}) doesn&apos;t allow embedded previews.</p>
+                    <a href={websiteData.websiteUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                      Open Website in New Tab
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  src={websiteData.previewUrl}
+                  title="Website Preview"
+                  frameBorder="0"
+                  allowFullScreen
+                ></iframe>
+              )}
             </div>
           </div>
 
@@ -322,13 +386,27 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                     required
                   ></textarea>
                 </div>
+                {submitError && (
+                  <div className="form-error" style={{ color: 'var(--color-danger)', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                    {submitError}
+                  </div>
+                )}
                 <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                    Submit Request
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <line x1="22" y1="2" x2="11" y2="13"></line>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Submit Request
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

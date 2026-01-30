@@ -39,9 +39,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
     }
 
-    // Get client data including landingsite_preview_url
+    // Get client data including website fields
     const clientResult = await dbPool.query(
-      `SELECT id, name, landingsite_preview_url, stripe_customer_id FROM clients WHERE id = $1`,
+      `SELECT id, name, website_url, hosting_type, hosting_provider, landingsite_preview_url, stripe_customer_id FROM clients WHERE id = $1`,
       [clientId]
     )
 
@@ -73,7 +73,8 @@ export async function GET(request: NextRequest) {
 
     const websiteProducts = subscriptionResult.rows.map(r => r.product_name)
     const hasWebsiteProducts = websiteProducts.length > 0
-    const hasWebsiteAccess = !!client.landingsite_preview_url
+    // Website access is enabled if we have a website URL configured
+    const hasWebsiteAccess = !!client.website_url
 
     // Determine website plan name from products
     let planName = 'Website'
@@ -98,47 +99,93 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Determine hosting provider based on hosting_type field
+    const getHostingProvider = () => {
+      switch (client.hosting_type) {
+        case 'ai_site':
+          return 'Landingsite.ai'
+        case 'pyrus_hosted':
+          return 'WPEngine (Pyrus Hosted)'
+        case 'client_hosted':
+          return client.hosting_provider || 'Client Hosted'
+        default:
+          // Fallback to old logic for backwards compatibility
+          return planName.includes('WordPress') ? 'WPEngine' : 'Landingsite.ai'
+      }
+    }
+
     // Build website data if available
     let websiteData = null
     if (hasWebsiteAccess) {
-      // Extract domain from preview URL or use default
+      // Extract domain from website URL
       let domain = 'yoursite.com'
       try {
-        const previewUrl = client.landingsite_preview_url
-        // Try to extract domain - for landingsite URLs use a placeholder
-        if (previewUrl.includes('landingsite.ai')) {
-          domain = `${client.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.com`
-        } else {
-          const url = new URL(previewUrl)
-          domain = url.hostname
-        }
+        const websiteUrl = client.website_url
+        const url = new URL(websiteUrl)
+        domain = url.hostname.replace(/^www\./, '')
       } catch {
         // Keep default
       }
 
+      // Determine if iframe preview is allowed based on hosting type
+      // HubSpot and many client-hosted sites block iframe embedding
+      const hostingProvider = getHostingProvider()
+      const blocksIframe = client.hosting_type === 'client_hosted' &&
+        client.hosting_provider?.toLowerCase().includes('hubspot')
+
       websiteData = {
         domain,
-        previewUrl: client.landingsite_preview_url,
+        websiteUrl: client.website_url,
+        previewUrl: blocksIframe ? null : client.website_url,
         plan: planName,
         carePlan,
         status: 'active' as const,
         launchDate: 'Dec 30, 2025', // TODO: Store actual launch date in database
+        hostingType: client.hosting_type,
         hosting: {
-          provider: planName.includes('WordPress') ? 'WPEngine' : 'Landingsite.ai',
+          provider: hostingProvider,
           uptime: '99.9%',
           lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         },
+        blocksIframe,
       }
     }
 
-    // TODO: Fetch real edit requests from database
-    // For now, return demo data that matches the existing structure
-    const editRequests = hasWebsiteAccess ? [
-      { id: 1, title: 'Update contact page hours', type: 'Content Update', status: 'completed' as const, date: 'Jan 3, 2026' },
-      { id: 2, title: 'Add new service page', type: 'New Feature', status: 'in-progress' as const, date: 'Jan 2, 2026' },
-      { id: 3, title: 'Fix mobile menu alignment', type: 'Bug Fix', status: 'completed' as const, date: 'Dec 28, 2025' },
-      { id: 4, title: 'Update footer contact info', type: 'Content Update', status: 'completed' as const, date: 'Dec 20, 2025' },
-    ] : []
+    // Fetch real edit requests from database
+    let editRequests: Array<{
+      id: string
+      title: string
+      type: string
+      status: 'pending' | 'in-progress' | 'completed'
+      date: string
+    }> = []
+
+    if (hasWebsiteAccess) {
+      try {
+        const editRequestsResult = await dbPool.query(`
+          SELECT id, title, request_type, status, created_at
+          FROM website_edit_requests
+          WHERE client_id = $1
+          ORDER BY created_at DESC
+          LIMIT 10
+        `, [clientId])
+
+        editRequests = editRequestsResult.rows.map(row => ({
+          id: row.id,
+          title: row.title,
+          type: row.request_type,
+          status: row.status as 'pending' | 'in-progress' | 'completed',
+          date: new Date(row.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          }),
+        }))
+      } catch (error) {
+        // Table may not exist yet, return empty array
+        console.log('website_edit_requests table not found or query failed:', error)
+      }
+    }
 
     return NextResponse.json({
       hasWebsiteProducts,

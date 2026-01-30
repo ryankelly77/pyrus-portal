@@ -111,12 +111,15 @@ export async function PATCH(
       referredBy,
       referralSource,
       avatarColor,
+      // Website fields
+      websiteUrl,
+      hostingType,
+      hostingProvider,
       // Integration fields
       agencyDashboardShareKey,
       dashboardToken, // alias for agencyDashboardShareKey
       basecampId,
       basecampProjectId,
-      landsitePreviewUrl,
       stripeCustomerId,
     } = body
 
@@ -135,11 +138,14 @@ export async function PATCH(
         ...(referredBy !== undefined && { referred_by: referredBy || null }),
         ...(referralSource !== undefined && { referral_source: referralSource || null }),
         ...(avatarColor !== undefined && { avatar_color: avatarColor || null }),
+        // Website fields
+        ...(websiteUrl !== undefined && { website_url: websiteUrl || null }),
+        ...(hostingType !== undefined && { hosting_type: hostingType || null }),
+        ...(hostingProvider !== undefined && { hosting_provider: hostingProvider || null }),
         // Integration fields
         ...(dashboardKey !== undefined && { agency_dashboard_share_key: dashboardKey || null }),
         ...(basecampId !== undefined && { basecamp_id: basecampId || null }),
         ...(basecampProjectId !== undefined && { basecamp_project_id: basecampProjectId || null }),
-        ...(landsitePreviewUrl !== undefined && { landingsite_preview_url: landsitePreviewUrl || null }),
         ...(stripeCustomerId !== undefined && { stripe_customer_id: stripeCustomerId || null }),
         updated_at: new Date(),
       },

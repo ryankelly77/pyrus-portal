@@ -28,6 +28,9 @@ model clients {
   stripe_customer_id        String?
   agency_dashboard_share_key String?
   landingsite_preview_url   String?
+  website_url               String?   @db.VarChar(500)
+  hosting_type              String?   @db.VarChar(50) // 'ai_site', 'pyrus_hosted', 'client_hosted'
+  hosting_provider          String?   @db.VarChar(100) // e.g., 'HubSpot', 'Wix', 'Squarespace'
   notes                     String?
   referred_by               String?
   referral_source           String?
@@ -52,6 +55,7 @@ model clients {
   ai_visibility_scores ai_visibility_scores[]
   client_alerts        client_alerts[]
   score_history        score_history[]
+  website_edit_requests website_edit_requests[]
 }
 
 // Manual product assignments (for clients not going through purchase flow)
@@ -602,6 +606,27 @@ model basecamp_activities {
   @@index([task_id])
   @@index([client_id])
   @@index([project_id])
+}
+
+// ============ Website Edit Requests ============
+
+model website_edit_requests {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id    String    @db.Uuid
+  title        String
+  description  String?
+  request_type String    // 'content_update', 'new_feature', 'bug_fix', 'design_change'
+  status       String    @default("pending") // 'pending', 'in-progress', 'completed', 'cancelled'
+  priority     String?   @default("normal") // 'low', 'normal', 'high', 'urgent'
+  completed_at DateTime? @db.Timestamptz(6)
+  created_by   String?   @db.Uuid
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([status])
 }
 
 // ============ Performance Scoring ============

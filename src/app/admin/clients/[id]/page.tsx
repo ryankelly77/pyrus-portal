@@ -100,6 +100,10 @@ interface DBClient {
   basecamp_project_id: string | null
   landingsite_preview_url: string | null
   stripe_customer_id: string | null
+  // Website fields
+  website_url: string | null
+  hosting_type: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
+  hosting_provider: string | null
   // Onboarding
   onboarding_completed_at: string | null
 }
@@ -412,16 +416,18 @@ export default function ClientDetailPage() {
     primaryContact: '',
     email: '',
     phone: '',
-    website: '',
     growthStage: 'prospect' as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
     internalNotes: '',
     referredBy: '',
     referralSource: '',
     avatarColor: '#885430',
+    // Website
+    websiteUrl: '',
+    hostingType: '' as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted',
+    hostingProvider: '',
     // Integrations
     agencyDashboardShareKey: '',
     basecampProjectId: '',
-    landsitePreviewUrl: '',
     stripeCustomerId: '',
     // Billing
     billingEmail: '',
@@ -801,10 +807,13 @@ export default function ClientDetailPage() {
           referredBy: editFormData.referredBy,
           referralSource: editFormData.referralSource,
           avatarColor: editFormData.avatarColor,
+          // Website fields
+          websiteUrl: editFormData.websiteUrl,
+          hostingType: editFormData.hostingType || null,
+          hostingProvider: editFormData.hostingProvider || null,
           // Integration fields
           agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
           basecampProjectId: editFormData.basecampProjectId,
-          landsitePreviewUrl: editFormData.landsitePreviewUrl,
           stripeCustomerId: editFormData.stripeCustomerId,
         }),
       })
@@ -848,10 +857,13 @@ export default function ClientDetailPage() {
             referredBy: data.referred_by || '',
             referralSource: data.referral_source || '',
             avatarColor: data.avatar_color || getAvatarColor(data.name),
+            // Website fields
+            websiteUrl: data.website_url || '',
+            hostingType: (data.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
+            hostingProvider: data.hosting_provider || '',
             // Integration fields
             agencyDashboardShareKey: data.agency_dashboard_share_key || '',
             basecampProjectId: data.basecamp_project_id || '',
-            landsitePreviewUrl: data.landingsite_preview_url || '',
             stripeCustomerId: data.stripe_customer_id || '',
           }))
         }
@@ -3317,13 +3329,14 @@ export default function ClientDetailPage() {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="website">Website</label>
+                      <label htmlFor="websiteUrl">Website</label>
                       <input
                         type="url"
-                        id="website"
+                        id="websiteUrl"
                         className="form-control"
-                        value={editFormData.website}
-                        onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                        value={editFormData.websiteUrl}
+                        onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
+                        placeholder="https://example.com"
                       />
                     </div>
                   </div>
@@ -3462,19 +3475,71 @@ export default function ClientDetailPage() {
                     </small>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="landsitePreviewUrl">Landingsite Preview URL</label>
-                    <input
-                      type="url"
-                      id="landsitePreviewUrl"
-                      className="form-control"
-                      placeholder="e.g., https://app.landingsite.ai/website-preview?id=..."
-                      value={editFormData.landsitePreviewUrl}
-                      onChange={(e) => setEditFormData({ ...editFormData, landsitePreviewUrl: e.target.value })}
-                    />
-                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                      For Seedling Site (AI-built website) preview in Website tab.
-                    </small>
+                  {/* Website Section */}
+                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '1rem' }}>
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>Website</h4>
+
+                    <div className="form-group">
+                      <label htmlFor="websiteUrl">Website Address</label>
+                      <input
+                        type="url"
+                        id="websiteUrl"
+                        className="form-control"
+                        placeholder="e.g., https://example.com"
+                        value={editFormData.websiteUrl}
+                        onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Hosting Type</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                          <input
+                            type="radio"
+                            name="hostingType"
+                            value="ai_site"
+                            checked={editFormData.hostingType === 'ai_site'}
+                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'ai_site', hostingProvider: '' })}
+                          />
+                          <span>AI Site (Landingsite.ai)</span>
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                          <input
+                            type="radio"
+                            name="hostingType"
+                            value="pyrus_hosted"
+                            checked={editFormData.hostingType === 'pyrus_hosted'}
+                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'pyrus_hosted', hostingProvider: '' })}
+                          />
+                          <span>Pyrus Hosted (WordPress)</span>
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                          <input
+                            type="radio"
+                            name="hostingType"
+                            value="client_hosted"
+                            checked={editFormData.hostingType === 'client_hosted'}
+                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'client_hosted' })}
+                          />
+                          <span>Client Hosted</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {editFormData.hostingType === 'client_hosted' && (
+                      <div className="form-group">
+                        <label htmlFor="hostingProvider">Hosting Provider</label>
+                        <input
+                          type="text"
+                          id="hostingProvider"
+                          className="form-control"
+                          placeholder="e.g., HubSpot, Wix, Squarespace, GoDaddy"
+                          value={editFormData.hostingProvider}
+                          onChange={(e) => setEditFormData({ ...editFormData, hostingProvider: e.target.value })}
+                        />
+                      </div>
+                    )}
                   </div>
                 </>
               )}

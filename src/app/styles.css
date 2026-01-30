@@ -21377,6 +21377,39 @@ input[type="date"].form-control {
     border: none;
 }
 
+.preview-blocked {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-subtle);
+}
+
+.preview-blocked-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 40px;
+}
+
+.preview-blocked-content svg {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.preview-blocked-content h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.preview-blocked-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
 .website-info-card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
