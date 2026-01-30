@@ -1,6 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
+import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+
+// Helper function to sync Stripe subscriptions to local database
+async function syncStripeSubscriptions(clientId: string, stripeCustomerId: string) {
+  try {
+    const subscriptionsResponse = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'all',
+    })
+
+    for (const sub of subscriptionsResponse.data) {
+      const existing = await dbPool.query(
+        'SELECT id FROM subscriptions WHERE stripe_subscription_id = $1',
+        [sub.id]
+      )
+
+      let subscriptionId: string
+
+      if (existing.rows.length > 0) {
+        subscriptionId = existing.rows[0].id
+        await dbPool.query(
+          `UPDATE subscriptions SET status = $1, current_period_start = to_timestamp($2), current_period_end = to_timestamp($3), updated_at = NOW() WHERE id = $4`,
+          [sub.status, sub.current_period_start, sub.current_period_end, subscriptionId]
+        )
+      } else {
+        const result = await dbPool.query(
+          `INSERT INTO subscriptions (client_id, stripe_subscription_id, status, current_period_start, current_period_end) VALUES ($1, $2, $3, to_timestamp($4), to_timestamp($5)) RETURNING id`,
+          [clientId, sub.id, sub.status, sub.current_period_start, sub.current_period_end]
+        )
+        subscriptionId = result.rows[0].id
+      }
+
+      for (const item of sub.items.data) {
+        const productId = typeof item.price.product === 'string' ? item.price.product : (item.price.product as any)?.id
+        if (!productId) continue
+
+        const productResult = await dbPool.query('SELECT id FROM products WHERE stripe_product_id = $1', [productId])
+        if (productResult.rows.length === 0) continue
+
+        const localProductId = productResult.rows[0].id
+        const existingItem = await dbPool.query('SELECT id FROM subscription_items WHERE subscription_id = $1 AND product_id = $2', [subscriptionId, localProductId])
+
+        if (existingItem.rows.length === 0) {
+          await dbPool.query(
+            `INSERT INTO subscription_items (subscription_id, product_id, stripe_subscription_item_id, quantity, unit_amount) VALUES ($1, $2, $3, $4, $5)`,
+            [subscriptionId, localProductId, item.id, item.quantity, item.price.unit_amount]
+          )
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to sync Stripe subscriptions:', error)
+  }
+}
 
 // GET /api/admin/clients/[id] - Get a single client
 export async function GET(
@@ -89,6 +143,11 @@ export async function PATCH(
         updated_at: new Date(),
       },
     })
+
+    // Auto-sync Stripe subscriptions when Stripe customer ID is set
+    if (stripeCustomerId) {
+      await syncStripeSubscriptions(id, stripeCustomerId)
+    }
 
     return NextResponse.json(client)
   } catch (error) {
