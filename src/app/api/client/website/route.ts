@@ -150,6 +150,50 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Calculate last updated date from most recent website activity
+      let lastUpdatedDate: Date | null = null
+
+      // Check for most recent completed edit request
+      try {
+        const lastEditResult = await dbPool.query(`
+          SELECT updated_at FROM website_edit_requests
+          WHERE client_id = $1 AND status = 'completed'
+          ORDER BY updated_at DESC
+          LIMIT 1
+        `, [clientId])
+        if (lastEditResult.rows.length > 0) {
+          lastUpdatedDate = new Date(lastEditResult.rows[0].updated_at)
+        }
+      } catch {
+        // Table may not exist
+      }
+
+      // Check for most recent basecamp activity (website content related)
+      try {
+        const lastActivityResult = await dbPool.query(`
+          SELECT COALESCE(basecamp_created_at, created_at) as activity_date
+          FROM basecamp_activities
+          WHERE client_id = $1
+          ORDER BY COALESCE(basecamp_created_at, created_at) DESC
+          LIMIT 1
+        `, [clientId])
+        if (lastActivityResult.rows.length > 0) {
+          const activityDate = new Date(lastActivityResult.rows[0].activity_date)
+          if (!lastUpdatedDate || activityDate > lastUpdatedDate) {
+            lastUpdatedDate = activityDate
+          }
+        }
+      } catch {
+        // Table may not exist
+      }
+
+      // Fall back to launch date or 'Unknown'
+      const lastUpdatedDisplay = lastUpdatedDate
+        ? lastUpdatedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : (client.website_launch_date
+          ? new Date(client.website_launch_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'Unknown')
+
       websiteData = {
         domain,
         websiteUrl: client.website_url,
@@ -165,7 +209,7 @@ export async function GET(request: NextRequest) {
           provider: hostingProvider,
           uptime: uptimeDisplay,
           uptimeStatus,
-          lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          lastUpdated: lastUpdatedDisplay,
         },
         blocksIframe,
       }
