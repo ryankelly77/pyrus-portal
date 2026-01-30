@@ -150,38 +150,21 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Calculate last updated date from most recent website activity
+      // Calculate last updated date from most recent "Website Updates" todo completion
       let lastUpdatedDate: Date | null = null
 
-      // Check for most recent completed edit request
       try {
-        const lastEditResult = await dbPool.query(`
-          SELECT updated_at FROM website_edit_requests
-          WHERE client_id = $1 AND status = 'completed'
-          ORDER BY updated_at DESC
-          LIMIT 1
-        `, [clientId])
-        if (lastEditResult.rows.length > 0) {
-          lastUpdatedDate = new Date(lastEditResult.rows[0].updated_at)
-        }
-      } catch {
-        // Table may not exist
-      }
-
-      // Check for most recent basecamp activity (website content related)
-      try {
-        const lastActivityResult = await dbPool.query(`
+        const lastUpdateResult = await dbPool.query(`
           SELECT COALESCE(basecamp_created_at, created_at) as activity_date
           FROM basecamp_activities
           WHERE client_id = $1
+            AND kind = 'todo_completed'
+            AND recording_title ILIKE '%Website Updates%'
           ORDER BY COALESCE(basecamp_created_at, created_at) DESC
           LIMIT 1
         `, [clientId])
-        if (lastActivityResult.rows.length > 0) {
-          const activityDate = new Date(lastActivityResult.rows[0].activity_date)
-          if (!lastUpdatedDate || activityDate > lastUpdatedDate) {
-            lastUpdatedDate = activityDate
-          }
+        if (lastUpdateResult.rows.length > 0) {
+          lastUpdatedDate = new Date(lastUpdateResult.rows[0].activity_date)
         }
       } catch {
         // Table may not exist
