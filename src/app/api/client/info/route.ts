@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       websiteProductKeywords.some(kw => name.includes(kw))
     )
     const hasContentProducts = activeProducts.some((name: string) =>
-      name.includes('content') || name.includes('ai creative') || name.includes('branding')
+      name.includes('content') || name.includes('ai creative') || name.includes('branding') || name.includes('harvest')
     )
 
     // Generate initials from name
