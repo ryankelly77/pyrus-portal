@@ -11,7 +11,7 @@ interface BasecampWebhookPayload {
     title: string
     type: string
     position?: number
-    content?: string
+    notes?: string
     bucket: {
       id: number
       name: string
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
           parent_id: payload.recording.parent?.id?.toString() || null,
           parent_title: payload.recording.parent?.title || null,
           parent_type: payload.recording.parent?.type || null,
-          recording_content: payload.recording.content || null,
+          recording_content: payload.recording.notes || null,
           basecamp_created_at: payload.created_at ? new Date(payload.created_at) : null,
         },
       })
