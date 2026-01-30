@@ -211,7 +211,7 @@ export const DashboardClientMetricSchema = z.object({
  * Dashboard client schema (for client list)
  */
 export const DashboardClientSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1), // Use string instead of strict uuid() to allow placeholder IDs
   name: z.string(),
   score: z.number().min(0).max(100),
   growth_stage: GrowthStageSchema,
