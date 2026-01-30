@@ -941,6 +941,39 @@
             flex-shrink: 0;
         }
 
+        /* Website Status Alerts - Prominent styling */
+        .activity-item.website-status {
+            border-radius: 8px;
+            margin: 4px 8px;
+            border: 1px solid transparent;
+        }
+
+        .activity-item.website-down {
+            background: var(--error-bg);
+            border-color: var(--error-border);
+        }
+
+        .activity-item.website-down:hover {
+            background: #FECACA;
+        }
+
+        .activity-item.website-down .activity-title {
+            color: var(--error-text);
+        }
+
+        .activity-item.website-up {
+            background: var(--success-bg);
+            border-color: var(--success-border);
+        }
+
+        .activity-item.website-up:hover {
+            background: #BBF7D0;
+        }
+
+        .activity-item.website-up .activity-title {
+            color: var(--success-text);
+        }
+
         /* ======================= */
         /* COMMUNICATION TAB */
         /* ======================= */

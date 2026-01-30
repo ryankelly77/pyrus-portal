@@ -9,13 +9,18 @@ export interface ActivityData {
   description: string
   time: string
   iconStyle?: { background: string; color: string }
+  metadata?: {
+    commType?: string
+    highlightType?: string
+    [key: string]: unknown
+  }
 }
 
 interface ActivityItemProps {
   activity: ActivityData
 }
 
-function getActivityIcon(type: ActivityType, iconStyle?: { background: string; color: string }) {
+function getActivityIcon(type: ActivityType, iconStyle?: { background: string; color: string }, metadata?: { commType?: string; highlightType?: string; [key: string]: unknown }) {
   switch (type) {
     case 'content':
       // Check for revision icon style (warning colors)
@@ -43,8 +48,21 @@ function getActivityIcon(type: ActivityType, iconStyle?: { background: string; c
         )
       }
     case 'alert':
+      // Website status alerts get a globe icon
+      if (metadata?.commType === 'website_status') {
+        return (
+          <div className="activity-icon alert" style={iconStyle}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+        )
+      }
+      // Default alert icon (lightning bolt)
       return (
-        <div className="activity-icon alert">
+        <div className="activity-icon alert" style={iconStyle}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
           </svg>
@@ -74,9 +92,22 @@ function getActivityIcon(type: ActivityType, iconStyle?: { background: string; c
 }
 
 export function ActivityItem({ activity }: ActivityItemProps) {
+  // Determine if this is a website status alert for special styling
+  const isWebsiteStatus = activity.metadata?.commType === 'website_status'
+  const isDown = activity.metadata?.highlightType === 'failed'
+  const isUp = activity.metadata?.highlightType === 'success'
+
+  // Build class names
+  const classNames = ['activity-item']
+  if (isWebsiteStatus) {
+    classNames.push('website-status')
+    if (isDown) classNames.push('website-down')
+    if (isUp) classNames.push('website-up')
+  }
+
   return (
-    <li className="activity-item" data-type={activity.type}>
-      {getActivityIcon(activity.type, activity.iconStyle)}
+    <li className={classNames.join(' ')} data-type={activity.type}>
+      {getActivityIcon(activity.type, activity.iconStyle, activity.metadata)}
       <div className="activity-details">
         <div className="activity-title">{activity.title}</div>
         <div className="activity-desc">{activity.description}</div>
