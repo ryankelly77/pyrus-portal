@@ -213,12 +213,12 @@ export const DashboardClientMetricSchema = z.object({
 export const DashboardClientSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  score: z.number().int().min(0).max(100),
+  score: z.number().min(0).max(100),
   growth_stage: GrowthStageSchema,
   status: z.string(),
   plan_type: z.string(),
   mrr: z.number().min(0),
-  tenure_months: z.number().int().min(0),
+  tenure_months: z.number().min(0),
   metrics: z.object({
     keywords: DashboardClientMetricSchema.optional(),
     visitors: DashboardClientMetricSchema.optional(),
@@ -238,7 +238,7 @@ export const DashboardClientSchema = z.object({
  * Stage summary schema
  */
 export const StageSummarySchema = z.object({
-  count: z.number().int().min(0),
+  count: z.number().min(0),
   avg_score: z.number().min(0).max(100),
 })
 
@@ -246,14 +246,14 @@ export const StageSummarySchema = z.object({
  * Dashboard summary schema
  */
 export const DashboardSummarySchema = z.object({
-  total_clients: z.number().int().min(0),
+  total_clients: z.number().min(0),
   average_score: z.number().min(0).max(100),
   by_status: z.object({
-    critical: z.number().int().min(0),
-    at_risk: z.number().int().min(0),
-    needs_attention: z.number().int().min(0),
-    healthy: z.number().int().min(0),
-    thriving: z.number().int().min(0),
+    critical: z.number().min(0),
+    at_risk: z.number().min(0),
+    needs_attention: z.number().min(0),
+    healthy: z.number().min(0),
+    thriving: z.number().min(0),
   }),
   by_stage: z.object({
     seedling: StageSummarySchema,
