@@ -139,8 +139,8 @@ export async function GET(request: NextRequest) {
     const hasResultsAccess = !!client.agency_dashboard_share_key
     const hasActivityAccess = !!client.basecamp_id || !!client.basecamp_project_id
     const hasWebsiteAccess = !!client.landingsite_preview_url
-    // Website products are actual websites (not just care/maintenance plans)
-    const websiteProductKeywords = ['seed site', 'seedling site', 'sprout site', 'bloom site', 'harvest site']
+    // Website products include actual websites and care plans (Harvest SEO includes Website Care)
+    const websiteProductKeywords = ['seed site', 'seedling site', 'sprout site', 'bloom site', 'harvest site', 'website care', 'harvest']
     const hasWebsiteProducts = activeProducts.some((name: string) =>
       websiteProductKeywords.some(kw => name.includes(kw))
     )
