@@ -92,7 +92,7 @@ export async function POST(
         data: {
           client_id: client?.id || null,
           kind: payload.kind,
-          basecamp_request_id: payload.id,
+          basecamp_request_id: String(payload.id),
           task_id: taskId,
           project_id: payload.recording.bucket?.id?.toString() || projectId,
           project_title: payload.recording.bucket?.name || null,
