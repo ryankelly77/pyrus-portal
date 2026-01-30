@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ClientDetailData } from './types'
-import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel } from './utils'
+import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel, formatMetricLabel } from './utils'
 import { AlertComposer } from './AlertComposer'
 import { Sparkline } from './Sparkline'
 
@@ -107,7 +107,7 @@ export function ClientDetailModal({
                   <div className="perf-metrics-grid">
                     {Object.entries(clientDetail.metrics).map(([key, metric]) => (
                       <div key={key} className="perf-metric-row">
-                        <div className="perf-metric-label">{key.replace('_', ' ')}</div>
+                        <div className="perf-metric-label">{formatMetricLabel(key)}</div>
                         <div className="perf-metric-bar-container">
                           <div
                             className="perf-metric-bar"

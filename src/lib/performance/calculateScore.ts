@@ -253,6 +253,9 @@ async function getRecentAlerts(clientId: string, days: number = 30): Promise<Ale
 
 /**
  * Get metric snapshots for a period
+ *
+ * Finds a snapshot whose start date falls within a reasonable range of the query period.
+ * This ensures we get the correct snapshot for current vs previous periods.
  */
 async function getMetricValue(
   clientId: string,
@@ -260,14 +263,23 @@ async function getMetricValue(
   periodStart: Date,
   periodEnd: Date
 ): Promise<number | null> {
+  // Find snapshot where period_start is within a few days of our query start
+  // This prevents finding the wrong snapshot when periods are close together
+  const rangeStart = new Date(periodStart)
+  rangeStart.setDate(rangeStart.getDate() - 5) // Allow 5 days before
+  const rangeEnd = new Date(periodStart)
+  rangeEnd.setDate(rangeEnd.getDate() + 10) // Allow 10 days after
+
   const snapshot = await prisma.metric_snapshots.findFirst({
     where: {
       client_id: clientId,
       metric_type: metricType,
-      period_start: { gte: periodStart },
-      period_end: { lte: periodEnd },
+      period_start: {
+        gte: rangeStart,
+        lte: rangeEnd,
+      },
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { period_start: 'desc' },
   })
 
   return snapshot ? parseFloat(snapshot.value.toString()) : null

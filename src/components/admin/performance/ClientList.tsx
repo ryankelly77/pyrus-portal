@@ -4,10 +4,9 @@ import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel, getPlanLabe
 interface ClientListProps {
   clients: ClientData[]
   onViewClient: (clientId: string) => void
-  onSendAlert?: (clientId: string) => void
 }
 
-export function ClientList({ clients, onViewClient, onSendAlert }: ClientListProps) {
+export function ClientList({ clients, onViewClient }: ClientListProps) {
   if (clients.length === 0) {
     return (
       <>
@@ -109,12 +108,6 @@ export function ClientList({ clients, onViewClient, onSendAlert }: ClientListPro
                 onClick={() => onViewClient(client.id)}
               >
                 View
-              </button>
-              <button
-                className="perf-btn perf-btn-alert"
-                onClick={() => onSendAlert ? onSendAlert(client.id) : onViewClient(client.id)}
-              >
-                Alert
               </button>
             </div>
           </div>
@@ -254,20 +247,11 @@ export function ClientList({ clients, onViewClient, onSendAlert }: ClientListPro
         }
 
         .perf-btn-view {
-          background: #F3F4F6;
-          color: #374151;
-        }
-
-        .perf-btn-view:hover {
-          background: #E5E7EB;
-        }
-
-        .perf-btn-alert {
           background: #059669;
           color: white;
         }
 
-        .perf-btn-alert:hover {
+        .perf-btn-view:hover {
           background: #047857;
         }
 

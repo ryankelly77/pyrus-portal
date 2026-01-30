@@ -40,6 +40,21 @@ export default function PerformanceDashboardPage() {
   // Scoring explainer modal
   const [showExplainer, setShowExplainer] = useState(false)
 
+  // Avg score history for sparkline
+  const [avgScoreHistory, setAvgScoreHistory] = useState<number[]>([])
+
+  // Fetch avg score history
+  useEffect(() => {
+    fetch('/api/admin/performance/avg-history')
+      .then(res => res.json())
+      .then(data => {
+        if (data.history) {
+          setAvgScoreHistory(data.history)
+        }
+      })
+      .catch(err => console.error('Failed to fetch avg score history:', err))
+  }, [])
+
   // Fetch dashboard data
   const fetchData = useCallback(async () => {
     try {
@@ -99,10 +114,6 @@ export default function PerformanceDashboardPage() {
     // Reset alert composer
     setAlertType('performance_focus')
     setAlertMessage(ALERT_TEMPLATES.performance_focus)
-  }
-
-  const openAlertComposer = (clientId: string) => {
-    openClientDetail(clientId, true)
   }
 
   const closeClientDetail = () => {
@@ -189,7 +200,7 @@ export default function PerformanceDashboardPage() {
       <AdminHeader title="Performance Dashboard" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
 
       <div className="admin-content">
-        <SummaryCards summary={summary} />
+        <SummaryCards summary={summary} avgScoreHistory={avgScoreHistory} />
 
         <GrowthStageCards summary={summary} />
 
@@ -207,7 +218,7 @@ export default function PerformanceDashboardPage() {
           onShowExplainer={() => setShowExplainer(true)}
         />
 
-        <ClientList clients={clients} onViewClient={openClientDetail} onSendAlert={openAlertComposer} />
+        <ClientList clients={clients} onViewClient={openClientDetail} />
       </div>
 
       {selectedClientId && (

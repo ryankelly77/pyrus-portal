@@ -77,17 +77,12 @@ export function ClientFilters({
           <option value="mrr_desc">MRR (High to Low)</option>
         </select>
 
-        <label className="perf-filter-checkbox">
-          <input
-            type="checkbox"
-            checked={criticalOnly}
-            onChange={(e) => onCriticalOnlyChange(e.target.checked)}
-          />
-          <span>Show Critical Only</span>
-        </label>
-
         {onShowExplainer && (
-          <button className="perf-explainer-btn" onClick={onShowExplainer}>
+          <button
+            type="button"
+            className="perf-explainer-btn"
+            onClick={onShowExplainer}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -96,6 +91,15 @@ export function ClientFilters({
             How Scoring Works
           </button>
         )}
+
+        <label className="perf-filter-checkbox">
+          <input
+            type="checkbox"
+            checked={criticalOnly}
+            onChange={(e) => onCriticalOnlyChange(e.target.checked)}
+          />
+          <span>Show Critical Only</span>
+        </label>
       </div>
 
       <style jsx>{`

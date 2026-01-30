@@ -63,6 +63,18 @@ export function getAlertTypeLabel(alertType: string | null): string {
   return labels[alertType] || alertType.replace('_', ' ')
 }
 
+export function formatMetricLabel(key: string): string {
+  const labels: Record<string, string> = {
+    keywords: 'Keywords',
+    visitors: 'Visitors',
+    leads: 'Leads',
+    ai_visibility: 'AI Visibility',
+    conversions: 'Conversions',
+    alerts: 'Alerts',
+  }
+  return labels[key] || key.replace('_', ' ')
+}
+
 export function getTrendArrow(delta: number): string {
   if (delta > 5) return '\u2191' // up arrow
   if (delta < -5) return '\u2193' // down arrow

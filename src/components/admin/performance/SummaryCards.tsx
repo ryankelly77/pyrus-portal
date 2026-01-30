@@ -1,10 +1,12 @@
 import type { Summary } from './types'
+import { Sparkline } from './Sparkline'
 
 interface SummaryCardsProps {
   summary: Summary
+  avgScoreHistory?: number[]
 }
 
-export function SummaryCards({ summary }: SummaryCardsProps) {
+export function SummaryCards({ summary, avgScoreHistory }: SummaryCardsProps) {
   return (
     <>
       <div className="perf-summary-grid">
@@ -16,16 +18,29 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
           <div className="perf-summary-value">{summary.by_status.critical}</div>
           <div className="perf-summary-label">Critical (0-19)</div>
         </div>
+        <div className="perf-summary-card perf-at-risk">
+          <div className="perf-summary-value">{summary.by_status.at_risk}</div>
+          <div className="perf-summary-label">At Risk (20-39)</div>
+        </div>
+        <div className="perf-summary-card perf-needs-attention">
+          <div className="perf-summary-value">{summary.by_status.needs_attention}</div>
+          <div className="perf-summary-label">Needs Attention (40-59)</div>
+        </div>
         <div className="perf-summary-card perf-healthy">
           <div className="perf-summary-value">{summary.by_status.healthy}</div>
           <div className="perf-summary-label">Healthy (60-79)</div>
         </div>
         <div className="perf-summary-card perf-thriving">
           <div className="perf-summary-value">{summary.by_status.thriving}</div>
-          <div className="perf-summary-label">Thriving (80-100)</div>
+          <div className="perf-summary-label">Thriving (80+)</div>
         </div>
-        <div className="perf-summary-card">
-          <div className="perf-summary-value">{summary.average_score.toFixed(1)}</div>
+        <div className="perf-summary-card perf-avg-score">
+          <div className="perf-avg-row">
+            <div className="perf-summary-value">{summary.average_score.toFixed(0)}</div>
+            {avgScoreHistory && avgScoreHistory.length > 1 && (
+              <Sparkline data={avgScoreHistory} width={60} height={28} />
+            )}
+          </div>
           <div className="perf-summary-label">Avg Score</div>
         </div>
       </div>
@@ -33,8 +48,8 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       <style jsx>{`
         .perf-summary-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 16px;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 12px;
           margin-bottom: 24px;
         }
 
@@ -42,21 +57,21 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
           background: white;
           border: 1px solid #E5E7EB;
           border-radius: 12px;
-          padding: 20px;
+          padding: 16px 12px;
           text-align: center;
         }
 
         .perf-summary-value {
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 700;
           color: #111827;
           line-height: 1;
         }
 
         .perf-summary-label {
-          font-size: 13px;
+          font-size: 11px;
           color: #6B7280;
-          margin-top: 8px;
+          margin-top: 6px;
         }
 
         .perf-summary-card.perf-critical {
@@ -65,6 +80,22 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         }
         .perf-summary-card.perf-critical .perf-summary-value {
           color: #dc2626;
+        }
+
+        .perf-summary-card.perf-at-risk {
+          border-color: #ea580c;
+          background: #fff7ed;
+        }
+        .perf-summary-card.perf-at-risk .perf-summary-value {
+          color: #ea580c;
+        }
+
+        .perf-summary-card.perf-needs-attention {
+          border-color: #eab308;
+          background: #fefce8;
+        }
+        .perf-summary-card.perf-needs-attention .perf-summary-value {
+          color: #ca8a04;
         }
 
         .perf-summary-card.perf-healthy {
@@ -83,7 +114,27 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
           color: #16a34a;
         }
 
-        @media (max-width: 1000px) {
+        .perf-summary-card.perf-avg-score {
+          border-color: #059669;
+          background: #ecfdf5;
+        }
+        .perf-summary-card.perf-avg-score .perf-summary-value {
+          color: #059669;
+        }
+        .perf-avg-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        @media (max-width: 1200px) {
+          .perf-summary-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        @media (max-width: 800px) {
           .perf-summary-grid {
             grid-template-columns: repeat(3, 1fr);
           }
