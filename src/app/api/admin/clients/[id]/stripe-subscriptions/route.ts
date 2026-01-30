@@ -16,6 +16,7 @@ async function syncStripeSubscriptions(clientId: string, stripeCustomerId: strin
   })
 
   for (const sub of subscriptionsResponse.data) {
+    const subAny = sub as any // Access snake_case properties
     // Check if subscription already exists
     const existing = await dbPool.query(
       'SELECT id FROM subscriptions WHERE stripe_subscription_id = $1',
@@ -34,7 +35,7 @@ async function syncStripeSubscriptions(clientId: string, stripeCustomerId: strin
           current_period_end = to_timestamp($3),
           updated_at = NOW()
         WHERE id = $4`,
-        [sub.status, sub.current_period_start, sub.current_period_end, subscriptionId]
+        [sub.status, subAny.current_period_start, subAny.current_period_end, subscriptionId]
       )
     } else {
       // Insert new subscription
@@ -42,7 +43,7 @@ async function syncStripeSubscriptions(clientId: string, stripeCustomerId: strin
         `INSERT INTO subscriptions (client_id, stripe_subscription_id, status, current_period_start, current_period_end)
         VALUES ($1, $2, $3, to_timestamp($4), to_timestamp($5))
         RETURNING id`,
-        [clientId, sub.id, sub.status, sub.current_period_start, sub.current_period_end]
+        [clientId, sub.id, sub.status, subAny.current_period_start, subAny.current_period_end]
       )
       subscriptionId = result.rows[0].id
     }
