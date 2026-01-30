@@ -40,6 +40,7 @@ interface DashboardClient {
   }
   velocity_modifier: number
   last_alert_at: string | null
+  last_alert_type: string | null
   flags: string[]
 }
 
@@ -227,6 +228,7 @@ export async function GET(request: NextRequest) {
       },
       velocity_modifier: r.velocity.modifier,
       last_alert_at: r.lastAlertAt?.toISOString() || null,
+      last_alert_type: r.lastAlertType || null,
       flags: r.flags.map(f => f.flag),
     }))
 

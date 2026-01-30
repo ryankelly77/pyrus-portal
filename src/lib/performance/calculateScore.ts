@@ -186,6 +186,7 @@ export interface PerformanceResult {
   }
   flags: StageFlag[]
   lastAlertAt: Date | null
+  lastAlertType: string | null
   redFlags: string[]
   recommendations: string[]
 }
@@ -272,20 +273,51 @@ async function getMetricValue(
   return snapshot ? parseFloat(snapshot.value.toString()) : null
 }
 
+interface LastAlertInfo {
+  date: Date | null
+  type: string | null
+}
+
 /**
- * Get last alert date for a client
+ * Get last alert date and type for a client
  */
-async function getLastAlertDate(clientId: string): Promise<Date | null> {
-  const lastAlert = await prisma.client_communications.findFirst({
+async function getLastAlertInfo(clientId: string): Promise<LastAlertInfo> {
+  // First check client_alerts table (newer system)
+  const clientAlert = await prisma.client_alerts.findFirst({
+    where: {
+      client_id: clientId,
+      status: 'published',
+    },
+    orderBy: { published_at: 'desc' },
+    select: { published_at: true, alert_type: true },
+  })
+
+  if (clientAlert?.published_at) {
+    return {
+      date: clientAlert.published_at,
+      type: clientAlert.alert_type,
+    }
+  }
+
+  // Fall back to client_communications table (legacy)
+  const lastComm = await prisma.client_communications.findFirst({
     where: {
       client_id: clientId,
       comm_type: 'result_alert',
     },
     orderBy: { created_at: 'desc' },
-    select: { created_at: true },
+    select: { created_at: true, metadata: true },
   })
 
-  return lastAlert?.created_at || null
+  if (lastComm) {
+    const metadata = lastComm.metadata as Record<string, unknown> | null
+    return {
+      date: lastComm.created_at,
+      type: (metadata?.type as string) || null,
+    }
+  }
+
+  return { date: null, type: null }
 }
 
 /**
@@ -519,8 +551,9 @@ export async function calculateClientPerformance(
   const evaluationLabel = getEvaluationLabel(finalScore, growthStage)
   const flags = getStageFlags(finalScore, growthStage)
 
-  // Get last alert date
-  const lastAlertAt = await getLastAlertDate(clientId)
+  // Get last alert info
+  const lastAlertInfo = await getLastAlertInfo(clientId)
+  const lastAlertAt = lastAlertInfo.date
 
   // Generate red flags and recommendations
   const redFlags = generateRedFlags(metrics, lastAlertAt, velocity)
@@ -553,6 +586,7 @@ export async function calculateClientPerformance(
     },
     flags,
     lastAlertAt,
+    lastAlertType: lastAlertInfo.type,
     redFlags,
     recommendations,
   }

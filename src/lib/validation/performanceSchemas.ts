@@ -231,6 +231,7 @@ export const DashboardClientSchema = z.object({
   }),
   velocity_modifier: z.number(),
   last_alert_at: z.string().nullable(),
+  last_alert_type: z.string().nullable(),
   flags: z.array(z.string()),
 })
 

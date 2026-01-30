@@ -123,11 +123,22 @@ async function main() {
     })
 
     // Generate metric snapshots for each metric type
-    const deltaMultiplier = trending === 'up' ? 1 : trending === 'down' ? -1 : 0
+    // Add variation: each metric gets its own direction with some randomness
+    const getMetricDirection = (baseTrending: 'up' | 'down' | 'stable'): number => {
+      // 70% chance to follow the overall trend, 30% chance to go different
+      const followTrend = rand(1, 10) <= 7
+      if (followTrend) {
+        return baseTrending === 'up' ? 1 : baseTrending === 'down' ? -1 : 0
+      }
+      // Random direction
+      const r = rand(1, 3)
+      return r === 1 ? 1 : r === 2 ? -1 : 0
+    }
 
     for (const metricType of metricTypes) {
       let currentValue: number
       let previousValue: number
+      const deltaMultiplier = getMetricDirection(trending)
 
       switch (metricType) {
         case 'visitors':

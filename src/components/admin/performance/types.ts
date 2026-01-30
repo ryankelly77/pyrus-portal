@@ -26,6 +26,7 @@ export interface ClientData {
   metrics: ClientMetrics
   velocity_modifier: number
   last_alert_at: string | null
+  last_alert_type: string | null
   flags: string[]
 }
 

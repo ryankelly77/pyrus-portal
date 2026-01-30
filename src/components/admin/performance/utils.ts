@@ -42,6 +42,27 @@ export function getStageLabel(stage: string): string {
   return labels[stage] || stage
 }
 
+export function getPlanLabel(planType: string): string {
+  const labels: Record<string, string> = {
+    seo: 'SEO Only',
+    paid_media: 'Paid Only',
+    ai_optimization: 'AI Only',
+    full_service: 'Multi Service',
+  }
+  return labels[planType] || planType.replace('_', ' ')
+}
+
+export function getAlertTypeLabel(alertType: string | null): string {
+  if (!alertType) return ''
+  const labels: Record<string, string> = {
+    performance_focus: 'Performance',
+    milestone: 'Milestone',
+    intervention: 'Intervention',
+    general_update: 'Update',
+  }
+  return labels[alertType] || alertType.replace('_', ' ')
+}
+
 export function getTrendArrow(delta: number): string {
   if (delta > 5) return '\u2191' // up arrow
   if (delta < -5) return '\u2193' // down arrow

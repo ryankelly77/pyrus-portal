@@ -1,5 +1,5 @@
 import type { ClientData } from './types'
-import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel, getTrendArrow, formatTimeAgo } from './utils'
+import { getScoreColor, getStatusLabel, getStageIcon, getStageLabel, getPlanLabel, getTrendArrow, formatTimeAgo, getAlertTypeLabel } from './utils'
 
 interface ClientListProps {
   clients: ClientData[]
@@ -63,7 +63,7 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
             </div>
 
             <div className="perf-client-plan">
-              {client.plan_type.replace('_', ' ')}
+              {getPlanLabel(client.plan_type)}
             </div>
 
             <div className="perf-client-status">
@@ -97,7 +97,9 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
             </div>
 
             <div className="perf-client-alert-date">
-              Last alert: {formatTimeAgo(client.last_alert_at)}
+              {client.last_alert_type
+                ? `${getAlertTypeLabel(client.last_alert_type)}: ${formatTimeAgo(client.last_alert_at)}`
+                : formatTimeAgo(client.last_alert_at)}
             </div>
 
             <div className="perf-client-actions">
