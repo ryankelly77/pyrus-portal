@@ -29,11 +29,21 @@ export async function POST(request: NextRequest) {
   try {
     const payload: BasecampWebhookPayload = await request.json()
 
+    // Log all incoming webhooks for debugging
+    console.log('Basecamp webhook received:', {
+      kind: payload.kind,
+      recording_title: payload.recording?.title,
+      recording_type: payload.recording?.type,
+      bucket_id: payload.recording?.bucket?.id,
+      bucket_name: payload.recording?.bucket?.name,
+    })
+
     // Only process todo_created and todo_completed events
     if (!['todo_created', 'todo_completed'].includes(payload.kind)) {
+      console.log('Skipping event type:', payload.kind)
       return NextResponse.json({
         success: true,
-        msg: 'Not a todo created or completed event',
+        msg: `Skipped event type: ${payload.kind}`,
       })
     }
 
