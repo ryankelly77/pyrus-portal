@@ -71,22 +71,38 @@ export async function GET(request: NextRequest) {
         ? { background: 'var(--success-bg)', color: 'var(--success)' }
         : { background: 'var(--info-bg)', color: 'var(--info)' }
 
-      // Format the date
+      // Format the date in Central Time
       const date = new Date(row.basecamp_created_at || row.created_at)
       const now = new Date()
-      const isToday = date.toDateString() === now.toDateString()
-      const yesterday = new Date(now)
+
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/Chicago'
+      }
+      const dateOptions: Intl.DateTimeFormatOptions = {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'America/Chicago'
+      }
+
+      // Compare dates in Central Time
+      const centralNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }))
+      const centralDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Chicago' }))
+      const isToday = centralDate.toDateString() === centralNow.toDateString()
+      const yesterday = new Date(centralNow)
       yesterday.setDate(yesterday.getDate() - 1)
-      const isYesterday = date.toDateString() === yesterday.toDateString()
+      const isYesterday = centralDate.toDateString() === yesterday.toDateString()
 
       let timeStr: string
       if (isToday) {
-        timeStr = `Today, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+        timeStr = `Today, ${date.toLocaleTimeString('en-US', timeOptions)}`
       } else if (isYesterday) {
-        timeStr = `Yesterday, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+        timeStr = `Yesterday, ${date.toLocaleTimeString('en-US', timeOptions)}`
       } else {
-        timeStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-          ', ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+        timeStr = date.toLocaleDateString('en-US', dateOptions) +
+          ', ' + date.toLocaleTimeString('en-US', timeOptions)
       }
 
       // Generate title based on task status
