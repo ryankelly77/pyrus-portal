@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
+import { getMonitorUptime } from '@/lib/uptimerobot/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Get client data including website fields
     const clientResult = await dbPool.query(
-      `SELECT id, name, website_url, hosting_type, hosting_provider, landingsite_preview_url, stripe_customer_id FROM clients WHERE id = $1`,
+      `SELECT id, name, website_url, hosting_type, hosting_provider, website_launch_date, uptimerobot_monitor_id, landingsite_preview_url, stripe_customer_id FROM clients WHERE id = $1`,
       [clientId]
     )
 
@@ -99,6 +100,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // If no specific website plan was found and client provides their own hosting, show "Client Provided"
+    if (planName === 'Website' && client.hosting_type === 'client_hosted') {
+      planName = 'Client Provided'
+    }
+
     // Determine hosting provider based on hosting_type field
     const getHostingProvider = () => {
       switch (client.hosting_type) {
@@ -133,6 +139,17 @@ export async function GET(request: NextRequest) {
       const blocksIframe = client.hosting_type === 'client_hosted' &&
         client.hosting_provider?.toLowerCase().includes('hubspot')
 
+      // Fetch uptime data from UptimeRobot if monitor is configured
+      let uptimeDisplay = 'Not Monitored'
+      let uptimeStatus: 'up' | 'down' | 'paused' | 'unknown' | null = null
+      if (client.uptimerobot_monitor_id) {
+        const uptimeData = await getMonitorUptime(client.uptimerobot_monitor_id)
+        if (uptimeData) {
+          uptimeDisplay = uptimeData.uptime
+          uptimeStatus = uptimeData.status
+        }
+      }
+
       websiteData = {
         domain,
         websiteUrl: client.website_url,
@@ -140,11 +157,14 @@ export async function GET(request: NextRequest) {
         plan: planName,
         carePlan,
         status: 'active' as const,
-        launchDate: 'Dec 30, 2025', // TODO: Store actual launch date in database
+        launchDate: client.website_launch_date
+          ? new Date(client.website_launch_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'Unknown',
         hostingType: client.hosting_type,
         hosting: {
           provider: hostingProvider,
-          uptime: '99.9%',
+          uptime: uptimeDisplay,
+          uptimeStatus,
           lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         },
         blocksIframe,

@@ -104,6 +104,8 @@ interface DBClient {
   website_url: string | null
   hosting_type: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
   hosting_provider: string | null
+  website_launch_date: string | null
+  uptimerobot_monitor_id: string | null
   // Onboarding
   onboarding_completed_at: string | null
 }
@@ -425,6 +427,8 @@ export default function ClientDetailPage() {
     websiteUrl: '',
     hostingType: '' as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted',
     hostingProvider: '',
+    websiteLaunchDate: '',
+    uptimerobotMonitorId: '',
     // Integrations
     agencyDashboardShareKey: '',
     basecampProjectId: '',
@@ -811,6 +815,8 @@ export default function ClientDetailPage() {
           websiteUrl: editFormData.websiteUrl,
           hostingType: editFormData.hostingType || null,
           hostingProvider: editFormData.hostingProvider || null,
+          websiteLaunchDate: editFormData.websiteLaunchDate || null,
+          uptimerobotMonitorId: editFormData.uptimerobotMonitorId || null,
           // Integration fields
           agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
           basecampProjectId: editFormData.basecampProjectId,
@@ -861,6 +867,8 @@ export default function ClientDetailPage() {
             websiteUrl: data.website_url || '',
             hostingType: (data.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
             hostingProvider: data.hosting_provider || '',
+            websiteLaunchDate: data.website_launch_date ? new Date(data.website_launch_date).toISOString().split('T')[0] : '',
+            uptimerobotMonitorId: data.uptimerobot_monitor_id || '',
             // Integration fields
             agencyDashboardShareKey: data.agency_dashboard_share_key || '',
             basecampProjectId: data.basecamp_project_id || '',
@@ -3540,6 +3548,35 @@ export default function ClientDetailPage() {
                         />
                       </div>
                     )}
+
+                    <div className="form-group">
+                      <label htmlFor="websiteLaunchDate">Launch Date</label>
+                      <input
+                        type="date"
+                        id="websiteLaunchDate"
+                        className="form-control"
+                        value={editFormData.websiteLaunchDate}
+                        onChange={(e) => setEditFormData({ ...editFormData, websiteLaunchDate: e.target.value })}
+                      />
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        Leave blank if website hasn&apos;t launched yet
+                      </small>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="uptimerobotMonitorId">UptimeRobot Monitor ID</label>
+                      <input
+                        type="text"
+                        id="uptimerobotMonitorId"
+                        className="form-control"
+                        placeholder="e.g., 123456789"
+                        value={editFormData.uptimerobotMonitorId}
+                        onChange={(e) => setEditFormData({ ...editFormData, uptimerobotMonitorId: e.target.value })}
+                      />
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        Get from UptimeRobot dashboard. Leave blank to show &quot;Not Monitored&quot;
+                      </small>
+                    </div>
                   </div>
                 </>
               )}

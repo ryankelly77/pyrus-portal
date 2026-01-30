@@ -25,6 +25,7 @@ interface WebsiteData {
   hosting: {
     provider: string
     uptime: string
+    uptimeStatus?: 'up' | 'down' | 'paused' | 'unknown' | null
     lastUpdated: string
   }
   blocksIframe?: boolean
@@ -60,6 +61,7 @@ const demoWebsiteData: WebsiteData = {
   hosting: {
     provider: 'WPEngine',
     uptime: '99.9%',
+    uptimeStatus: 'up',
     lastUpdated: 'Jan 10, 2026',
   },
 }
@@ -234,8 +236,8 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                     </svg>
                     <h4>Preview Not Available</h4>
                     <p>Your website hosting provider ({websiteData.hosting.provider}) doesn&apos;t allow embedded previews.</p>
-                    <a href={websiteData.websiteUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16" style={{ flexShrink: 0 }}>
+                    <a href={websiteData.websiteUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -294,8 +296,12 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
 
             <div className="website-stats-mini">
               <div className="stat-mini">
-                <div className="stat-mini-value success">{websiteData.hosting.uptime}</div>
-                <div className="stat-mini-label">Uptime</div>
+                <div className={`stat-mini-value ${
+                  websiteData.hosting.uptimeStatus === 'up' ? 'success' :
+                  websiteData.hosting.uptimeStatus === 'down' ? 'danger' :
+                  websiteData.hosting.uptime === 'Not Monitored' ? '' : 'success'
+                }`}>{websiteData.hosting.uptime}</div>
+                <div className="stat-mini-label">Uptime (30 days)</div>
               </div>
               <div className="stat-mini">
                 <div className="stat-mini-value">{websiteData.hosting.lastUpdated}</div>

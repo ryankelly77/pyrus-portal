@@ -115,6 +115,8 @@ export async function PATCH(
       websiteUrl,
       hostingType,
       hostingProvider,
+      websiteLaunchDate,
+      uptimerobotMonitorId,
       // Integration fields
       agencyDashboardShareKey,
       dashboardToken, // alias for agencyDashboardShareKey
@@ -142,6 +144,8 @@ export async function PATCH(
         ...(websiteUrl !== undefined && { website_url: websiteUrl || null }),
         ...(hostingType !== undefined && { hosting_type: hostingType || null }),
         ...(hostingProvider !== undefined && { hosting_provider: hostingProvider || null }),
+        ...(websiteLaunchDate !== undefined && { website_launch_date: websiteLaunchDate ? new Date(websiteLaunchDate) : null }),
+        ...(uptimerobotMonitorId !== undefined && { uptimerobot_monitor_id: uptimerobotMonitorId || null }),
         // Integration fields
         ...(dashboardKey !== undefined && { agency_dashboard_share_key: dashboardKey || null }),
         ...(basecampId !== undefined && { basecamp_id: basecampId || null }),

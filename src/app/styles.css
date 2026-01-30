@@ -21392,7 +21392,7 @@ input[type="date"].form-control {
     padding: 40px;
 }
 
-.preview-blocked-content svg {
+.preview-blocked-content > svg {
     color: var(--text-muted);
     margin-bottom: 16px;
 }

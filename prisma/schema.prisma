@@ -31,6 +31,8 @@ model clients {
   website_url               String?   @db.VarChar(500)
   hosting_type              String?   @db.VarChar(50) // 'ai_site', 'pyrus_hosted', 'client_hosted'
   hosting_provider          String?   @db.VarChar(100) // e.g., 'HubSpot', 'Wix', 'Squarespace'
+  website_launch_date       DateTime? @db.Date
+  uptimerobot_monitor_id    String?   @db.VarChar(50)
   notes                     String?
   referred_by               String?
   referral_source           String?
