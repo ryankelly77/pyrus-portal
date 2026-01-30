@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
           LOWER(p.name) LIKE '%site%'
           OR LOWER(p.name) LIKE '%website%'
           OR LOWER(p.name) LIKE '%wordpress%'
+          OR LOWER(p.name) LIKE '%harvest%'
+          OR LOWER(p.name) LIKE '%care%'
         )
     `, [clientId])
 
@@ -78,14 +80,17 @@ export async function GET(request: NextRequest) {
     let carePlan = 'None'
     for (const name of websiteProducts) {
       const lowerName = name.toLowerCase()
-      if (lowerName.includes('bloom')) {
+      if (lowerName.includes('bloom site')) {
         planName = 'Bloom Site (WordPress)'
-      } else if (lowerName.includes('sprout')) {
+      } else if (lowerName.includes('sprout site')) {
         planName = 'Sprout Site (WordPress)'
-      } else if (lowerName.includes('seed')) {
+      } else if (lowerName.includes('seed site')) {
         planName = 'Seed Site (AI-Built)'
-      } else if (lowerName.includes('harvest')) {
+      } else if (lowerName.includes('harvest site')) {
         planName = 'Harvest Site (WordPress)'
+      } else if (lowerName.includes('harvest seo')) {
+        // Harvest SEO includes Website Care
+        carePlan = 'Website Care Plan (included with Harvest SEO)'
       } else if (lowerName.includes('website care')) {
         carePlan = 'Website Care Plan'
       } else if (lowerName.includes('wordpress care')) {

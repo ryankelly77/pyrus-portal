@@ -1570,8 +1570,8 @@ export default function ClientDetailPage() {
       .filter(Boolean)
   ))
 
-  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'website care plan', 'wordpress care plan']
-  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation']
+  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'harvest site', 'website care', 'wordpress care', 'harvest seo', 'harvest']
+  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation', 'harvest seo', 'harvest']
 
   const hasWebsiteProducts = activeSubscriptionProducts.some(name =>
     websiteProducts.some(wp => name.includes(wp))
