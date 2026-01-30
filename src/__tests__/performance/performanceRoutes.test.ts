@@ -10,6 +10,7 @@ import { NextRequest } from 'next/server'
 import {
   CreateClientAlertSchema,
   PerformanceDashboardQuerySchema,
+  PerformanceDashboardResponseSchema,
 } from '@/lib/validation/performanceSchemas'
 
 // Mock the dependencies
@@ -308,5 +309,191 @@ describe('Dashboard Query Filters', () => {
       const result = PerformanceDashboardQuerySchema.safeParse({ plan })
       expect(result.success).toBe(true)
     }
+  })
+})
+
+describe('Performance Dashboard Response Validation', () => {
+  it('validates a complete valid response', () => {
+    const validResponse = {
+      summary: {
+        total_clients: 10,
+        average_score: 65,
+        by_status: {
+          critical: 2,
+          at_risk: 2,
+          needs_attention: 2,
+          healthy: 3,
+          thriving: 1,
+        },
+        by_stage: {
+          seedling: { count: 3, avg_score: 45 },
+          sprouting: { count: 2, avg_score: 55 },
+          blooming: { count: 3, avg_score: 70 },
+          harvesting: { count: 2, avg_score: 85 },
+        },
+      },
+      clients: [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test Client',
+          score: 75,
+          growth_stage: 'blooming',
+          status: 'healthy',
+          plan_type: 'seo',
+          mrr: 1500,
+          tenure_months: 8,
+          metrics: {
+            keywords: { score: 80, delta: 5 },
+            visitors: { score: 70, delta: -2 },
+          },
+          velocity_modifier: 1.05,
+          last_alert_at: null,
+          flags: [],
+        },
+      ],
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(validResponse)
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects response missing by_status', () => {
+    const invalidResponse = {
+      summary: {
+        total_clients: 10,
+        average_score: 65,
+        // Missing by_status
+        by_stage: {
+          seedling: { count: 3, avg_score: 45 },
+          sprouting: { count: 2, avg_score: 55 },
+          blooming: { count: 3, avg_score: 70 },
+          harvesting: { count: 2, avg_score: 85 },
+        },
+      },
+      clients: [],
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(invalidResponse)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const byStatusError = result.error.issues.find(
+        (issue) => issue.path.includes('by_status')
+      )
+      expect(byStatusError).toBeDefined()
+    }
+  })
+
+  it('rejects response missing by_stage', () => {
+    const invalidResponse = {
+      summary: {
+        total_clients: 10,
+        average_score: 65,
+        by_status: {
+          critical: 2,
+          at_risk: 2,
+          needs_attention: 2,
+          healthy: 3,
+          thriving: 1,
+        },
+        // Missing by_stage
+      },
+      clients: [],
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(invalidResponse)
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects client with invalid growth_stage', () => {
+    const invalidResponse = {
+      summary: {
+        total_clients: 1,
+        average_score: 65,
+        by_status: {
+          critical: 0,
+          at_risk: 0,
+          needs_attention: 0,
+          healthy: 1,
+          thriving: 0,
+        },
+        by_stage: {
+          seedling: { count: 0, avg_score: 0 },
+          sprouting: { count: 0, avg_score: 0 },
+          blooming: { count: 1, avg_score: 65 },
+          harvesting: { count: 0, avg_score: 0 },
+        },
+      },
+      clients: [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test Client',
+          score: 65,
+          growth_stage: 'invalid_stage', // Invalid
+          status: 'healthy',
+          plan_type: 'seo',
+          mrr: 1500,
+          tenure_months: 8,
+          metrics: {},
+          velocity_modifier: 1.0,
+          last_alert_at: null,
+          flags: [],
+        },
+      ],
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(invalidResponse)
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects response with missing clients array', () => {
+    const invalidResponse = {
+      summary: {
+        total_clients: 0,
+        average_score: 0,
+        by_status: {
+          critical: 0,
+          at_risk: 0,
+          needs_attention: 0,
+          healthy: 0,
+          thriving: 0,
+        },
+        by_stage: {
+          seedling: { count: 0, avg_score: 0 },
+          sprouting: { count: 0, avg_score: 0 },
+          blooming: { count: 0, avg_score: 0 },
+          harvesting: { count: 0, avg_score: 0 },
+        },
+      },
+      // Missing clients array
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(invalidResponse)
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts empty clients array', () => {
+    const validResponse = {
+      summary: {
+        total_clients: 0,
+        average_score: 0,
+        by_status: {
+          critical: 0,
+          at_risk: 0,
+          needs_attention: 0,
+          healthy: 0,
+          thriving: 0,
+        },
+        by_stage: {
+          seedling: { count: 0, avg_score: 0 },
+          sprouting: { count: 0, avg_score: 0 },
+          blooming: { count: 0, avg_score: 0 },
+          harvesting: { count: 0, avg_score: 0 },
+        },
+      },
+      clients: [],
+    }
+
+    const result = PerformanceDashboardResponseSchema.safeParse(validResponse)
+    expect(result.success).toBe(true)
   })
 })

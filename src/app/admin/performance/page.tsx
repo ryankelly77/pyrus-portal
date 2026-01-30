@@ -11,6 +11,7 @@ import {
   ALERT_TEMPLATES,
 } from '@/components/admin/performance'
 import type { PerformanceData, ClientDetailData } from '@/components/admin/performance'
+import { PerformanceDashboardResponseSchema } from '@/lib/validation/performanceSchemas'
 
 export default function PerformanceDashboardPage() {
   const [data, setData] = useState<PerformanceData | null>(null)
@@ -48,7 +49,17 @@ export default function PerformanceDashboardPage() {
       const res = await fetch(`/api/admin/performance?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch performance data')
       const result = await res.json()
-      setData(result)
+
+      // Validate response shape matches expected schema
+      const validation = PerformanceDashboardResponseSchema.safeParse(result)
+      if (!validation.success) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Performance API response validation failed:', validation.error.issues)
+        }
+        throw new Error('Invalid API response format')
+      }
+
+      setData(validation.data as PerformanceData)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')

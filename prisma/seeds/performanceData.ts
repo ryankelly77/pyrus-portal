@@ -58,32 +58,37 @@ async function main() {
 
   console.log(`Found ${clients.length} active clients\n`)
 
-  // Assign performance profiles and client types
+  // Assign performance profiles and client types with explicit distribution
+  // Ensure we have good representation of each status
+  const profileDistribution: PerfProfile[] = [
+    'critical',      // 0 - First client is critical
+    'critical',      // 1 - Second is also critical
+    'critical',      // 2 - Third is critical too
+    'at_risk',       // 3
+    'at_risk',       // 4
+    'needs_attention', // 5
+    'needs_attention', // 6
+    'healthy',       // 7
+    'healthy',       // 8
+    'thriving',      // 9
+  ]
+
+  const typeDistribution: ClientType[] = ['seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media']
+
+  // Assign varied tenure months for different growth stages
+  const tenureDistribution = [1, 2, 4, 5, 7, 9, 11, 14, 18, 24]
+
   const clientConfigs: {
     client: typeof clients[0]
     profile: PerfProfile
     type: ClientType
     monthsActive: number
   }[] = clients.map((client, idx) => {
-    // Distribute profiles for variety
-    const profiles: PerfProfile[] = [
-      'critical', 'critical',
-      'at_risk', 'at_risk', 'at_risk',
-      'needs_attention', 'needs_attention', 'needs_attention',
-      'healthy', 'healthy', 'healthy', 'healthy',
-      'thriving', 'thriving',
-    ]
-    const types: ClientType[] = ['seo', 'paid_media', 'ai_visibility', 'mixed', 'seo', 'paid_media']
-
-    const monthsActive = client.created_at
-      ? Math.floor((Date.now() - new Date(client.created_at).getTime()) / (30 * 24 * 60 * 60 * 1000))
-      : rand(1, 18)
-
     return {
       client,
-      profile: profiles[idx % profiles.length],
-      type: types[idx % types.length],
-      monthsActive: Math.max(1, monthsActive),
+      profile: profileDistribution[idx % profileDistribution.length],
+      type: typeDistribution[idx % typeDistribution.length],
+      monthsActive: tenureDistribution[idx % tenureDistribution.length],
     }
   })
 

@@ -33,6 +33,16 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
   return (
     <>
       <div className="perf-client-list">
+        <div className="perf-client-header">
+          <div className="perf-header-score">Score</div>
+          <div className="perf-header-client">Client</div>
+          <div className="perf-header-stage">Stage</div>
+          <div className="perf-header-plan">Plan</div>
+          <div className="perf-header-status">Status</div>
+          <div className="perf-header-trends">Trends</div>
+          <div className="perf-header-alert">Last Alert</div>
+          <div className="perf-header-actions">Actions</div>
+        </div>
         {clients.map((client) => (
           <div key={client.id} className="perf-client-row">
             <div className="perf-client-score" style={{ background: getScoreColor(client.score) }}>
@@ -114,6 +124,21 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
           border: 1px solid #E5E7EB;
           border-radius: 12px;
           overflow: hidden;
+        }
+
+        .perf-client-header {
+          display: grid;
+          grid-template-columns: 60px 1fr 140px 120px 140px 180px 140px 140px;
+          gap: 16px;
+          align-items: center;
+          padding: 12px 20px;
+          background: #F9FAFB;
+          border-bottom: 1px solid #E5E7EB;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .perf-client-row {
@@ -244,33 +269,41 @@ export function ClientList({ clients, onViewClient }: ClientListProps) {
         }
 
         @media (max-width: 1400px) {
+          .perf-client-header,
           .perf-client-row {
             grid-template-columns: 50px 1fr 120px 100px 120px 100px;
           }
 
           .perf-client-trends,
-          .perf-client-alert-date {
+          .perf-client-alert-date,
+          .perf-header-trends,
+          .perf-header-alert {
             display: none;
           }
         }
 
         @media (max-width: 1000px) {
+          .perf-client-header,
           .perf-client-row {
             grid-template-columns: 50px 1fr 100px 100px;
           }
 
           .perf-client-plan,
-          .perf-client-stage {
+          .perf-client-stage,
+          .perf-header-plan,
+          .perf-header-stage {
             display: none;
           }
         }
 
         @media (max-width: 600px) {
+          .perf-client-header,
           .perf-client-row {
             grid-template-columns: 50px 1fr 100px;
           }
 
-          .perf-client-status {
+          .perf-client-status,
+          .perf-header-status {
             display: none;
           }
         }

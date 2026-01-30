@@ -37,17 +37,17 @@ export async function GET(
       )
     }
 
-    // Get alert history
-    const alertsHistory = await prisma.client_communications.findMany({
+    // Get alert history from client_alerts table
+    const alertsHistory = await prisma.client_alerts.findMany({
       where: {
         client_id: clientId,
-        comm_type: 'result_alert',
+        status: 'published',
       },
       select: {
         id: true,
-        title: true,
-        metadata: true,
-        sent_at: true,
+        message: true,
+        alert_type: true,
+        published_at: true,
         created_at: true,
       },
       orderBy: { created_at: 'desc' },
@@ -128,9 +128,9 @@ export async function GET(
       flags: result.flags,
       alerts_history: alertsHistory.map(a => ({
         id: a.id,
-        title: a.title,
-        type: (a.metadata as Record<string, unknown>)?.type || 'other_update',
-        sent_at: a.sent_at?.toISOString() || a.created_at?.toISOString(),
+        type: a.alert_type,
+        message: a.message,
+        sent_at: a.published_at?.toISOString() || a.created_at?.toISOString() || new Date().toISOString(),
       })),
       red_flags: result.redFlags,
       recommendations: result.recommendations,

@@ -199,6 +199,79 @@ export const PerformanceDashboardQuerySchema = z.object({
   critical_only: z.coerce.boolean().optional().default(false),
 })
 
+/**
+ * Dashboard client metric schema (simplified for list view)
+ */
+export const DashboardClientMetricSchema = z.object({
+  score: z.number(),
+  delta: z.number(),
+})
+
+/**
+ * Dashboard client schema (for client list)
+ */
+export const DashboardClientSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  score: z.number().int().min(0).max(100),
+  growth_stage: GrowthStageSchema,
+  status: z.string(),
+  plan_type: z.string(),
+  mrr: z.number().min(0),
+  tenure_months: z.number().int().min(0),
+  metrics: z.object({
+    keywords: DashboardClientMetricSchema.optional(),
+    visitors: DashboardClientMetricSchema.optional(),
+    leads: DashboardClientMetricSchema.optional(),
+    ai_visibility: DashboardClientMetricSchema.optional(),
+    alerts: z.object({
+      score: z.number(),
+      count: z.number(),
+    }).optional(),
+  }),
+  velocity_modifier: z.number(),
+  last_alert_at: z.string().nullable(),
+  flags: z.array(z.string()),
+})
+
+/**
+ * Stage summary schema
+ */
+export const StageSummarySchema = z.object({
+  count: z.number().int().min(0),
+  avg_score: z.number().min(0).max(100),
+})
+
+/**
+ * Dashboard summary schema
+ */
+export const DashboardSummarySchema = z.object({
+  total_clients: z.number().int().min(0),
+  average_score: z.number().min(0).max(100),
+  by_status: z.object({
+    critical: z.number().int().min(0),
+    at_risk: z.number().int().min(0),
+    needs_attention: z.number().int().min(0),
+    healthy: z.number().int().min(0),
+    thriving: z.number().int().min(0),
+  }),
+  by_stage: z.object({
+    seedling: StageSummarySchema,
+    sprouting: StageSummarySchema,
+    blooming: StageSummarySchema,
+    harvesting: StageSummarySchema,
+  }),
+})
+
+/**
+ * Performance dashboard response schema
+ * Use this to validate API responses match expected shape
+ */
+export const PerformanceDashboardResponseSchema = z.object({
+  summary: DashboardSummarySchema,
+  clients: z.array(DashboardClientSchema),
+})
+
 // Type exports
 export type MetricType = z.infer<typeof MetricTypeSchema>
 export type PlanType = z.infer<typeof PlanTypeSchema>
@@ -216,3 +289,8 @@ export type KeywordRankingInput = z.infer<typeof KeywordRankingInputSchema>
 export type LeadInput = z.infer<typeof LeadInputSchema>
 export type AIVisibilityScoreInput = z.infer<typeof AIVisibilityScoreInputSchema>
 export type PerformanceDashboardQuery = z.infer<typeof PerformanceDashboardQuerySchema>
+export type DashboardClientMetric = z.infer<typeof DashboardClientMetricSchema>
+export type DashboardClient = z.infer<typeof DashboardClientSchema>
+export type StageSummary = z.infer<typeof StageSummarySchema>
+export type DashboardSummary = z.infer<typeof DashboardSummarySchema>
+export type PerformanceDashboardResponse = z.infer<typeof PerformanceDashboardResponseSchema>
