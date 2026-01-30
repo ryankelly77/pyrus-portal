@@ -12,9 +12,14 @@ import { PerformanceDashboardQuerySchema } from '@/lib/validation/performanceSch
 interface DashboardSummary {
   total_clients: number
   average_score: number
+  by_status: {
+    critical: number
+    at_risk: number
+    needs_attention: number
+    healthy: number
+    thriving: number
+  }
   by_stage: Record<GrowthStage, { count: number; avg_score: number }>
-  needs_attention: number
-  upsell_ready: number
 }
 
 interface DashboardClient {
@@ -167,16 +172,19 @@ export async function GET(request: NextRequest) {
       average_score: performanceResults.length > 0
         ? Math.round(performanceResults.reduce((sum, r) => sum + r.score, 0) / performanceResults.length)
         : 0,
+      by_status: {
+        critical: performanceResults.filter(r => r.score < 20).length,
+        at_risk: performanceResults.filter(r => r.score >= 20 && r.score < 40).length,
+        needs_attention: performanceResults.filter(r => r.score >= 40 && r.score < 60).length,
+        healthy: performanceResults.filter(r => r.score >= 60 && r.score < 80).length,
+        thriving: performanceResults.filter(r => r.score >= 80).length,
+      },
       by_stage: {
         seedling: { count: 0, avg_score: 0 },
         sprouting: { count: 0, avg_score: 0 },
         blooming: { count: 0, avg_score: 0 },
         harvesting: { count: 0, avg_score: 0 },
       },
-      needs_attention: performanceResults.filter(r => r.score >= 40 && r.score < 60).length,
-      upsell_ready: performanceResults.filter(r =>
-        r.score >= 80 && (r.growthStage === 'harvesting' || r.growthStage === 'sprouting')
-      ).length,
     }
 
     // Calculate stage stats
