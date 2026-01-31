@@ -293,14 +293,16 @@ export function RecommendationsView({
   // Client-side data fetching (when not admin)
   const [localDbClient, setLocalDbClient] = useState<DBClient | null>(null)
   const [localRecommendation, setLocalRecommendation] = useState<Recommendation | null>(null)
-  const [localSubscriptions, setLocalSubscriptions] = useState<Subscription[]>([])
+  // subscriptionService returns { subscription, services, discounts, invoices, ... }
+  const [localSubscriptionData, setLocalSubscriptionData] = useState<any>(null)
   const [localLoading, setLocalLoading] = useState(!isAdmin)
 
   // Use prop data for admin, local data for client
   const dbClient = isAdmin ? propDbClient : localDbClient
   const recommendation = isAdmin ? propRecommendation : localRecommendation
   const recommendationLoading = isAdmin ? propRecommendationLoading : localLoading
-  const subscriptions = isAdmin ? (propSubscriptions || []) : localSubscriptions
+  // Both admin and client now use subscriptionService data format
+  const subscriptions = isAdmin ? propSubscriptions : localSubscriptionData
   const subscriptionsLoading = isAdmin ? propSubscriptionsLoading : localLoading
   const stripeSubscriptions = propStripeSubscriptions || []
   const stripeSubscriptionsLoading = propStripeSubscriptionsLoading || false
@@ -326,7 +328,8 @@ export function RecommendationsView({
           if (data) {
             setLocalDbClient(data.client)
             setLocalRecommendation(data.recommendation)
-            setLocalSubscriptions(data.subscriptions || [])
+            // subscriptions is now subscriptionService data format
+            setLocalSubscriptionData(data.subscriptions || null)
           }
         }
       } catch (error) {

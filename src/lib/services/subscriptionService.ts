@@ -54,10 +54,10 @@ export interface SubscriptionData {
   invoices: Array<{
     id: string
     number: string | null
-    date: string
-    amount: number
+    created: string // ISO date string
+    total: number // amount in dollars
     status: string
-    pdfUrl: string | null
+    invoicePdf: string | null
     receiptUrl: string | null
     hostedUrl: string | null
   }>
@@ -397,10 +397,10 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
           return {
             id: inv.id,
             number: inv.number,
-            date: new Date(inv.created * 1000).toISOString(),
-            amount: inv.amount_paid / 100,
+            created: new Date(inv.created * 1000).toISOString(),
+            total: inv.amount_paid / 100,
             status: inv.status || 'unknown',
-            pdfUrl: inv.invoice_pdf || null,
+            invoicePdf: inv.invoice_pdf || null,
             receiptUrl,
             hostedUrl: inv.hosted_invoice_url || null,
           }

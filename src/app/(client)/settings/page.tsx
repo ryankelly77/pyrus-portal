@@ -14,21 +14,36 @@ const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : 
 
 type SettingsTab = 'profile' | 'subscription' | 'billing' | 'security'
 
+interface SubscriptionDiscount {
+  id: string
+  couponCode: string | null
+  couponName: string | null
+  amountOff: number | null
+  percentOff: number | null
+  duration: string
+  appliesTo: string[] | null
+}
+
 interface SubscriptionData {
   subscription: {
     id: string
     status: string
-    currentPeriodStart: string
-    currentPeriodEnd: string
-    currentPeriodEndFormatted?: string
+    currentPeriodStart: string | null
+    currentPeriodEnd: string | null
+    currentPeriodEndFormatted?: string | null
     monthlyAmount: number
-    createdAt: string
+    monthlyAmountAfterDiscount: number
+    totalDiscount: number
+    createdAt: string | null
   } | null
+  discounts: SubscriptionDiscount[]
   services: Array<{
     id: string
     name: string
     category: string | null
     price: number
+    discountedPrice: number
+    discountAmount: number
     quantity: number
     type: 'product' | 'bundle'
   }>
@@ -47,10 +62,10 @@ interface SubscriptionData {
   invoices: Array<{
     id: string
     number: string | null
-    date: string
-    amount: number
+    created: string
+    total: number
     status: string
-    pdfUrl: string | null
+    invoicePdf: string | null
     receiptUrl: string | null
     hostedUrl: string | null
   }>
@@ -428,17 +443,32 @@ export default function SettingsPage() {
                       </div>
                       <div className="meta-item">
                         <span className="meta-label">Monthly Amount</span>
-                        <span className="meta-value">${subscriptionData.subscription.monthlyAmount.toLocaleString()}/mo</span>
+                        <span className="meta-value">
+                          {subscriptionData.subscription.totalDiscount > 0 ? (
+                            <>
+                              <span style={{ textDecoration: 'line-through', color: '#9CA3AF', marginRight: '8px' }}>
+                                ${subscriptionData.subscription.monthlyAmount.toLocaleString()}
+                              </span>
+                              ${subscriptionData.subscription.monthlyAmountAfterDiscount.toLocaleString()}/mo
+                            </>
+                          ) : (
+                            <>${subscriptionData.subscription.monthlyAmountAfterDiscount.toLocaleString()}/mo</>
+                          )}
+                        </span>
                       </div>
                       <div className="meta-item">
                         <span className="meta-label">Next Billing Date</span>
                         <span className="meta-value">
-                          {subscriptionData.subscription.currentPeriodEndFormatted || new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                            timeZone: 'America/Chicago'
-                          })}
+                          {subscriptionData.subscription.currentPeriodEndFormatted ||
+                           (subscriptionData.subscription.currentPeriodEnd
+                            ? new Date(subscriptionData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                                timeZone: 'America/Chicago'
+                              })
+                            : 'N/A'
+                           )}
                         </span>
                       </div>
                       <div className="meta-item">
@@ -446,6 +476,35 @@ export default function SettingsPage() {
                         <span className="meta-value">{subscriptionData.clientSince || client.clientSince || 'N/A'}</span>
                       </div>
                     </div>
+                    {/* Active Coupon Display */}
+                    {subscriptionData.discounts && subscriptionData.discounts.length > 0 && (
+                      <div style={{
+                        marginTop: '1rem',
+                        padding: '0.75rem 1rem',
+                        background: '#F0FDF4',
+                        borderRadius: '8px',
+                        border: '1px solid #BBF7D0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" width="18" height="18">
+                          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                        </svg>
+                        <span style={{ color: '#166534', fontWeight: 500 }}>
+                          {subscriptionData.discounts[0].couponCode
+                            ? `Coupon "${subscriptionData.discounts[0].couponCode}" applied`
+                            : 'Discount applied'
+                          }
+                          {subscriptionData.subscription.totalDiscount > 0 && (
+                            <span style={{ marginLeft: '8px', color: '#16A34A' }}>
+                              (saving ${subscriptionData.subscription.totalDiscount.toLocaleString()}/mo)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="subscription-overview">
@@ -540,7 +599,16 @@ export default function SettingsPage() {
                               {service.quantity > 1 ? `Qty: ${service.quantity}` : 'Monthly'}
                             </span>
                             <span style={{ fontWeight: 600, color: '#324438' }}>
-                              ${service.price.toLocaleString()}/mo
+                              {service.discountAmount > 0 ? (
+                                <>
+                                  <span style={{ textDecoration: 'line-through', color: '#9CA3AF', fontWeight: 400, marginRight: '4px' }}>
+                                    ${service.price.toLocaleString()}
+                                  </span>
+                                  {service.discountedPrice === 0 ? 'FREE' : `$${service.discountedPrice.toLocaleString()}/mo`}
+                                </>
+                              ) : (
+                                `$${service.price.toLocaleString()}/mo`
+                              )}
                             </span>
                           </div>
                         </div>
@@ -738,14 +806,14 @@ export default function SettingsPage() {
                           {invoice.number || invoice.id.slice(0, 8)}
                         </div>
                         <div style={{ color: '#5A6358' }}>
-                          {new Date(invoice.date).toLocaleDateString('en-US', {
+                          {new Date(invoice.created).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
                           })}
                         </div>
                         <div style={{ fontWeight: 500, color: '#1A1F18' }}>
-                          ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           <span style={{
@@ -758,9 +826,9 @@ export default function SettingsPage() {
                           }}>
                             Paid
                           </span>
-                          {(invoice.receiptUrl || invoice.hostedUrl || invoice.pdfUrl) && (
+                          {(invoice.receiptUrl || invoice.hostedUrl || invoice.invoicePdf) && (
                             <a
-                              href={invoice.receiptUrl || invoice.hostedUrl || invoice.pdfUrl || '#'}
+                              href={invoice.receiptUrl || invoice.hostedUrl || invoice.invoicePdf || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{

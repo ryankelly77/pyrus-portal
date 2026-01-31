@@ -3220,9 +3220,9 @@ export default function ClientDetailPage() {
             isActiveClient={isActiveClient}
             stripeHistory={stripeHistory}
             stripeHistoryLoading={stripeHistoryLoading}
-            invoices={invoices}
-            invoicesLoading={invoicesLoading}
-            stripeCustomerId={stripeCustomerId}
+            invoices={(subscriptions as any)?.invoices || []}
+            invoicesLoading={subscriptionsLoading}
+            stripeCustomerId={dbClient?.stripe_customer_id || null}
           />
         )}
 
