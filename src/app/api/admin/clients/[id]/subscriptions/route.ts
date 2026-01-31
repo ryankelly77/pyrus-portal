@@ -1,38 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { getSubscriptionData } from '@/lib/services/subscriptionService'
 
-// GET /api/admin/clients/[id]/subscriptions - Get subscriptions for a client
+export const dynamic = 'force-dynamic'
+
+// GET /api/admin/clients/[id]/subscriptions - Get subscription data for a client
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await requireAdmin()
-    if ((auth as any)?.user === undefined) return auth as any
-    const { id } = await params
+    if (auth instanceof NextResponse) return auth
+    const { id: clientId } = await params
 
-    // Fetch active subscriptions for the client
-    const subscriptions = await prisma.subscriptions.findMany({
-      where: {
-        client_id: id,
-        status: { in: ['active', 'trialing'] },
-      },
-      include: {
-        subscription_items: {
-          include: {
-            product: true,
-            bundle: true,
-          },
-        },
-        subscription_history: {
-          orderBy: { created_at: 'desc' },
-        },
-      },
-      orderBy: { created_at: 'desc' },
-    })
+    // Get subscription data using shared service
+    const subscriptionData = await getSubscriptionData(clientId)
 
-    return NextResponse.json(subscriptions)
+    return NextResponse.json(subscriptionData)
   } catch (error) {
     console.error('Failed to fetch subscriptions:', error)
     return NextResponse.json(
