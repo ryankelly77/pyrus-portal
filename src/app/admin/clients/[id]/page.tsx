@@ -1110,7 +1110,10 @@ export default function ClientDetailPage() {
         const data = await res.json()
         // Filter out products already assigned
         const assignedIds = new Set(manualProducts.map(p => p.productId))
-        const subProductIds = new Set(subscriptions.flatMap(s => s.subscription_items.map(i => i.product?.id)))
+        // Get product IDs from subscription services (new format from subscriptionService.ts)
+        const subProductIds = new Set(
+          ((subscriptions as any)?.services || []).map((s: any) => s.id).filter(Boolean)
+        )
         const available = data
           .filter((p: { id: string }) => !assignedIds.has(p.id) && !subProductIds.has(p.id))
           .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
@@ -2723,15 +2726,16 @@ export default function ClientDetailPage() {
                     <div className="content-plan-inline">
                       <span className="plan-inline-label">Your Plan:</span>
                       {(() => {
-                        const contentItems = subscriptions.flatMap(sub => sub.subscription_items)
-                          .filter(item => {
-                            const name = (item.product?.name || item.bundle?.name || '').toLowerCase()
-                            return contentProducts.some(cp => name.includes(cp))
-                          })
+                        // Use services array from subscriptionService.ts format
+                        const services = ((subscriptions as any)?.services || []) as Array<{ id: string; name: string; quantity: number }>
+                        const contentItems = services.filter(item => {
+                          const name = (item.name || '').toLowerCase()
+                          return contentProducts.some(cp => name.includes(cp))
+                        })
                         // Combine items with same name and sum quantities
                         const combinedItems: { name: string; totalQty: number }[] = []
                         contentItems.forEach(item => {
-                          const name = item.product?.name || item.bundle?.name || ''
+                          const name = item.name || ''
                           const qty = item.quantity || 1
                           const existing = combinedItems.find(ci => ci.name === name)
                           if (existing) {
