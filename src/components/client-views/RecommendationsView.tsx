@@ -907,9 +907,9 @@ export function RecommendationsView({
             const stripeItems = activeStripeSubscriptions.flatMap(sub => sub.items)
             const hasStripeSubscriptions = stripeItems.length > 0
 
-            // Fallback to database subscriptions
-            const dbItems = subscriptions.flatMap(sub => sub.subscription_items)
-            const hasDbSubscription = dbItems.length > 0
+            // Fallback to database subscriptions (now uses services array from subscriptionService.ts)
+            const dbServices = ((subscriptions as any)?.services || []) as Array<{ id: string; name: string; quantity: number }>
+            const hasDbSubscription = dbServices.length > 0
 
             // If no subscriptions but has purchased tier, fall back to recommendation items
             const fallbackItems = !hasStripeSubscriptions && !hasDbSubscription && recommendation?.purchased_tier
@@ -938,13 +938,13 @@ export function RecommendationsView({
             if (hasStripeSubscriptions) {
               totalMonthly = stripeItems.reduce((sum, item) => sum + (item.unitAmount * (item.quantity || 1)), 0)
             } else if (hasDbSubscription) {
-              totalMonthly = dbItems.reduce((sum, item) => sum + Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0), 0)
+              totalMonthly = dbServices.reduce((sum, item) => sum + ((item as any).price || 0) * (item.quantity || 1), 0)
             } else {
               totalMonthly = fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
             }
 
-            // Get the start date
-            const startDate = subscriptions[0]?.created_at || recommendation?.purchased_at
+            // Get the start date (from subscription object or recommendation)
+            const startDate = (subscriptions as any)?.subscription?.createdAt || recommendation?.purchased_at
 
             // Determine which items to display
             let displayItems: { id: string; name: string; desc: string; price: number; isFree?: boolean }[] = []
@@ -957,11 +957,11 @@ export function RecommendationsView({
                 price: item.unitAmount * (item.quantity || 1),
               }))
             } else if (hasDbSubscription) {
-              displayItems = dbItems.map(item => ({
+              displayItems = dbServices.map(item => ({
                 id: item.id,
-                name: item.product?.name || item.bundle?.name || 'Service',
-                desc: item.product?.short_description || item.bundle?.description || '',
-                price: Number(item.unit_amount || item.product?.monthly_price || item.bundle?.monthly_price || 0),
+                name: item.name || 'Service',
+                desc: '',
+                price: ((item as any).price || 0) * (item.quantity || 1),
               }))
             } else {
               displayItems = fallbackItems.map(item => ({
