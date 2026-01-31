@@ -11,11 +11,38 @@ export async function GET() {
     if (auth instanceof NextResponse) return auth
     const { user, profile } = auth
 
+    // Fetch clients with their active subscription items count
     const clients = await prisma.clients.findMany({
       orderBy: { name: 'asc' },
+      include: {
+        subscriptions: {
+          where: { status: 'active' },
+          include: {
+            subscription_items: {
+              select: { id: true },
+            },
+          },
+        },
+      },
     })
 
-    return NextResponse.json(clients)
+    // Transform to include services_count
+    const clientsWithServicesCount = clients.map((client) => {
+      // Count total subscription items across all active subscriptions
+      const servicesCount = client.subscriptions.reduce(
+        (total, sub) => total + sub.subscription_items.length,
+        0
+      )
+
+      // Remove the nested subscriptions data, just return the count
+      const { subscriptions, ...clientData } = client
+      return {
+        ...clientData,
+        services_count: servicesCount,
+      }
+    })
+
+    return NextResponse.json(clientsWithServicesCount)
   } catch (error) {
     console.error('Failed to fetch clients:', error)
     return NextResponse.json(

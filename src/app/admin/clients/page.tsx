@@ -38,6 +38,7 @@ interface DBClient {
   growth_stage: string | null
   avatar_color: string | null
   created_at: string
+  services_count: number
 }
 
 // Helper to generate initials from name
@@ -140,10 +141,10 @@ export default function ClientsPage() {
         }
 
         // Generate dummy data for active clients based on growth stage
+        // Note: services count now comes from real subscription data (c.services_count)
         let visitors: number | null = null
         let leads: number | null = null
         let growth: number | null = null
-        let services = 0
 
         if (!isProspect && displayStatus !== 'inactive') {
           // Generate consistent dummy data based on client name hash
@@ -154,25 +155,21 @@ export default function ClientsPage() {
               visitors = 500 + (hash % 1000)
               leads = 5 + (hash % 10)
               growth = 5 + (hash % 15)
-              services = 1 + (hash % 2)
               break
             case 'sprouting':
               visitors = 2000 + (hash % 3000)
               leads = 15 + (hash % 25)
               growth = 12 + (hash % 20)
-              services = 2 + (hash % 3)
               break
             case 'blooming':
               visitors = 8000 + (hash % 7000)
               leads = 50 + (hash % 50)
               growth = 20 + (hash % 25)
-              services = 3 + (hash % 4)
               break
             case 'harvesting':
               visitors = 20000 + (hash % 15000)
               leads = 150 + (hash % 100)
               growth = 30 + (hash % 20)
-              services = 5 + (hash % 5)
               break
           }
         }
@@ -185,7 +182,7 @@ export default function ClientsPage() {
           avatarColor: c.avatar_color || getAvatarColor(c.name),
           status: displayStatus,
           growthStage,
-          services,
+          services: c.services_count,
           since: formatDate(c.created_at),
           visitors,
           leads,

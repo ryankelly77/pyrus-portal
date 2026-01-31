@@ -548,6 +548,7 @@ export default function ClientDetailPage() {
   const [basecampActivities, setBasecampActivities] = useState<BasecampActivity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
+  const [subscriptionServicesCount, setSubscriptionServicesCount] = useState(0)
 
   // Payment methods state
   interface PaymentMethod {
@@ -1031,6 +1032,8 @@ export default function ClientDetailPage() {
         if (res.ok) {
           const data = await res.json()
           setSubscriptions(data)
+          // Set services count from subscription data (from subscriptionService.ts)
+          setSubscriptionServicesCount(data.services?.length || 0)
         }
       } catch (error) {
         console.error('Failed to fetch subscriptions:', error)
@@ -1650,7 +1653,7 @@ export default function ClientDetailPage() {
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
-    servicesCount: checklistItems.length > 0 ? Array.from(new Set(checklistItems.map(i => i.product.id))).length : 0,
+    servicesCount: subscriptionServicesCount,
     hasWebsite: hasWebsiteProducts,
     hasContent: hasContentProducts,
     websiteData: realWebsiteData,
