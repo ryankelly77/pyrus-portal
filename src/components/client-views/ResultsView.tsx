@@ -139,7 +139,8 @@ function KpiCard({ icon, label, value, changeFormatted, trend }: {
 }
 
 export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDashboardUrl }: ResultsViewProps) {
-  const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard'>('overview')
+  // Default to pro-dashboard while overview is under construction
+  const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard'>('pro-dashboard')
   const [loading, setLoading] = useState(true)
   const [resultsData, setResultsData] = useState<ResultsData | null>(null)
 
