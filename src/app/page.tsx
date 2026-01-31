@@ -22,6 +22,6 @@ export default async function Home() {
     redirect('/getting-started')
   }
 
-  // Admin and super_admin go to dashboard
-  redirect('/dashboard')
+  // Admin and super_admin go to admin dashboard
+  redirect('/admin/dashboard')
 }
