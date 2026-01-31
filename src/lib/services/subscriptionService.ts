@@ -6,6 +6,16 @@ interface ExpandedInvoice extends Stripe.Invoice {
   payment_intent?: Stripe.PaymentIntent | string | null
 }
 
+export interface SubscriptionDiscount {
+  id: string
+  couponCode: string | null
+  couponName: string | null
+  amountOff: number | null // in dollars
+  percentOff: number | null
+  duration: string // 'forever', 'once', 'repeating'
+  appliesTo: string[] | null // product IDs if restricted, null if applies to all
+}
+
 export interface SubscriptionData {
   subscription: {
     id: string
@@ -13,14 +23,19 @@ export interface SubscriptionData {
     currentPeriodStart: string | null
     currentPeriodEnd: string | null
     currentPeriodEndFormatted: string | null
-    monthlyAmount: number
+    monthlyAmount: number // full price before discounts
+    monthlyAmountAfterDiscount: number // actual amount charged
+    totalDiscount: number // total discount applied
     createdAt: string | null
   } | null
+  discounts: SubscriptionDiscount[]
   services: Array<{
     id: string
     name: string
     category: string | null
-    price: number
+    price: number // full price before discounts
+    discountedPrice: number // price after any discounts
+    discountAmount: number // discount applied to this item
     quantity: number
     type: 'product' | 'bundle'
   }>
@@ -87,6 +102,7 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
 
   let services: SubscriptionData['services'] = []
   let subscriptionData: SubscriptionData['subscription'] = null
+  let discounts: SubscriptionData['discounts'] = []
   let paymentMethods: SubscriptionData['paymentMethods'] = []
   let invoices: SubscriptionData['invoices'] = []
   let stripeBillingEmail: string | null = null
@@ -98,7 +114,7 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
         customer: client.stripe_customer_id,
         status: 'active',
         limit: 10,
-        expand: ['data.latest_invoice'],
+        expand: ['data.latest_invoice', 'data.discounts', 'data.discounts.promotion_code'],
       })
 
       if (stripeSubscriptions.data.length > 0) {
@@ -132,8 +148,99 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
           })
         )
 
+        // Extract discount info from the subscription
+        // Fetch coupon details for each discount
+        const subDiscounts = (stripeSub.discounts || []) as any[]
+        discounts = await Promise.all(
+          subDiscounts.map(async (d: any) => {
+            const couponId = d.source?.coupon || d.coupon
+            const promoCodeObj = d.promotion_code
+
+            // Fetch full coupon details if we only have an ID
+            let couponData: any = null
+            if (typeof couponId === 'string') {
+              try {
+                couponData = await stripe.coupons.retrieve(couponId)
+              } catch {
+                // Ignore errors fetching coupon
+              }
+            } else if (typeof couponId === 'object') {
+              couponData = couponId
+            }
+
+            // Fetch promo code details if we have an ID
+            let promoCode: string | null = null
+            if (typeof promoCodeObj === 'string') {
+              try {
+                const promo = await stripe.promotionCodes.retrieve(promoCodeObj)
+                promoCode = promo.code
+              } catch {
+                // Ignore errors
+              }
+            } else if (typeof promoCodeObj === 'object') {
+              promoCode = promoCodeObj?.code || null
+            }
+
+            return {
+              id: d.id,
+              couponCode: promoCode,
+              couponName: couponData?.name || couponId,
+              amountOff: couponData?.amount_off ? couponData.amount_off / 100 : null,
+              percentOff: couponData?.percent_off || null,
+              duration: couponData?.duration || 'once',
+              appliesTo: couponData?.applies_to?.products || null,
+            }
+          })
+        )
+
+        // Get period dates and discount amounts from latest invoice
+        const latestInvoice = stripeSub.latest_invoice
+        let periodStart: string | null = null
+        let periodEnd: string | null = null
+        let totalDiscountFromInvoice = 0
+        let invoiceTotal = 0
+
+        // Map of subscription item ID to discount amount from invoice
+        const itemDiscountMap = new Map<string, number>()
+
+        if (latestInvoice && typeof latestInvoice !== 'string') {
+          periodStart = latestInvoice.period_start
+            ? new Date(latestInvoice.period_start * 1000).toISOString()
+            : null
+          periodEnd = latestInvoice.period_end
+            ? new Date(latestInvoice.period_end * 1000).toISOString()
+            : null
+
+          // Get actual total from invoice (already accounts for discounts)
+          invoiceTotal = (latestInvoice.total || 0) / 100
+
+          // Get discount amounts from invoice line items
+          const invoiceLines = latestInvoice.lines?.data || []
+          for (const line of invoiceLines) {
+            const discountAmounts = (line as any).discount_amounts || []
+            // Get subscription item ID from parent.subscription_item_details.subscription_item
+            const subItemId = (line as any).parent?.subscription_item_details?.subscription_item
+            let lineDiscount = 0
+
+            for (const da of discountAmounts) {
+              lineDiscount += (da.amount || 0) / 100
+            }
+
+            if (subItemId && lineDiscount > 0) {
+              itemDiscountMap.set(subItemId, lineDiscount)
+            }
+            totalDiscountFromInvoice += lineDiscount
+          }
+        }
+
+        // Fall back to billing_cycle_anchor if no invoice periods
+        if (!periodStart && stripeSub.billing_cycle_anchor) {
+          periodStart = new Date(stripeSub.billing_cycle_anchor * 1000).toISOString()
+        }
+
         // Calculate total monthly amount from all active subscriptions
         let totalMonthlyAmount = 0
+        let totalMonthlyAfterDiscount = 0
         const allServices: typeof services = []
 
         for (const sub of stripeSubscriptions.data) {
@@ -151,13 +258,20 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
               monthlyPrice = monthlyPrice / 12
             }
 
-            totalMonthlyAmount += monthlyPrice * (item.quantity || 1)
+            const itemTotal = monthlyPrice * (item.quantity || 1)
+            const itemDiscount = itemDiscountMap.get(item.id) || 0
+            const itemDiscountedTotal = itemTotal - itemDiscount
+
+            totalMonthlyAmount += itemTotal
+            totalMonthlyAfterDiscount += itemDiscountedTotal
 
             allServices.push({
               id: item.id,
               name: productData.name,
               category: productData.category,
               price: monthlyPrice,
+              discountedPrice: monthlyPrice - (itemDiscount / (item.quantity || 1)),
+              discountAmount: itemDiscount,
               quantity: item.quantity || 1,
               type: 'product',
             })
@@ -166,25 +280,6 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
 
         services = allServices
 
-        // Get period dates from latest invoice
-        const latestInvoice = stripeSub.latest_invoice
-        let periodStart: string | null = null
-        let periodEnd: string | null = null
-
-        if (latestInvoice && typeof latestInvoice !== 'string') {
-          periodStart = latestInvoice.period_start
-            ? new Date(latestInvoice.period_start * 1000).toISOString()
-            : null
-          periodEnd = latestInvoice.period_end
-            ? new Date(latestInvoice.period_end * 1000).toISOString()
-            : null
-        }
-
-        // Fall back to billing_cycle_anchor if no invoice periods
-        if (!periodStart && stripeSub.billing_cycle_anchor) {
-          periodStart = new Date(stripeSub.billing_cycle_anchor * 1000).toISOString()
-        }
-
         subscriptionData = {
           id: stripeSub.id,
           status: stripeSub.status,
@@ -192,6 +287,8 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
           currentPeriodEnd: periodEnd,
           currentPeriodEndFormatted: formatDate(periodEnd),
           monthlyAmount: totalMonthlyAmount,
+          monthlyAmountAfterDiscount: totalMonthlyAfterDiscount,
+          totalDiscount: totalDiscountFromInvoice,
           createdAt: new Date(stripeSub.created * 1000).toISOString(),
         }
       }
@@ -220,24 +317,32 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
     })
 
     if (dbSubscription) {
+      const dbMonthlyAmount = Number(dbSubscription.monthly_amount) || 0
       subscriptionData = {
         id: dbSubscription.id,
         status: dbSubscription.status || 'active',
         currentPeriodStart: dbSubscription.current_period_start?.toISOString() || null,
         currentPeriodEnd: dbSubscription.current_period_end?.toISOString() || null,
         currentPeriodEndFormatted: formatDate(dbSubscription.current_period_end),
-        monthlyAmount: Number(dbSubscription.monthly_amount) || 0,
+        monthlyAmount: dbMonthlyAmount,
+        monthlyAmountAfterDiscount: dbMonthlyAmount, // No discounts from DB
+        totalDiscount: 0,
         createdAt: dbSubscription.created_at?.toISOString() || null,
       }
 
-      services = dbSubscription.subscription_items.map((item) => ({
-        id: item.id,
-        name: item.product?.name || item.bundle?.name || 'Unknown Service',
-        category: item.product?.category || null,
-        price: Number(item.unit_amount) || 0,
-        quantity: item.quantity || 1,
-        type: item.bundle_id ? 'bundle' : 'product',
-      }))
+      services = dbSubscription.subscription_items.map((item) => {
+        const itemPrice = Number(item.unit_amount) || 0
+        return {
+          id: item.id,
+          name: item.product?.name || item.bundle?.name || 'Unknown Service',
+          category: item.product?.category || null,
+          price: itemPrice,
+          discountedPrice: itemPrice, // No discounts from DB
+          discountAmount: 0,
+          quantity: item.quantity || 1,
+          type: item.bundle_id ? 'bundle' : 'product',
+        }
+      })
     }
   }
 
@@ -267,10 +372,10 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
         isDefault: pm.id === defaultPaymentMethodId,
       }))
 
-      // Fetch invoices (last 10) - only paid invoices
+      // Fetch all paid invoices
       const stripeInvoices = await stripe.invoices.list({
         customer: client.stripe_customer_id,
-        limit: 10,
+        limit: 100, // Increased to show all invoices
         status: 'paid',
         expand: ['data.payment_intent.latest_charge'],
       })
@@ -309,6 +414,7 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
 
   return {
     subscription: subscriptionData,
+    discounts,
     services,
     paymentMethods,
     invoices,

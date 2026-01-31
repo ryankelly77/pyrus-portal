@@ -902,21 +902,37 @@ export function RecommendationsView({
           ) : subscriptionsLoading ? (
             <div className="loading-state">Loading services...</div>
           ) : (() => {
-            // Get active Stripe subscriptions (admin) or database subscriptions (client)
-            const activeStripeSubscriptions = stripeSubscriptions.filter(sub => sub.status === 'active' || sub.status === 'trialing')
-            const stripeItems = activeStripeSubscriptions.flatMap(sub => sub.items)
-            const hasStripeSubscriptions = stripeItems.length > 0
+            // Get services from subscriptionService (includes discount info)
+            const subData = subscriptions as any
+            const servicesList = (subData?.services || []) as Array<{
+              id: string
+              name: string
+              quantity: number
+              price: number
+              discountedPrice: number
+              discountAmount: number
+            }>
+            const subscriptionInfo = subData?.subscription as {
+              monthlyAmount: number
+              monthlyAmountAfterDiscount: number
+              totalDiscount: number
+            } | null
+            const discountsList = (subData?.discounts || []) as Array<{
+              id: string
+              couponCode: string | null
+              couponName: string | null
+              amountOff: number | null
+              percentOff: number | null
+            }>
 
-            // Fallback to database subscriptions (now uses services array from subscriptionService.ts)
-            const dbServices = ((subscriptions as any)?.services || []) as Array<{ id: string; name: string; quantity: number }>
-            const hasDbSubscription = dbServices.length > 0
+            const hasServices = servicesList.length > 0
 
             // If no subscriptions but has purchased tier, fall back to recommendation items
-            const fallbackItems = !hasStripeSubscriptions && !hasDbSubscription && recommendation?.purchased_tier
+            const fallbackItems = !hasServices && recommendation?.purchased_tier
               ? recommendation.recommendation_items.filter(item => item.tier === recommendation.purchased_tier)
               : []
 
-            const hasAnyProducts = hasStripeSubscriptions || hasDbSubscription || fallbackItems.length > 0
+            const hasAnyProducts = hasServices || fallbackItems.length > 0
 
             if (!hasAnyProducts) {
               return (
@@ -933,35 +949,41 @@ export function RecommendationsView({
               )
             }
 
-            // Calculate totals
+            // Calculate totals - use discounted amounts if available
             let totalMonthly = 0
-            if (hasStripeSubscriptions) {
-              totalMonthly = stripeItems.reduce((sum, item) => sum + (item.unitAmount * (item.quantity || 1)), 0)
-            } else if (hasDbSubscription) {
-              totalMonthly = dbServices.reduce((sum, item) => sum + ((item as any).price || 0) * (item.quantity || 1), 0)
+            let totalAfterDiscount = 0
+            let totalDiscount = 0
+
+            if (hasServices && subscriptionInfo) {
+              totalMonthly = subscriptionInfo.monthlyAmount || 0
+              totalAfterDiscount = subscriptionInfo.monthlyAmountAfterDiscount || totalMonthly
+              totalDiscount = subscriptionInfo.totalDiscount || 0
+            } else if (hasServices) {
+              totalMonthly = servicesList.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0)
+              totalAfterDiscount = servicesList.reduce((sum, item) => {
+                const effectivePrice = item.discountedPrice !== undefined ? item.discountedPrice : item.price
+                return sum + (effectivePrice * (item.quantity || 1))
+              }, 0)
+              totalDiscount = totalMonthly - totalAfterDiscount
             } else {
               totalMonthly = fallbackItems.reduce((sum, item) => sum + Number(item.monthly_price || 0), 0)
+              totalAfterDiscount = totalMonthly
             }
 
             // Get the start date (from subscription object or recommendation)
-            const startDate = (subscriptions as any)?.subscription?.createdAt || recommendation?.purchased_at
+            const startDate = subData?.subscription?.createdAt || recommendation?.purchased_at
 
             // Determine which items to display
-            let displayItems: { id: string; name: string; desc: string; price: number; isFree?: boolean }[] = []
+            let displayItems: { id: string; name: string; desc: string; price: number; discountedPrice: number; discountAmount: number; isFree?: boolean }[] = []
 
-            if (hasStripeSubscriptions) {
-              displayItems = stripeItems.map(item => ({
-                id: item.id,
-                name: item.product.name,
-                desc: item.product.description || '',
-                price: item.unitAmount * (item.quantity || 1),
-              }))
-            } else if (hasDbSubscription) {
-              displayItems = dbServices.map(item => ({
+            if (hasServices) {
+              displayItems = servicesList.map(item => ({
                 id: item.id,
                 name: item.name || 'Service',
                 desc: '',
-                price: ((item as any).price || 0) * (item.quantity || 1),
+                price: item.price * (item.quantity || 1),
+                discountedPrice: (item.discountedPrice !== undefined ? item.discountedPrice : item.price) * (item.quantity || 1),
+                discountAmount: item.discountAmount || 0,
               }))
             } else {
               displayItems = fallbackItems.map(item => ({
@@ -969,9 +991,15 @@ export function RecommendationsView({
                 name: item.product?.name || item.bundle?.name || item.addon?.name || 'Service',
                 desc: item.product?.short_description || item.bundle?.description || item.addon?.description || '',
                 price: Number(item.monthly_price || 0),
+                discountedPrice: Number(item.monthly_price || 0),
+                discountAmount: 0,
                 isFree: item.is_free || false,
               }))
             }
+
+            // Get coupon info for display
+            const activeCoupon = discountsList.length > 0 ? discountsList[0] : null
+            const couponDisplay = activeCoupon?.couponCode || activeCoupon?.couponName || null
 
             return (
               <div className="current-services-list">
@@ -988,25 +1016,61 @@ export function RecommendationsView({
                       <div className="current-service-name">
                         {item.name}
                         {item.isFree && <span className="free-badge">FREE</span>}
+                        {item.discountAmount > 0 && <span className="discount-badge">-${item.discountAmount.toLocaleString()}</span>}
                       </div>
                       {item.desc && <div className="current-service-desc">{item.desc}</div>}
                     </div>
                     <div className="current-service-price">
                       {item.isFree ? (
                         <><strong>$0</strong><br /><span>included</span></>
+                      ) : item.discountAmount > 0 ? (
+                        <>
+                          <strong>${item.discountedPrice.toLocaleString()}</strong>
+                          <br />
+                          <span style={{ textDecoration: 'line-through', color: '#9CA3AF', fontSize: '0.75rem' }}>${item.price.toLocaleString()}</span>
+                          <span>/month</span>
+                        </>
                       ) : (
                         <><strong>${item.price.toLocaleString()}</strong><br /><span>/month</span></>
                       )}
                     </div>
                   </div>
                 ))}
+
+                {/* Discount summary if applicable */}
+                {totalDiscount > 0 && (
+                  <div className="current-services-discount" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.75rem 1rem',
+                    background: '#F0FDF4',
+                    borderRadius: '8px',
+                    marginBottom: '0.5rem',
+                    border: '1px solid #BBF7D0'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" width="18" height="18">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                      </svg>
+                      <span style={{ color: '#166534', fontWeight: 500 }}>
+                        {couponDisplay ? `Coupon "${couponDisplay}" applied` : 'Discount applied'}
+                      </span>
+                    </div>
+                    <span style={{ color: '#16A34A', fontWeight: 600 }}>
+                      -${totalDiscount.toLocaleString()}/mo
+                    </span>
+                  </div>
+                )}
+
                 <div className="current-services-total">
                   <div className="current-services-total-label">
                     Total Monthly Investment
                     <span>{displayItems.length} active service{displayItems.length !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="current-services-total-value">
-                    ${totalMonthly.toLocaleString()}<span> per month</span>
+                    ${totalAfterDiscount.toLocaleString()}<span> per month</span>
                   </div>
                 </div>
 
@@ -1069,8 +1133,8 @@ export function RecommendationsView({
                             </tr>
                           </thead>
                           <tbody>
-                            {propInvoices.slice(0, 10).map((invoice, index) => (
-                              <tr key={invoice.id} style={{ borderBottom: index < Math.min(propInvoices.length, 10) - 1 ? '1px solid #E5E7EB' : undefined }}>
+                            {propInvoices.map((invoice, index) => (
+                              <tr key={invoice.id} style={{ borderBottom: index < propInvoices.length - 1 ? '1px solid #E5E7EB' : undefined }}>
                                 <td style={{ padding: '0.5rem 0.75rem' }}>
                                   <div style={{ fontWeight: 500, color: '#111827' }}>{invoice.number || invoice.id.slice(0, 10)}</div>
                                 </td>

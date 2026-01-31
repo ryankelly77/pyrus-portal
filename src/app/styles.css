@@ -5812,6 +5812,31 @@
             font-weight: 500;
             color: var(--text-primary);
             margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .current-service-name .discount-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
+            color: white;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .current-service-name .free-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: linear-gradient(135deg, #324438 0%, #4a6352 100%);
+            color: white;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .current-service-desc {
