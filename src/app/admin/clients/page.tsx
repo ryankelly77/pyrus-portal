@@ -38,6 +38,7 @@ interface DBClient {
   growth_stage: string | null
   avatar_color: string | null
   created_at: string
+  start_date: string | null
   services_count: number
 }
 
@@ -183,7 +184,7 @@ export default function ClientsPage() {
           status: displayStatus,
           growthStage,
           services: c.services_count,
-          since: formatDate(c.created_at),
+          since: formatDate(c.start_date || c.created_at),
           visitors,
           leads,
           growth,
