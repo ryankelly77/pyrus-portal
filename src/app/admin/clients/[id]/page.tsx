@@ -1579,7 +1579,7 @@ export default function ClientDetailPage() {
   // Determine which tabs should be active based on integrations and purchased products
   const hasResultsAccess = !!dbClient?.agency_dashboard_share_key
   const hasActivityAccess = !!dbClient?.basecamp_project_id
-  const hasWebsiteAccess = !!dbClient?.landingsite_preview_url
+  const hasWebsiteAccess = !!dbClient?.website_url
 
   // Check purchased products from ACTIVE Stripe subscriptions
   const activeSubscriptionProducts = Array.from(new Set(
