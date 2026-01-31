@@ -259,7 +259,7 @@ export function RecommendationsView({
   isAdmin = false,
   isDemo = false,
   clientName,
-  defaultTab = 'original-plan',
+  defaultTab = 'smart-recommendations',
   dbClient: propDbClient,
   recommendation: propRecommendation,
   recommendationLoading: propRecommendationLoading,
