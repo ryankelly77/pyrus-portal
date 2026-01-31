@@ -20,6 +20,12 @@ interface ContentProduct {
   supports_quantity?: boolean | null
 }
 
+interface Service {
+  name: string
+  quantity: number
+  details?: string
+}
+
 interface ContentViewProps {
   clientId: string
   isAdmin?: boolean
@@ -30,6 +36,8 @@ interface ContentViewProps {
   availableContentProducts?: ContentProduct[]
   onProductClick?: (product: ContentProduct) => void
   onViewContentRequirements?: () => void
+  // Aggregated services from product flags
+  contentServices?: Service[]
 }
 
 interface ContentItem {
@@ -362,7 +370,8 @@ export function ContentView({
   subscriptionServices,
   availableContentProducts,
   onProductClick,
-  onViewContentRequirements
+  onViewContentRequirements,
+  contentServices
 }: ContentViewProps) {
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
   const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
@@ -460,7 +469,7 @@ export function ContentView({
       </div>
 
       {/* Content Actions Bar */}
-      <div className="content-actions-bar" style={isAdmin ? { justifyContent: 'space-between' } : undefined}>
+      <div className="content-actions-bar" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary"
@@ -476,8 +485,19 @@ export function ContentView({
           </button>
           <div className="content-plan-inline">
             <span className="plan-inline-label">Your Plan:</span>
-            {subscriptionServices && subscriptionServices.length > 0 ? (
-              // Dynamic rendering from subscription data
+            {contentServices && contentServices.length > 0 ? (
+              // Render aggregated services from product flags
+              contentServices.map((service, index) => (
+                <span key={service.name}>
+                  {index > 0 && <span className="plan-inline-divider">+ </span>}
+                  <span className="plan-inline-item">
+                    ({service.quantity}) {service.name}
+                    {service.details && ` (${service.details})`}
+                  </span>
+                </span>
+              ))
+            ) : subscriptionServices && subscriptionServices.length > 0 ? (
+              // Fallback: Dynamic rendering from subscription data
               (() => {
                 const contentProductKeywords = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation', 'harvest seo', 'harvest']
                 const contentItems = subscriptionServices.filter(item => {
@@ -503,7 +523,7 @@ export function ContentView({
                       : item.name
                     return (
                       <span key={item.name}>
-                        {index > 0 && <span className="plan-inline-divider">•</span>}
+                        {index > 0 && <span className="plan-inline-divider">+ </span>}
                         <span className="plan-inline-item">{displayName}</span>
                       </span>
                     )
@@ -513,7 +533,7 @@ export function ContentView({
                 )
               })()
             ) : (
-              // Fallback — no subscription data available
+              // No subscription data available
               <span className="plan-inline-item">No content services yet</span>
             )}
           </div>

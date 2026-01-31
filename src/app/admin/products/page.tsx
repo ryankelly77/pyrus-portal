@@ -113,6 +113,10 @@ export default function AdminProductsPage() {
         stripeMonthlyPriceId: '',
         stripeOnetimePriceId: '',
         dependencies: product.product_dependencies?.map((d: { requires_product_id: string }) => d.requires_product_id) || [],
+        includesContent: product.includes_content || false,
+        contentServices: product.content_services || [],
+        includesWebsite: product.includes_website || false,
+        websiteServices: product.website_services || [],
       }
 
       const createRes = await fetch('/api/admin/products', {

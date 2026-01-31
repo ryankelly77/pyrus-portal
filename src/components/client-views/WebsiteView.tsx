@@ -39,6 +39,12 @@ interface WebsiteApiResponse {
   editRequests: EditRequest[]
 }
 
+interface Service {
+  name: string
+  quantity: number
+  details?: string
+}
+
 interface WebsiteViewProps {
   clientId: string
   isAdmin?: boolean
@@ -46,6 +52,8 @@ interface WebsiteViewProps {
   clientName?: string
   // Optional: Pass in add-to-cart handler for client pages
   onAddToCart?: (productSlug: string) => void
+  // Aggregated website services from product flags
+  websiteServices?: Service[]
 }
 
 // Demo website data
@@ -99,7 +107,7 @@ function getStatusIcon(status: RequestStatus) {
   }
 }
 
-export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientName, onAddToCart }: WebsiteViewProps) {
+export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientName, onAddToCart, websiteServices }: WebsiteViewProps) {
   const [loading, setLoading] = useState(true)
   const [websiteData, setWebsiteData] = useState<WebsiteData | null>(null)
   const [editRequests, setEditRequests] = useState<EditRequest[]>([])
@@ -282,7 +290,20 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
               </div>
               <div className="info-row">
                 <span className="info-label">Care Plan</span>
-                <span className="info-value">{websiteData.carePlan}</span>
+                <div className="info-value-group">
+                  <span className="info-value">{websiteData.carePlan}</span>
+                  {websiteServices && websiteServices.length > 0 && (
+                    <span className="info-subline">
+                      {websiteServices.map((service, index) => (
+                        <span key={service.name}>
+                          {index > 0 && ' + '}
+                          ({service.quantity}) {service.name}
+                          {service.details && ` (${service.details})`}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="info-row">
                 <span className="info-label">Launched</span>

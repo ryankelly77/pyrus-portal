@@ -104,6 +104,7 @@ interface DBClient {
   website_url: string | null
   hosting_type: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
   hosting_provider: string | null
+  website_provider: 'pear' | 'other' | null
   website_launch_date: string | null
   uptimerobot_monitor_id: string | null
   // Onboarding
@@ -427,6 +428,7 @@ export default function ClientDetailPage() {
     websiteUrl: '',
     hostingType: '' as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted',
     hostingProvider: '',
+    websiteProvider: '' as '' | 'pear' | 'other',
     websiteLaunchDate: '',
     uptimerobotMonitorId: '',
     // Integrations
@@ -592,6 +594,15 @@ export default function ClientDetailPage() {
   const [availableContentProducts, setAvailableContentProducts] = useState<ContentProduct[]>([])
   const [showProductModal, setShowProductModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ContentProduct | null>(null)
+
+  // Aggregated content services from product flags
+  interface Service {
+    name: string
+    quantity: number
+    details?: string
+  }
+  const [contentServices, setContentServices] = useState<Service[]>([])
+  const [websiteServices, setWebsiteServices] = useState<Service[]>([])
 
   // Result Alert modal state
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
@@ -809,6 +820,7 @@ export default function ClientDetailPage() {
           websiteUrl: editFormData.websiteUrl,
           hostingType: editFormData.hostingType || null,
           hostingProvider: editFormData.hostingProvider || null,
+          websiteProvider: editFormData.websiteProvider || null,
           websiteLaunchDate: editFormData.websiteLaunchDate || null,
           uptimerobotMonitorId: editFormData.uptimerobotMonitorId || null,
           // Integration fields
@@ -861,6 +873,7 @@ export default function ClientDetailPage() {
             websiteUrl: data.website_url || '',
             hostingType: (data.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
             hostingProvider: data.hosting_provider || '',
+            websiteProvider: (data.website_provider as '' | 'pear' | 'other') || '',
             websiteLaunchDate: data.website_launch_date ? new Date(data.website_launch_date).toISOString().split('T')[0] : '',
             uptimerobotMonitorId: data.uptimerobot_monitor_id || '',
             // Integration fields
@@ -1198,7 +1211,7 @@ export default function ClientDetailPage() {
     }
   }
 
-  // Fetch available content products for upsell
+  // Fetch available content products for upsell and aggregated services
   useEffect(() => {
     const fetchContentProducts = async () => {
       try {
@@ -1211,7 +1224,23 @@ export default function ClientDetailPage() {
         console.error('Failed to fetch content products:', error)
       }
     }
+
+    // Fetch aggregated services from client info API
+    const fetchClientServices = async () => {
+      try {
+        const res = await fetch(`/api/client/info?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setContentServices(data.access?.contentServices || [])
+          setWebsiteServices(data.access?.websiteServices || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch client services:', error)
+      }
+    }
+
     fetchContentProducts()
+    fetchClientServices()
   }, [clientId, subscriptions])
 
   // Fetch communications
@@ -2651,7 +2680,7 @@ export default function ClientDetailPage() {
         {/* ==================== WEBSITE TAB ==================== */}
         {activeTab === 'website' && (
           <div className="website-tab-content">
-            <WebsiteView clientId={clientId} isAdmin={true} clientName={dbClient?.name} />
+            <WebsiteView clientId={clientId} isAdmin={true} clientName={dbClient?.name} websiteServices={websiteServices} />
           </div>
         )}
 
@@ -2665,6 +2694,7 @@ export default function ClientDetailPage() {
                 isAdmin={true}
                 subscriptionServices={(subscriptions as any)?.services || []}
                 availableContentProducts={availableContentProducts}
+                contentServices={contentServices}
                 onProductClick={(product) => {
                   // Cast to local ContentProduct type
                   setSelectedProduct(product as ContentProduct)
@@ -3275,6 +3305,23 @@ export default function ClientDetailPage() {
                         value={editFormData.websiteUrl}
                         onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
                       />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="websiteProvider">Built By</label>
+                      <select
+                        id="websiteProvider"
+                        className="form-control"
+                        value={editFormData.websiteProvider}
+                        onChange={(e) => setEditFormData({ ...editFormData, websiteProvider: e.target.value as '' | 'pear' | 'other' })}
+                      >
+                        <option value="">Select...</option>
+                        <option value="pear">Pear Analytics</option>
+                        <option value="other">Other / Client-managed</option>
+                      </select>
+                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
+                        Who built or maintains this website
+                      </small>
                     </div>
 
                     <div className="form-group">

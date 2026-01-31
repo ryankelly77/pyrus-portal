@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 
+interface Service {
+  name: string
+  quantity: number
+  details?: string
+}
+
 interface ProductOption {
   id: string
   name: string
@@ -26,6 +32,10 @@ export default function NewProductPage() {
     stripeMonthlyPriceId: '',
     stripeOnetimePriceId: '',
     dependencies: [] as string[],
+    includesContent: false,
+    contentServices: [] as Service[],
+    includesWebsite: false,
+    websiteServices: [] as Service[],
   })
 
   const [allProducts, setAllProducts] = useState<ProductOption[]>([])
@@ -228,6 +238,187 @@ export default function NewProductPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="form-card">
+                <h3 className="form-card-title">Page Activation</h3>
+                <p className="form-hint" style={{ marginBottom: '1rem' }}>
+                  Select which client portal pages this product activates when purchased.
+                </p>
+
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={productForm.includesContent}
+                      onChange={(e) => setProductForm({ ...productForm, includesContent: e.target.checked })}
+                      style={{ width: '16px', height: '16px', margin: 0, accentColor: '#2D5A27' }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#1f2937' }}>This plan activates the Content page</span>
+                  </label>
+                </div>
+
+                {productForm.includesContent && (
+                  <div style={{ marginLeft: '24px', marginTop: '12px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Content Services</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {productForm.contentServices.map((service, index) => (
+                        <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Service name"
+                            value={service.name}
+                            onChange={(e) => {
+                              const updated = [...productForm.contentServices]
+                              updated[index] = { ...updated[index], name: e.target.value }
+                              setProductForm({ ...productForm, contentServices: updated })
+                            }}
+                            style={{ flex: 2 }}
+                          />
+                          <input
+                            type="number"
+                            className="form-control"
+                            placeholder="Qty"
+                            min="1"
+                            value={service.quantity}
+                            onChange={(e) => {
+                              const updated = [...productForm.contentServices]
+                              updated[index] = { ...updated[index], quantity: parseInt(e.target.value) || 1 }
+                              setProductForm({ ...productForm, contentServices: updated })
+                            }}
+                            style={{ width: '80px' }}
+                          />
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Details (optional)"
+                            value={service.details || ''}
+                            onChange={(e) => {
+                              const updated = [...productForm.contentServices]
+                              updated[index] = { ...updated[index], details: e.target.value }
+                              setProductForm({ ...productForm, contentServices: updated })
+                            }}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = productForm.contentServices.filter((_, i) => i !== index)
+                              setProductForm({ ...productForm, contentServices: updated })
+                            }}
+                            style={{ padding: '8px', background: '#FEE2E2', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#DC2626' }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductForm({
+                            ...productForm,
+                            contentServices: [...productForm.contentServices, { name: '', quantity: 1, details: '' }]
+                          })
+                        }}
+                        style={{ alignSelf: 'flex-start', padding: '6px 12px', background: '#F3F4F6', border: '1px dashed #D1D5DB', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', color: '#4B5563' }}
+                      >
+                        + Add Service
+                      </button>
+                    </div>
+                    <span className="form-hint" style={{ marginTop: '8px', display: 'block' }}>Services are aggregated across products when displayed to clients</span>
+                  </div>
+                )}
+
+                <div className="form-group" style={{ marginTop: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={productForm.includesWebsite}
+                      onChange={(e) => setProductForm({ ...productForm, includesWebsite: e.target.checked })}
+                      style={{ width: '16px', height: '16px', margin: 0, accentColor: '#2D5A27' }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#1f2937' }}>This plan activates the Website page</span>
+                  </label>
+                </div>
+
+                {productForm.includesWebsite && (
+                  <div style={{ marginLeft: '24px', marginTop: '12px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Website Services</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {productForm.websiteServices.map((service, index) => (
+                        <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Service name"
+                            value={service.name}
+                            onChange={(e) => {
+                              const updated = [...productForm.websiteServices]
+                              updated[index] = { ...updated[index], name: e.target.value }
+                              setProductForm({ ...productForm, websiteServices: updated })
+                            }}
+                            style={{ flex: 2 }}
+                          />
+                          <input
+                            type="number"
+                            className="form-control"
+                            placeholder="Qty"
+                            min="1"
+                            value={service.quantity}
+                            onChange={(e) => {
+                              const updated = [...productForm.websiteServices]
+                              updated[index] = { ...updated[index], quantity: parseInt(e.target.value) || 1 }
+                              setProductForm({ ...productForm, websiteServices: updated })
+                            }}
+                            style={{ width: '80px' }}
+                          />
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Details (optional)"
+                            value={service.details || ''}
+                            onChange={(e) => {
+                              const updated = [...productForm.websiteServices]
+                              updated[index] = { ...updated[index], details: e.target.value }
+                              setProductForm({ ...productForm, websiteServices: updated })
+                            }}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = productForm.websiteServices.filter((_, i) => i !== index)
+                              setProductForm({ ...productForm, websiteServices: updated })
+                            }}
+                            style={{ padding: '8px', background: '#FEE2E2', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#DC2626' }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductForm({
+                            ...productForm,
+                            websiteServices: [...productForm.websiteServices, { name: '', quantity: 1, details: '' }]
+                          })
+                        }}
+                        style={{ alignSelf: 'flex-start', padding: '6px 12px', background: '#F3F4F6', border: '1px dashed #D1D5DB', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', color: '#4B5563' }}
+                      >
+                        + Add Service
+                      </button>
+                    </div>
+                    <span className="form-hint" style={{ marginTop: '8px', display: 'block' }}>Services are aggregated across products when displayed to clients</span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -794,6 +794,7 @@ export default function ContentPage() {
           availableContentProducts={availableContentProducts}
           onAddToCart={handleAddToCart}
           onViewContentRequirements={() => setShowContentRequirementsModal(true)}
+          contentServices={client.access.contentServices || []}
         />
       </div>
 

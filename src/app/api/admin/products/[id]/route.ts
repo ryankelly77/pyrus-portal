@@ -66,6 +66,10 @@ export async function PUT(
       stripeOnetimePriceId,
       dependencies,
       sortOrder,
+      includesContent,
+      contentServices,
+      includesWebsite,
+      websiteServices,
     } = body
 
     // Update the product
@@ -84,6 +88,10 @@ export async function PUT(
         stripe_monthly_price_id: stripeMonthlyPriceId || null,
         stripe_onetime_price_id: stripeOnetimePriceId || null,
         sort_order: sortOrder,
+        includes_content: includesContent ?? false,
+        content_services: contentServices || null,
+        includes_website: includesWebsite ?? false,
+        website_services: websiteServices || null,
         updated_at: new Date(),
       },
     })

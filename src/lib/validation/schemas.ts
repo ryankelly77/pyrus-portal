@@ -15,6 +15,13 @@ export const clientCreateSchema = z.object({
 
 export const clientUpdateSchema = clientCreateSchema.partial()
 
+// Service schema for content/website services
+export const serviceSchema = z.object({
+  name: z.string().min(1, "Service name is required"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  details: z.string().optional(),
+})
+
 export const productCreateSchema = z.object({
   name: z.string().min(1).max(255),
   shortDesc: z.string().nullable().optional(),
@@ -29,6 +36,10 @@ export const productCreateSchema = z.object({
   stripeOnetimePriceId: z.string().nullable().optional(),
   dependencies: z.array(z.string()).nullable().optional(),
   sortOrder: z.number().nullable().optional(),
+  includesContent: z.boolean().optional(),
+  contentServices: z.array(serviceSchema).nullable().optional(),
+  includesWebsite: z.boolean().optional(),
+  websiteServices: z.array(serviceSchema).nullable().optional(),
 })
 
 export const bundleCreateSchema = z.object({

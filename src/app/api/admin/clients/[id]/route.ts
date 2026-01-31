@@ -115,6 +115,7 @@ export async function PATCH(
       websiteUrl,
       hostingType,
       hostingProvider,
+      websiteProvider,
       websiteLaunchDate,
       uptimerobotMonitorId,
       // Integration fields
@@ -144,6 +145,7 @@ export async function PATCH(
         ...(websiteUrl !== undefined && { website_url: websiteUrl || null }),
         ...(hostingType !== undefined && { hosting_type: hostingType || null }),
         ...(hostingProvider !== undefined && { hosting_provider: hostingProvider || null }),
+        ...(websiteProvider !== undefined && { website_provider: websiteProvider || null }),
         ...(websiteLaunchDate !== undefined && { website_launch_date: websiteLaunchDate ? new Date(websiteLaunchDate) : null }),
         ...(uptimerobotMonitorId !== undefined && { uptimerobot_monitor_id: uptimerobotMonitorId || null }),
         // Integration fields

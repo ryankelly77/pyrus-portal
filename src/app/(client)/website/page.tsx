@@ -125,6 +125,18 @@ export default function WebsitePage() {
     ? demoState === 'upsell'
     : !isPending && !hasWebsiteProducts
 
+  // Determine upsell variant based on website_provider
+  // State A: No website URL - show full website design upsell
+  // State B: Has URL, provider='other' or null - show "We can manage your site" with care plans
+  // State C: Has URL, provider='pear' - show "Add a Website Care Plan" with care plans
+  const hasExistingWebsite = !!client.websiteUrl
+  const websiteProvider = client.websiteProvider
+  const upsellVariant = !hasExistingWebsite
+    ? 'no-website'
+    : websiteProvider === 'pear'
+    ? 'pear-built'
+    : 'other-built'
+
   const handleAddToCart = (itemId: string) => {
     // If client has an active subscription, show the add modal
     // Otherwise, redirect to checkout for a new subscription
@@ -287,36 +299,73 @@ export default function WebsitePage() {
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
               </svg>
             </div>
-            <h2 className="upsell-title">Get Your Professional Website</h2>
+            <h2 className="upsell-title">
+              {upsellVariant === 'no-website' && 'Get Your Professional Website'}
+              {upsellVariant === 'pear-built' && 'Add a Website Care Plan'}
+              {upsellVariant === 'other-built' && 'We Can Manage Your Existing Site'}
+            </h2>
             <p className="upsell-description">
-              Establish your online presence with a stunning, professional website tailored to your business. Our websites are designed to convert visitors into customers.
+              {upsellVariant === 'no-website' && 'Establish your online presence with a stunning, professional website tailored to your business. Our websites are designed to convert visitors into customers.'}
+              {upsellVariant === 'pear-built' && 'Your Pear-built website needs ongoing care. Add a Website Care Plan for content updates, design changes, and ongoing requests to keep your site running smoothly.'}
+              {upsellVariant === 'other-built' && 'We can help maintain and improve your existing website. Add a Website Care Plan for content updates, design changes, and ongoing support.'}
             </p>
-            <div className="upsell-features">
-              <div className="upsell-feature">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Custom design that reflects your brand</span>
+            {upsellVariant === 'no-website' && (
+              <div className="upsell-features">
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Custom design that reflects your brand</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Mobile-responsive on all devices</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>SEO optimized for better rankings</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Ongoing care and maintenance included</span>
+                </div>
               </div>
-              <div className="upsell-feature">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Mobile-responsive on all devices</span>
+            )}
+            {(upsellVariant === 'pear-built' || upsellVariant === 'other-built') && (
+              <div className="upsell-features">
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Content updates and design changes</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Security updates and backups</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Performance monitoring</span>
+                </div>
+                <div className="upsell-feature">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Ongoing support and requests</span>
+                </div>
               </div>
-              <div className="upsell-feature">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>SEO optimized for better rankings</span>
-              </div>
-              <div className="upsell-feature">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Ongoing care and maintenance included</span>
-              </div>
-            </div>
+            )}
+            {upsellVariant === 'no-website' && (
             <div className="upsell-plans">
               <div className="upsell-plan-card">
                 <div className="plan-card-content">
@@ -426,6 +475,7 @@ export default function WebsitePage() {
                 </button>
               </div>
             </div>
+            )}
 
             {/* Care Plans */}
             <div className="care-plans-section">
@@ -592,7 +642,7 @@ export default function WebsitePage() {
           </div>
         ) : (
           /* Active Website - use shared WebsiteView component */
-          <WebsiteView clientId={client.id} isDemo={isDemo} onAddToCart={handleAddToCart} />
+          <WebsiteView clientId={client.id} isDemo={isDemo} onAddToCart={handleAddToCart} websiteServices={client.access.websiteServices || []} />
         )}
       </div>
 

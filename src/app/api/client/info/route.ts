@@ -4,6 +4,36 @@ import { dbPool } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+// Service interface for content/website services
+interface Service {
+  name: string
+  quantity: number
+  details?: string
+}
+
+// Aggregates services across products, summing quantities by service name
+function aggregateServices(products: any[], serviceField: 'content_services' | 'website_services'): Service[] {
+  const serviceMap = new Map<string, Service>()
+
+  for (const product of products) {
+    const services = product[serviceField]
+    if (!services || !Array.isArray(services)) continue
+
+    for (const service of services) {
+      const existing = serviceMap.get(service.name)
+      if (existing) {
+        // Same service name — sum quantities, keep first details
+        existing.quantity += service.quantity
+      } else {
+        // New service — add to map
+        serviceMap.set(service.name, { ...service })
+      }
+    }
+  }
+
+  return Array.from(serviceMap.values())
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -83,6 +113,7 @@ export async function GET(request: NextRequest) {
         agency_dashboard_share_key,
         landingsite_preview_url,
         website_url,
+        website_provider,
         basecamp_id,
         basecamp_project_id,
         onboarding_completed_at
@@ -99,7 +130,10 @@ export async function GET(request: NextRequest) {
 
     // Fetch active subscription products to determine access
     const subscriptionResult = await dbPool.query(
-      `SELECT DISTINCT p.name, p.category
+      `SELECT DISTINCT
+         p.id, p.name, p.category,
+         p.includes_content, p.content_services,
+         p.includes_website, p.website_services
        FROM subscriptions s
        JOIN subscription_items si ON si.subscription_id = s.id
        JOIN products p ON p.id = si.product_id
@@ -108,10 +142,13 @@ export async function GET(request: NextRequest) {
     )
 
     // Also fetch manually assigned products (handle case where table doesn't exist)
-    let manualProductsResult = { rows: [] as { name: string; category: string }[] }
+    let manualProductsResult = { rows: [] as any[] }
     try {
       manualProductsResult = await dbPool.query(
-        `SELECT DISTINCT p.name, p.category
+        `SELECT DISTINCT
+           p.id, p.name, p.category,
+           p.includes_content, p.content_services,
+           p.includes_website, p.website_services
          FROM client_products cp
          JOIN products p ON p.id = cp.product_id
          WHERE cp.client_id = $1`,
@@ -127,6 +164,9 @@ export async function GET(request: NextRequest) {
     const manualProductNames = manualProductsResult.rows.map((r: { name: string }) => r.name.toLowerCase())
     const activeProducts = Array.from(new Set([...subscriptionProducts, ...manualProductNames]))
 
+    // Combine all active products with full details for flag-based access
+    const allActiveProducts = [...subscriptionResult.rows, ...manualProductsResult.rows]
+
     // Check if admin has manually set the client as active
     // A client is "active" if:
     // 1. They have active subscriptions, OR
@@ -141,17 +181,14 @@ export async function GET(request: NextRequest) {
     const hasActivityAccess = !!client.basecamp_id || !!client.basecamp_project_id
     // Website access: has a website URL configured
     const hasWebsiteAccess = !!client.website_url
-    // Website products: match the same logic as websiteService.ts for data parity
-    const hasWebsiteProducts = activeProducts.some((name: string) =>
-      name.includes('site') ||
-      name.includes('website') ||
-      name.includes('wordpress') ||
-      name.includes('harvest') ||
-      name.includes('care')
-    )
-    const hasContentProducts = activeProducts.some((name: string) =>
-      name.includes('content') || name.includes('ai creative') || name.includes('branding') || name.includes('harvest')
-    )
+
+    // Flag-based product detection (replaces name matching)
+    const hasWebsiteProducts = allActiveProducts.some((p: any) => p.includes_website === true)
+    const hasContentProducts = allActiveProducts.some((p: any) => p.includes_content === true)
+
+    // Aggregate content and website services across all active products
+    const contentServices = aggregateServices(allActiveProducts, 'content_services')
+    const websiteServices = aggregateServices(allActiveProducts, 'website_services')
 
     // Generate initials from name
     const initials = client.name
@@ -181,6 +218,7 @@ export async function GET(request: NextRequest) {
       agencyDashboardKey: client.agency_dashboard_share_key,
       landingsitePreviewUrl: client.landingsite_preview_url,
       websiteUrl: client.website_url,
+      websiteProvider: client.website_provider,
       onboardingCompletedAt: client.onboarding_completed_at,
       // Access flags for sidebar badges
       access: {
@@ -193,6 +231,9 @@ export async function GET(request: NextRequest) {
         // For now, we don't have a separate field to indicate content is active, so use hasActivityAccess as proxy
         hasContent: hasActivityAccess && hasContentProducts,
         hasContentProducts,
+        // Aggregated services for "Your Plan Includes" display
+        contentServices,
+        websiteServices,
       }
     })
   } catch (error) {

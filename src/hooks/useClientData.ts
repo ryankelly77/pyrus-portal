@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react'
 
+export interface Service {
+  name: string
+  quantity: number
+  details?: string
+}
+
 export interface ClientAccess {
   isActive: boolean
   hasResults: boolean
@@ -10,6 +16,8 @@ export interface ClientAccess {
   hasWebsiteProducts: boolean
   hasContent: boolean
   hasContentProducts: boolean
+  contentServices: Service[]
+  websiteServices: Service[]
 }
 
 export interface ClientInfo {
@@ -27,6 +35,7 @@ export interface ClientInfo {
   agencyDashboardKey: string | null
   landingsitePreviewUrl: string | null
   websiteUrl: string | null
+  websiteProvider: string | null
   onboardingCompletedAt: string | null
   access: ClientAccess
 }
@@ -47,6 +56,7 @@ const defaultClient: ClientInfo = {
   agencyDashboardKey: null,
   landingsitePreviewUrl: null,
   websiteUrl: null,
+  websiteProvider: null,
   onboardingCompletedAt: null,
   access: {
     isActive: true,
@@ -56,6 +66,8 @@ const defaultClient: ClientInfo = {
     hasWebsiteProducts: false,
     hasContent: false,
     hasContentProducts: false,
+    contentServices: [],
+    websiteServices: [],
   },
 }
 

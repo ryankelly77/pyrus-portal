@@ -71,6 +71,10 @@ export async function POST(request: NextRequest) {
       stripeOnetimePriceId,
       dependencies,
       sortOrder,
+      includesContent,
+      contentServices,
+      includesWebsite,
+      websiteServices,
     } = (validated as any).data
 
     // Get the max sort_order for the category
@@ -93,6 +97,10 @@ export async function POST(request: NextRequest) {
         stripe_monthly_price_id: stripeMonthlyPriceId || null,
         stripe_onetime_price_id: stripeOnetimePriceId || null,
         sort_order: sortOrder ?? (maxSortOrder._max.sort_order ?? 0) + 1,
+        includes_content: includesContent || false,
+        content_services: contentServices || null,
+        includes_website: includesWebsite || false,
+        website_services: websiteServices || null,
       },
     })
 
