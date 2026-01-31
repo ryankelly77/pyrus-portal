@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { getContentData } from '@/lib/services/contentService'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,33 +13,17 @@ export async function GET(
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
-    const { user, profile } = auth
     const { id: clientId } = await params
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
+    const status = searchParams.get('status') || undefined
 
-    const where: { client_id: string; status?: string } = { client_id: clientId }
-    if (status) {
-      where.status = status
-    }
-
-    const content = await prisma.content.findMany({
-      where,
-      include: {
-        author: {
-          select: { id: true, full_name: true, email: true },
-        },
-        assignee: {
-          select: { id: true, full_name: true, email: true },
-        },
-      },
-      orderBy: [
-        { due_date: 'asc' },
-        { created_at: 'desc' },
-      ],
+    // Get content data using shared service (with assignments for admin)
+    const contentData = await getContentData(clientId, {
+      includeAssignments: true,
+      status,
     })
 
-    return NextResponse.json(content)
+    return NextResponse.json(contentData)
   } catch (error) {
     console.error('Failed to fetch content:', error)
     return NextResponse.json(
