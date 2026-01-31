@@ -513,23 +513,14 @@ export function ContentView({
                 )
               })()
             ) : (
-              // Fallback — static display for client view
-              <>
-                <span className="plan-inline-item">(2) Blog posts</span>
-                <span className="plan-inline-divider">•</span>
-                <span className="plan-inline-item">(2) GBP posts</span>
-                <span className="plan-inline-divider">•</span>
-                <span className="plan-inline-item">(8) Social posts</span>
-                <span className="plan-inline-divider">•</span>
-                <span className="plan-inline-item">(4) AI graphics</span>
-                <span className="plan-inline-suffix">per month</span>
-              </>
+              // Fallback — no subscription data available
+              <span className="plan-inline-item">No content services yet</span>
             )}
           </div>
         </div>
 
-        {/* Upsell buttons — admin only */}
-        {isAdmin && availableContentProducts && availableContentProducts.length > 0 && (
+        {/* Upsell buttons — both roles, different callbacks */}
+        {availableContentProducts && availableContentProducts.length > 0 && (
           <div style={{ display: 'flex', gap: '8px' }}>
             {availableContentProducts.map(product => {
               const isWriting = product.name.toLowerCase().includes('writing')
@@ -549,7 +540,13 @@ export function ContentView({
                   key={product.id}
                   className="btn"
                   style={buttonStyle}
-                  onClick={() => onProductClick?.(product)}
+                  onClick={() => {
+                    if (isAdmin) {
+                      onProductClick?.(product)
+                    } else {
+                      onAddToCart?.(product.id)
+                    }
+                  }}
                 >
                   {isWriting && (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -569,7 +566,7 @@ export function ContentView({
                       <path d="M2 12l10 5 10-5"></path>
                     </svg>
                   )}
-                  Add {product.name.replace('Business ', '').replace(' Assets', '')}
+                  {isAdmin ? `Add ${product.name.replace('Business ', '').replace(' Assets', '')}` : 'Add to my plan'}
                 </button>
               )
             })}

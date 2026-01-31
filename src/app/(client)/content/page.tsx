@@ -26,6 +26,9 @@ export default function ContentPage() {
 
   // State hooks
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [showContentRequirementsModal, setShowContentRequirementsModal] = useState(false)
+  const [subscriptionServices, setSubscriptionServices] = useState<Array<{ id?: string; name: string; quantity: number }>>([])
+  const [availableContentProducts, setAvailableContentProducts] = useState<Array<{ id: string; name: string; short_description?: string | null; monthly_price?: string | null }>>([])
 
   // Add to subscription modal state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -35,7 +38,7 @@ export default function ContentPage() {
   const [addModalError, setAddModalError] = useState<string | null>(null)
   const [nextBillingDate, setNextBillingDate] = useState<string | null>(null)
 
-  // Fetch subscription info to get next billing date
+  // Fetch subscription info to get next billing date and services
   useEffect(() => {
     async function fetchSubscriptionInfo() {
       if (!client.id || isDemo) return
@@ -46,12 +49,33 @@ export default function ContentPage() {
           if (data.subscription?.currentPeriodEnd) {
             setNextBillingDate(data.subscription.currentPeriodEnd)
           }
+          // Set subscription services for ContentView
+          if (data.services) {
+            setSubscriptionServices(data.services)
+          }
         }
       } catch (err) {
         console.error('Error fetching subscription:', err)
       }
     }
     fetchSubscriptionInfo()
+  }, [client.id, isDemo])
+
+  // Fetch available content products for upsell
+  useEffect(() => {
+    async function fetchContentProducts() {
+      if (!client.id || isDemo) return
+      try {
+        const res = await fetch(`/api/client/content-products?clientId=${client.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAvailableContentProducts(data.available || [])
+        }
+      } catch (err) {
+        console.error('Error fetching content products:', err)
+      }
+    }
+    fetchContentProducts()
   }, [client.id, isDemo])
 
   // Demo state from URL params (set by PreviewBanner)
@@ -763,8 +787,78 @@ export default function ContentPage() {
 
       <div className="client-content">
         {/* Active Content - use shared ContentView component */}
-        <ContentView clientId={client.id} isDemo={isDemo} onAddToCart={handleAddToCart} />
+        <ContentView
+          clientId={client.id}
+          isDemo={isDemo}
+          subscriptionServices={subscriptionServices}
+          availableContentProducts={availableContentProducts}
+          onAddToCart={handleAddToCart}
+          onViewContentRequirements={() => setShowContentRequirementsModal(true)}
+        />
       </div>
+
+      {/* Content Requirements Modal */}
+      {showContentRequirementsModal && (
+        <div className="edit-modal-overlay" onClick={() => setShowContentRequirementsModal(false)}>
+          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <div className="modal-icon" style={{ background: '#EDE9FE' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" width="20" height="20">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2>Content Requirements</h2>
+                  <p className="modal-subtitle">What we need from you to create great content</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowContentRequirementsModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Brand Voice & Tone</h4>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                    Share your brand guidelines, preferred tone, and any specific messaging requirements.
+                  </p>
+                </div>
+                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Target Keywords</h4>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                    List the primary keywords and topics you want your content to focus on.
+                  </p>
+                </div>
+                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Competitor References</h4>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                    Share examples of content from competitors or other brands you admire.
+                  </p>
+                </div>
+                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Visual Assets</h4>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                    Provide high-quality images, logos, and any existing brand assets for use in content.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB' }}>
+              <button className="btn btn-primary" onClick={() => setShowContentRequirementsModal(false)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
