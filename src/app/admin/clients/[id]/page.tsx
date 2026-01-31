@@ -576,13 +576,6 @@ export default function ClientDetailPage() {
   const [stripeBillingEmail, setStripeBillingEmail] = useState<string | null>(null)
 
   // Content state
-  const [contentStats, setContentStats] = useState<{
-    urgentReviews: number
-    pendingApproval: number
-    approved: number
-    published: number
-  } | null>(null)
-  const [contentSubtab, setContentSubtab] = useState<'review' | 'files'>('review')
   const [showContentRequirementsModal, setShowContentRequirementsModal] = useState(false)
 
   // Content upsell state
@@ -1204,22 +1197,6 @@ export default function ClientDetailPage() {
       setSavingPrice(false)
     }
   }
-
-  // Fetch content stats
-  useEffect(() => {
-    const fetchContentStats = async () => {
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/content-stats`)
-        if (res.ok) {
-          const data = await res.json()
-          setContentStats(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch content stats:', error)
-      }
-    }
-    fetchContentStats()
-  }, [clientId])
 
   // Fetch available content products for upsell
   useEffect(() => {
@@ -2681,226 +2658,20 @@ export default function ClientDetailPage() {
         {/* ==================== CONTENT TAB ==================== */}
         {activeTab === 'content' && (
           <div className="content-manager-tab">
-            {hasContentProducts && hasActivityAccess ? (
-              /* Active Content - has content products AND Basecamp configured */
-              <ContentView clientId={clientId} isAdmin={true} />
-            ) : hasContentProducts && !hasActivityAccess ? (
-              /* Content Purchased - show active state with placeholder data */
-              <>
-                {/* Content Stats - matching prototype exactly */}
-                <div className="content-stats">
-                  <div className={`content-stat-card ${contentStats?.urgentReviews ? 'urgent' : ''}`}>
-                    <div className="stat-label">Urgent Reviews</div>
-                    <div className="stat-value">{contentStats?.urgentReviews ?? '--'}</div>
-                    <div className="stat-desc">Less than 24 hours</div>
-                  </div>
-                  <div className="content-stat-card">
-                    <div className="stat-label">Pending Approval</div>
-                    <div className="stat-value">{contentStats?.pendingApproval ?? '--'}</div>
-                    <div className="stat-desc">Awaiting your review</div>
-                  </div>
-                  <div className="content-stat-card">
-                    <div className="stat-label">Approved</div>
-                    <div className="stat-value">{contentStats?.approved ?? '--'}</div>
-                    <div className="stat-desc">Ready for publishing</div>
-                  </div>
-                  <div className="content-stat-card">
-                    <div className="stat-label">Published</div>
-                    <div className="stat-value">{contentStats?.published ?? '--'}</div>
-                    <div className="stat-desc">Live content</div>
-                  </div>
-                </div>
-
-                {/* Content Actions Bar - matching prototype */}
-                <div className="content-actions-bar" style={{ justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                    <button className="btn btn-secondary" onClick={() => setShowContentRequirementsModal(true)}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                      </svg>
-                      View Content Requirements
-                    </button>
-                    <div className="content-plan-inline">
-                      <span className="plan-inline-label">Your Plan:</span>
-                      {(() => {
-                        // Use services array from subscriptionService.ts format
-                        const services = ((subscriptions as any)?.services || []) as Array<{ id: string; name: string; quantity: number }>
-                        const contentItems = services.filter(item => {
-                          const name = (item.name || '').toLowerCase()
-                          return contentProducts.some(cp => name.includes(cp))
-                        })
-                        // Combine items with same name and sum quantities
-                        const combinedItems: { name: string; totalQty: number }[] = []
-                        contentItems.forEach(item => {
-                          const name = item.name || ''
-                          const qty = item.quantity || 1
-                          const existing = combinedItems.find(ci => ci.name === name)
-                          if (existing) {
-                            existing.totalQty += qty
-                          } else {
-                            combinedItems.push({ name, totalQty: qty })
-                          }
-                        })
-                        return combinedItems.length > 0 ? (
-                          combinedItems.map((item, index) => {
-                            // Show quantity for Content Writing since it's configurable
-                            const displayName = item.name.toLowerCase().includes('content writing')
-                              ? `(${item.totalQty}) ${item.name}`
-                              : item.name
-                            return (
-                              <span key={item.name}>
-                                {index > 0 && <span className="plan-inline-divider">•</span>}
-                                <span className="plan-inline-item">{displayName}</span>
-                              </span>
-                            )
-                          })
-                        ) : (
-                          <span className="plan-inline-item">No content services yet</span>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                  {/* Upsell buttons for products not purchased - right side */}
-                  {availableContentProducts.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {availableContentProducts.map(product => {
-                        // Determine color and icon based on product
-                        const isWriting = product.name.toLowerCase().includes('writing')
-                        const isCreative = product.name.toLowerCase().includes('creative')
-                        const isBranding = product.name.toLowerCase().includes('branding')
-
-                        const buttonStyle = isWriting
-                          ? { background: '#7C3AED', borderColor: '#7C3AED', color: 'white' }
-                          : isCreative
-                            ? { background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }
-                            : isBranding
-                              ? { background: '#0EA5E9', borderColor: '#0EA5E9', color: 'white' }
-                              : {}
-
-                        return (
-                          <button
-                            key={product.id}
-                            className="btn"
-                            style={buttonStyle}
-                            onClick={() => {
-                              setSelectedProduct(product)
-                              setShowProductModal(true)
-                            }}
-                          >
-                            {isWriting && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                              </svg>
-                            )}
-                            {isCreative && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                              </svg>
-                            )}
-                            {isBranding && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                <path d="M2 17l10 5 10-5"></path>
-                                <path d="M2 12l10 5 10-5"></path>
-                              </svg>
-                            )}
-                            Add {product.name.replace('Business ', '').replace(' Assets', '')}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Content Tabs - matching prototype */}
-                <div className="results-subtabs">
-                  <button
-                    className={`results-subtab ${contentSubtab === 'review' ? 'active' : ''}`}
-                    onClick={() => setContentSubtab('review')}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                    Content Review
-                  </button>
-                  <button
-                    className={`results-subtab ${contentSubtab === 'files' ? 'active' : ''}`}
-                    onClick={() => setContentSubtab('files')}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    Files
-                  </button>
-                </div>
-
-                {/* Content Review Tab */}
-                {contentSubtab === 'review' && (
-                  <>
-                    {/* Content Filters - aligned right */}
-                    <div className="content-filters" style={{ marginBottom: '1rem', justifyContent: 'flex-end' }}>
-                      <button className="btn btn-outline btn-sm">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <circle cx="11" cy="11" r="8"></circle>
-                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        Search
-                      </button>
-                      <button className="btn btn-outline btn-sm">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                          <line x1="16" y1="2" x2="16" y2="6"></line>
-                          <line x1="8" y1="2" x2="8" y2="6"></line>
-                          <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Sort by Date
-                      </button>
-                    </div>
-
-                    {/* Coming Soon Message */}
-                    <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
-                      <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                      </div>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>Content Coming Soon</h3>
-                      <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
-                        Your content team is getting started on your first pieces. You&apos;ll be notified when content is ready for review.
-                      </p>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#DEF7EC', color: '#03543F', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: '500' }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Content service active
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Files Tab */}
-                {contentSubtab === 'files' && (
-                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
-                    <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                      </svg>
-                    </div>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>No Files Yet</h3>
-                    <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
-                      Files from your content team will appear here. This includes brand assets, documents, images, and videos.
-                    </p>
-                  </div>
-                )}
-              </>
+            {hasContentProducts ? (
+              /* Content products purchased - use shared ContentView component */
+              <ContentView
+                clientId={clientId}
+                isAdmin={true}
+                subscriptionServices={(subscriptions as any)?.services || []}
+                availableContentProducts={availableContentProducts}
+                onProductClick={(product) => {
+                  // Cast to local ContentProduct type
+                  setSelectedProduct(product as ContentProduct)
+                  setShowProductModal(true)
+                }}
+                onViewContentRequirements={() => setShowContentRequirementsModal(true)}
+              />
             ) : (
               /* Upsell - no content products purchased */
               <div className="content-upsell-container">

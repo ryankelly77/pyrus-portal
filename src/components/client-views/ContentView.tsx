@@ -3,11 +3,33 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+interface SubscriptionService {
+  id?: string
+  name: string
+  quantity: number
+}
+
+interface ContentProduct {
+  id: string
+  name: string
+  short_description?: string | null
+  long_description?: string | null
+  category?: string
+  monthly_price?: string | null
+  onetime_price?: string | null
+  supports_quantity?: boolean | null
+}
+
 interface ContentViewProps {
   clientId: string
   isAdmin?: boolean
   isDemo?: boolean
   onAddToCart?: (itemId: string) => void
+  // Admin-specific props for data parity
+  subscriptionServices?: SubscriptionService[]
+  availableContentProducts?: ContentProduct[]
+  onProductClick?: (product: ContentProduct) => void
+  onViewContentRequirements?: () => void
 }
 
 interface ContentItem {
@@ -332,7 +354,16 @@ function ContentItemCard({
   )
 }
 
-export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddToCart }: ContentViewProps) {
+export function ContentView({
+  clientId,
+  isAdmin = false,
+  isDemo = false,
+  onAddToCart,
+  subscriptionServices,
+  availableContentProducts,
+  onProductClick,
+  onViewContentRequirements
+}: ContentViewProps) {
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
   const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
   const [loading, setLoading] = useState(true)
@@ -360,7 +391,11 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
       }
 
       try {
-        const res = await fetch(`/api/client/content?clientId=${clientId}`)
+        // Use admin route when isAdmin is true for data parity
+        const apiUrl = isAdmin
+          ? `/api/admin/clients/${clientId}/content`
+          : `/api/client/content?clientId=${clientId}`
+        const res = await fetch(apiUrl)
         if (res.ok) {
           const data = await res.json()
           setContentStats(data.stats)
@@ -373,7 +408,7 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
       }
     }
     fetchContent()
-  }, [clientId, isDemo])
+  }, [clientId, isDemo, isAdmin])
 
   if (loading) {
     return (
@@ -425,9 +460,12 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
       </div>
 
       {/* Content Actions Bar */}
-      {!isAdmin && (
-        <div className="content-actions-bar">
-          <button className="btn btn-secondary">
+      <div className="content-actions-bar" style={isAdmin ? { justifyContent: 'space-between' } : undefined}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={onViewContentRequirements ? onViewContentRequirements : undefined}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
@@ -438,17 +476,106 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
           </button>
           <div className="content-plan-inline">
             <span className="plan-inline-label">Your Plan:</span>
-            <span className="plan-inline-item">(2) Blog posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(2) GBP posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(8) Social posts</span>
-            <span className="plan-inline-divider">•</span>
-            <span className="plan-inline-item">(4) AI graphics</span>
-            <span className="plan-inline-suffix">per month</span>
+            {subscriptionServices && subscriptionServices.length > 0 ? (
+              // Dynamic rendering from subscription data
+              (() => {
+                const contentProductKeywords = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation', 'harvest seo', 'harvest']
+                const contentItems = subscriptionServices.filter(item => {
+                  const name = (item.name || '').toLowerCase()
+                  return contentProductKeywords.some(cp => name.includes(cp))
+                })
+                // Combine items with same name and sum quantities
+                const combinedItems: { name: string; totalQty: number }[] = []
+                contentItems.forEach(item => {
+                  const name = item.name || ''
+                  const qty = item.quantity || 1
+                  const existing = combinedItems.find(ci => ci.name === name)
+                  if (existing) {
+                    existing.totalQty += qty
+                  } else {
+                    combinedItems.push({ name, totalQty: qty })
+                  }
+                })
+                return combinedItems.length > 0 ? (
+                  combinedItems.map((item, index) => {
+                    const displayName = item.name.toLowerCase().includes('content writing')
+                      ? `(${item.totalQty}) ${item.name}`
+                      : item.name
+                    return (
+                      <span key={item.name}>
+                        {index > 0 && <span className="plan-inline-divider">•</span>}
+                        <span className="plan-inline-item">{displayName}</span>
+                      </span>
+                    )
+                  })
+                ) : (
+                  <span className="plan-inline-item">No content services yet</span>
+                )
+              })()
+            ) : (
+              // Fallback — static display for client view
+              <>
+                <span className="plan-inline-item">(2) Blog posts</span>
+                <span className="plan-inline-divider">•</span>
+                <span className="plan-inline-item">(2) GBP posts</span>
+                <span className="plan-inline-divider">•</span>
+                <span className="plan-inline-item">(8) Social posts</span>
+                <span className="plan-inline-divider">•</span>
+                <span className="plan-inline-item">(4) AI graphics</span>
+                <span className="plan-inline-suffix">per month</span>
+              </>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Upsell buttons — admin only */}
+        {isAdmin && availableContentProducts && availableContentProducts.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {availableContentProducts.map(product => {
+              const isWriting = product.name.toLowerCase().includes('writing')
+              const isCreative = product.name.toLowerCase().includes('creative')
+              const isBranding = product.name.toLowerCase().includes('branding')
+
+              const buttonStyle = isWriting
+                ? { background: '#7C3AED', borderColor: '#7C3AED', color: 'white' }
+                : isCreative
+                  ? { background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }
+                  : isBranding
+                    ? { background: '#0EA5E9', borderColor: '#0EA5E9', color: 'white' }
+                    : {}
+
+              return (
+                <button
+                  key={product.id}
+                  className="btn"
+                  style={buttonStyle}
+                  onClick={() => onProductClick?.(product)}
+                >
+                  {isWriting && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                  )}
+                  {isCreative && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  )}
+                  {isBranding && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                  )}
+                  Add {product.name.replace('Business ', '').replace(' Assets', '')}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Content Tabs */}
       <div className="results-subtabs">
@@ -547,10 +674,22 @@ export function ContentView({ clientId, isAdmin = false, isDemo = false, onAddTo
                   <line x1="16" y1="17" x2="8" y2="17"></line>
                 </svg>
               </div>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>No Content Yet</h3>
-              <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
-                Content will appear here once created. Check back soon!
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>
+                {isAdmin ? 'Content Coming Soon' : 'No Content Yet'}
+              </h3>
+              <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto', marginBottom: isAdmin ? '1.5rem' : 0 }}>
+                {isAdmin
+                  ? "Your content team is getting started on your first pieces. You'll be notified when content is ready for review."
+                  : 'Content will appear here once created. Check back soon!'}
               </p>
+              {isAdmin && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#DEF7EC', color: '#03543F', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  Content service active
+                </div>
+              )}
             </div>
           )}
         </>
