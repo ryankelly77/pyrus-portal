@@ -888,6 +888,41 @@ export default function GettingStartedPage() {
         {/* Onboarding Summary Tab Content */}
         <div className={`gs-tab-content ${activeSubtab === 'onboarding-summary' ? 'active' : ''}`} id="onboarding-summary">
           <div className="onboarding-summary">
+            {/* Client Info Section - from onboarding data */}
+            {onboardingData?.client && (
+              <div className="summary-card">
+                <div className="summary-card-header">
+                  <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Client Info
+                  </h3>
+                </div>
+                <div className="summary-card-content">
+                  <div className="summary-field">
+                    <label>Contact Name</label>
+                    <div className={`answer-box ${onboardingData.client.contactName ? 'answered' : 'unanswered'}`}>
+                      {onboardingData.client.contactName || 'Not provided'}
+                    </div>
+                  </div>
+                  <div className="summary-field">
+                    <label>Company</label>
+                    <div className={`answer-box ${onboardingData.client.name ? 'answered' : 'unanswered'}`}>
+                      {onboardingData.client.name || 'Not provided'}
+                    </div>
+                  </div>
+                  <div className="summary-field">
+                    <label>Email</label>
+                    <div className={`answer-box ${onboardingData.client.contactEmail ? 'answered' : 'unanswered'}`}>
+                      {onboardingData.client.contactEmail || 'Not provided'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="summary-loading">Loading onboarding summary...</div>
             ) : Object.keys(summary).length > 0 ? (
