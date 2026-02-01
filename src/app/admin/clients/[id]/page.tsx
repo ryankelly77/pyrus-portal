@@ -603,6 +603,9 @@ export default function ClientDetailPage() {
   }
   const [contentServices, setContentServices] = useState<Service[]>([])
   const [websiteServices, setWebsiteServices] = useState<Service[]>([])
+  // Flags from API based on product includes_content/includes_website fields
+  const [hasContentProductsFromApi, setHasContentProductsFromApi] = useState<boolean | null>(null)
+  const [hasWebsiteProductsFromApi, setHasWebsiteProductsFromApi] = useState<boolean | null>(null)
 
   // Result Alert modal state
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
@@ -1225,7 +1228,7 @@ export default function ClientDetailPage() {
       }
     }
 
-    // Fetch aggregated services from client info API
+    // Fetch aggregated services and product flags from client info API
     const fetchClientServices = async () => {
       try {
         const res = await fetch(`/api/client/info?clientId=${clientId}`)
@@ -1233,6 +1236,8 @@ export default function ClientDetailPage() {
           const data = await res.json()
           setContentServices(data.access?.contentServices || [])
           setWebsiteServices(data.access?.websiteServices || [])
+          setHasContentProductsFromApi(data.access?.hasContentProducts ?? false)
+          setHasWebsiteProductsFromApi(data.access?.hasWebsiteProducts ?? false)
         }
       } catch (error) {
         console.error('Failed to fetch client services:', error)
@@ -1602,15 +1607,21 @@ export default function ClientDetailPage() {
       .filter(Boolean)
   ))
 
-  const websiteProducts = ['bloom site', 'seedling site', 'seed site', 'harvest site', 'website care', 'wordpress care', 'harvest seo', 'harvest']
-  const contentProducts = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation', 'harvest seo', 'harvest']
+  // Use API flags (based on includes_content/includes_website product fields) when available
+  // Fall back to name matching only while API is loading
+  const websiteProductNames = ['bloom site', 'seedling site', 'seed site', 'harvest site', 'website care', 'wordpress care', 'harvest seo', 'harvest']
+  const contentProductNames = ['content writing', 'blog writing', 'social media', 'content marketing', 'ai creative', 'branding foundation', 'harvest seo', 'harvest', 'google business profile', 'gbp']
 
-  const hasWebsiteProducts = activeSubscriptionProducts.some(name =>
-    websiteProducts.some(wp => name.includes(wp))
+  const hasWebsiteProductsByName = activeSubscriptionProducts.some(name =>
+    websiteProductNames.some(wp => name.includes(wp))
   )
-  const hasContentProducts = activeSubscriptionProducts.some(name =>
-    contentProducts.some(cp => name.includes(cp))
+  const hasContentProductsByName = activeSubscriptionProducts.some(name =>
+    contentProductNames.some(cp => name.includes(cp))
   )
+
+  // Prefer API values when loaded, otherwise use name matching as fallback
+  const hasWebsiteProducts = hasWebsiteProductsFromApi !== null ? hasWebsiteProductsFromApi : hasWebsiteProductsByName
+  const hasContentProducts = hasContentProductsFromApi !== null ? hasContentProductsFromApi : hasContentProductsByName
 
   // Recommendation state - determines which template to show
   // Use Stripe subscriptions for accurate active status
