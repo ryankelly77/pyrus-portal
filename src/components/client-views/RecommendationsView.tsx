@@ -55,6 +55,7 @@ interface DBClient {
   contact_email: string | null
   growth_stage: string | null
   status?: string | null
+  start_date?: string | null
 }
 
 interface SubscriptionItem {
@@ -315,9 +316,53 @@ export function RecommendationsView({
     : (dbClient?.status === 'active' || dbClient?.status === 'client')
   const isPending = propIsPending ?? (dbClient?.status === 'pending' || dbClient?.status === 'prospect')
 
+  // Calculate months since client start date
+  const monthsSinceStart = (() => {
+    // Use client's start_date if available (most accurate)
+    if (dbClient?.start_date) {
+      const startDate = new Date(dbClient.start_date)
+      const now = new Date()
+      const months = (now.getFullYear() - startDate.getFullYear()) * 12
+        + (now.getMonth() - startDate.getMonth())
+      return Math.max(1, months + 1)
+    }
+
+    // Fall back to earliest Stripe subscription date
+    const subscriptionDates = stripeSubscriptions
+      .filter(s => s.created)
+      .map(s => new Date(s.created!))
+
+    if (subscriptionDates.length === 0) return 1
+
+    const earliestDate = new Date(Math.min(...subscriptionDates.map(d => d.getTime())))
+    const now = new Date()
+    const months = (now.getFullYear() - earliestDate.getFullYear()) * 12
+      + (now.getMonth() - earliestDate.getMonth())
+
+    return Math.max(1, months + 1)
+  })()
+
+  // Demo data for preview mode
+  const demoDbClient: DBClient = {
+    id: '00000000-0000-0000-0000-000000000001',
+    name: 'Raptor Vending',
+    contact_name: 'John Smith',
+    contact_email: 'john@raptorvendingco.com',
+    growth_stage: 'seedling',
+    status: demoState === 'locked' ? 'pending' : 'active',
+    start_date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago = ~3 months
+  }
+
   // Client-side data fetching
   useEffect(() => {
-    if (isAdmin || isDemo) return // Skip for admin (data passed via props) or demo
+    if (isAdmin) return // Skip for admin (data passed via props)
+
+    // For demo mode, set demo data immediately
+    if (isDemo) {
+      setLocalDbClient(demoDbClient)
+      setLocalLoading(false)
+      return
+    }
 
     async function fetchData() {
       try {
@@ -340,7 +385,7 @@ export function RecommendationsView({
     }
 
     fetchData()
-  }, [clientId, isAdmin, isDemo])
+  }, [clientId, isAdmin, isDemo, demoState])
 
   // Get display name
   const displayName = clientName || dbClient?.name || 'this client'
@@ -375,7 +420,7 @@ export function RecommendationsView({
                 {dbClient?.growth_stage === 'blooming' && 'Blooming'}
                 {dbClient?.growth_stage === 'harvesting' && 'Harvesting'}
                 {!dbClient?.growth_stage && 'Seedling'}
-                <span className="month-badge">Month 1</span>
+                <span className="month-badge">Month {monthsSinceStart}</span>
               </div>
               <div className="stage-description-large">
                 {dbClient?.growth_stage === 'seedling' && (isAdmin

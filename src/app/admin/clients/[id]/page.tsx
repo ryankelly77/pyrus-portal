@@ -94,6 +94,7 @@ interface DBClient {
   referred_by: string | null
   referral_source: string | null
   created_at: string
+  start_date: string | null
   // Integration fields
   agency_dashboard_share_key: string | null
   basecamp_id: string | null
@@ -3879,11 +3880,11 @@ export default function ClientDetailPage() {
                 )}
 
                 {selectedProduct.long_description && (
-                  <div className="product-long-desc" style={{ color: '#4B5563', lineHeight: '1.6' }}>
-                    {selectedProduct.long_description.split('\n').map((para, i) => (
-                      <p key={i} style={{ marginBottom: '1rem' }}>{para}</p>
-                    ))}
-                  </div>
+                  <div
+                    className="product-long-desc"
+                    style={{ color: '#4B5563', lineHeight: '1.6' }}
+                    dangerouslySetInnerHTML={{ __html: selectedProduct.long_description }}
+                  />
                 )}
 
                 {!selectedProduct.long_description && (
