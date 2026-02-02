@@ -6,6 +6,7 @@ import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
+import { WelcomeView } from '@/components/client-views'
 
 type ClientStatus = 'pending' | 'active' | 'inactive' | 'churned'
 
@@ -126,6 +127,7 @@ export default function GettingStartedPage() {
   const [formResponses, setFormResponses] = useState<Record<string, string | string[]>>({})
   const [isSavingForm, setIsSavingForm] = useState(false)
   const [formSaveMessage, setFormSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isSkippingOnboarding, setIsSkippingOnboarding] = useState(false)
 
   // Update client display and status when hook data loads
   useEffect(() => {
@@ -139,6 +141,15 @@ export default function GettingStartedPage() {
       setOnboardingCompletedAt(client.onboardingCompletedAt)
     }
   }, [client])
+
+  // Calculate onboarding status: < 30 days AND no completion timestamp
+  // Use local onboardingCompletedAt state which updates when user clicks "Skip to Dashboard"
+  const clientAgeInDays = client.startDate
+    ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0
+  const isPending = clientStatus === 'pending'
+  const isOnboarding = !isPending && clientAgeInDays < 30 && !onboardingCompletedAt
+  const isEstablished = !isPending && !isOnboarding
 
   // Fetch video chapters
   useEffect(() => {
@@ -292,6 +303,30 @@ export default function GettingStartedPage() {
     }
   }
 
+  // Handle skip to dashboard
+  const handleSkipOnboarding = async () => {
+    const clientId = viewingAs || client.id
+    if (!clientId) return
+
+    setIsSkippingOnboarding(true)
+    try {
+      const url = viewingAs
+        ? `/api/admin/clients/${viewingAs}/onboarding/complete`
+        : '/api/client/onboarding/complete'
+
+      const res = await fetch(url, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        // Update local state to trigger re-render showing WelcomeView
+        setOnboardingCompletedAt(data.completedAt || new Date().toISOString())
+      }
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error)
+    } finally {
+      setIsSkippingOnboarding(false)
+    }
+  }
+
   const checklist = onboardingData?.checklist
   const summary = onboardingData?.onboardingSummary || {}
 
@@ -325,7 +360,7 @@ export default function GettingStartedPage() {
       {/* Top Header Bar */}
       <div className="client-top-header">
         <div className="client-top-header-left">
-          <h1>{clientStatus === 'pending' ? 'Welcome' : 'Getting Started'}</h1>
+          <h1>{isOnboarding ? 'Getting Started' : 'Welcome'}</h1>
         </div>
         <div className="client-top-header-right">
           <Link href="/notifications" className="btn-icon has-notification">
@@ -345,8 +380,10 @@ export default function GettingStartedPage() {
       </div>
 
       <div className="client-content">
-        {/* Pending Client View - Show welcome and recommendation prompt */}
-        {clientStatus === 'pending' ? (
+        {/* Established Client View - Show Welcome dashboard */}
+        {isEstablished ? (
+          <WelcomeView clientId={client.id} isAdmin={!!viewingAs} />
+        ) : isPending ? (
           <div className="pending-client-view">
             {/* Welcome Section */}
             <div className="welcome-hero">
@@ -489,6 +526,27 @@ export default function GettingStartedPage() {
                 </svg>
                 Summary
               </button>
+              <div className="skip-onboarding-container">
+                <button
+                  className="skip-onboarding-btn"
+                  onClick={handleSkipOnboarding}
+                  disabled={isSkippingOnboarding}
+                >
+                  {isSkippingOnboarding ? (
+                    <>
+                      <span className="spinner" style={{ width: 14, height: 14 }}></span>
+                      Skipping...
+                    </>
+                  ) : (
+                    <>
+                      Skip to Dashboard
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Checklist Tab Content */}
@@ -1395,6 +1453,39 @@ export default function GettingStartedPage() {
           font-weight: 600;
           color: #5A6358;
           flex-shrink: 0;
+        }
+
+        /* Skip to Dashboard Button */
+        .skip-onboarding-container {
+          margin-left: auto;
+          display: flex;
+          align-items: center;
+        }
+
+        .skip-onboarding-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: #6B7280;
+          background: transparent;
+          border: 1px solid #E5E7EB;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .skip-onboarding-btn:hover {
+          color: #374151;
+          border-color: #D1D5DB;
+          background: #F9FAFB;
+        }
+
+        .skip-onboarding-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
       `}</style>

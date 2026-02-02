@@ -69,6 +69,12 @@ export function ClientSidebar() {
   // Check if client is pending (prospect with recommendation only)
   const isPending = client.status === 'pending'
 
+  // Calculate onboarding status: < 30 days AND no completion timestamp
+  const clientAgeInDays = client.startDate
+    ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0
+  const isOnboarding = !isPending && clientAgeInDays < 30 && !client.onboardingCompletedAt
+
   // Access flags (only relevant for active clients)
   const { isActive, hasResults, hasActivity, hasWebsite, hasWebsiteProducts, hasContent, hasContentProducts } = client.access
 
@@ -116,7 +122,7 @@ export function ClientSidebar() {
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
           </svg>
-          <span>{isPending ? 'Welcome' : 'Getting Started'}</span>
+          <span>{isOnboarding ? 'Getting Started' : 'Welcome'}</span>
         </Link>
         <Link
           href={buildHref('/results')}

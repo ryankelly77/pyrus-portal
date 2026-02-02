@@ -32,6 +32,7 @@ export interface ClientInfo {
   status: string
   growthStage: string | null
   clientSince: string | null
+  startDate: string | null // Raw ISO date for calculations
   agencyDashboardKey: string | null
   landingsitePreviewUrl: string | null
   websiteUrl: string | null
@@ -53,6 +54,7 @@ const defaultClient: ClientInfo = {
   status: 'active',
   growthStage: null,
   clientSince: null,
+  startDate: null,
   agencyDashboardKey: null,
   landingsitePreviewUrl: null,
   websiteUrl: null,

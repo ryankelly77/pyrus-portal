@@ -215,6 +215,7 @@ export async function GET(request: NextRequest) {
       status: clientStatus,
       growthStage: client.growth_stage,
       clientSince: startDate,
+      startDate: client.start_date ? new Date(client.start_date).toISOString() : null,
       agencyDashboardKey: client.agency_dashboard_share_key,
       landingsitePreviewUrl: client.landingsite_preview_url,
       websiteUrl: client.website_url,
