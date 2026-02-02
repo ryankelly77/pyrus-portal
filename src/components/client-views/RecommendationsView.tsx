@@ -1113,13 +1113,13 @@ export function RecommendationsView({
                           {isClientChoice ? (
                             <div className="add-to-plan-options client">
                               <a
-                                href={`/checkout?product=${item.product_id}&price=monthly`}
+                                href={`/checkout?product=${item.product_id}&price=monthly${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                 className="btn-add-to-plan"
                               >
                                 Add Monthly
                               </a>
                               <a
-                                href={`/checkout?product=${item.product_id}&price=onetime`}
+                                href={`/checkout?product=${item.product_id}&price=onetime${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                 className="btn-add-to-plan secondary"
                               >
                                 Add One-time
@@ -1127,7 +1127,7 @@ export function RecommendationsView({
                             </div>
                           ) : (
                             <a
-                              href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}`}
+                              href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                               className="btn-add-to-plan"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">

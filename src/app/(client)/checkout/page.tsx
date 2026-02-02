@@ -126,6 +126,8 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const itemId = searchParams.get('item')
+  const productId = searchParams.get('product') // Product UUID from smart recommendations
+  const priceOption = searchParams.get('price') // 'monthly' or 'onetime'
   const tier = searchParams.get('tier') // 'good', 'better', or 'best'
   const urlCoupon = searchParams.get('coupon')
   const { client, loading: clientLoading } = useClientData(viewingAs)
@@ -269,8 +271,59 @@ export default function CheckoutPage() {
     }
   }
 
-  // Fetch recommendation items when tier is provided
+  // Fetch recommendation items when tier is provided, or product from smart recommendations
   useEffect(() => {
+    // Handle individual product from smart recommendations
+    if (productId) {
+      const clientId = viewingAs || client.id
+      if (clientLoading || !clientId) {
+        return
+      }
+
+      async function fetchProduct() {
+        try {
+          const res = await fetch(`/api/products/${productId}`)
+          if (res.ok) {
+            const product = await res.json()
+            const monthlyPrice = Number(product.monthly_price || 0)
+            const onetimePrice = Number(product.onetime_price || 0)
+
+            // Determine which price to use based on priceOption
+            let price: number
+            let billingPeriod: 'monthly' | 'one-time'
+            if (priceOption === 'monthly' && monthlyPrice > 0) {
+              price = monthlyPrice
+              billingPeriod = 'monthly'
+            } else if (priceOption === 'onetime' && onetimePrice > 0) {
+              price = onetimePrice
+              billingPeriod = 'one-time'
+            } else {
+              // Default: prefer monthly if available
+              price = monthlyPrice > 0 ? monthlyPrice : onetimePrice
+              billingPeriod = monthlyPrice > 0 ? 'monthly' : 'one-time'
+            }
+
+            const cartItem: CartItem = {
+              id: product.id,
+              name: product.name,
+              description: product.short_description || product.description || '',
+              price,
+              billingPeriod,
+              category: product.category || 'service',
+            }
+            setCartItems([cartItem])
+          }
+        } catch (error) {
+          console.error('Failed to fetch product:', error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+
+      fetchProduct()
+      return
+    }
+
     if (!tier) {
       // Build cart from product catalog for individual items
       if (itemId && productCatalog[itemId]) {
@@ -341,7 +394,7 @@ export default function CheckoutPage() {
     }
 
     fetchRecommendationItems()
-  }, [tier, viewingAs, client.id, itemId, clientLoading])
+  }, [tier, viewingAs, client.id, itemId, productId, priceOption, clientLoading])
 
   // Fetch saved payment methods
   useEffect(() => {
