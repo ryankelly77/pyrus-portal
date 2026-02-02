@@ -18,6 +18,8 @@ export interface ActivityData {
 
 interface ActivityItemProps {
   activity: ActivityData
+  isAdmin?: boolean
+  onDelete?: (id: number | string) => void
 }
 
 function getActivityIcon(type: ActivityType, iconStyle?: { background: string; color: string }, metadata?: { commType?: string; highlightType?: string; [key: string]: unknown }) {
@@ -91,7 +93,7 @@ function getActivityIcon(type: ActivityType, iconStyle?: { background: string; c
   }
 }
 
-export function ActivityItem({ activity }: ActivityItemProps) {
+export function ActivityItem({ activity, isAdmin = false, onDelete }: ActivityItemProps) {
   // Determine if this is a website status alert for special styling
   const isWebsiteStatus = activity.metadata?.commType === 'website_status'
   const isDown = activity.metadata?.highlightType === 'failed'
@@ -105,6 +107,13 @@ export function ActivityItem({ activity }: ActivityItemProps) {
     if (isUp) classNames.push('website-up')
   }
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onDelete && window.confirm('Delete this activity item?')) {
+      onDelete(activity.id)
+    }
+  }
+
   return (
     <li className={classNames.join(' ')} data-type={activity.type}>
       {getActivityIcon(activity.type, activity.iconStyle, activity.metadata)}
@@ -113,6 +122,18 @@ export function ActivityItem({ activity }: ActivityItemProps) {
         <div className="activity-desc">{activity.description}</div>
       </div>
       <div className="activity-time">{activity.time}</div>
+      {isAdmin && onDelete && (
+        <button
+          className="activity-delete-btn"
+          onClick={handleDelete}
+          title="Delete activity"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      )}
     </li>
   )
 }

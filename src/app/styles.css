@@ -978,6 +978,32 @@
             flex-shrink: 0;
         }
 
+        /* Activity delete button (admin only) */
+        .activity-delete-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+            transition: all 0.15s ease;
+        }
+
+        .activity-item:hover .activity-delete-btn {
+            display: flex;
+        }
+
+        .activity-delete-btn:hover {
+            background: var(--error-bg, #fee2e2);
+            color: var(--error, #dc2626);
+        }
+
         /* Website Status Alerts - Prominent styling */
         .activity-item.website-status {
             border-radius: 8px;

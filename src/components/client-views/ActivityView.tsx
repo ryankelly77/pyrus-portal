@@ -110,6 +110,33 @@ export function ActivityView({ clientId, isAdmin = false, isDemo = false, client
   const [hasActivityAccess, setHasActivityAccess] = useState(false)
   const [hasActiveProjects, setHasActiveProjects] = useState(false)
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [deleting, setDeleting] = useState<string | number | null>(null)
+
+  const handleDeleteActivity = async (id: string | number) => {
+    if (isDemo) return
+
+    setDeleting(id)
+    try {
+      const activity = activities.find(a => a.id === id)
+      const res = await fetch(`/api/admin/activity/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: activity?.metadata?.commType ? 'communication' : 'basecamp',
+        }),
+      })
+
+      if (res.ok) {
+        setActivities(prev => prev.filter(a => a.id !== id))
+      } else {
+        console.error('Failed to delete activity')
+      }
+    } catch (err) {
+      console.error('Error deleting activity:', err)
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   useEffect(() => {
     async function fetchActivityData() {
@@ -196,7 +223,12 @@ export function ActivityView({ clientId, isAdmin = false, isDemo = false, client
               <ActivityEmptyState message={activeFilter === 'all' ? 'No activities yet' : `No ${activeFilter} activities`} />
             ) : (
               filteredActivities.map(activity => (
-                <ActivityItem key={activity.id} activity={activity} />
+                <ActivityItem
+                  key={activity.id}
+                  activity={activity}
+                  isAdmin={isAdmin}
+                  onDelete={isAdmin ? handleDeleteActivity : undefined}
+                />
               ))
             )}
           </ul>
