@@ -280,7 +280,7 @@ export default function CheckoutPage() {
         return
       }
 
-      async function fetchProduct() {
+      const fetchProduct = async () => {
         try {
           const res = await fetch(`/api/products/${productId}`)
           if (res.ok) {

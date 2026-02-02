@@ -280,7 +280,10 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                         Learn More
                       </button>
                     )}
-                    <Link href={buildHref('/recommendations')} className="btn btn-sm rec-add-btn">
+                    <Link
+                      href={`/checkout?product=${rec.productId}&price=${rec.priceOption || (rec.monthlyPrice && rec.monthlyPrice > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                      className="btn btn-sm rec-add-btn"
+                    >
                       Add to Plan
                     </Link>
                   </div>
@@ -513,7 +516,10 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                   <span>{formatCurrency(selectedProduct.onetimePrice)} one-time</span>
                 ) : null}
               </div>
-              <Link href={buildHref('/recommendations')} className="btn btn-primary">
+              <Link
+                href={`/checkout?product=${selectedProduct.productId}&price=${selectedProduct.priceOption || (selectedProduct.monthlyPrice && selectedProduct.monthlyPrice > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                className="btn btn-primary"
+              >
                 Add to Plan
               </Link>
             </div>
