@@ -18,7 +18,6 @@ export async function GET(
         long_description: true,
         monthly_price: true,
         onetime_price: true,
-        stripe_price_id: true,
         stripe_product_id: true,
       },
     })
@@ -35,7 +34,6 @@ export async function GET(
       description: product.long_description,
       monthly_price: product.monthly_price ? Number(product.monthly_price) : null,
       onetime_price: product.onetime_price ? Number(product.onetime_price) : null,
-      stripe_price_id: product.stripe_price_id,
       stripe_product_id: product.stripe_product_id,
     })
   } catch (error) {
