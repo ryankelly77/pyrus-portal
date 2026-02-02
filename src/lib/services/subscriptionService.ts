@@ -193,24 +193,26 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
           })
         )
 
-        // Get period dates and discount amounts from latest invoice
+        // Get period dates from subscription items (current_period_end = next billing date)
         const latestInvoice = stripeSub.latest_invoice
         let periodStart: string | null = null
         let periodEnd: string | null = null
         let totalDiscountFromInvoice = 0
         let invoiceTotal = 0
 
+        // Period dates are on subscription items, not the subscription itself
+        const firstItem = stripeSub.items?.data?.[0]
+        if (firstItem?.current_period_start) {
+          periodStart = new Date(firstItem.current_period_start * 1000).toISOString()
+        }
+        if (firstItem?.current_period_end) {
+          periodEnd = new Date(firstItem.current_period_end * 1000).toISOString()
+        }
+
         // Map of subscription item ID to discount amount from invoice
         const itemDiscountMap = new Map<string, number>()
 
         if (latestInvoice && typeof latestInvoice !== 'string') {
-          periodStart = latestInvoice.period_start
-            ? new Date(latestInvoice.period_start * 1000).toISOString()
-            : null
-          periodEnd = latestInvoice.period_end
-            ? new Date(latestInvoice.period_end * 1000).toISOString()
-            : null
-
           // Get actual total from invoice (already accounts for discounts)
           invoiceTotal = (latestInvoice.total || 0) / 100
 

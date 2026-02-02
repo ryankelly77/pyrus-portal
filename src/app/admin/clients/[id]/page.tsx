@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 import { CommunicationItem, formatTimelineDate } from '@/components'
-import { ContentView, ResultsView, WebsiteView, ActivityView, RecommendationsView, CommunicationView } from '@/components/client-views'
+import { ContentView, ResultsView, WebsiteView, ActivityView, RecommendationsView, CommunicationView, WelcomeView } from '@/components/client-views'
 
 // Helper to generate initials from name (same as Clients page)
 function getInitials(name: string): string {
@@ -1644,8 +1644,14 @@ export default function ClientDetailPage() {
   const hasContentProducts = hasContentProductsFromApi !== null ? hasContentProductsFromApi : hasContentProductsByName
 
   // Recommendation state - determines which template to show
-  // Use Stripe subscriptions for accurate active status
-  const hasActiveSubscriptions = stripeSubscriptions.some(s => s.status === 'active' && s.items.length > 0)
+  // Match client portal logic: check database status field, with Stripe as fallback
+  const hasActiveSubscriptions = dbClient?.status !== 'pending' || stripeSubscriptions.some(s => s.status === 'active' && s.items.length > 0)
+
+  // Determine if client is still in onboarding phase (< 30 days since start and not completed)
+  const isOnboarding = dbClient?.start_date
+    ? (Math.floor((Date.now() - new Date(dbClient.start_date).getTime()) / (1000 * 60 * 60 * 24)) < 30 && !dbClient.onboarding_completed_at)
+    : !dbClient?.onboarding_completed_at
+  const isEstablished = hasActiveSubscriptions && !isOnboarding
   const activeStripeSubscriptions = stripeSubscriptions.filter(s => s.status === 'active' && s.items.length > 0)
   const firstPurchaseDate = activeStripeSubscriptions.length > 0
     ? activeStripeSubscriptions.reduce((oldest, sub) =>
@@ -1963,7 +1969,7 @@ export default function ClientDetailPage() {
         {/* Tab Navigation */}
         <div className="tab-nav">
           <button className={`tab-btn ${activeTab === 'getting-started' ? 'active' : ''}`} onClick={() => setActiveTab('getting-started')}>
-            {hasActiveSubscriptions ? 'Getting Started' : 'Welcome'}
+            {!hasActiveSubscriptions ? 'Welcome' : isOnboarding ? 'Getting Started' : 'Welcome'}
           </button>
           <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>
             Results
@@ -2106,9 +2112,12 @@ export default function ClientDetailPage() {
                   </div>
                 </div>
               </div>
+            ) : isEstablished ? (
+              /* Established Client Welcome Dashboard */
+              <WelcomeView clientId={clientId} isAdmin={true} />
             ) : (
               <>
-            {/* Getting Started Sub-tabs */}
+            {/* Getting Started Sub-tabs - for onboarding clients */}
             <div className="getting-started-subtabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button

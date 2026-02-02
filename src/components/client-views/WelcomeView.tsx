@@ -1,9 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ActivityItem, ActivityEmptyState, ActivityLoadingState } from '@/components'
 import type { ActivityData } from '@/components'
 import './WelcomeView.css'
+
+// Growth stage icons and colors (matching admin dashboard)
+type GrowthStage = 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
+const growthStageConfig: Record<GrowthStage, { icon: string; color: string; bg: string; label: string }> = {
+  prospect: { icon: '○', color: '#6B7280', bg: '#F3F4F6', label: 'Prospect' },
+  seedling: { icon: '🌱', color: '#D97706', bg: '#FEF3C7', label: 'Seedling' },
+  sprouting: { icon: '🌿', color: '#059669', bg: '#D1FAE5', label: 'Sprouting' },
+  blooming: { icon: '🌸', color: '#2563EB', bg: '#DBEAFE', label: 'Blooming' },
+  harvesting: { icon: '🌾', color: '#7C3AED', bg: '#EDE9FE', label: 'Harvesting' },
+}
 
 interface WelcomeViewProps {
   clientId: string
@@ -15,6 +27,7 @@ interface ResultAlert {
   type: string
   message: string
   createdAt: string
+  isDismissed: boolean
 }
 
 interface Recommendation {
@@ -22,6 +35,7 @@ interface Recommendation {
   productId: string
   productName: string
   description: string | null
+  longDescription: string | null
   whyNote: string | null
   isFeatured: boolean
   priceOption: string | null
@@ -53,6 +67,9 @@ interface WelcomeData {
   isOnboarding: boolean
   clientAge: number
   companyName: string
+  contactFirstName: string | null
+  growthStage: string | null
+  monthNumber: number
   recentActivity: ActivityData[]
   resultAlerts: ResultAlert[]
   billing: BillingSummary | null
@@ -61,9 +78,50 @@ interface WelcomeData {
 }
 
 export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
   const [data, setData] = useState<WelcomeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Recommendation | null>(null)
+  const [onboardingSummary, setOnboardingSummary] = useState<Record<string, Array<{id: string, question: string, answer: string | string[] | null}>> | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+
+  // Helper to build href with viewingAs param preserved
+  const buildHref = (path: string) => {
+    if (viewingAs) {
+      return `${path}?viewingAs=${viewingAs}`
+    }
+    return path
+  }
+
+  // Fetch onboarding summary when archive is opened
+  const handleArchiveToggle = async (isOpen: boolean) => {
+    if (isOpen && !onboardingSummary && !summaryLoading) {
+      setSummaryLoading(true)
+      try {
+        const url = isAdmin
+          ? `/api/client/onboarding?clientId=${clientId}`
+          : `/api/client/onboarding?clientId=${clientId}`
+        const res = await fetch(url)
+        if (res.ok) {
+          const data = await res.json()
+          setOnboardingSummary(data.onboardingSummary || {})
+        }
+      } catch (err) {
+        console.error('Failed to fetch onboarding summary:', err)
+      } finally {
+        setSummaryLoading(false)
+      }
+    }
+  }
+
+  // Format answer for display
+  const formatAnswer = (answer: string | string[] | null): string => {
+    if (!answer) return 'Not answered'
+    if (Array.isArray(answer)) return answer.join(', ')
+    return answer
+  }
 
   useEffect(() => {
     async function fetchWelcomeData() {
@@ -144,8 +202,37 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
       {/* Header */}
       <div className="welcome-header">
         <div className="welcome-greeting">
-          <h2>Welcome Back{data.companyName ? `, ${data.companyName}` : ''}</h2>
+          <h2>Welcome Back{data.contactFirstName ? `, ${data.contactFirstName}` : ''}</h2>
           <p className="welcome-subtitle">Your account at a glance</p>
+        </div>
+        <div className="welcome-stats">
+          {data.growthStage && (
+            <div className="welcome-stat">
+              <span className="stat-label">Growth Stage</span>
+              {(() => {
+                const stageKey = data.growthStage.toLowerCase() as GrowthStage
+                const config = growthStageConfig[stageKey]
+                return (
+                  <span className="stat-value stage-badge">
+                    <span
+                      className="stage-icon"
+                      style={{
+                        background: config?.bg || '#F3F4F6',
+                        color: config?.color || '#6B7280',
+                      }}
+                    >
+                      {config?.icon || '○'}
+                    </span>
+                    {config?.label || data.growthStage}
+                  </span>
+                )
+              })()}
+            </div>
+          )}
+          <div className="welcome-stat">
+            <span className="stat-label">Pyrus Client For</span>
+            <span className="stat-value">{data.monthNumber} {data.monthNumber === 1 ? 'month' : 'months'}</span>
+          </div>
         </div>
       </div>
 
@@ -175,23 +262,43 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                   </p>
                 )}
                 <div className="rec-footer">
-                  {rec.monthlyPrice !== null && (
-                    <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo</span>
-                  )}
-                  {rec.onetimePrice !== null && rec.monthlyPrice === null && (
-                    <span className="rec-price">{formatCurrency(rec.onetimePrice)} one-time</span>
-                  )}
+                  <div className="rec-price-row">
+                    {rec.monthlyPrice !== null && rec.monthlyPrice > 0 && rec.onetimePrice !== null && rec.onetimePrice > 0 ? (
+                      <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo for 12 months</span>
+                    ) : rec.monthlyPrice !== null && rec.monthlyPrice > 0 ? (
+                      <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo</span>
+                    ) : rec.onetimePrice !== null && rec.onetimePrice > 0 ? (
+                      <span className="rec-price">{formatCurrency(rec.onetimePrice)} one-time</span>
+                    ) : null}
+                  </div>
+                  <div className="rec-btn-group">
+                    {rec.longDescription && (
+                      <button
+                        className="btn btn-sm btn-outline rec-learn-btn"
+                        onClick={() => setSelectedProduct(rec)}
+                      >
+                        Learn More
+                      </button>
+                    )}
+                    <Link href={buildHref('/recommendations')} className="btn btn-sm rec-add-btn">
+                      Add to Plan
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-          {data.recommendations.length > 4 && (
-            <div className="section-footer">
-              <a href="#recommendations" className="view-all-link">
-                View all {data.recommendations.length} recommendations
-              </a>
-            </div>
-          )}
+          <div className="section-footer">
+            <Link href={buildHref('/recommendations')} className="view-all-link">
+              {data.recommendations.length > 4
+                ? `View all ${data.recommendations.length} recommendations`
+                : 'Go to Smart Recommendations'
+              }
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="welcome-section recommendations-hero empty">
@@ -235,7 +342,7 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
             )}
           </div>
           <div className="column-footer">
-            <a href="#activity" className="view-all-link">View All Activity</a>
+            <Link href={buildHref('/activity')} className="view-all-link">View All Activity</Link>
           </div>
         </div>
 
@@ -254,15 +361,21 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                 {data.resultAlerts.map((alert) => {
                   const style = getAlertTypeStyle(alert.type)
                   return (
-                    <li key={alert.id} className="alert-item-mini">
+                    <li key={alert.id} className={`alert-item-mini ${alert.isDismissed ? 'dismissed' : ''}`}>
                       <div className="alert-icon-mini" style={style}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                        </svg>
+                        {alert.isDismissed ? (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                          </svg>
+                        )}
                       </div>
                       <div className="alert-content-mini">
                         <span className="alert-message">{alert.message}</span>
-                        <span className="alert-date">{formatDate(alert.createdAt)}</span>
+                        <span className="alert-date">{formatDate(alert.createdAt)}{alert.isDismissed && ' • Acknowledged'}</span>
                       </div>
                     </li>
                   )
@@ -273,7 +386,7 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
             )}
           </div>
           <div className="column-footer">
-            <a href="#results" className="view-all-link">View Results</a>
+            <Link href={buildHref('/results')} className="view-all-link">View Results</Link>
           </div>
         </div>
 
@@ -319,14 +432,14 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
             )}
           </div>
           <div className="column-footer">
-            <a href="#subscription" className="view-all-link">Manage Subscription</a>
+            <Link href={buildHref('/settings')} className="view-all-link">Manage Subscription</Link>
           </div>
         </div>
       </div>
 
-      {/* Onboarding Archive Link */}
+      {/* Onboarding Archive */}
       <div className="onboarding-archive">
-        <details>
+        <details onToggle={(e) => handleArchiveToggle((e.target as HTMLDetailsElement).open)}>
           <summary>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -334,16 +447,79 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
               <line x1="16" y1="13" x2="8" y2="13"></line>
               <line x1="16" y1="17" x2="8" y2="17"></line>
             </svg>
-            View your onboarding responses and checklist
+            View your onboarding responses
           </summary>
           <div className="archive-content">
-            <p>Your original onboarding information is preserved for reference.</p>
-            <a href="#getting-started" className="btn btn-outline btn-sm">
-              View Onboarding Archive
-            </a>
+            {summaryLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem' }}>
+                <div className="spinner" style={{ width: 24, height: 24 }} />
+              </div>
+            ) : onboardingSummary && Object.keys(onboardingSummary).length > 0 ? (
+              <div className="archive-summary">
+                {Object.entries(onboardingSummary).map(([section, responses]) => (
+                  <div key={section} className="archive-section">
+                    <h4>{section}</h4>
+                    <div className="archive-responses">
+                      {responses.map((r) => (
+                        <div key={r.id} className="archive-response">
+                          <span className="archive-question">{r.question}</span>
+                          <span className="archive-answer">{formatAnswer(r.answer)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : onboardingSummary ? (
+              <p className="archive-empty">No onboarding responses recorded.</p>
+            ) : null}
           </div>
         </details>
       </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <div className="product-modal-overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="product-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="product-modal-header">
+              <h3>{selectedProduct.productName}</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedProduct(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="product-modal-body">
+              {selectedProduct.longDescription && (
+                <div
+                  className="product-long-description"
+                  dangerouslySetInnerHTML={{ __html: selectedProduct.longDescription }}
+                />
+              )}
+              {selectedProduct.whyNote && (
+                <div className="product-why-note">
+                  <strong>Why we recommend this:</strong> {selectedProduct.whyNote}
+                </div>
+              )}
+            </div>
+            <div className="product-modal-footer">
+              <div className="modal-price">
+                {selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 && selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
+                  <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo for 12 months</span>
+                ) : selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 ? (
+                  <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo</span>
+                ) : selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
+                  <span>{formatCurrency(selectedProduct.onetimePrice)} one-time</span>
+                ) : null}
+              </div>
+              <Link href={buildHref('/recommendations')} className="btn btn-primary">
+                Add to Plan
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

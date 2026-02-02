@@ -30,9 +30,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       `SELECT
         id,
         name,
+        contact_name,
         start_date,
         created_at,
-        onboarding_completed_at
+        onboarding_completed_at,
+        growth_stage
       FROM clients
       WHERE id = $1`,
       [clientId]
@@ -43,6 +45,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const client = clientResult.rows[0]
+
+    // Extract first name from contact_name
+    const contactFirstName = client.contact_name
+      ? client.contact_name.split(' ')[0]
+      : null
+
+    // Calculate month number (1-indexed)
+    const startDate = client.start_date ? new Date(client.start_date) : new Date(client.created_at)
+    const monthsActive = Math.max(1, Math.ceil((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)))
 
     // Calculate onboarding status using start_date (Stripe signup) or created_at
     const clientStartDate = client.start_date
@@ -58,7 +69,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({
         isOnboarding: true,
         clientAge: clientAgeInDays,
-        companyName: client.name
+        companyName: client.name,
+        contactFirstName,
+        growthStage: client.growth_stage,
+        monthNumber: monthsActive
       })
     }
 
@@ -76,14 +90,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         return null
       }),
 
-      // Result alerts (published, not dismissed)
+      // Result alerts from client_communications table
       dbPool.query(
-        `SELECT id, message, alert_type, published_at, created_at
-         FROM client_alerts
+        `SELECT id, title, body, highlight_type, sent_at, created_at
+         FROM client_communications
          WHERE client_id = $1
-           AND status = 'published'
-           AND dismissed_at IS NULL
-         ORDER BY published_at DESC NULLS LAST, created_at DESC
+           AND comm_type = 'result_alert'
+         ORDER BY sent_at DESC NULLS LAST, created_at DESC
          LIMIT 5`,
         [clientId]
       ).catch(err => {
@@ -104,6 +117,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
            p.id as product_id,
            p.name as product_name,
            p.short_description,
+           p.long_description,
            p.monthly_price,
            p.onetime_price
          FROM smart_recommendations sr
@@ -129,12 +143,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       status: subscriptionResult.subscription?.status || 'unknown'
     } : null
 
-    // Format alerts
+    // Format alerts from client_communications
     const resultAlerts = alertsResult.rows.map((alert: any) => ({
       id: alert.id,
-      type: alert.alert_type,
-      message: alert.message,
-      createdAt: alert.published_at || alert.created_at
+      type: alert.highlight_type || 'milestone',
+      message: alert.title,
+      createdAt: alert.sent_at || alert.created_at,
+      isDismissed: false
     }))
 
     // Format recommendations
@@ -143,6 +158,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       productId: rec.product_id,
       productName: rec.product_name,
       description: rec.short_description,
+      longDescription: rec.long_description,
       whyNote: rec.why_note,
       isFeatured: rec.is_featured,
       priceOption: rec.price_option,
@@ -155,6 +171,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isOnboarding: false,
       clientAge: clientAgeInDays,
       companyName: client.name,
+      contactFirstName,
+      growthStage: client.growth_stage,
+      monthNumber: monthsActive,
       recentActivity: activityResult || [],
       resultAlerts,
       billing,
