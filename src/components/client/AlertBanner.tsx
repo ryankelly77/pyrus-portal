@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 interface Alert {
   id: string
@@ -46,14 +47,29 @@ function formatDate(dateStr: string | null): string {
 }
 
 export function AlertBanner() {
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const [dismissing, setDismissing] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure we're on the client before fetching
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
+    // Wait for client-side mount to ensure searchParams are hydrated
+    if (!mounted) return
+
     async function fetchAlerts() {
       try {
-        const res = await fetch('/api/client/alerts')
+        // Use admin endpoint if viewing as another client
+        const url = viewingAs
+          ? `/api/admin/clients/${viewingAs}/alerts`
+          : '/api/client/alerts'
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           setAlerts(data.alerts || [])
@@ -65,12 +81,34 @@ export function AlertBanner() {
       }
     }
     fetchAlerts()
-  }, [])
+  }, [viewingAs, mounted])
+
+  // Log alert view to activity feed when alert is displayed
+  useEffect(() => {
+    if (loading || alerts.length === 0) return
+
+    const alert = alerts[0]
+    const logView = async () => {
+      try {
+        const url = viewingAs
+          ? `/api/client/alerts/${alert.id}/view?clientId=${viewingAs}`
+          : `/api/client/alerts/${alert.id}/view`
+        await fetch(url, { method: 'POST' })
+      } catch (error) {
+        // Silent fail - logging is non-critical
+        console.error('Failed to log alert view:', error)
+      }
+    }
+    logView()
+  }, [loading, alerts, viewingAs])
 
   const dismissAlert = async (alertId: string) => {
     try {
       setDismissing(alertId)
-      const res = await fetch(`/api/client/alerts/${alertId}/dismiss`, {
+      const url = viewingAs
+        ? `/api/client/alerts/${alertId}/dismiss?clientId=${viewingAs}`
+        : `/api/client/alerts/${alertId}/dismiss`
+      const res = await fetch(url, {
         method: 'POST',
       })
       if (res.ok) {

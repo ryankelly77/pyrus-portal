@@ -28,14 +28,45 @@ async function getClientAndUser(): Promise<{ clientId: string; userId: string } 
 }
 
 // POST /api/client/alerts/[alertId]/dismiss - Client dismiss alert
+// Supports ?clientId= query param for admin viewing as client
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ alertId: string }> }
 ) {
   try {
-    const result = await getClientAndUser()
-    if (result instanceof NextResponse) return result
-    const { clientId, userId } = result
+    const { searchParams } = new URL(request.url)
+    const viewingAsClientId = searchParams.get('clientId')
+
+    let clientId: string
+    let userId: string
+
+    if (viewingAsClientId) {
+      // Admin viewing as client - verify admin role
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+
+      const profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      })
+
+      if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+
+      clientId = viewingAsClientId
+      userId = user.id
+    } else {
+      // Regular client user
+      const result = await getClientAndUser()
+      if (result instanceof NextResponse) return result
+      clientId = result.clientId
+      userId = result.userId
+    }
 
     const { alertId } = await params
 
@@ -80,11 +111,13 @@ export async function POST(
         client_id: clientId,
         user_id: userId,
         activity_type: 'alert_dismissed',
-        description: 'Client dismissed performance alert',
+        description: viewingAsClientId
+          ? 'Admin dismissed alert while viewing as client'
+          : 'Client dismissed performance alert',
         metadata: {
           alert_id: alert.id,
           alert_type: alert.alert_type,
-          dismissed_by: 'client',
+          dismissed_by: viewingAsClientId ? 'admin' : 'client',
         },
       },
     })

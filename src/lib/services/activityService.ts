@@ -83,11 +83,11 @@ export async function getClientActivity(
     take: limit,
   })
 
-  // Fetch communications (website status alerts, result alerts)
+  // Fetch communications (website status alerts, result alerts, client alerts)
   const communications = await prisma.client_communications.findMany({
     where: {
       client_id: clientId,
-      comm_type: { in: ['website_status', 'result_alert'] },
+      comm_type: { in: ['website_status', 'result_alert', 'client_alert'] },
     },
     orderBy: [{ sent_at: 'desc' }, { created_at: 'desc' }],
     take: 50,

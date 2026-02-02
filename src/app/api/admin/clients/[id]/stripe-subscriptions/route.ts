@@ -201,6 +201,123 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// PUT /api/admin/clients/[id]/stripe-subscriptions - Add a product to the client's Stripe subscription
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const auth = await requireAdmin()
+    if ((auth as any)?.user === undefined) return auth as any
+    const { id: clientId } = await params
+    const body = await request.json()
+    const { product_id, price_id } = body
+
+    if (!product_id) {
+      return NextResponse.json({ error: 'product_id is required' }, { status: 400 })
+    }
+
+    // Get client to find stripe_customer_id
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: {
+        id: true,
+        name: true,
+        stripe_customer_id: true,
+      },
+    })
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    if (!client.stripe_customer_id) {
+      return NextResponse.json({
+        error: 'No Stripe customer ID linked to this client. Please set up billing first.',
+      }, { status: 400 })
+    }
+
+    // Get the product to find its Stripe price ID
+    const product = await prisma.products.findUnique({
+      where: { id: product_id },
+      select: {
+        id: true,
+        name: true,
+        stripe_product_id: true,
+        stripe_monthly_price_id: true,
+        stripe_onetime_price_id: true,
+        monthly_price: true,
+        onetime_price: true,
+      },
+    })
+
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
+    // Determine which price to use
+    const stripePriceId = price_id || product.stripe_monthly_price_id || product.stripe_onetime_price_id
+
+    if (!stripePriceId) {
+      return NextResponse.json({
+        error: 'Product does not have a Stripe price configured',
+      }, { status: 400 })
+    }
+
+    // Get the client's active subscription
+    const subscriptionsResponse = await stripe.subscriptions.list({
+      customer: client.stripe_customer_id,
+      status: 'active',
+      limit: 1,
+    })
+
+    if (subscriptionsResponse.data.length === 0) {
+      return NextResponse.json({
+        error: 'Client does not have an active subscription. Please create a subscription first.',
+      }, { status: 400 })
+    }
+
+    const subscription = subscriptionsResponse.data[0]
+
+    // Check if product is already in the subscription
+    const existingItem = subscription.items.data.find(item => {
+      const itemProductId = typeof item.price.product === 'string'
+        ? item.price.product
+        : (item.price.product as any)?.id
+      return itemProductId === product.stripe_product_id
+    })
+
+    if (existingItem) {
+      return NextResponse.json({
+        error: 'Product is already in the subscription',
+      }, { status: 400 })
+    }
+
+    // Add the item to the subscription
+    const subscriptionItem = await stripe.subscriptionItems.create({
+      subscription: subscription.id,
+      price: stripePriceId,
+      quantity: 1,
+      proration_behavior: 'create_prorations',
+    })
+
+    // Sync the updated subscription to local DB
+    await syncStripeSubscriptions(clientId, client.stripe_customer_id)
+
+    return NextResponse.json({
+      success: true,
+      message: `${product.name} has been added to the subscription`,
+      subscriptionItem: {
+        id: subscriptionItem.id,
+        priceId: subscriptionItem.price.id,
+      },
+    })
+  } catch (error: any) {
+    console.error('Failed to add product to subscription:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to add product to subscription' },
+      { status: 500 }
+    )
+  }
+}
+
 // POST /api/admin/clients/[id]/stripe-subscriptions - Sync subscriptions from Stripe to local DB
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {

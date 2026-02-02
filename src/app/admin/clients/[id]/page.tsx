@@ -536,6 +536,9 @@ export default function ClientDetailPage() {
   const [editingPriceValue, setEditingPriceValue] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
 
+  // Smart recommendations count for tab badge
+  const [smartRecommendationsCount, setSmartRecommendationsCount] = useState(0)
+
   // Basecamp activities state
   interface BasecampActivity {
     id: string
@@ -912,6 +915,22 @@ export default function ClientDetailPage() {
       }
     }
     fetchChecklist()
+  }, [clientId])
+
+  // Fetch smart recommendations count for tab badge
+  useEffect(() => {
+    const fetchSmartRecsCount = async () => {
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations`)
+        if (res.ok) {
+          const data = await res.json()
+          setSmartRecommendationsCount(data.recommendation?.items?.length || 0)
+        }
+      } catch (error) {
+        console.error('Failed to fetch smart recommendations count:', error)
+      }
+    }
+    fetchSmartRecsCount()
   }, [clientId])
 
   // Fetch payment methods
@@ -1970,6 +1989,9 @@ export default function ClientDetailPage() {
           </button>
           <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>
             Recommendations
+            {smartRecommendationsCount > 0 && (
+              <span className={`tab-badge count${activeTab === 'recommendations' ? ' active' : ''}`}>{smartRecommendationsCount}</span>
+            )}
           </button>
           <button className={`tab-btn ${activeTab === 'communication' ? 'active' : ''}`} onClick={() => setActiveTab('communication')}>
             Communication

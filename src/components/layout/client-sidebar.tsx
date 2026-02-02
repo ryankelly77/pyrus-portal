@@ -4,12 +4,40 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
+import { useState, useEffect } from 'react'
 
 export function ClientSidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
   const { client, loading } = useClientData(viewingAs)
+  const [smartRecsCount, setSmartRecsCount] = useState(0)
+
+  // Fetch smart recommendations count
+  useEffect(() => {
+    const fetchSmartRecsCount = async () => {
+      try {
+        const url = viewingAs
+          ? `/api/admin/clients/${viewingAs}/smart-recommendations`
+          : '/api/client/smart-recommendations'
+        const res = await fetch(url)
+        if (res.ok) {
+          const data = await res.json()
+          // Check if published (for client view) or any items (for admin viewing as client)
+          if (viewingAs) {
+            setSmartRecsCount(data.recommendation?.items?.length || 0)
+          } else {
+            setSmartRecsCount(data.items?.length || 0)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch smart recommendations count:', error)
+      }
+    }
+    if (!loading) {
+      fetchSmartRecsCount()
+    }
+  }, [viewingAs, loading])
 
   // Show minimal skeleton while loading to prevent flash
   if (loading) {
@@ -153,6 +181,9 @@ export function ClientSidebar() {
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
           <span>Recommendations</span>
+          {smartRecsCount > 0 && (
+            <span className={`nav-badge count${pathname === '/recommendations' ? ' active' : ''}`}>{smartRecsCount}</span>
+          )}
         </Link>
         <Link
           href={buildHref('/communication')}

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       where: {
         client_id: clientId,
         status: 'published',
+        dismissed_at: null,
       },
       select: {
         id: true,

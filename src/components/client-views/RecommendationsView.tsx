@@ -146,6 +146,46 @@ interface StripeInvoice {
   subscriptionId?: string | null
 }
 
+// Smart Recommendations interfaces
+interface SmartRecommendationProduct {
+  id: string
+  name: string
+  short_description: string | null
+  long_description: string | null
+  category: string
+  monthly_price: string | null
+  onetime_price: string | null
+  stripe_monthly_price_id: string | null
+  stripe_onetime_price_id: string | null
+}
+
+interface SmartRecommendationItem {
+  id: string
+  product_id: string
+  priority: number
+  why_note: string | null
+  is_featured: boolean
+  price_option: 'monthly' | 'onetime' | 'client_choice' | null
+  created_at: string | null
+  product: SmartRecommendationProduct
+}
+
+interface SmartRecommendation {
+  id: string
+  status: string
+  published_at: string | null
+  next_refresh_at: string | null
+}
+
+interface AvailableProduct {
+  id: string
+  name: string
+  short_description: string | null
+  category: string
+  monthly_price: string | null
+  onetime_price: string | null
+}
+
 interface RecommendationsViewProps {
   clientId: string
   isAdmin?: boolean
@@ -182,6 +222,28 @@ const REWARD_TIERS = [
   { threshold: 1500, discount: 5, coupon: 'HARVEST5X' },
   { threshold: 2000, discount: 10, coupon: 'CULTIVATE10' },
 ]
+
+// Format relative time for recommendations using calendar days
+const formatRecommendedDate = (dateString: string | null) => {
+  if (!dateString) return null
+  const date = new Date(dateString)
+  const now = new Date()
+
+  // Compare calendar dates by setting both to midnight
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffDays = Math.round((today.getTime() - dateDay.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7)
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`
+  }
+  // For older dates, show the actual date
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+}
 
 // Icon mapping based on service name
 const getServiceIcon = (name: string) => {
@@ -298,6 +360,16 @@ export function RecommendationsView({
   const [localSubscriptionData, setLocalSubscriptionData] = useState<any>(null)
   const [localLoading, setLocalLoading] = useState(!isAdmin)
 
+  // Smart Recommendations state
+  const [smartRecommendation, setSmartRecommendation] = useState<SmartRecommendation | null>(null)
+  const [smartRecommendationItems, setSmartRecommendationItems] = useState<SmartRecommendationItem[]>([])
+  const [smartRecommendationsLoading, setSmartRecommendationsLoading] = useState(false)
+  const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([])
+  const [showAddProductModal, setShowAddProductModal] = useState(false)
+  const [editingItem, setEditingItem] = useState<SmartRecommendationItem | null>(null)
+  const [savingSmartRec, setSavingSmartRec] = useState(false)
+  const [addingToPlan, setAddingToPlan] = useState<string | null>(null) // product_id being added
+
   // Use prop data for admin, local data for client
   const dbClient = isAdmin ? propDbClient : localDbClient
   const recommendation = isAdmin ? propRecommendation : localRecommendation
@@ -386,6 +458,211 @@ export function RecommendationsView({
 
     fetchData()
   }, [clientId, isAdmin, isDemo, demoState])
+
+  // Fetch smart recommendations
+  useEffect(() => {
+    async function fetchSmartRecommendations() {
+      if (!clientId || isDemo) return
+
+      setSmartRecommendationsLoading(true)
+      try {
+        // Use different API based on admin/client
+        const apiUrl = isAdmin
+          ? `/api/admin/clients/${clientId}/smart-recommendations`
+          : `/api/client/smart-recommendations?clientId=${clientId}`
+
+        const res = await fetch(apiUrl)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.recommendation) {
+            setSmartRecommendation(data.recommendation)
+            setSmartRecommendationItems(data.recommendation.items || data.items || [])
+          } else if (data.items) {
+            // Client API returns items separately
+            setSmartRecommendationItems(data.items)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch smart recommendations:', error)
+      } finally {
+        setSmartRecommendationsLoading(false)
+      }
+    }
+
+    fetchSmartRecommendations()
+  }, [clientId, isAdmin, isDemo])
+
+  // Fetch available products for admin (to add to recommendations)
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!isAdmin || !clientId) return
+
+      try {
+        const res = await fetch('/api/admin/products')
+        if (res.ok) {
+          const data = await res.json()
+          // Products API returns array directly, not wrapped in { products }
+          setAvailableProducts(Array.isArray(data) ? data : [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error)
+      }
+    }
+
+    fetchProducts()
+  }, [isAdmin, clientId])
+
+  // Add product to smart recommendations
+  const handleAddProduct = async (productId: string, whyNote: string, priceOption: string | null) => {
+    if (!clientId) return
+
+    setSavingSmartRec(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId, why_note: whyNote, price_option: priceOption }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSmartRecommendationItems(prev => [...prev, data.item])
+        setShowAddProductModal(false)
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('Failed to add recommendation:', res.status, errorData)
+        alert(errorData.error || 'Failed to add recommendation')
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error)
+      alert('Failed to add recommendation. Please try again.')
+    } finally {
+      setSavingSmartRec(false)
+    }
+  }
+
+  // Update recommendation item
+  const handleUpdateItem = async (itemId: string, whyNote: string, isFeatured: boolean) => {
+    if (!clientId) return
+
+    setSavingSmartRec(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/items`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId, why_note: whyNote, is_featured: isFeatured }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSmartRecommendationItems(prev =>
+          prev.map(item => item.id === itemId ? data.item : item)
+        )
+        setEditingItem(null)
+      }
+    } catch (error) {
+      console.error('Failed to update item:', error)
+    } finally {
+      setSavingSmartRec(false)
+    }
+  }
+
+  // Remove product from smart recommendations
+  const handleRemoveItem = async (itemId: string) => {
+    if (!clientId || !confirm('Remove this recommendation?')) return
+
+    setSavingSmartRec(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/items?item_id=${itemId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setSmartRecommendationItems(prev => prev.filter(item => item.id !== itemId))
+      }
+    } catch (error) {
+      console.error('Failed to remove item:', error)
+    } finally {
+      setSavingSmartRec(false)
+    }
+  }
+
+  // Publish smart recommendations
+  const handlePublishRecommendations = async () => {
+    if (!clientId || smartRecommendationItems.length === 0) return
+
+    setSavingSmartRec(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: smartRecommendationItems.map((item, index) => ({
+            product_id: item.product_id,
+            priority: index + 1,
+            why_note: item.why_note,
+            is_featured: item.is_featured,
+          })),
+          status: 'published',
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSmartRecommendation(data.recommendation)
+        setSmartRecommendationItems(data.recommendation.items || [])
+      }
+    } catch (error) {
+      console.error('Failed to publish recommendations:', error)
+    } finally {
+      setSavingSmartRec(false)
+    }
+  }
+
+  // Add product to client's Stripe subscription
+  const handleAddToPlan = async (item: SmartRecommendationItem, priceType: 'monthly' | 'onetime') => {
+    if (!clientId) return
+
+    const priceId = priceType === 'monthly'
+      ? item.product.stripe_monthly_price_id
+      : item.product.stripe_onetime_price_id
+
+    if (!priceId) {
+      alert(`No ${priceType} Stripe price configured for this product`)
+      return
+    }
+
+    if (!confirm(`Add "${item.product.name}" to the client's Stripe subscription?`)) {
+      return
+    }
+
+    setAddingToPlan(item.product_id)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: item.product_id,
+          price_id: priceId,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert(`${item.product.name} has been added to the subscription`)
+        // Optionally remove from recommendations after adding
+        // handleRemoveItem(item.id)
+      } else {
+        alert(data.error || 'Failed to add product to subscription')
+      }
+    } catch (error) {
+      console.error('Failed to add to plan:', error)
+      alert('Failed to add product to subscription. Please try again.')
+    } finally {
+      setAddingToPlan(null)
+    }
+  }
 
   // Get display name
   const displayName = clientName || dbClient?.name || 'this client'
@@ -540,6 +817,8 @@ export function RecommendationsView({
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
+          ) : smartRecommendationItems.length > 0 ? (
+            <span className={`tab-badge count${activeTab === 'smart-recommendations' ? ' active' : ''}`}>{smartRecommendationItems.length}</span>
           ) : (
             <span className="tab-badge coming-soon">Coming Soon</span>
           )}
@@ -565,7 +844,318 @@ export function RecommendationsView({
                 }
               </p>
             </div>
+          ) : isAdmin ? (
+            /* Admin View - Manage Smart Recommendations */
+            <div className="smart-recommendations-admin">
+              <div className="smart-rec-header">
+                <div className="smart-rec-title">
+                  <h3>Smart Recommendations</h3>
+                  <p>Recommend products tailored to {displayName}&apos;s needs</p>
+                </div>
+                <div className="smart-rec-actions">
+                  {smartRecommendation?.status === 'published' && (
+                    <span className="status-badge published">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Published
+                    </span>
+                  )}
+                  <button
+                    className="btn-add-product"
+                    onClick={() => setShowAddProductModal(true)}
+                    disabled={savingSmartRec}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Recommendation
+                  </button>
+                  {smartRecommendationItems.length > 0 && smartRecommendation?.status !== 'published' && (
+                    <button
+                      className="btn-publish"
+                      onClick={handlePublishRecommendations}
+                      disabled={savingSmartRec}
+                    >
+                      {savingSmartRec ? 'Publishing...' : 'Publish'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {smartRecommendationsLoading ? (
+                <div className="loading-placeholder">Loading smart recommendations...</div>
+              ) : smartRecommendationItems.length === 0 ? (
+                <div className="empty-recommendations">
+                  <div className="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </div>
+                  <h4>No recommendations yet</h4>
+                  <p>Add products you recommend for {displayName} to help them grow their business.</p>
+                  <button className="btn-add-first" onClick={() => setShowAddProductModal(true)}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add First Recommendation
+                  </button>
+                </div>
+              ) : (
+                <div className="smart-rec-grid">
+                  {smartRecommendationItems.map((item, index) => {
+                    // Determine which prices to show based on price_option
+                    const showMonthly = item.price_option === 'monthly' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.monthly_price) > 0)
+                    const showOnetime = item.price_option === 'onetime' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.onetime_price) > 0 && !Number(item.product.monthly_price))
+                    const isClientChoice = item.price_option === 'client_choice'
+
+                    return (
+                      <div key={item.id} className={`smart-rec-card${item.is_featured ? ' featured' : ''}`}>
+                        {item.is_featured && (
+                          <div className="smart-rec-card-badge">Top Recommendation</div>
+                        )}
+                        {isClientChoice && (
+                          <div className="smart-rec-card-badge client-choice">Client Chooses</div>
+                        )}
+                        <div className="smart-rec-card-body">
+                          {item.created_at && (
+                            <div className="smart-rec-card-date">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                              </svg>
+                              {formatRecommendedDate(item.created_at)}
+                            </div>
+                          )}
+                          <div className="smart-rec-card-header">
+                            <div className="smart-rec-card-icon">
+                              {getServiceIcon(item.product.name)}
+                            </div>
+                            <div className="smart-rec-card-title-wrap">
+                              <div className="smart-rec-card-title">{item.product.name}</div>
+                              <div className="smart-rec-card-category">{item.product.category}</div>
+                            </div>
+                          </div>
+
+                          {(item.why_note || item.product.short_description) && (
+                            <div className="smart-rec-card-description">
+                              {item.why_note || item.product.short_description}
+                            </div>
+                          )}
+
+                          <div className="smart-rec-card-pricing">
+                            {showMonthly && Number(item.product.monthly_price) > 0 && (
+                              <div className="pricing-option">
+                                <span className="price">${formatPrice(Number(item.product.monthly_price))}</span>
+                                <span className="period">/mo</span>
+                              </div>
+                            )}
+                            {showOnetime && Number(item.product.onetime_price) > 0 && (
+                              <div className="pricing-option onetime">
+                                <span className="price">${formatPrice(Number(item.product.onetime_price))}</span>
+                                <span className="period">one-time</span>
+                              </div>
+                            )}
+                            {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
+                              <div className="pricing-or">or</div>
+                            )}
+                          </div>
+
+                          <div className="smart-rec-card-footer">
+                            <div className="smart-rec-card-actions">
+                              {/* Add to Plan button logic based on price_option */}
+                              {isClientChoice ? (
+                                <div className="add-to-plan-options">
+                                  <button
+                                    className="btn-add-to-plan small"
+                                    onClick={() => handleAddToPlan(item, 'monthly')}
+                                    disabled={addingToPlan === item.product_id}
+                                  >
+                                    {addingToPlan === item.product_id ? '...' : 'Add Monthly'}
+                                  </button>
+                                  <button
+                                    className="btn-add-to-plan small secondary"
+                                    onClick={() => handleAddToPlan(item, 'onetime')}
+                                    disabled={addingToPlan === item.product_id}
+                                  >
+                                    {addingToPlan === item.product_id ? '...' : 'Add One-time'}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="btn-add-to-plan"
+                                  onClick={() => handleAddToPlan(item, item.price_option === 'onetime' ? 'onetime' : 'monthly')}
+                                  disabled={addingToPlan === item.product_id}
+                                >
+                                  {addingToPlan === item.product_id ? 'Adding...' : (
+                                    <>
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                      </svg>
+                                      Add to Plan
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                            <div className="btn-icons-row">
+                              <button
+                                className="btn-icon-sm"
+                                onClick={() => setEditingItem(item)}
+                                title="Edit"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                              </button>
+                              <button
+                                className="btn-icon-sm danger"
+                                onClick={() => handleRemoveItem(item.id)}
+                                title="Remove"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ) : smartRecommendationItems.length > 0 && smartRecommendation?.status === 'published' ? (
+            /* Client View - Show Published Recommendations */
+            <div className="smart-recommendations-client">
+              <div className="smart-rec-intro">
+                <div className="smart-rec-intro-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                </div>
+                <div className="smart-rec-intro-content">
+                  <h2>Recommended for You</h2>
+                  <p>Based on your business goals and current marketing performance, we recommend these services to accelerate your growth.</p>
+                </div>
+              </div>
+
+              <div className="smart-rec-grid client-view">
+                {smartRecommendationItems.map((item, index) => {
+                  // Determine which prices to show based on price_option
+                  const showMonthly = item.price_option === 'monthly' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.monthly_price) > 0)
+                  const showOnetime = item.price_option === 'onetime' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.onetime_price) > 0 && !Number(item.product.monthly_price))
+                  const isClientChoice = item.price_option === 'client_choice'
+
+                  return (
+                    <div key={item.id} className={`smart-rec-card client${item.is_featured ? ' featured' : ''}`}>
+                      {item.is_featured && (
+                        <div className="smart-rec-card-badge">Top Recommendation</div>
+                      )}
+                      <div className="smart-rec-card-body">
+                        {item.created_at && (
+                          <div className="smart-rec-card-date">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            {formatRecommendedDate(item.created_at)}
+                          </div>
+                        )}
+                        <div className="smart-rec-card-header">
+                          <div className="smart-rec-card-icon">
+                            {getServiceIcon(item.product.name)}
+                          </div>
+                          <div className="smart-rec-card-title-wrap">
+                            <div className="smart-rec-card-title">{item.product.name}</div>
+                            <div className="smart-rec-card-category">{item.product.category}</div>
+                          </div>
+                        </div>
+
+                        {item.why_note && (
+                          <div className="smart-rec-card-why">
+                            <div className="why-label">Why we recommend this</div>
+                            <p>{item.why_note}</p>
+                          </div>
+                        )}
+
+                        {item.product.short_description && !item.why_note && (
+                          <div className="smart-rec-card-description">
+                            {item.product.short_description}
+                          </div>
+                        )}
+
+                        <div className="smart-rec-card-pricing">
+                          {showMonthly && Number(item.product.monthly_price) > 0 && (
+                            <div className="pricing-option">
+                              <span className="price">${formatPrice(Number(item.product.monthly_price))}</span>
+                              <span className="period">/mo</span>
+                            </div>
+                          )}
+                          {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
+                            <div className="pricing-or">or</div>
+                          )}
+                          {showOnetime && Number(item.product.onetime_price) > 0 && (
+                            <div className="pricing-option onetime">
+                              <span className="price">${formatPrice(Number(item.product.onetime_price))}</span>
+                              <span className="period">one-time</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="smart-rec-card-footer client">
+                          {isClientChoice ? (
+                            <div className="add-to-plan-options client">
+                              <a
+                                href={`/checkout?product=${item.product_id}&price=monthly`}
+                                className="btn-add-to-plan"
+                              >
+                                Add Monthly
+                              </a>
+                              <a
+                                href={`/checkout?product=${item.product_id}&price=onetime`}
+                                className="btn-add-to-plan secondary"
+                              >
+                                Add One-time
+                              </a>
+                            </div>
+                          ) : (
+                            <a
+                              href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}`}
+                              className="btn-add-to-plan"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                              Add to Plan
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {smartRecommendation?.next_refresh_at && (
+                <div className="refresh-info">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </div>
+              )}
+            </div>
           ) : (
+            /* Client View - No recommendations published yet */
             <div className="coming-soon-placeholder">
               <div className="coming-soon-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
@@ -574,10 +1164,7 @@ export function RecommendationsView({
               </div>
               <h2>Smart Recommendations Coming Soon</h2>
               <p>
-                {isAdmin
-                  ? `We're analyzing ${displayName}'s marketing performance data to generate personalized AI-powered recommendations. The first set of smart recommendations will be available in approximately 90 days.`
-                  : "We're analyzing your marketing performance data to generate personalized AI-powered recommendations. The first set of smart recommendations will be available in approximately 90 days."
-                }
+                We&apos;re analyzing your marketing performance data to generate personalized recommendations. The first set of smart recommendations will be available soon.
               </p>
               <div className="coming-soon-timeline">
                 <div className="timeline-item">
@@ -586,19 +1173,12 @@ export function RecommendationsView({
                 </div>
                 <div className="timeline-item">
                   <div className="timeline-dot pending"></div>
-                  <span>AI analysis in progress</span>
+                  <span>Performance analysis in progress</span>
                 </div>
                 <div className="timeline-item">
                   <div className="timeline-dot pending"></div>
-                  <span>Smart recommendations generation</span>
+                  <span>Personalized recommendations generation</span>
                 </div>
-              </div>
-              <div className="refresh-info" style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#5A6358' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                </svg>
-                First recommendations expected around <strong>90 days</strong> from start date
               </div>
             </div>
           )}
@@ -1258,6 +1838,256 @@ export function RecommendationsView({
           </div>
         </div>
       )}
+
+      {/* Add Recommendation Modal (Admin Only) */}
+      {showAddProductModal && isAdmin && (
+        <AddProductModal
+          availableProducts={availableProducts.filter(
+            p => !smartRecommendationItems.some(item => item.product_id === p.id)
+          )}
+          onAdd={(productId, whyNote, priceOption) => handleAddProduct(productId, whyNote, priceOption)}
+          onClose={() => setShowAddProductModal(false)}
+          saving={savingSmartRec}
+        />
+      )}
+
+      {/* Edit Item Modal (Admin Only) */}
+      {editingItem && isAdmin && (
+        <EditItemModal
+          item={editingItem}
+          onSave={(whyNote, isFeatured) => handleUpdateItem(editingItem.id, whyNote, isFeatured)}
+          onClose={() => setEditingItem(null)}
+          saving={savingSmartRec}
+        />
+      )}
+    </div>
+  )
+}
+
+// Add Recommendation Modal Component
+function AddProductModal({
+  availableProducts,
+  onAdd,
+  onClose,
+  saving,
+}: {
+  availableProducts: AvailableProduct[]
+  onAdd: (productId: string, whyNote: string, priceOption: string | null) => void
+  onClose: () => void
+  saving: boolean
+}) {
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [whyNote, setWhyNote] = useState('')
+  const [priceOption, setPriceOption] = useState<string>('auto')
+
+  // Get the selected product details
+  const selectedProductData = availableProducts.find(p => p.id === selectedProduct)
+  const hasMonthly = selectedProductData && Number(selectedProductData.monthly_price) > 0
+  const hasOnetime = selectedProductData && Number(selectedProductData.onetime_price) > 0
+  const hasBothPrices = hasMonthly && hasOnetime
+
+  // Reset price option when product changes
+  const handleProductChange = (productId: string) => {
+    setSelectedProduct(productId)
+    setPriceOption('auto')
+  }
+
+  return (
+    <div className="smart-rec-modal-overlay" onClick={onClose}>
+      <div className="smart-rec-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="smart-rec-modal-header">
+          <h3>Add Recommendation</h3>
+          <button className="modal-close-btn" onClick={onClose}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div className="smart-rec-modal-body">
+          <div className="form-group">
+            <label htmlFor="product-select">Select Product</label>
+            <select
+              id="product-select"
+              value={selectedProduct}
+              onChange={(e) => handleProductChange(e.target.value)}
+              className="form-control"
+            >
+              <option value="">Choose a product...</option>
+              {availableProducts.map(product => (
+                <option key={product.id} value={product.id}>
+                  {product.name} - {product.category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Show product pricing info when selected */}
+          {selectedProductData && (
+            <div className="selected-product-info">
+              <div className="product-pricing-display">
+                {hasMonthly && (
+                  <div className="price-badge monthly">
+                    <span className="price-value">${Number(selectedProductData.monthly_price).toLocaleString()}</span>
+                    <span className="price-label">/month</span>
+                  </div>
+                )}
+                {hasOnetime && (
+                  <div className="price-badge onetime">
+                    <span className="price-value">${Number(selectedProductData.onetime_price).toLocaleString()}</span>
+                    <span className="price-label">one-time</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing option selector - only show if product has both prices */}
+              {hasBothPrices && (
+                <div className="form-group pricing-options">
+                  <label>Pricing Option</label>
+                  <div className="pricing-option-buttons">
+                    <button
+                      type="button"
+                      className={`pricing-option-btn ${priceOption === 'monthly' ? 'active' : ''}`}
+                      onClick={() => setPriceOption('monthly')}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      Monthly Only
+                    </button>
+                    <button
+                      type="button"
+                      className={`pricing-option-btn ${priceOption === 'onetime' ? 'active' : ''}`}
+                      onClick={() => setPriceOption('onetime')}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                      </svg>
+                      One-Time Only
+                    </button>
+                    <button
+                      type="button"
+                      className={`pricing-option-btn ${priceOption === 'client_choice' ? 'active' : ''}`}
+                      onClick={() => setPriceOption('client_choice')}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <polyline points="17 11 19 13 23 9"></polyline>
+                      </svg>
+                      Client Chooses
+                    </button>
+                  </div>
+                  <small className="pricing-option-hint">
+                    {priceOption === 'monthly' && 'Only the monthly subscription price will be shown'}
+                    {priceOption === 'onetime' && 'Only the one-time price will be shown'}
+                    {priceOption === 'client_choice' && 'Client can choose between monthly or one-time'}
+                    {priceOption === 'auto' && 'Select how pricing should be displayed'}
+                  </small>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="why-note">Why we recommend this (optional)</label>
+            <textarea
+              id="why-note"
+              value={whyNote}
+              onChange={(e) => setWhyNote(e.target.value)}
+              placeholder="Explain why this service would benefit the client..."
+              className="form-control"
+              rows={3}
+            />
+          </div>
+        </div>
+        <div className="smart-rec-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => onAdd(selectedProduct, whyNote, priceOption === 'auto' ? null : priceOption)}
+            disabled={!selectedProduct || saving || (hasBothPrices && priceOption === 'auto')}
+          >
+            {saving ? 'Adding...' : 'Add Recommendation'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Edit Item Modal Component
+function EditItemModal({
+  item,
+  onSave,
+  onClose,
+  saving,
+}: {
+  item: SmartRecommendationItem
+  onSave: (whyNote: string, isFeatured: boolean) => void
+  onClose: () => void
+  saving: boolean
+}) {
+  const [whyNote, setWhyNote] = useState(item.why_note || '')
+  const [isFeatured, setIsFeatured] = useState(item.is_featured)
+
+  return (
+    <div className="smart-rec-modal-overlay" onClick={onClose}>
+      <div className="smart-rec-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="smart-rec-modal-header">
+          <h3>Edit Recommendation</h3>
+          <button className="modal-close-btn" onClick={onClose}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div className="smart-rec-modal-body">
+          <div className="edit-product-info">
+            <strong>{item.product.name}</strong>
+            <span>{item.product.category}</span>
+          </div>
+          <div className="form-group">
+            <label htmlFor="edit-why-note">Why we recommend this</label>
+            <textarea
+              id="edit-why-note"
+              value={whyNote}
+              onChange={(e) => setWhyNote(e.target.value)}
+              placeholder="Explain why this service would benefit the client..."
+              className="form-control"
+              rows={3}
+            />
+          </div>
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+              />
+              <span>Featured recommendation</span>
+            </label>
+            <small>Featured recommendations are highlighted at the top</small>
+          </div>
+        </div>
+        <div className="smart-rec-modal-footer">
+          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => onSave(whyNote, isFeatured)}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

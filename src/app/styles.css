@@ -863,6 +863,7 @@
             padding: 20px 24px;
             border-bottom: 1px solid var(--border-light);
             transition: background 0.15s ease;
+            align-items: flex-start;
         }
 
         .activity-item:hover {
@@ -920,6 +921,7 @@
 
         .activity-details {
             flex: 1;
+            min-width: 0;
         }
 
         .activity-title {
@@ -932,6 +934,41 @@
         .activity-desc {
             font-size: 13px;
             color: var(--text-secondary);
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        .activity-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .activity-text.expanded {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+
+        .read-more-btn {
+            background: none;
+            border: none;
+            color: var(--pyrus-green);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 4px;
+            font-family: inherit;
+        }
+
+        .read-more-btn:hover {
+            text-decoration: underline;
+            overflow-wrap: break-word;
+            white-space: normal;
         }
 
         .activity-time {
@@ -10403,6 +10440,19 @@
             color: #a78bfa;
         }
 
+        .nav-badge.count {
+            background: #885430;
+            color: white;
+            min-width: 18px;
+            text-align: center;
+            border-radius: 9px;
+        }
+
+        .nav-badge.count.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #885430;
+        }
+
         .nav-lock-icon {
             margin-left: auto;
             opacity: 0.5;
@@ -10526,6 +10576,1274 @@
         .coming-soon-timeline .timeline-dot.pending {
             background: #E5E7EB;
             border: 2px solid #D1D5DB;
+        }
+
+        /* Tab Badges */
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            margin-left: 0.375rem;
+        }
+
+        .tab-badge.coming-soon {
+            background: #F3F4F6;
+            color: #6B7280;
+        }
+
+        .tab-badge.count {
+            background: #885430;
+            color: white;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 0.375rem;
+        }
+
+        .tab-badge.count.active {
+            background: white;
+            color: #885430;
+        }
+
+        /* ========================================
+           Smart Recommendations - Admin UI
+           ======================================== */
+
+        .smart-recommendations-admin {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+        }
+
+        .smart-rec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .smart-rec-title h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 0.25rem;
+        }
+
+        .smart-rec-title p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .smart-rec-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .smart-rec-actions .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .smart-rec-actions .status-badge.published {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .btn-add-product,
+        .btn-publish {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: none;
+        }
+
+        .btn-add-product {
+            background: #885430 !important;
+            border: 1px solid #885430 !important;
+            color: white !important;
+        }
+
+        .btn-add-product:hover:not(:disabled) {
+            background: #5F4B3A !important;
+            border-color: #5F4B3A !important;
+        }
+
+        .btn-publish {
+            background: #166534;
+            color: white;
+        }
+
+        .btn-publish:hover:not(:disabled) {
+            background: #14532D;
+        }
+
+        .btn-add-product:disabled,
+        .btn-publish:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .empty-recommendations {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--border-light);
+        }
+
+        .empty-recommendations .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-recommendations h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 0.5rem;
+        }
+
+        .empty-recommendations p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0 0 1.5rem;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-add-first {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-add-first:hover {
+            background: #5F4B3A;
+        }
+
+        .smart-rec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .smart-rec-item {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            transition: border-color 0.15s ease;
+        }
+
+        .smart-rec-item:hover {
+            border-color: var(--border-default);
+        }
+
+        .smart-rec-item.featured {
+            border-color: #FCD34D;
+            background: #FFFBEB;
+        }
+
+        .smart-rec-item-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .smart-rec-item-priority {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-subtle);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .smart-rec-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .smart-rec-item-name {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .smart-rec-item-name .featured-badge {
+            font-size: 0.625rem;
+            font-weight: 500;
+            padding: 0.125rem 0.375rem;
+            background: #FCD34D;
+            color: #92400E;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .smart-rec-item-category {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.125rem;
+        }
+
+        .smart-rec-item-price {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .smart-rec-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .smart-rec-item-actions .btn-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .smart-rec-item-actions .btn-icon:hover {
+            background: var(--bg-subtle);
+            border-color: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .smart-rec-item-actions .btn-icon.danger:hover {
+            background: #FEE2E2;
+            border-color: #FECACA;
+            color: #DC2626;
+        }
+
+        .smart-rec-item-why {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .smart-rec-item-why strong {
+            color: var(--text-primary);
+        }
+
+        .smart-rec-item-desc {
+            margin-top: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* Smart Recommendation Cards - Admin View (2-Column Grid) */
+        .smart-rec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 900px) {
+            .smart-rec-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .smart-rec-card {
+            background: linear-gradient(135deg, #FDFBF7 0%, #FFFFFF 50%, #F8FAF8 100%);
+            border: 1px solid #E5DFD8;
+            border-radius: 16px;
+            position: relative;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .smart-rec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #885430 0%, #A67C52 50%, #C4956A 100%);
+        }
+
+        .smart-rec-card:hover {
+            border-color: #C4956A;
+            box-shadow: 0 8px 24px rgba(136, 84, 48, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .smart-rec-card.featured {
+            border-color: #F59E0B;
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 30%, #FFFFFF 100%);
+        }
+
+        .smart-rec-card.featured::before {
+            background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 50%, #FCD34D 100%);
+        }
+
+        .smart-rec-card-badge {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: white;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
+        }
+
+        .smart-rec-card-badge.client-choice {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            left: auto;
+            right: 16px;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+        }
+
+        .smart-rec-card-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            position: relative;
+        }
+
+        .smart-rec-card-date {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.6875rem;
+            color: #9CA3AF;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .smart-rec-card-date svg {
+            opacity: 0.7;
+        }
+
+        .smart-rec-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .smart-rec-card-icon {
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #885430 0%, #A67C52 100%);
+            border-radius: 12px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(136, 84, 48, 0.25);
+        }
+
+        .smart-rec-card-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .smart-rec-card-title-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .smart-rec-card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1A1F16;
+            margin-bottom: 0.25rem;
+        }
+
+        .smart-rec-card-category {
+            font-size: 0.75rem;
+            color: #885430;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .smart-rec-card-description {
+            font-size: 0.875rem;
+            color: #5A6358;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+            flex: 1;
+        }
+
+        .smart-rec-card-pricing {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #F0EDE8 0%, #FAFAF8 100%);
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            border: 1px solid #E5DFD8;
+        }
+
+        .smart-rec-card-pricing .pricing-option {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+        }
+
+        .smart-rec-card-pricing .pricing-option .price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #885430;
+        }
+
+        .smart-rec-card-pricing .pricing-option .period {
+            font-size: 0.8125rem;
+            color: #7A746E;
+            font-weight: 500;
+        }
+
+        .smart-rec-card-pricing .pricing-option.onetime .price {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #6B7280;
+        }
+
+        .smart-rec-card-pricing .pricing-or {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            font-weight: 500;
+        }
+
+        .smart-rec-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-top: auto;
+        }
+
+        .smart-rec-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .btn-add-to-plan {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.625rem 1rem;
+            background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex: 1;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-add-to-plan:hover {
+            background: linear-gradient(135deg, #16A34A 0%, #15803D 100%) !important;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-add-to-plan:disabled {
+            background: #9CA3AF !important;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-add-to-plan.small {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8125rem;
+        }
+
+        .btn-add-to-plan.small.secondary {
+            background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%) !important;
+            box-shadow: 0 2px 6px rgba(75, 85, 99, 0.3);
+        }
+
+        .btn-add-to-plan.small.secondary:hover {
+            background: linear-gradient(135deg, #4B5563 0%, #374151 100%) !important;
+            box-shadow: 0 4px 12px rgba(75, 85, 99, 0.4);
+        }
+
+        .add-to-plan-options {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .btn-icon-sm {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #E5DFD8;
+            border-radius: 8px;
+            color: #7A746E;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-icon-sm:hover {
+            background: #F5F3EF;
+            border-color: #C4956A;
+            color: #885430;
+        }
+
+        .btn-icon-sm.danger:hover {
+            background: #FEE2E2;
+            border-color: #FECACA;
+            color: #DC2626;
+        }
+
+        .btn-icons-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Smart Recommendations - Client View Styles */
+        .smart-recommendations-client {
+            padding: 1rem 0;
+        }
+
+        .smart-rec-intro {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #FEF7F0 0%, #FFF8F2 50%, #FDFBF7 100%);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #E5DFD8;
+        }
+
+        .smart-rec-intro-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .smart-rec-intro-content h2 {
+            margin: 0 0 0.375rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1A1F16;
+        }
+
+        .smart-rec-intro-content p {
+            margin: 0;
+            font-size: 0.9375rem;
+            color: #5A6358;
+            line-height: 1.5;
+        }
+
+        .smart-rec-grid.client-view {
+            gap: 1.5rem;
+        }
+
+        .smart-rec-card.client {
+            background: linear-gradient(135deg, #FFFFFF 0%, #FDFBF7 50%, #F8FAF8 100%);
+        }
+
+        .smart-rec-card-why {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 30%, #FFFBEB 100%);
+            border: 1px solid #FCD34D;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .smart-rec-card-why .why-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #92400E;
+            margin-bottom: 0.375rem;
+        }
+
+        .smart-rec-card-why p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #78350F;
+            line-height: 1.5;
+        }
+
+        .smart-rec-card-footer.client {
+            justify-content: center;
+        }
+
+        .btn-learn-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #885430 0%, #A67C52 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(136, 84, 48, 0.25);
+        }
+
+        .btn-learn-more:hover {
+            background: linear-gradient(135deg, #6B4226 0%, #885430 100%);
+            box-shadow: 0 6px 16px rgba(136, 84, 48, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* Client view add to plan buttons */
+        .smart-rec-card-footer.client .btn-add-to-plan {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9375rem;
+            border-radius: 10px;
+            text-decoration: none;
+        }
+
+        .smart-rec-card-footer.client .btn-add-to-plan.secondary {
+            background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%) !important;
+            box-shadow: 0 2px 6px rgba(75, 85, 99, 0.3);
+        }
+
+        .smart-rec-card-footer.client .btn-add-to-plan.secondary:hover {
+            background: linear-gradient(135deg, #4B5563 0%, #374151 100%) !important;
+        }
+
+        .add-to-plan-options.client {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .add-to-plan-options.client .btn-add-to-plan {
+            flex: 1;
+            max-width: 150px;
+        }
+
+        .refresh-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding: 0.875rem;
+            background: #F8F6F3;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            color: #7A746E;
+        }
+
+        .refresh-info strong {
+            color: #885430;
+        }
+
+        .refresh-info svg {
+            color: #885430;
+        }
+
+        /* Add Product Modal - Pricing Options */
+        .selected-product-info {
+            background: linear-gradient(135deg, #F8F6F3 0%, #FFFFFF 100%);
+            border: 1px solid #E5DFD8;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-pricing-display {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .price-badge {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            padding: 0.75rem 1rem;
+            background: white;
+            border: 1px solid #E5DFD8;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .price-badge.monthly {
+            border-color: #885430;
+            background: linear-gradient(135deg, #FEF7F0 0%, white 100%);
+        }
+
+        .price-badge.onetime {
+            border-color: #6B7280;
+            background: linear-gradient(135deg, #F9FAFB 0%, white 100%);
+        }
+
+        .price-badge .price-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #885430;
+        }
+
+        .price-badge.onetime .price-value {
+            color: #4B5563;
+        }
+
+        .price-badge .price-label {
+            font-size: 0.8125rem;
+            color: #7A746E;
+            font-weight: 500;
+        }
+
+        .pricing-options {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E5DFD8;
+        }
+
+        .pricing-options > label {
+            font-weight: 600 !important;
+            color: #1A1F16 !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .pricing-option-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pricing-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: white;
+            border: 2px solid #E5DFD8;
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #5A6358;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .pricing-option-btn:hover {
+            border-color: #C4956A;
+            background: #FDFBF7;
+            color: #885430;
+        }
+
+        .pricing-option-btn.active {
+            border-color: #885430;
+            background: linear-gradient(135deg, #FEF7F0 0%, #FFF8F2 100%);
+            color: #885430;
+            box-shadow: 0 2px 8px rgba(136, 84, 48, 0.2);
+        }
+
+        .pricing-option-btn svg {
+            color: currentColor;
+        }
+
+        .pricing-option-hint {
+            display: block;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+            color: #7A746E;
+            padding: 0.5rem 0.75rem;
+            background: #F8F6F3;
+            border-radius: 6px;
+        }
+
+        /* ========================================
+           Smart Recommendations - Client View
+           ======================================== */
+
+        .smart-recommendations-client {
+            padding: 1rem 0;
+        }
+
+        .smart-rec-intro {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+        }
+
+        .smart-rec-intro-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: var(--radius-md);
+            color: #D97706;
+            flex-shrink: 0;
+        }
+
+        .smart-rec-intro-content h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #78350F;
+            margin: 0 0 0.375rem;
+        }
+
+        .smart-rec-intro-content p {
+            font-size: 0.875rem;
+            color: #92400E;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .recommendation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .recommendation-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .recommendation-card:hover {
+            border-color: var(--border-default);
+            box-shadow: var(--shadow-md);
+        }
+
+        .recommendation-card.featured {
+            border-color: #FCD34D;
+            box-shadow: 0 0 0 1px #FCD34D;
+        }
+
+        .recommendation-card .card-featured-badge {
+            position: absolute;
+            top: -10px;
+            left: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: #FCD34D;
+            color: #78350F;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        .recommendation-card .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-card .card-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            color: var(--brand-primary);
+            flex-shrink: 0;
+        }
+
+        .recommendation-card .card-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .recommendation-card .card-title h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 0.125rem;
+        }
+
+        .recommendation-card .card-category {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .recommendation-card .card-why {
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-card .card-why .why-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: #166534;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .recommendation-card .card-why p {
+            font-size: 0.8125rem;
+            color: #14532D;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .recommendation-card .card-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0 0 1rem;
+        }
+
+        .recommendation-card .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .recommendation-card .card-price {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .recommendation-card .price-monthly {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .recommendation-card .price-monthly span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .recommendation-card .price-onetime {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .recommendation-card .btn-learn-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 1rem;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .recommendation-card .btn-learn-more:hover {
+            background: #5F4B3A;
+        }
+
+        .smart-recommendations-client .refresh-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           Smart Recommendations - Modal Styles
+           ======================================== */
+
+        .smart-rec-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .smart-rec-modal {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 480px;
+            max-height: calc(100vh - 2rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .smart-rec-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .smart-rec-modal-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .smart-rec-modal-header .modal-close-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .smart-rec-modal-header .modal-close-btn:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+
+        .smart-rec-modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+        }
+
+        .smart-rec-modal-body .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .smart-rec-modal-body .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .smart-rec-modal-body label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.375rem;
+        }
+
+        .smart-rec-modal-body .form-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            background: var(--bg-white);
+            transition: border-color 0.15s ease;
+        }
+
+        .smart-rec-modal-body .form-control:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(136, 84, 48, 0.1);
+        }
+
+        .smart-rec-modal-body textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .smart-rec-modal-body .edit-product-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+            padding: 0.75rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+        }
+
+        .smart-rec-modal-body .edit-product-info strong {
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+        }
+
+        .smart-rec-modal-body .edit-product-info span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .smart-rec-modal-body .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .smart-rec-modal-body .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .smart-rec-modal-body .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--brand-primary);
+        }
+
+        .smart-rec-modal-body .checkbox-label span {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .smart-rec-modal-body .checkbox-group small {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: 24px;
+        }
+
+        .smart-rec-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-subtle);
+        }
+
+        .smart-rec-modal-footer .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .smart-rec-modal-footer .btn-secondary {
+            background: var(--bg-white);
+            border: 1px solid var(--border-default);
+            color: var(--text-primary);
+        }
+
+        .smart-rec-modal-footer .btn-secondary:hover:not(:disabled) {
+            background: var(--bg-subtle);
+        }
+
+        .smart-rec-modal-footer .btn-primary {
+            background: #885430 !important;
+            border: none !important;
+            color: white !important;
+        }
+
+        .smart-rec-modal-footer .btn-primary:hover:not(:disabled) {
+            background: #5F4B3A !important;
+        }
+
+        .smart-rec-modal-footer .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* ========================================
