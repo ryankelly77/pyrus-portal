@@ -174,6 +174,7 @@
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
 }
 
 .recommendation-card:hover {
@@ -181,11 +182,34 @@
   transform: translateY(-2px);
 }
 
+/* Date in upper right corner */
+.rec-date {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.rec-date svg {
+  opacity: 0.7;
+}
+
 .rec-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
+  padding-right: 4.5rem; /* Make room for date */
+}
+
+.rec-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .rec-header h4 {
@@ -193,6 +217,12 @@
   font-weight: 600;
   margin: 0;
   color: var(--text-primary, #1a1a1a);
+}
+
+.rec-category {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 .featured-badge {

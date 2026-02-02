@@ -34,6 +34,7 @@ interface Recommendation {
   id: string
   productId: string
   productName: string
+  category: string | null
   description: string | null
   longDescription: string | null
   whyNote: string | null
@@ -42,6 +43,7 @@ interface Recommendation {
   monthlyPrice: number | null
   onetimePrice: number | null
   priority: number
+  createdAt: string | null
 }
 
 interface Invoice {
@@ -197,6 +199,30 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
     }
   }
 
+  const formatRecommendedDate = (dateString: string | null) => {
+    if (!dateString) return null
+    const date = new Date(dateString)
+    const now = new Date()
+
+    // Compare calendar dates by setting both to midnight
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffDays = Math.round((today.getTime() - dateDay.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays <= 7) return `${diffDays} days ago`
+
+    // For older dates, show the actual date
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+  }
+
+  const formatCategory = (category: string | null) => {
+    if (!category) return null
+    // Capitalize first letter and append " Product"
+    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase() + ' Product'
+  }
+
   return (
     <div className="welcome-view">
       {/* Header */}
@@ -251,8 +277,20 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
           <div className="recommendations-grid">
             {data.recommendations.slice(0, 4).map((rec) => (
               <div key={rec.id} className={`recommendation-card ${rec.isFeatured ? 'featured' : ''}`}>
+                {rec.createdAt && (
+                  <div className="rec-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    {formatRecommendedDate(rec.createdAt)}
+                  </div>
+                )}
                 <div className="rec-header">
-                  <h4>{rec.productName}</h4>
+                  <div className="rec-title-wrap">
+                    <h4>{rec.productName}</h4>
+                    {rec.category && <span className="rec-category">{formatCategory(rec.category)}</span>}
+                  </div>
                   {rec.isFeatured && <span className="featured-badge">Recommended</span>}
                 </div>
                 {rec.description && <p className="rec-description">{rec.description}</p>}

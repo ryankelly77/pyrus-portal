@@ -245,6 +245,12 @@ const formatRecommendedDate = (dateString: string | null) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
 }
 
+const formatCategory = (category: string | null) => {
+  if (!category) return null
+  // Capitalize first letter and append " Product"
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase() + ' Product'
+}
+
 // Icon mapping based on service name
 const getServiceIcon = (name: string) => {
   const lowerName = name.toLowerCase()
@@ -367,6 +373,7 @@ export function RecommendationsView({
   const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([])
   const [showAddProductModal, setShowAddProductModal] = useState(false)
   const [editingItem, setEditingItem] = useState<SmartRecommendationItem | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<SmartRecommendationItem | null>(null)
   const [savingSmartRec, setSavingSmartRec] = useState(false)
   const [addingToPlan, setAddingToPlan] = useState<string | null>(null) // product_id being added
 
@@ -670,8 +677,9 @@ export function RecommendationsView({
   // Loading state
   if (recommendationLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+      <div className="recommendations-loading">
         <div className="spinner" style={{ width: 40, height: 40 }}></div>
+        <p>Loading your recommendations...</p>
       </div>
     )
   }
@@ -763,13 +771,15 @@ export function RecommendationsView({
                 <span>Harvesting</span>
               </div>
             </div>
-            <div className="refresh-info">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-              </svg>
-              Next recommendations refresh: <strong>90 days</strong> from start
-            </div>
+            {smartRecommendation?.next_refresh_at && (
+              <div className="refresh-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -935,7 +945,7 @@ export function RecommendationsView({
                             </div>
                             <div className="smart-rec-card-title-wrap">
                               <div className="smart-rec-card-title">{item.product.name}</div>
-                              <div className="smart-rec-card-category">{item.product.category}</div>
+                              <div className="smart-rec-card-category">{formatCategory(item.product.category)}</div>
                             </div>
                           </div>
 
@@ -1074,7 +1084,7 @@ export function RecommendationsView({
                           </div>
                           <div className="smart-rec-card-title-wrap">
                             <div className="smart-rec-card-title">{item.product.name}</div>
-                            <div className="smart-rec-card-category">{item.product.category}</div>
+                            <div className="smart-rec-card-category">{formatCategory(item.product.category)}</div>
                           </div>
                         </div>
 
@@ -1091,52 +1101,67 @@ export function RecommendationsView({
                           </div>
                         )}
 
-                        <div className="smart-rec-card-pricing">
-                          {showMonthly && Number(item.product.monthly_price) > 0 && (
-                            <div className="pricing-option">
-                              <span className="price">${formatPrice(Number(item.product.monthly_price))}</span>
-                              <span className="period">/mo</span>
-                            </div>
-                          )}
-                          {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
-                            <div className="pricing-or">or</div>
-                          )}
-                          {showOnetime && Number(item.product.onetime_price) > 0 && (
-                            <div className="pricing-option onetime">
-                              <span className="price">${formatPrice(Number(item.product.onetime_price))}</span>
-                              <span className="period">one-time</span>
-                            </div>
-                          )}
-                        </div>
-
                         <div className="smart-rec-card-footer client">
-                          {isClientChoice ? (
-                            <div className="add-to-plan-options client">
+                          <div className="smart-rec-card-pricing">
+                            {/* If both prices exist and not client choice, show "for 12 months" format */}
+                            {!isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 ? (
+                              <div className="pricing-option">
+                                <span className="price">${formatPrice(Number(item.product.monthly_price))}</span>
+                                <span className="period">/mo for 12 months</span>
+                              </div>
+                            ) : (
+                              <>
+                                {showMonthly && Number(item.product.monthly_price) > 0 && (
+                                  <div className="pricing-option">
+                                    <span className="price">${formatPrice(Number(item.product.monthly_price))}</span>
+                                    <span className="period">/mo</span>
+                                  </div>
+                                )}
+                                {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
+                                  <div className="pricing-or">or</div>
+                                )}
+                                {showOnetime && Number(item.product.onetime_price) > 0 && (
+                                  <div className="pricing-option onetime">
+                                    <span className="price">${formatPrice(Number(item.product.onetime_price))}</span>
+                                    <span className="period">one-time</span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div className="smart-rec-card-buttons">
+                            {item.product.long_description && (
+                              <button
+                                className="btn-learn-more"
+                                onClick={() => setSelectedProduct(item)}
+                              >
+                                Learn More
+                              </button>
+                            )}
+                            {isClientChoice ? (
+                              <div className="add-to-plan-options client">
+                                <a
+                                  href={`/checkout?product=${item.product_id}&price=monthly${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                  className="btn-add-to-plan"
+                                >
+                                  Add Monthly
+                                </a>
+                                <a
+                                  href={`/checkout?product=${item.product_id}&price=onetime${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                  className="btn-add-to-plan secondary"
+                                >
+                                  Add One-time
+                                </a>
+                              </div>
+                            ) : (
                               <a
-                                href={`/checkout?product=${item.product_id}&price=monthly${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                 className="btn-add-to-plan"
                               >
-                                Add Monthly
+                                Add to Plan
                               </a>
-                              <a
-                                href={`/checkout?product=${item.product_id}&price=onetime${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
-                                className="btn-add-to-plan secondary"
-                              >
-                                Add One-time
-                              </a>
-                            </div>
-                          ) : (
-                            <a
-                              href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
-                              className="btn-add-to-plan"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                              </svg>
-                              Add to Plan
-                            </a>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1859,6 +1884,53 @@ export function RecommendationsView({
           onClose={() => setEditingItem(null)}
           saving={savingSmartRec}
         />
+      )}
+
+      {/* Product Detail Modal (Learn More) */}
+      {selectedProduct && (
+        <div className="product-modal-overlay" onClick={() => setSelectedProduct(null)}>
+          <div className="product-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="product-modal-header">
+              <h3>{selectedProduct.product.name}</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedProduct(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="product-modal-body">
+              {selectedProduct.product.long_description && (
+                <div
+                  className="product-long-description"
+                  dangerouslySetInnerHTML={{ __html: selectedProduct.product.long_description }}
+                />
+              )}
+              {selectedProduct.why_note && (
+                <div className="product-why-note">
+                  <strong>Why we recommend this:</strong> {selectedProduct.why_note}
+                </div>
+              )}
+            </div>
+            <div className="product-modal-footer">
+              <div className="modal-price">
+                {Number(selectedProduct.product.monthly_price) > 0 && Number(selectedProduct.product.onetime_price) > 0 ? (
+                  <span>${formatPrice(Number(selectedProduct.product.monthly_price))}/mo for 12 months</span>
+                ) : Number(selectedProduct.product.monthly_price) > 0 ? (
+                  <span>${formatPrice(Number(selectedProduct.product.monthly_price))}/mo</span>
+                ) : Number(selectedProduct.product.onetime_price) > 0 ? (
+                  <span>${formatPrice(Number(selectedProduct.product.onetime_price))} one-time</span>
+                ) : null}
+              </div>
+              <a
+                href={`/checkout?product=${selectedProduct.product_id}&price=${selectedProduct.price_option || (Number(selectedProduct.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                className="btn btn-primary"
+              >
+                Add to Plan
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -130,12 +130,14 @@ export async function GET(request: NextRequest) {
            sri.why_note,
            sri.is_featured,
            sri.price_option,
+           sri.created_at as item_created_at,
            p.id as product_id,
            p.name as product_name,
            p.short_description,
            p.long_description,
            p.monthly_price,
-           p.onetime_price
+           p.onetime_price,
+           p.category
          FROM smart_recommendations sr
          JOIN smart_recommendation_items sri ON sri.recommendation_id = sr.id
          JOIN products p ON p.id = sri.product_id
@@ -173,6 +175,7 @@ export async function GET(request: NextRequest) {
       id: rec.item_id,
       productId: rec.product_id,
       productName: rec.product_name,
+      category: rec.category,
       description: rec.short_description,
       longDescription: rec.long_description,
       whyNote: rec.why_note,
@@ -180,7 +183,8 @@ export async function GET(request: NextRequest) {
       priceOption: rec.price_option,
       monthlyPrice: rec.monthly_price ? Number(rec.monthly_price) : null,
       onetimePrice: rec.onetime_price ? Number(rec.onetime_price) : null,
-      priority: rec.priority
+      priority: rec.priority,
+      createdAt: rec.item_created_at
     }))
 
     return NextResponse.json({
