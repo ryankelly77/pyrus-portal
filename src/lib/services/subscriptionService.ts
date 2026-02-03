@@ -374,13 +374,24 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
         isDefault: pm.id === defaultPaymentMethodId,
       }))
 
-      // Fetch all paid invoices
-      const stripeInvoices = await stripe.invoices.list({
-        customer: client.stripe_customer_id,
-        limit: 100, // Increased to show all invoices
-        status: 'paid',
-        expand: ['data.payment_intent.latest_charge'],
-      })
+      // Fetch all paid and open invoices (open includes pending proration invoices)
+      const [paidInvoices, openInvoices] = await Promise.all([
+        stripe.invoices.list({
+          customer: client.stripe_customer_id,
+          limit: 100,
+          status: 'paid',
+          expand: ['data.payment_intent.latest_charge'],
+        }),
+        stripe.invoices.list({
+          customer: client.stripe_customer_id,
+          limit: 20,
+          status: 'open',
+          expand: ['data.payment_intent.latest_charge'],
+        }),
+      ])
+      const stripeInvoices = {
+        data: [...paidInvoices.data, ...openInvoices.data].sort((a, b) => b.created - a.created),
+      }
 
       invoices = await Promise.all(
         stripeInvoices.data.map(async (invoice) => {

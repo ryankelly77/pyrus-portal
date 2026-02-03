@@ -406,13 +406,6 @@ export function RecommendationsView({
   const [savingSmartRec, setSavingSmartRec] = useState(false)
   const [addingToPlan, setAddingToPlan] = useState<string | null>(null) // product_id being added
 
-  // Password protection for Add to Plan
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [pendingAddToPlan, setPendingAddToPlan] = useState<{ item: SmartRecommendationItem; priceType: 'monthly' | 'onetime' } | null>(null)
-  const [addToPlanPassword, setAddToPlanPassword] = useState('')
-  const [passwordError, setPasswordError] = useState('')
-  const [verifyingPassword, setVerifyingPassword] = useState(false)
-
   // Decline recommendation state
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false)
   const [pendingDecline, setPendingDecline] = useState<SmartRecommendationItem | null>(null)
@@ -719,7 +712,7 @@ export function RecommendationsView({
     }
   }
 
-  // Add product to client's Stripe subscription - requires password
+  // Add product to client's Stripe subscription
   const handleAddToPlan = async (item: SmartRecommendationItem, priceType: 'monthly' | 'onetime') => {
     if (!clientId) return
 
@@ -731,48 +724,6 @@ export function RecommendationsView({
       alert(`No ${priceType} Stripe price configured for this product`)
       return
     }
-
-    // Show password modal for super admin verification
-    setPendingAddToPlan({ item, priceType })
-    setAddToPlanPassword('')
-    setPasswordError('')
-    setShowPasswordModal(true)
-  }
-
-  // Execute the add to plan after password verification
-  const executeAddToPlan = async () => {
-    if (!pendingAddToPlan || !clientId) return
-
-    const { item, priceType } = pendingAddToPlan
-    const priceId = priceType === 'monthly'
-      ? item.product.stripe_monthly_price_id
-      : item.product.stripe_onetime_price_id
-
-    // Verify password
-    setVerifyingPassword(true)
-    try {
-      const verifyRes = await fetch('/api/admin/verify-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: addToPlanPassword }),
-      })
-      const verifyData = await verifyRes.json()
-
-      if (!verifyData.valid) {
-        setPasswordError('Invalid password. Only super admins can add items to client plans.')
-        setVerifyingPassword(false)
-        return
-      }
-    } catch (error) {
-      setPasswordError('Failed to verify password. Please try again.')
-      setVerifyingPassword(false)
-      return
-    }
-    setVerifyingPassword(false)
-
-    // Close modal and proceed
-    setShowPasswordModal(false)
-    setPendingAddToPlan(null)
 
     setAddingToPlan(item.product_id)
     try {
@@ -1096,7 +1047,7 @@ export function RecommendationsView({
 
               {smartRecommendationsLoading ? (
                 <div className="loading-placeholder">Loading smart recommendations...</div>
-              ) : smartRecommendationItems.filter(i => i.status !== 'declined').length === 0 ? (
+              ) : smartRecommendationItems.filter(i => i.status !== 'declined' && i.status !== 'purchased').length === 0 ? (
                 <div className="empty-recommendations">
                   <div className="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
@@ -1115,7 +1066,7 @@ export function RecommendationsView({
                 </div>
               ) : (
                 <div className="smart-rec-grid">
-                  {smartRecommendationItems.filter(i => i.status !== 'declined').map((item, index) => {
+                  {smartRecommendationItems.filter(i => i.status !== 'declined' && i.status !== 'purchased').map((item, index) => {
                     // Determine which prices to show based on price_option
                     const showMonthly = item.price_option === 'monthly' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.monthly_price) > 0)
                     const showOnetime = item.price_option === 'onetime' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.onetime_price) > 0 && !Number(item.product.monthly_price))
@@ -2324,77 +2275,6 @@ export function RecommendationsView({
               >
                 Add to Plan
               </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Password Modal for Add to Plan */}
-      {showPasswordModal && (
-        <div className="smart-rec-modal-overlay" onClick={() => setShowPasswordModal(false)}>
-          <div className="smart-rec-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="smart-rec-modal-header">
-              <h3>Super Admin Verification</h3>
-              <button className="modal-close-btn" onClick={() => setShowPasswordModal(false)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="smart-rec-modal-body">
-              <p style={{ marginBottom: '1rem', color: '#666' }}>
-                Adding items to a client's plan requires super admin authorization. Please enter the admin password to continue.
-              </p>
-              {pendingAddToPlan && (
-                <p style={{ marginBottom: '1rem', fontWeight: 500 }}>
-                  Adding: <strong>{pendingAddToPlan.item.product.name}</strong> ({pendingAddToPlan.priceType})
-                </p>
-              )}
-              <div className="form-group">
-                <label htmlFor="admin-password">Admin Password</label>
-                <input
-                  type="password"
-                  id="admin-password"
-                  value={addToPlanPassword}
-                  onChange={(e) => {
-                    setAddToPlanPassword(e.target.value)
-                    setPasswordError('')
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && addToPlanPassword) {
-                      executeAddToPlan()
-                    }
-                  }}
-                  placeholder="Enter admin password"
-                  className="form-control"
-                  autoFocus
-                />
-                {passwordError && (
-                  <div style={{ color: '#DC2626', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                    {passwordError}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="smart-rec-modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowPasswordModal(false)
-                  setPendingAddToPlan(null)
-                }}
-                disabled={verifyingPassword}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={executeAddToPlan}
-                disabled={!addToPlanPassword || verifyingPassword}
-              >
-                {verifyingPassword ? 'Verifying...' : 'Add to Plan'}
-              </button>
             </div>
           </div>
         </div>

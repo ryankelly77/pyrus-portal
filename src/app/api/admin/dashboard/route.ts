@@ -267,6 +267,7 @@ function mapActivityType(activityType: string): { type: string, title: string } 
     'login': { type: 'login', title: 'Client Login' },
     'client_login': { type: 'login', title: 'Client Login' },
     'admin_login': { type: 'login', title: 'Admin Login' },
+    'super_admin_login': { type: 'login', title: 'Super Admin Login' },
     'prospect_login': { type: 'login', title: 'Prospect Login' },
 
     // Registration

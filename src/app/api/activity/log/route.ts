@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
     // Determine activity type based on role
     let finalActivityType = activity_type
     if (activity_type === 'login') {
-      if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+      if (profile?.role === 'super_admin') {
+        finalActivityType = 'super_admin_login'
+      } else if (profile?.role === 'admin') {
         finalActivityType = 'admin_login'
       } else if (clientId) {
         // Check if client has active subscriptions (to differentiate prospect vs client)

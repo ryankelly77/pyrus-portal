@@ -290,12 +290,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 })
     }
 
-    // Add the item to the subscription
+    // Add the item to the subscription with immediate proration invoice
     const subscriptionItem = await stripe.subscriptionItems.create({
       subscription: subscription.id,
       price: stripePriceId,
       quantity: 1,
-      proration_behavior: 'create_prorations',
+      proration_behavior: 'always_invoice', // Charge prorated amount immediately
     })
 
     // Sync the updated subscription to local DB

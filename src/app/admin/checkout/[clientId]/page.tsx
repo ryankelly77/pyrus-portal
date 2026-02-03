@@ -43,6 +43,9 @@ interface DBClient {
   avatar_color: string | null
   growth_stage: string | null
   status: string | null
+  stripe_customer_id: string | null
+  start_date: string | null
+  onboarding_completed_at: string | null
 }
 
 // Helper to generate initials from name
@@ -85,6 +88,7 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isCardFormExpanded, setIsCardFormExpanded] = useState(false)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
 
   // Load client and cart items from sessionStorage
   useEffect(() => {
@@ -95,6 +99,18 @@ export default function CheckoutPage() {
         if (clientRes.ok) {
           const clientData = await clientRes.json()
           setClient(clientData)
+
+          // Check if client has active Stripe subscriptions (existing client)
+          if (clientData.stripe_customer_id) {
+            const subsRes = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`)
+            if (subsRes.ok) {
+              const subsData = await subsRes.json()
+              const hasActive = subsData.subscriptions?.some(
+                (sub: { status: string; items: unknown[] }) => sub.status === 'active' && sub.items.length > 0
+              )
+              setHasActiveSubscription(hasActive)
+            }
+          }
         }
 
         // Get cart items from sessionStorage
@@ -172,12 +188,19 @@ export default function CheckoutPage() {
   }
 
   // Create PaymentIntent when cart is loaded and payment method is new_card
+  // For existing clients, we'll use the subscription modification API instead
   const createPaymentIntent = async (forceRefresh = false) => {
     if (!client || cartItems.length === 0) return
     if (clientSecret && !forceRefresh) return
 
     // If total is $0 (e.g., 100% coupon), we'll handle this in the UI
     if (finalDueToday === 0) {
+      return
+    }
+
+    // For existing clients with active subscriptions, skip PaymentIntent
+    // They'll use the subscription modification flow which handles proration
+    if (hasActiveSubscription) {
       return
     }
 
@@ -210,6 +233,53 @@ export default function CheckoutPage() {
       setPaymentError(error instanceof Error ? error.message : 'Failed to initialize payment')
     } finally {
       setIsCreatingPayment(false)
+    }
+  }
+
+  // Add items to existing Stripe subscription with proration (for existing clients)
+  const addToExistingSubscription = async () => {
+    if (!client || cartItems.length === 0) return
+
+    setIsProcessing(true)
+    setPaymentError(null)
+
+    try {
+      // Add each cart item to the subscription with proration
+      for (const item of cartItems) {
+        if (!item.productId) {
+          console.warn('Cart item missing productId:', item.name)
+          continue
+        }
+
+        // Determine the price ID based on pricing type
+        // The API will use the product's stripe price ID
+        const response = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: item.productId,
+            // price_id will be determined by the API based on the product
+          }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to add ${item.name} to subscription`)
+        }
+      }
+
+      // Note: The stripe-subscriptions API already syncs to local DB via syncStripeSubscriptions
+      // No need to create a separate subscription record
+
+      // Clear cart and redirect to success
+      sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+      router.push(`/admin/checkout/${clientId}/success?amount=${finalDueToday}&existing=true`)
+    } catch (error) {
+      console.error('Error adding to subscription:', error)
+      setPaymentError(error instanceof Error ? error.message : 'Failed to add to subscription')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -284,9 +354,6 @@ export default function CheckoutPage() {
   }, [isCardFormExpanded, clientSecret, finalDueToday, client])
 
   const handlePaymentSuccess = async () => {
-    // Note: Don't clear cart from sessionStorage yet - onboarding page needs it
-    // sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
-
     // Create subscription record in database
     try {
       const subscriptionRes = await fetch('/api/admin/subscriptions', {
@@ -308,19 +375,27 @@ export default function CheckoutPage() {
       console.error('Failed to create subscription:', error)
     }
 
-    // Update client's growth stage to "seedling"
-    try {
-      await fetch(`/api/admin/clients/${clientId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ growthStage: 'seedling' }),
-      })
-    } catch (error) {
-      console.error('Failed to update client stage:', error)
-    }
+    // Only update growth stage and redirect to onboarding for NEW clients
+    // Existing clients with active subscriptions should keep their current stage/tenure
+    if (!hasActiveSubscription) {
+      // Update client's growth stage to "seedling" (new clients only)
+      try {
+        await fetch(`/api/admin/clients/${clientId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ growthStage: 'seedling' }),
+        })
+      } catch (error) {
+        console.error('Failed to update client stage:', error)
+      }
 
-    // Redirect to onboarding form (which will redirect to success after completion)
-    router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
+      // Redirect to onboarding form (new clients only)
+      router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
+    } else {
+      // Existing client - clear cart and go to success page
+      sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+      router.push(`/admin/checkout/${clientId}/success?amount=${finalDueToday}&existing=true`)
+    }
   }
 
   const handlePaymentError = (error: string) => {
@@ -354,19 +429,26 @@ export default function CheckoutPage() {
         console.error('Failed to create subscription:', error)
       }
 
-      // Update client's growth stage
-      try {
-        await fetch(`/api/admin/clients/${clientId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ growthStage: 'seedling' }),
-        })
-      } catch (error) {
-        console.error('Failed to update client stage:', error)
-      }
+      // Only update growth stage and redirect to onboarding for NEW clients
+      if (!hasActiveSubscription) {
+        // Update client's growth stage (new clients only)
+        try {
+          await fetch(`/api/admin/clients/${clientId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ growthStage: 'seedling' }),
+          })
+        } catch (error) {
+          console.error('Failed to update client stage:', error)
+        }
 
-      // Don't clear sessionStorage yet - onboarding needs it
-      router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
+        // Redirect to onboarding (new clients only)
+        router.push(`/admin/checkout/${clientId}/onboarding?tier=${tier}&amount=${finalDueToday}`)
+      } else {
+        // Existing client - clear cart and go to success page
+        sessionStorage.removeItem(`checkout_${clientId}_${tier}`)
+        router.push(`/admin/checkout/${clientId}/success?amount=${finalDueToday}&existing=true`)
+      }
     } catch (error) {
       console.error('Payment failed:', error)
       setPaymentError('Payment failed. Please try again.')
@@ -644,86 +726,136 @@ export default function CheckoutPage() {
 
                 {paymentMethod === 'new_card' && (
                   <div className="new-card-form">
-                    {/* Show expand button if form not yet expanded */}
-                    {!isCardFormExpanded && (
-                      <button
-                        className="btn btn-secondary btn-full"
-                        onClick={expandCardForm}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                          <line x1="1" y1="10" x2="23" y2="10"></line>
-                        </svg>
-                        Enter Card Details
-                      </button>
-                    )}
-
-                    {/* Card form area - stays visible once expanded */}
-                    {isCardFormExpanded && (
-                      <div className="card-form-expanded">
-                        {/* Show $0 message if coupon makes it free */}
-                        {finalDueToday === 0 ? (
-                          <div className="free-order-message">
-                            <div className="free-order-icon">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                            <p>Your total is $0 - no payment required!</p>
-                            <button
-                              className="btn btn-success btn-full"
-                              onClick={handlePaymentSuccess}
-                            >
-                              Complete Order
-                            </button>
+                    {/* For existing clients with active subscriptions - simple add to subscription flow */}
+                    {hasActiveSubscription ? (
+                      <div className="existing-client-checkout">
+                        <div className="existing-client-notice">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                          </svg>
+                          <span>Using {client?.name}&apos;s existing payment method on file</span>
+                        </div>
+                        <p className="proration-note">
+                          The prorated amount for this billing period will be charged to the card on file.
+                          Future charges will occur on the existing billing date.
+                        </p>
+                        {paymentError && (
+                          <div className="payment-error">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="8" x2="12" y2="12"></line>
+                              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <span>{paymentError}</span>
                           </div>
-                        ) : (
-                          <>
-                            {isCreatingPayment && (
-                              <div className="payment-loading">
-                                <span className="spinner"></span>
-                                <span>Preparing payment form...</span>
-                              </div>
-                            )}
-                            {paymentError && (
-                              <div className="payment-error">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                  <circle cx="12" cy="12" r="10"></circle>
-                                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
-                                <span>{paymentError}</span>
-                              </div>
-                            )}
-                            {clientSecret && (
-                              <Elements
-                                stripe={stripePromise}
-                                options={{
-                                  clientSecret,
-                                  appearance: {
-                                    theme: 'stripe',
-                                    variables: {
-                                      colorPrimary: '#2563EB',
-                                      colorBackground: '#ffffff',
-                                      colorText: '#1f2937',
-                                      colorDanger: '#dc2626',
-                                      fontFamily: 'Inter, system-ui, sans-serif',
-                                      borderRadius: '8px',
-                                    },
-                                  },
-                                }}
-                              >
-                                <CheckoutForm
-                                  amount={finalDueToday}
-                                  clientName={client.name}
-                                  onSuccess={handlePaymentSuccess}
-                                  onError={handlePaymentError}
-                                />
-                              </Elements>
-                            )}
-                          </>
                         )}
+                        <button
+                          className="btn btn-success btn-large btn-full"
+                          onClick={addToExistingSubscription}
+                          disabled={isProcessing}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <span className="spinner"></span>
+                              Adding to Subscription...
+                            </>
+                          ) : (
+                            <>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                              Add to Subscription
+                            </>
+                          )}
+                        </button>
                       </div>
+                    ) : (
+                      <>
+                        {/* New client flow - show card entry */}
+                        {/* Show expand button if form not yet expanded */}
+                        {!isCardFormExpanded && (
+                          <button
+                            className="btn btn-secondary btn-full"
+                            onClick={expandCardForm}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                              <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            Enter Card Details
+                          </button>
+                        )}
+
+                        {/* Card form area - stays visible once expanded */}
+                        {isCardFormExpanded && (
+                          <div className="card-form-expanded">
+                            {/* Show $0 message if coupon makes it free */}
+                            {finalDueToday === 0 ? (
+                              <div className="free-order-message">
+                                <div className="free-order-icon">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                                <p>Your total is $0 - no payment required!</p>
+                                <button
+                                  className="btn btn-success btn-full"
+                                  onClick={handlePaymentSuccess}
+                                >
+                                  Complete Order
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                {isCreatingPayment && (
+                                  <div className="payment-loading">
+                                    <span className="spinner"></span>
+                                    <span>Preparing payment form...</span>
+                                  </div>
+                                )}
+                                {paymentError && (
+                                  <div className="payment-error">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span>{paymentError}</span>
+                                  </div>
+                                )}
+                                {clientSecret && (
+                                  <Elements
+                                    stripe={stripePromise}
+                                    options={{
+                                      clientSecret,
+                                      appearance: {
+                                        theme: 'stripe',
+                                        variables: {
+                                          colorPrimary: '#2563EB',
+                                          colorBackground: '#ffffff',
+                                          colorText: '#1f2937',
+                                          colorDanger: '#dc2626',
+                                          fontFamily: 'Inter, system-ui, sans-serif',
+                                          borderRadius: '8px',
+                                        },
+                                      },
+                                    }}
+                                  >
+                                    <CheckoutForm
+                                      amount={finalDueToday}
+                                      clientName={client.name}
+                                      onSuccess={handlePaymentSuccess}
+                                      onError={handlePaymentError}
+                                    />
+                                  </Elements>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

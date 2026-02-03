@@ -182,6 +182,16 @@ export default function SettingsPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [paymentProcessing, setPaymentProcessing] = useState(false)
 
+  // Billing information state
+  const [billingEmail, setBillingEmail] = useState('')
+  const [billingCompany, setBillingCompany] = useState('')
+  const [billingAddress, setBillingAddress] = useState('')
+  const [billingCity, setBillingCity] = useState('')
+  const [billingState, setBillingState] = useState('')
+  const [billingZip, setBillingZip] = useState('')
+  const [billingSaving, setBillingSaving] = useState(false)
+  const [billingSaveMessage, setBillingSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
   // Open payment method modal
   const handleOpenPaymentModal = async () => {
     setShowPaymentModal(true)
@@ -247,6 +257,58 @@ export default function SettingsPage() {
         })
     }
   }, [activeTab, subscriptionData, subscriptionLoading, viewingAs])
+
+  // Populate billing fields when subscription data loads
+  useEffect(() => {
+    if (subscriptionData) {
+      setBillingEmail(subscriptionData.billingEmail || client.contactEmail || '')
+      setBillingCompany(subscriptionData.clientName || client.name)
+    }
+  }, [subscriptionData, client.contactEmail, client.name])
+
+  // Save billing information
+  const handleSaveBilling = async () => {
+    setBillingSaving(true)
+    setBillingSaveMessage(null)
+
+    try {
+      let url = '/api/client/billing'
+      if (viewingAs) {
+        url += `?clientId=${viewingAs}`
+      }
+
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: billingEmail,
+          name: billingCompany,
+          address: {
+            line1: billingAddress,
+            city: billingCity,
+            state: billingState,
+            postal_code: billingZip,
+            country: 'US',
+          },
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save billing information')
+      }
+
+      setBillingSaveMessage({ type: 'success', text: 'Billing information saved successfully' })
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setBillingSaveMessage(null), 3000)
+    } catch (err) {
+      console.error('Error saving billing:', err)
+      setBillingSaveMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save billing information' })
+    } finally {
+      setBillingSaving(false)
+    }
+  }
 
   // Parse first and last name from contactName
   const nameParts = client.contactName.split(' ')
@@ -735,33 +797,85 @@ export default function SettingsPage() {
               <div className="settings-card-body">
                 <div className="form-group">
                   <label className="form-label">Billing Email</label>
-                  <input type="email" className="form-input" defaultValue={subscriptionData?.billingEmail || client.contactEmail || ''} />
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={billingEmail}
+                    onChange={(e) => setBillingEmail(e.target.value)}
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-input" defaultValue={subscriptionData?.clientName || client.name} />
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={billingCompany}
+                    onChange={(e) => setBillingCompany(e.target.value)}
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Billing Address</label>
-                  <input type="text" className="form-input" placeholder="Street address" />
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Street address"
+                    value={billingAddress}
+                    onChange={(e) => setBillingAddress(e.target.value)}
+                  />
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">City</label>
-                    <input type="text" className="form-input" placeholder="City" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="City"
+                      value={billingCity}
+                      onChange={(e) => setBillingCity(e.target.value)}
+                    />
                   </div>
                   <div className="form-group">
                     <label className="form-label">State</label>
-                    <input type="text" className="form-input" placeholder="TX" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="TX"
+                      value={billingState}
+                      onChange={(e) => setBillingState(e.target.value)}
+                    />
                   </div>
                   <div className="form-group">
                     <label className="form-label">ZIP Code</label>
-                    <input type="text" className="form-input" placeholder="ZIP" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="ZIP"
+                      value={billingZip}
+                      onChange={(e) => setBillingZip(e.target.value)}
+                    />
                   </div>
                 </div>
+                {billingSaveMessage && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '6px',
+                    backgroundColor: billingSaveMessage.type === 'success' ? '#DEF7EC' : '#FDE8E8',
+                    color: billingSaveMessage.type === 'success' ? '#03543F' : '#9B1C1C',
+                    fontSize: '0.875rem',
+                  }}>
+                    {billingSaveMessage.text}
+                  </div>
+                )}
               </div>
               <div className="settings-card-footer">
-                <button className="btn btn-primary">Save Changes</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveBilling}
+                  disabled={billingSaving}
+                >
+                  {billingSaving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             </div>
 
