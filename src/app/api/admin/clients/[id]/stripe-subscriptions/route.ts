@@ -322,17 +322,27 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Sync the updated subscription to local DB
-    await syncStripeSubscriptions(clientId, client.stripe_customer_id)
+    // Sync the updated subscription to local DB (don't fail if this errors)
+    try {
+      await syncStripeSubscriptions(clientId, client.stripe_customer_id)
+    } catch (syncError) {
+      console.error('Failed to sync subscription to local DB:', syncError)
+      // Continue anyway - the Stripe subscription was updated successfully
+    }
 
     // If this is a term product, update the subscription_item with term_end_date
     if (termEndDate) {
-      await dbPool.query(
-        `UPDATE subscription_items
-         SET term_end_date = $1, updated_at = NOW()
-         WHERE stripe_subscription_item_id = $2`,
-        [termEndDate.toISOString(), subscriptionItem.id]
-      )
+      try {
+        await dbPool.query(
+          `UPDATE subscription_items
+           SET term_end_date = $1, updated_at = NOW()
+           WHERE stripe_subscription_item_id = $2`,
+          [termEndDate.toISOString(), subscriptionItem.id]
+        )
+      } catch (termError) {
+        console.error('Failed to update term_end_date:', termError)
+        // Continue anyway - the Stripe subscription was updated successfully
+      }
     }
 
     // Mark any matching smart recommendation item as 'purchased'
