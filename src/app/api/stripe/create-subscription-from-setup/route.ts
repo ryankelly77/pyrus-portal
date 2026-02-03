@@ -47,6 +47,27 @@ export async function POST(request: NextRequest) {
 
     let stripeCustomerId = (client as any).stripe_customer_id as string | null
 
+    // LAYER 1: Server-side guard - check for existing active subscription
+    // This prevents creating duplicate subscriptions if frontend logic fails
+    if (stripeCustomerId) {
+      const existingSubscriptions = await stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: 'active',
+        limit: 1,
+      })
+
+      if (existingSubscriptions.data.length > 0) {
+        console.warn(`[BLOCKED] Attempted to create new subscription for client ${clientId} who already has active subscription ${existingSubscriptions.data[0].id}`)
+        return NextResponse.json(
+          {
+            error: 'Client already has an active subscription. Use the add-to-subscription flow instead.',
+            existingSubscriptionId: existingSubscriptions.data[0].id,
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     if (!stripeCustomerId) {
       // Create Stripe customer
       const customer = await stripe.customers.create({
@@ -221,15 +242,32 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Update client status to active and growth stage to seedling (from prospect)
-    await prisma.clients.update({
-      where: { id: clientId },
-      data: {
-        status: 'active',
-        growth_stage: 'seedling',
-        start_date: new Date(),
-      },
-    })
+    // Update client status - only set growth stage and start_date for genuinely new clients
+    // This prevents resetting state for existing clients if they somehow reach this endpoint
+    const clientAny = client as any
+    const isGenuinelyNewClient = !clientAny.start_date &&
+      (!clientAny.status || clientAny.status === 'pending' || clientAny.status === 'prospect')
+
+    if (isGenuinelyNewClient) {
+      // New client - set initial state
+      await prisma.clients.update({
+        where: { id: clientId },
+        data: {
+          status: 'active',
+          growth_stage: 'seedling',
+          start_date: new Date(),
+        },
+      })
+    } else {
+      // Existing client - only update status if needed, preserve start_date and growth_stage
+      console.warn(`[SAFEGUARD] Client ${clientId} already has start_date or active status - preserving existing state`)
+      if (clientAny.status !== 'active') {
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: { status: 'active' },
+        })
+      }
+    }
 
     // Log purchase activity for notifications
     const tierDisplay = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : ''

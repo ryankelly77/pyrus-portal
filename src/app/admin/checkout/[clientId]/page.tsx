@@ -438,10 +438,33 @@ export default function CheckoutPage() {
       console.error('Failed to create subscription:', error)
     }
 
-    // Only update growth stage and redirect to onboarding for NEW clients
-    // Existing clients with active subscriptions should keep their current stage/tenure
+    // LAYER 3: Only update growth stage for GENUINELY new clients
+    // Check client's existing state before resetting to prevent state corruption
+    let isGenuinelyNewClient = !hasActiveSubscription
+
     if (!hasActiveSubscription) {
-      // Update client's growth stage to "seedling" (new clients only)
+      try {
+        // Fetch current client data to verify they're truly new
+        const clientResponse = await fetch(`/api/admin/clients/${clientId}`)
+        if (clientResponse.ok) {
+          const clientData = await clientResponse.json()
+          // Client is genuinely new if they have no start_date and are pending/prospect
+          isGenuinelyNewClient = !clientData.start_date &&
+            (!clientData.status || clientData.status === 'pending' || clientData.status === 'prospect')
+
+          if (!isGenuinelyNewClient) {
+            console.warn(`[SAFEGUARD] Client ${clientId} has existing start_date or active status — preserving state`)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch client data for state check:', error)
+        // On error, be conservative and don't reset state
+        isGenuinelyNewClient = false
+      }
+    }
+
+    if (isGenuinelyNewClient) {
+      // Update client's growth stage to "seedling" (genuinely new clients only)
       try {
         await fetch(`/api/admin/clients/${clientId}`, {
           method: 'PATCH',
@@ -492,9 +515,29 @@ export default function CheckoutPage() {
         console.error('Failed to create subscription:', error)
       }
 
-      // Only update growth stage and redirect to onboarding for NEW clients
+      // LAYER 3: Only update growth stage for GENUINELY new clients
+      let isGenuinelyNewClient = !hasActiveSubscription
+
       if (!hasActiveSubscription) {
-        // Update client's growth stage (new clients only)
+        try {
+          const clientResponse = await fetch(`/api/admin/clients/${clientId}`)
+          if (clientResponse.ok) {
+            const clientData = await clientResponse.json()
+            isGenuinelyNewClient = !clientData.start_date &&
+              (!clientData.status || clientData.status === 'pending' || clientData.status === 'prospect')
+
+            if (!isGenuinelyNewClient) {
+              console.warn(`[SAFEGUARD] Client ${clientId} has existing start_date or active status — preserving state`)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch client data for state check:', error)
+          isGenuinelyNewClient = false
+        }
+      }
+
+      if (isGenuinelyNewClient) {
+        // Update client's growth stage (genuinely new clients only)
         try {
           await fetch(`/api/admin/clients/${clientId}`, {
             method: 'PATCH',

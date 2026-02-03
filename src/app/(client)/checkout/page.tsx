@@ -264,6 +264,26 @@ export default function CheckoutPage() {
         return
       }
 
+      // LAYER 2: Defensive verification before creating new subscription
+      // If hasActiveSubscription is false, double-check with a direct API call
+      // This prevents race conditions or stale state from causing duplicate subscriptions
+      try {
+        const verifyResponse = await fetch(`/api/admin/clients/${effectiveClientId}/stripe-subscriptions`)
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json()
+          const hasExistingSub = verifyData?.subscriptions?.some((s: { status: string }) => s.status === 'active')
+
+          if (hasExistingSub) {
+            console.warn('[SAFEGUARD] hasActiveSubscription was false but client has active subscription — using add-to-subscription flow')
+            await handleAddToExistingSubscription()
+            return
+          }
+        }
+      } catch (verifyErr) {
+        // If verification fails, proceed with caution - the server-side guard will catch duplicates
+        console.warn('Subscription verification failed, proceeding with server-side protection:', verifyErr)
+      }
+
       const response = await fetch('/api/stripe/create-subscription-from-setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
