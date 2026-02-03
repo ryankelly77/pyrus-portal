@@ -335,7 +335,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       try {
         await dbPool.query(
           `UPDATE subscription_items
-           SET term_end_date = $1, updated_at = NOW()
+           SET term_end_date = $1
            WHERE stripe_subscription_item_id = $2`,
           [termEndDate.toISOString(), subscriptionItem.id]
         )
