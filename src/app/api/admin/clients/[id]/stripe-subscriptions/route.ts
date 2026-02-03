@@ -301,6 +301,41 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Sync the updated subscription to local DB
     await syncStripeSubscriptions(clientId, client.stripe_customer_id)
 
+    // Mark any matching smart recommendation item as 'purchased'
+    try {
+      // Find the smart recommendation item for this product
+      const recItemResult = await dbPool.query(
+        `SELECT sri.id, sri.recommendation_id
+         FROM smart_recommendation_items sri
+         JOIN smart_recommendations sr ON sr.id = sri.recommendation_id
+         WHERE sr.client_id = $1 AND sri.product_id = $2 AND (sri.status = 'active' OR sri.status IS NULL)
+         LIMIT 1`,
+        [clientId, product_id]
+      )
+
+      if (recItemResult.rows.length > 0) {
+        const recItem = recItemResult.rows[0]
+        // Update item status to purchased
+        await dbPool.query(
+          `UPDATE smart_recommendation_items
+           SET status = 'purchased', status_changed_at = NOW(), updated_at = NOW()
+           WHERE id = $1`,
+          [recItem.id]
+        )
+
+        // Create history entry
+        await dbPool.query(
+          `INSERT INTO smart_recommendation_history
+           (recommendation_id, item_id, product_id, action, details, created_by)
+           VALUES ($1, $2, $3, 'purchased', $4, NULL)`,
+          [recItem.recommendation_id, recItem.id, product_id, `"${product.name}" was added to subscription`]
+        )
+      }
+    } catch (recError) {
+      // Don't fail the whole request if recommendation update fails
+      console.error('Failed to update recommendation status:', recError)
+    }
+
     return NextResponse.json({
       success: true,
       message: `${product.name} has been added to the subscription`,

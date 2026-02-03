@@ -539,6 +539,9 @@ export default function ClientDetailPage() {
   // Smart recommendations count for tab badge
   const [smartRecommendationsCount, setSmartRecommendationsCount] = useState(0)
 
+  // Current user role
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+
   // Basecamp activities state
   interface BasecampActivity {
     id: string
@@ -917,21 +920,40 @@ export default function ClientDetailPage() {
     fetchChecklist()
   }, [clientId])
 
-  // Fetch smart recommendations count for tab badge
-  useEffect(() => {
-    const fetchSmartRecsCount = async () => {
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations`)
-        if (res.ok) {
-          const data = await res.json()
-          setSmartRecommendationsCount(data.recommendation?.items?.length || 0)
-        }
-      } catch (error) {
-        console.error('Failed to fetch smart recommendations count:', error)
+  // Fetch smart recommendations count for tab badge (only active items - filtered server-side)
+  const fetchSmartRecsCount = async () => {
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations`)
+      if (res.ok) {
+        const data = await res.json()
+        // API already filters to only active items
+        const items = data.recommendation?.items || []
+        setSmartRecommendationsCount(items.length)
       }
+    } catch (error) {
+      console.error('Failed to fetch smart recommendations count:', error)
     }
+  }
+
+  useEffect(() => {
     fetchSmartRecsCount()
   }, [clientId])
+
+  // Fetch current user's role to check if super admin
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        if (res.ok) {
+          const data = await res.json()
+          setIsSuperAdmin(data.role === 'super_admin')
+        }
+      } catch (error) {
+        console.error('Failed to fetch user role:', error)
+      }
+    }
+    fetchUserRole()
+  }, [])
 
   // Fetch payment methods
   useEffect(() => {
@@ -3067,6 +3089,8 @@ export default function ClientDetailPage() {
             invoices={(subscriptions as any)?.invoices || []}
             invoicesLoading={subscriptionsLoading}
             stripeCustomerId={dbClient?.stripe_customer_id || null}
+            onRecommendationChange={fetchSmartRecsCount}
+            isSuperAdmin={isSuperAdmin}
           />
         )}
 

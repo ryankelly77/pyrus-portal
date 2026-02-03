@@ -112,6 +112,10 @@ export default function RecommendationsPage() {
             isPending={isPending}
             demoState={demoState}
             viewingAs={viewingAs}
+            onRecommendationChange={() => {
+              // Dispatch event to notify sidebar to refresh count
+              window.dispatchEvent(new Event('recommendation-changed'))
+            }}
           />
         )}
       </div>

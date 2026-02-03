@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 // GET /api/admin/clients/[id]/smart-recommendations
@@ -22,7 +22,24 @@ export async function GET(
       },
       include: {
         items: {
-          include: {
+          where: {
+            NOT: {
+              status: 'declined'
+            }
+          },
+          select: {
+            id: true,
+            recommendation_id: true,
+            product_id: true,
+            priority: true,
+            why_note: true,
+            is_featured: true,
+            price_option: true,
+            coupon_code: true,
+            status: true,
+            status_changed_at: true,
+            created_at: true,
+            updated_at: true,
             product: {
               select: {
                 id: true,
@@ -95,12 +112,14 @@ export async function POST(
       // Create new items
       if (items.length > 0) {
         await prisma.smart_recommendation_items.createMany({
-          data: items.map((item: { product_id: string; priority?: number; why_note?: string; is_featured?: boolean }, index: number) => ({
+          data: items.map((item: { product_id: string; priority?: number; why_note?: string; is_featured?: boolean; price_option?: string; coupon_code?: string }, index: number) => ({
             recommendation_id: recommendation!.id,
             product_id: item.product_id,
             priority: item.priority ?? index + 1,
             why_note: item.why_note || null,
             is_featured: item.is_featured || false,
+            price_option: item.price_option || null,
+            coupon_code: item.coupon_code || null,
           }))
         })
       }
@@ -136,7 +155,24 @@ export async function POST(
       where: { id: recommendation.id },
       include: {
         items: {
-          include: {
+          where: {
+            NOT: {
+              status: 'declined'
+            }
+          },
+          select: {
+            id: true,
+            recommendation_id: true,
+            product_id: true,
+            priority: true,
+            why_note: true,
+            is_featured: true,
+            price_option: true,
+            coupon_code: true,
+            status: true,
+            status_changed_at: true,
+            created_at: true,
+            updated_at: true,
             product: {
               select: {
                 id: true,

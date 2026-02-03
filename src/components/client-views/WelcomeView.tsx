@@ -40,6 +40,7 @@ interface Recommendation {
   whyNote: string | null
   isFeatured: boolean
   priceOption: string | null
+  couponCode: string | null
   monthlyPrice: number | null
   onetimePrice: number | null
   priority: number
@@ -76,6 +77,7 @@ interface WelcomeData {
   resultAlerts: ResultAlert[]
   billing: BillingSummary | null
   recommendations: Recommendation[]
+  nextRecommendationDate: string | null
   lastUpdated: string
 }
 
@@ -88,6 +90,11 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
   const [selectedProduct, setSelectedProduct] = useState<Recommendation | null>(null)
   const [onboardingSummary, setOnboardingSummary] = useState<Record<string, Array<{id: string, question: string, answer: string | string[] | null}>> | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
+
+  // Decline recommendation state
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false)
+  const [pendingDecline, setPendingDecline] = useState<Recommendation | null>(null)
+  const [declining, setDeclining] = useState(false)
 
   // Helper to build href with viewingAs param preserved
   const buildHref = (path: string) => {
@@ -147,6 +154,50 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
 
     fetchWelcomeData()
   }, [clientId, isAdmin])
+
+  // Handle declining a recommendation
+  const handleDeclineClick = (rec: Recommendation) => {
+    setPendingDecline(rec)
+    setShowDeclineConfirm(true)
+  }
+
+  const handleDeclineConfirm = async () => {
+    if (!pendingDecline || !data) return
+
+    setDeclining(true)
+    try {
+      // Use admin endpoint if in admin context, otherwise use client endpoint
+      const apiUrl = isAdmin
+        ? `/api/admin/clients/${clientId}/smart-recommendations/decline`
+        : '/api/client/smart-recommendations/decline'
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: pendingDecline.id }),
+      })
+
+      if (res.ok) {
+        // Remove the recommendation from local state
+        setData({
+          ...data,
+          recommendations: data.recommendations.filter(r => r.id !== pendingDecline.id)
+        })
+        setShowDeclineConfirm(false)
+        setPendingDecline(null)
+        // Notify sidebar to refresh count
+        window.dispatchEvent(new Event('recommendation-changed'))
+      } else {
+        const result = await res.json()
+        alert(result.error || 'Failed to decline recommendation')
+      }
+    } catch (error) {
+      console.error('Failed to decline:', error)
+      alert('Failed to decline recommendation. Please try again.')
+    } finally {
+      setDeclining(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -275,7 +326,9 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
             <p className="section-subtitle">Priority actions based on your account</p>
           </div>
           <div className="recommendations-grid">
-            {data.recommendations.slice(0, 4).map((rec) => (
+            {data.recommendations.slice(0, 4).map((rec) => {
+              console.log('[DEBUG] Recommendation:', rec.productName, 'couponCode:', rec.couponCode)
+              return (
               <div key={rec.id} className={`recommendation-card ${rec.isFeatured ? 'featured' : ''}`}>
                 {rec.createdAt && (
                   <div className="rec-date">
@@ -301,7 +354,13 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                 )}
                 <div className="rec-footer">
                   <div className="rec-price-row">
-                    {rec.monthlyPrice !== null && rec.monthlyPrice > 0 && rec.onetimePrice !== null && rec.onetimePrice > 0 ? (
+                    {rec.priceOption === 'client_choice' && rec.monthlyPrice && rec.monthlyPrice > 0 && rec.onetimePrice && rec.onetimePrice > 0 ? (
+                      <>
+                        <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo for 12 months</span>
+                        <span className="rec-price-or">or</span>
+                        <span className="rec-price">{formatCurrency(rec.onetimePrice)} one-time</span>
+                      </>
+                    ) : rec.monthlyPrice !== null && rec.monthlyPrice > 0 && rec.onetimePrice !== null && rec.onetimePrice > 0 ? (
                       <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo for 12 months</span>
                     ) : rec.monthlyPrice !== null && rec.monthlyPrice > 0 ? (
                       <span className="rec-price">{formatCurrency(rec.monthlyPrice)}/mo</span>
@@ -309,6 +368,16 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                       <span className="rec-price">{formatCurrency(rec.onetimePrice)} one-time</span>
                     ) : null}
                   </div>
+                  {rec.couponCode && (
+                    <div className="rec-coupon-banner">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+                        <path d="M4 6v12c0 1.1.9 2 2 2h14v-4" />
+                        <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" />
+                      </svg>
+                      Use code <strong>{rec.couponCode}</strong> at checkout
+                    </div>
+                  )}
                   <div className="rec-btn-group">
                     {rec.longDescription && (
                       <button
@@ -318,16 +387,41 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
                         Learn More
                       </button>
                     )}
-                    <Link
-                      href={`/checkout?product=${rec.productId}&price=${rec.priceOption || (rec.monthlyPrice && rec.monthlyPrice > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
-                      className="btn btn-sm rec-add-btn"
-                    >
-                      Add to Plan
-                    </Link>
+                    {rec.priceOption === 'client_choice' && rec.monthlyPrice && rec.monthlyPrice > 0 && rec.onetimePrice && rec.onetimePrice > 0 ? (
+                      <>
+                        <Link
+                          href={`/checkout?product=${rec.productId}&price=monthly&from=welcome${rec.couponCode ? `&coupon=${rec.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                          className="btn btn-sm rec-add-btn"
+                        >
+                          Add Monthly
+                        </Link>
+                        <Link
+                          href={`/checkout?product=${rec.productId}&price=onetime&from=welcome${rec.couponCode ? `&coupon=${rec.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                          className="btn btn-sm rec-add-btn secondary"
+                        >
+                          Add One-time
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        href={`/checkout?product=${rec.productId}&price=${rec.priceOption || (rec.monthlyPrice && rec.monthlyPrice > 0 ? 'monthly' : 'onetime')}&from=welcome${rec.couponCode ? `&coupon=${rec.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                        className="btn btn-sm rec-add-btn"
+                      >
+                        Add to Plan
+                      </Link>
+                    )}
                   </div>
+                  {/* Not interested button */}
+                  <button
+                    className="btn-not-interested"
+                    onClick={() => handleDeclineClick(rec)}
+                  >
+                    Not interested at this time
+                  </button>
                 </div>
               </div>
-            ))}
+            )})}
+
           </div>
           <div className="section-footer">
             <Link href={buildHref('/recommendations')} className="view-all-link">
@@ -357,6 +451,11 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
             <p>You&apos;re all caught up! No pending recommendations.</p>
+            {data.nextRecommendationDate && (
+              <p className="next-recommendation-date">
+                Your next Smart Recommendation will be {new Date(data.nextRecommendationDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -545,21 +644,95 @@ export function WelcomeView({ clientId, isAdmin = false }: WelcomeViewProps) {
               )}
             </div>
             <div className="product-modal-footer">
-              <div className="modal-price">
-                {selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 && selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
-                  <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo for 12 months</span>
-                ) : selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 ? (
-                  <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo</span>
-                ) : selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
-                  <span>{formatCurrency(selectedProduct.onetimePrice)} one-time</span>
-                ) : null}
+              <div className="modal-price-section">
+                <div className="modal-price">
+                  {selectedProduct.priceOption === 'client_choice' && selectedProduct.monthlyPrice && selectedProduct.monthlyPrice > 0 && selectedProduct.onetimePrice && selectedProduct.onetimePrice > 0 ? (
+                    <>
+                      <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo</span>
+                      <span className="price-or">or</span>
+                      <span>{formatCurrency(selectedProduct.onetimePrice)} one-time</span>
+                    </>
+                  ) : selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 && selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
+                    <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo for 12 months</span>
+                  ) : selectedProduct.monthlyPrice !== null && selectedProduct.monthlyPrice > 0 ? (
+                    <span>{formatCurrency(selectedProduct.monthlyPrice)}/mo</span>
+                  ) : selectedProduct.onetimePrice !== null && selectedProduct.onetimePrice > 0 ? (
+                    <span>{formatCurrency(selectedProduct.onetimePrice)} one-time</span>
+                  ) : null}
+                </div>
+                {selectedProduct.couponCode && (
+                  <div className="modal-coupon-code">
+                    Use code <strong>{selectedProduct.couponCode}</strong> at checkout
+                  </div>
+                )}
               </div>
-              <Link
-                href={`/checkout?product=${selectedProduct.productId}&price=${selectedProduct.priceOption || (selectedProduct.monthlyPrice && selectedProduct.monthlyPrice > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
-                className="btn btn-primary"
+              {selectedProduct.priceOption === 'client_choice' && selectedProduct.monthlyPrice && selectedProduct.monthlyPrice > 0 && selectedProduct.onetimePrice && selectedProduct.onetimePrice > 0 ? (
+                <div className="modal-btn-group">
+                  <Link
+                    href={`/checkout?product=${selectedProduct.productId}&price=monthly&from=welcome${selectedProduct.couponCode ? `&coupon=${selectedProduct.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                    className="btn btn-primary"
+                  >
+                    Add Monthly
+                  </Link>
+                  <Link
+                    href={`/checkout?product=${selectedProduct.productId}&price=onetime&from=welcome${selectedProduct.couponCode ? `&coupon=${selectedProduct.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                    className="btn btn-secondary"
+                  >
+                    Add One-time
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href={`/checkout?product=${selectedProduct.productId}&price=${selectedProduct.priceOption || (selectedProduct.monthlyPrice && selectedProduct.monthlyPrice > 0 ? 'monthly' : 'onetime')}&from=welcome${selectedProduct.couponCode ? `&coupon=${selectedProduct.couponCode}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                  className="btn btn-primary"
+                >
+                  Add to Plan
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Confirmation Modal */}
+      {showDeclineConfirm && pendingDecline && (
+        <div className="product-modal-overlay" onClick={() => setShowDeclineConfirm(false)}>
+          <div className="product-modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="product-modal-header">
+              <h3>Decline Recommendation</h3>
+              <button className="modal-close-btn" onClick={() => setShowDeclineConfirm(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="product-modal-body">
+              <p style={{ marginBottom: '1rem' }}>
+                Are you sure you want to decline <strong>{pendingDecline.productName}</strong>?
+              </p>
+              <p style={{ color: '#666', fontSize: '0.875rem' }}>
+                This recommendation will be removed from your view. You can always contact us if you change your mind.
+              </p>
+            </div>
+            <div className="product-modal-footer" style={{ gap: '0.75rem' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDeclineConfirm(false)
+                  setPendingDecline(null)
+                }}
+                disabled={declining}
               >
-                Add to Plan
-              </Link>
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDeclineConfirm}
+                disabled={declining}
+              >
+                {declining ? 'Declining...' : 'Yes, Decline'}
+              </button>
             </div>
           </div>
         </div>

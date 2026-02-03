@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all welcome dashboard data in parallel
-    const [activityResult, subscriptionResult, alertsResult, recommendationsResult] = await Promise.all([
+    const [activityResult, subscriptionResult, alertsResult, recommendationsResult, recommendationMetaResult] = await Promise.all([
       // Recent activity (5 items)
       getClientActivity(clientId, { limit: 5 }).catch(err => {
         console.error('Activity feed error:', err)
@@ -130,6 +130,7 @@ export async function GET(request: NextRequest) {
            sri.why_note,
            sri.is_featured,
            sri.price_option,
+           sri.coupon_code,
            sri.created_at as item_created_at,
            p.id as product_id,
            p.name as product_name,
@@ -143,11 +144,26 @@ export async function GET(request: NextRequest) {
          JOIN products p ON p.id = sri.product_id
          WHERE sr.client_id = $1
            AND sr.status = 'published'
+           AND (sri.status = 'active' OR sri.status IS NULL)
          ORDER BY sri.priority ASC
          LIMIT 8`,
         [clientId]
       ).catch(err => {
         console.error('Recommendations query error:', err)
+        return { rows: [] }
+      }),
+
+      // Smart recommendation metadata (for next_refresh_at even when no active items)
+      dbPool.query(
+        `SELECT id, status, next_refresh_at
+         FROM smart_recommendations
+         WHERE client_id = $1
+           AND status = 'published'
+         ORDER BY published_at DESC
+         LIMIT 1`,
+        [clientId]
+      ).catch(err => {
+        console.error('Recommendation metadata query error:', err)
         return { rows: [] }
       })
     ])
@@ -181,11 +197,16 @@ export async function GET(request: NextRequest) {
       whyNote: rec.why_note,
       isFeatured: rec.is_featured,
       priceOption: rec.price_option,
+      couponCode: rec.coupon_code,
       monthlyPrice: rec.monthly_price ? Number(rec.monthly_price) : null,
       onetimePrice: rec.onetime_price ? Number(rec.onetime_price) : null,
       priority: rec.priority,
       createdAt: rec.item_created_at
     }))
+
+    // Get next refresh date from recommendation metadata
+    const recommendationMeta = recommendationMetaResult.rows[0]
+    const nextRecommendationDate = recommendationMeta?.next_refresh_at || null
 
     return NextResponse.json({
       isOnboarding: false,
@@ -198,6 +219,7 @@ export async function GET(request: NextRequest) {
       resultAlerts,
       billing,
       recommendations,
+      nextRecommendationDate,
       lastUpdated: new Date().toISOString()
     })
 

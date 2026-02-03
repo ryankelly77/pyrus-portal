@@ -14,30 +14,47 @@ export function ClientSidebar() {
   const [smartRecsCount, setSmartRecsCount] = useState(0)
 
   // Fetch smart recommendations count
-  useEffect(() => {
-    const fetchSmartRecsCount = async () => {
-      try {
-        const url = viewingAs
-          ? `/api/admin/clients/${viewingAs}/smart-recommendations`
-          : '/api/client/smart-recommendations'
-        const res = await fetch(url)
-        if (res.ok) {
-          const data = await res.json()
-          // Check if published (for client view) or any items (for admin viewing as client)
-          if (viewingAs) {
-            setSmartRecsCount(data.recommendation?.items?.length || 0)
-          } else {
-            setSmartRecsCount(data.items?.length || 0)
-          }
+  const fetchSmartRecsCount = async () => {
+    try {
+      const url = viewingAs
+        ? `/api/admin/clients/${viewingAs}/smart-recommendations`
+        : '/api/client/smart-recommendations'
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        // Count only active items (not declined or purchased)
+        if (viewingAs) {
+          const items = data.recommendation?.items || []
+          const activeCount = items.filter((item: { status?: string }) =>
+            !item.status || item.status === 'active'
+          ).length
+          setSmartRecsCount(activeCount)
+        } else {
+          // Client API already filters to active items only
+          setSmartRecsCount(data.items?.length || 0)
         }
-      } catch (error) {
-        console.error('Failed to fetch smart recommendations count:', error)
       }
+    } catch (error) {
+      console.error('Failed to fetch smart recommendations count:', error)
     }
+  }
+
+  useEffect(() => {
     if (!loading) {
       fetchSmartRecsCount()
     }
   }, [viewingAs, loading])
+
+  // Listen for recommendation changes to refresh the count
+  useEffect(() => {
+    const handleRecommendationChange = () => {
+      fetchSmartRecsCount()
+    }
+    window.addEventListener('recommendation-changed', handleRecommendationChange)
+    return () => {
+      window.removeEventListener('recommendation-changed', handleRecommendationChange)
+    }
+  }, [viewingAs])
 
   // Show minimal skeleton while loading to prevent flash
   if (loading) {

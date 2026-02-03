@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recommendation: null, items: [] })
     }
 
-    // Get the recommendation items with product details
+    // Get the recommendation items with product details (only active items for clients)
     const itemsResult = await dbPool.query(
       `SELECT
         sri.id,
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
         sri.why_note,
         sri.is_featured,
         sri.price_option,
+        sri.coupon_code,
         sri.created_at,
         p.name as product_name,
         p.short_description,
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
       FROM smart_recommendation_items sri
       JOIN products p ON p.id = sri.product_id
       WHERE sri.recommendation_id = $1
+        AND (sri.status = 'active' OR sri.status IS NULL)
       ORDER BY sri.priority ASC`,
       [recommendation.id]
     )
@@ -82,6 +84,7 @@ export async function GET(request: NextRequest) {
       why_note: row.why_note,
       is_featured: row.is_featured,
       price_option: row.price_option,
+      coupon_code: row.coupon_code,
       created_at: row.created_at,
       product: {
         id: row.product_id,

@@ -93,6 +93,24 @@ export async function getClientActivity(
     take: 50,
   })
 
+  // Fetch recommendation history events
+  const recommendationHistory = await prisma.smart_recommendation_history.findMany({
+    where: {
+      recommendation: {
+        client_id: clientId,
+      },
+    },
+    include: {
+      product: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: { created_at: 'desc' },
+    take: 50,
+  })
+
   // Map Basecamp activities to unified format
   const mappedBasecampActivities = basecampActivities.map((row) => {
     const isCompleted = row.kind === 'todo_completed'
@@ -159,8 +177,57 @@ export async function getClientActivity(
     }
   })
 
+  // Map recommendation history to unified format
+  const mappedRecommendationHistory = recommendationHistory.map((row) => {
+    const type: 'task' | 'update' | 'alert' | 'content' = 'update'
+    const productName = row.product?.name || 'a product'
+
+    // Determine title and style based on action
+    let title: string
+    let iconStyle: { background: string; color: string }
+
+    switch (row.action) {
+      case 'item_added':
+        title = `Recommendation added: ${productName}`
+        iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+        break
+      case 'purchased':
+        title = `Recommendation accepted: ${productName}`
+        iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
+        break
+      case 'declined':
+        title = `Recommendation declined: ${productName}`
+        iconStyle = { background: 'var(--warning-bg)', color: 'var(--warning)' }
+        break
+      case 'published':
+        title = 'Smart Recommendations published'
+        iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+        break
+      default:
+        title = row.details || `Recommendation ${row.action}`
+        iconStyle = { background: 'var(--muted-bg)', color: 'var(--text-muted)' }
+    }
+
+    const date = new Date(row.created_at || new Date())
+
+    return {
+      id: row.id,
+      type,
+      title,
+      description: row.details || '',
+      time: formatTime(date),
+      timestamp: date.getTime(),
+      iconStyle,
+      metadata: {
+        action: row.action,
+        productId: row.product_id,
+        itemId: row.item_id,
+      },
+    }
+  })
+
   // Merge and sort by timestamp (most recent first)
-  const allActivities = [...mappedBasecampActivities, ...mappedCommunications]
+  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit)
     .map(({ timestamp, ...rest }) => rest as ActivityItem)

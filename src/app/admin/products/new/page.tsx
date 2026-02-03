@@ -23,6 +23,7 @@ export default function NewProductPage() {
     name: '',
     shortDesc: '',
     longDesc: '',
+    smartRecWhyText: '',
     category: '',
     status: 'active',
     monthlyPrice: '',
@@ -151,6 +152,18 @@ export default function NewProductPage() {
                     value={productForm.longDesc}
                     onChange={(e) => setProductForm({ ...productForm, longDesc: e.target.value })}
                   />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="smartRecWhyText">Smart Recommendation "Why You Need This"</label>
+                  <textarea
+                    id="smartRecWhyText"
+                    className="form-control"
+                    rows={3}
+                    placeholder="Default text shown to clients explaining why they need this product"
+                    value={productForm.smartRecWhyText}
+                    onChange={(e) => setProductForm({ ...productForm, smartRecWhyText: e.target.value })}
+                  />
+                  <span className="form-hint">This text auto-populates when adding this product to a client's smart recommendations</span>
                 </div>
               </div>
 

@@ -16,6 +16,7 @@ interface Product {
   name: string
   short_description: string | null
   long_description: string | null
+  smart_rec_why_text: string | null
   category: string
   status: string | null
   monthly_price: string | null
@@ -52,6 +53,7 @@ export default function EditProductPage() {
     name: '',
     shortDesc: '',
     longDesc: '',
+    smartRecWhyText: '',
     category: '',
     status: 'active',
     monthlyPrice: '',
@@ -98,6 +100,7 @@ export default function EditProductPage() {
           name: product.name,
           shortDesc: product.short_description || '',
           longDesc: product.long_description || '',
+          smartRecWhyText: product.smart_rec_why_text || '',
           category: product.category,
           status: product.status || 'active',
           monthlyPrice: product.monthly_price ? String(product.monthly_price) : '',
@@ -252,6 +255,18 @@ export default function EditProductPage() {
                     value={productForm.longDesc}
                     onChange={(e) => setProductForm({ ...productForm, longDesc: e.target.value })}
                   />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="smartRecWhyText">Smart Recommendation "Why You Need This"</label>
+                  <textarea
+                    id="smartRecWhyText"
+                    className="form-control"
+                    rows={3}
+                    placeholder="Default text shown to clients explaining why they need this product"
+                    value={productForm.smartRecWhyText}
+                    onChange={(e) => setProductForm({ ...productForm, smartRecWhyText: e.target.value })}
+                  />
+                  <span className="form-hint">This text auto-populates when adding this product to a client's smart recommendations</span>
                 </div>
               </div>
 

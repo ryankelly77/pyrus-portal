@@ -15,6 +15,12 @@ const formatPrice = (amount: number): string => {
   return Math.round(amount).toLocaleString('en-US')
 }
 
+// Available coupon codes for admin selection
+const AVAILABLE_COUPON_CODES = [
+  { code: 'SAVE10', label: 'SAVE10 - 10% Off' },
+  { code: 'BIGDEAL100', label: 'BIGDEAL100 - 100% Off' },
+]
+
 interface RecommendationItem {
   id: string
   tier: string | null
@@ -166,6 +172,9 @@ interface SmartRecommendationItem {
   why_note: string | null
   is_featured: boolean
   price_option: 'monthly' | 'onetime' | 'client_choice' | null
+  coupon_code: string | null
+  status?: 'active' | 'purchased' | 'declined' | null
+  status_changed_at?: string | null
   created_at: string | null
   product: SmartRecommendationProduct
 }
@@ -177,10 +186,24 @@ interface SmartRecommendation {
   next_refresh_at: string | null
 }
 
+interface SmartRecommendationHistoryItem {
+  id: string
+  itemId: string | null
+  productId: string | null
+  productName: string | null
+  action: string
+  details: string | null
+  createdAt: string
+  createdBy: string | null
+  createdByEmail: string | null
+  clientName: string | null
+}
+
 interface AvailableProduct {
   id: string
   name: string
   short_description: string | null
+  smart_rec_why_text: string | null
   category: string
   monthly_price: string | null
   onetime_price: string | null
@@ -213,6 +236,10 @@ interface RecommendationsViewProps {
   isPending?: boolean
   demoState?: string | null
   viewingAs?: string | null
+  // Callback when recommendations change (decline/purchase)
+  onRecommendationChange?: () => void
+  // Super admin can delete history items
+  isSuperAdmin?: boolean
 }
 
 // Growth Rewards tier thresholds - shared constant
@@ -347,6 +374,8 @@ export function RecommendationsView({
   isPending: propIsPending,
   demoState,
   viewingAs,
+  onRecommendationChange,
+  isSuperAdmin = false,
 }: RecommendationsViewProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -376,6 +405,23 @@ export function RecommendationsView({
   const [selectedProduct, setSelectedProduct] = useState<SmartRecommendationItem | null>(null)
   const [savingSmartRec, setSavingSmartRec] = useState(false)
   const [addingToPlan, setAddingToPlan] = useState<string | null>(null) // product_id being added
+
+  // Password protection for Add to Plan
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [pendingAddToPlan, setPendingAddToPlan] = useState<{ item: SmartRecommendationItem; priceType: 'monthly' | 'onetime' } | null>(null)
+  const [addToPlanPassword, setAddToPlanPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [verifyingPassword, setVerifyingPassword] = useState(false)
+
+  // Decline recommendation state
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false)
+  const [pendingDecline, setPendingDecline] = useState<SmartRecommendationItem | null>(null)
+  const [declining, setDeclining] = useState(false)
+
+  // Admin history state
+  const [recommendationHistory, setRecommendationHistory] = useState<SmartRecommendationHistoryItem[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [deletingHistoryId, setDeletingHistoryId] = useState<string | null>(null)
 
   // Use prop data for admin, local data for client
   const dbClient = isAdmin ? propDbClient : localDbClient
@@ -519,16 +565,47 @@ export function RecommendationsView({
     fetchProducts()
   }, [isAdmin, clientId])
 
+  // Fetch recommendation history
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!clientId) return
+
+      setHistoryLoading(true)
+      try {
+        // Use different API based on admin/client
+        const apiUrl = isAdmin
+          ? `/api/admin/clients/${clientId}/smart-recommendations/history`
+          : `/api/client/smart-recommendations/history?clientId=${clientId}`
+
+        const res = await fetch(apiUrl)
+        if (res.ok) {
+          const data = await res.json()
+          setRecommendationHistory(data.history || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommendation history:', error)
+      } finally {
+        setHistoryLoading(false)
+      }
+    }
+
+    fetchHistory()
+  }, [isAdmin, clientId])
+
   // Add product to smart recommendations
-  const handleAddProduct = async (productId: string, whyNote: string, priceOption: string | null) => {
+  const handleAddProduct = async (productId: string, whyNote: string, priceOption: string | null, couponCode: string | null) => {
     if (!clientId) return
+
+    console.log('[DEBUG] handleAddProduct called with:', { productId, whyNote, priceOption, couponCode })
 
     setSavingSmartRec(true)
     try {
+      const payload = { product_id: productId, why_note: whyNote, price_option: priceOption, coupon_code: couponCode }
+      console.log('[DEBUG] Sending payload:', JSON.stringify(payload))
       const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, why_note: whyNote, price_option: priceOption }),
+        body: JSON.stringify(payload),
       })
 
       if (res.ok) {
@@ -549,7 +626,7 @@ export function RecommendationsView({
   }
 
   // Update recommendation item
-  const handleUpdateItem = async (itemId: string, whyNote: string, isFeatured: boolean) => {
+  const handleUpdateItem = async (itemId: string, whyNote: string, isFeatured: boolean, couponCode: string | null) => {
     if (!clientId) return
 
     setSavingSmartRec(true)
@@ -557,7 +634,7 @@ export function RecommendationsView({
       const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/items`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_id: itemId, why_note: whyNote, is_featured: isFeatured }),
+        body: JSON.stringify({ item_id: itemId, why_note: whyNote, is_featured: isFeatured, coupon_code: couponCode }),
       })
 
       if (res.ok) {
@@ -585,7 +662,17 @@ export function RecommendationsView({
       })
 
       if (res.ok) {
+        const data = await res.json()
         setSmartRecommendationItems(prev => prev.filter(item => item.id !== itemId))
+
+        // If no items remain, the backend resets to draft - update local state too
+        if (data.remainingItems === 0 && smartRecommendation) {
+          setSmartRecommendation({
+            ...smartRecommendation,
+            status: 'draft',
+            published_at: null
+          })
+        }
       }
     } catch (error) {
       console.error('Failed to remove item:', error)
@@ -609,6 +696,8 @@ export function RecommendationsView({
             priority: index + 1,
             why_note: item.why_note,
             is_featured: item.is_featured,
+            price_option: item.price_option,
+            coupon_code: item.coupon_code,
           })),
           status: 'published',
         }),
@@ -626,7 +715,7 @@ export function RecommendationsView({
     }
   }
 
-  // Add product to client's Stripe subscription
+  // Add product to client's Stripe subscription - requires password
   const handleAddToPlan = async (item: SmartRecommendationItem, priceType: 'monthly' | 'onetime') => {
     if (!clientId) return
 
@@ -639,9 +728,47 @@ export function RecommendationsView({
       return
     }
 
-    if (!confirm(`Add "${item.product.name}" to the client's Stripe subscription?`)) {
+    // Show password modal for super admin verification
+    setPendingAddToPlan({ item, priceType })
+    setAddToPlanPassword('')
+    setPasswordError('')
+    setShowPasswordModal(true)
+  }
+
+  // Execute the add to plan after password verification
+  const executeAddToPlan = async () => {
+    if (!pendingAddToPlan || !clientId) return
+
+    const { item, priceType } = pendingAddToPlan
+    const priceId = priceType === 'monthly'
+      ? item.product.stripe_monthly_price_id
+      : item.product.stripe_onetime_price_id
+
+    // Verify password
+    setVerifyingPassword(true)
+    try {
+      const verifyRes = await fetch('/api/admin/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: addToPlanPassword }),
+      })
+      const verifyData = await verifyRes.json()
+
+      if (!verifyData.valid) {
+        setPasswordError('Invalid password. Only super admins can add items to client plans.')
+        setVerifyingPassword(false)
+        return
+      }
+    } catch (error) {
+      setPasswordError('Failed to verify password. Please try again.')
+      setVerifyingPassword(false)
       return
     }
+    setVerifyingPassword(false)
+
+    // Close modal and proceed
+    setShowPasswordModal(false)
+    setPendingAddToPlan(null)
 
     setAddingToPlan(item.product_id)
     try {
@@ -668,6 +795,75 @@ export function RecommendationsView({
       alert('Failed to add product to subscription. Please try again.')
     } finally {
       setAddingToPlan(null)
+    }
+  }
+
+  // Handle client declining a recommendation
+  const handleDeclineClick = (item: SmartRecommendationItem) => {
+    setPendingDecline(item)
+    setShowDeclineConfirm(true)
+  }
+
+  const handleDeclineConfirm = async () => {
+    if (!pendingDecline) return
+
+    setDeclining(true)
+    try {
+      // Use admin endpoint if in admin context, otherwise use client endpoint
+      const apiUrl = isAdmin
+        ? `/api/admin/clients/${clientId}/smart-recommendations/decline`
+        : '/api/client/smart-recommendations/decline'
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: pendingDecline.id }),
+      })
+
+      if (res.ok) {
+        // Remove the item from the local state
+        setSmartRecommendationItems(prev =>
+          prev.filter(item => item.id !== pendingDecline.id)
+        )
+        setShowDeclineConfirm(false)
+        setPendingDecline(null)
+        // Notify parent to refresh count
+        onRecommendationChange?.()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to decline recommendation')
+      }
+    } catch (error) {
+      console.error('Failed to decline:', error)
+      alert('Failed to decline recommendation. Please try again.')
+    } finally {
+      setDeclining(false)
+    }
+  }
+
+  // Handle deleting a history item (super admin only)
+  const handleDeleteHistoryItem = async (historyId: string) => {
+    if (!isSuperAdmin) return
+    if (!confirm('Are you sure you want to delete this history item?')) return
+
+    setDeletingHistoryId(historyId)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations/history/${historyId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        // Remove the item from local state
+        setRecommendationHistory(prev => prev.filter(item => item.id !== historyId))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete history item')
+      }
+    } catch (error) {
+      console.error('Failed to delete history item:', error)
+      alert('Failed to delete history item. Please try again.')
+    } finally {
+      setDeletingHistoryId(null)
     }
   }
 
@@ -777,7 +973,7 @@ export function RecommendationsView({
                   <polyline points="23 4 23 10 17 10"></polyline>
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                 </svg>
-                Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })}
               </div>
             )}
           </div>
@@ -863,7 +1059,7 @@ export function RecommendationsView({
                   <p>Recommend products tailored to {displayName}&apos;s needs</p>
                 </div>
                 <div className="smart-rec-actions">
-                  {smartRecommendation?.status === 'published' && (
+                  {smartRecommendation?.status === 'published' && smartRecommendationItems.some(i => i.status !== 'declined') && (
                     <span className="status-badge published">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -882,7 +1078,7 @@ export function RecommendationsView({
                     </svg>
                     Add Recommendation
                   </button>
-                  {smartRecommendationItems.length > 0 && smartRecommendation?.status !== 'published' && (
+                  {smartRecommendationItems.some(i => i.status !== 'declined') && smartRecommendation?.status !== 'published' && (
                     <button
                       className="btn-publish"
                       onClick={handlePublishRecommendations}
@@ -896,7 +1092,7 @@ export function RecommendationsView({
 
               {smartRecommendationsLoading ? (
                 <div className="loading-placeholder">Loading smart recommendations...</div>
-              ) : smartRecommendationItems.length === 0 ? (
+              ) : smartRecommendationItems.filter(i => i.status !== 'declined').length === 0 ? (
                 <div className="empty-recommendations">
                   <div className="empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
@@ -915,19 +1111,22 @@ export function RecommendationsView({
                 </div>
               ) : (
                 <div className="smart-rec-grid">
-                  {smartRecommendationItems.map((item, index) => {
+                  {smartRecommendationItems.filter(i => i.status !== 'declined').map((item, index) => {
                     // Determine which prices to show based on price_option
                     const showMonthly = item.price_option === 'monthly' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.monthly_price) > 0)
                     const showOnetime = item.price_option === 'onetime' || item.price_option === 'client_choice' || (!item.price_option && Number(item.product.onetime_price) > 0 && !Number(item.product.monthly_price))
                     const isClientChoice = item.price_option === 'client_choice'
 
                     return (
-                      <div key={item.id} className={`smart-rec-card${item.is_featured ? ' featured' : ''}`}>
-                        {item.is_featured && (
+                      <div key={item.id} className={`smart-rec-card${item.is_featured ? ' featured' : ''}${item.status === 'purchased' ? ' purchased' : ''}`}>
+                        {item.is_featured && !item.status && (
                           <div className="smart-rec-card-badge">Top Recommendation</div>
                         )}
-                        {isClientChoice && (
+                        {isClientChoice && !item.status && (
                           <div className="smart-rec-card-badge client-choice">Client Chooses</div>
+                        )}
+                        {item.status === 'purchased' && (
+                          <div className="smart-rec-card-badge purchased">Purchased</div>
                         )}
                         <div className="smart-rec-card-body">
                           {item.created_at && (
@@ -962,16 +1161,27 @@ export function RecommendationsView({
                                 <span className="period">/mo</span>
                               </div>
                             )}
+                            {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
+                              <div className="pricing-or">or</div>
+                            )}
                             {showOnetime && Number(item.product.onetime_price) > 0 && (
                               <div className="pricing-option onetime">
                                 <span className="price">${formatPrice(Number(item.product.onetime_price))}</span>
                                 <span className="period">one-time</span>
                               </div>
                             )}
-                            {isClientChoice && Number(item.product.monthly_price) > 0 && Number(item.product.onetime_price) > 0 && (
-                              <div className="pricing-or">or</div>
-                            )}
                           </div>
+
+                          {item.coupon_code && (
+                            <div className="coupon-code-display admin">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"></path>
+                                <path d="M14 2h6a2 2 0 0 1 2 2v6"></path>
+                                <path d="M10 14L20 4"></path>
+                              </svg>
+                              Code: <strong>{item.coupon_code}</strong>
+                            </div>
+                          )}
 
                           <div className="smart-rec-card-footer">
                             <div className="smart-rec-card-actions">
@@ -979,14 +1189,14 @@ export function RecommendationsView({
                               {isClientChoice ? (
                                 <div className="add-to-plan-options">
                                   <button
-                                    className="btn-add-to-plan small"
+                                    className="btn-add-to-plan"
                                     onClick={() => handleAddToPlan(item, 'monthly')}
                                     disabled={addingToPlan === item.product_id}
                                   >
                                     {addingToPlan === item.product_id ? '...' : 'Add Monthly'}
                                   </button>
                                   <button
-                                    className="btn-add-to-plan small secondary"
+                                    className="btn-add-to-plan secondary"
                                     onClick={() => handleAddToPlan(item, 'onetime')}
                                     disabled={addingToPlan === item.product_id}
                                   >
@@ -1038,6 +1248,97 @@ export function RecommendationsView({
                       </div>
                     )
                   })}
+                </div>
+              )}
+
+              {/* Recommendation History Section */}
+              {recommendationHistory.length > 0 && (
+                <div className="smart-rec-history">
+                  <div className="smart-rec-history-header">
+                    <h4>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                      </svg>
+                      Recommendation History
+                    </h4>
+                  </div>
+                  <div className="smart-rec-history-list">
+                    {historyLoading ? (
+                      <div className="loading-placeholder">Loading history...</div>
+                    ) : (
+                      recommendationHistory.map((entry) => (
+                        <div key={entry.id} className={`history-item ${entry.action}`}>
+                          <div className="history-item-icon">
+                            {entry.action === 'item_added' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                            )}
+                            {entry.action === 'item_removed' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                              </svg>
+                            )}
+                            {entry.action === 'declined' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            )}
+                            {entry.action === 'purchased' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            )}
+                          </div>
+                          <div className="history-item-content">
+                            <div className="history-item-action">
+                              {entry.details ? (
+                                <span dangerouslySetInnerHTML={{ __html: entry.details.replace(/"([^"]+)"/, '<strong>$1</strong>') }} />
+                              ) : (
+                                <>
+                                  {entry.action === 'item_added' && 'Added'}
+                                  {entry.action === 'item_removed' && 'Removed'}
+                                  {entry.action === 'declined' && 'Declined'}
+                                  {entry.action === 'purchased' && 'Purchased'}
+                                  {entry.productName && <strong> {entry.productName}</strong>}
+                                </>
+                              )}
+                            </div>
+                            <div className="history-item-meta">
+                              {new Date(entry.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })}
+                              {entry.createdByEmail && ` by ${entry.createdByEmail}`}
+                            </div>
+                          </div>
+                          {isSuperAdmin && (
+                            <button
+                              className="history-item-delete"
+                              onClick={() => handleDeleteHistoryItem(entry.id)}
+                              disabled={deletingHistoryId === entry.id}
+                              title="Delete history item"
+                            >
+                              {deletingHistoryId === entry.id ? (
+                                <span className="spinner-small"></span>
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1129,6 +1430,16 @@ export function RecommendationsView({
                               </>
                             )}
                           </div>
+                          {item.coupon_code && (
+                            <div className="coupon-code-display">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"></path>
+                                <path d="M14 2h6a2 2 0 0 1 2 2v6"></path>
+                                <path d="M10 14L20 4"></path>
+                              </svg>
+                              Use code <strong>{item.coupon_code}</strong> at checkout
+                            </div>
+                          )}
                           <div className="smart-rec-card-buttons">
                             {item.product.long_description && (
                               <button
@@ -1141,13 +1452,13 @@ export function RecommendationsView({
                             {isClientChoice ? (
                               <div className="add-to-plan-options client">
                                 <a
-                                  href={`/checkout?product=${item.product_id}&price=monthly${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                  href={`/checkout?product=${item.product_id}&price=monthly${item.coupon_code ? `&coupon=${item.coupon_code}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                   className="btn-add-to-plan"
                                 >
                                   Add Monthly
                                 </a>
                                 <a
-                                  href={`/checkout?product=${item.product_id}&price=onetime${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                  href={`/checkout?product=${item.product_id}&price=onetime${item.coupon_code ? `&coupon=${item.coupon_code}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                   className="btn-add-to-plan secondary"
                                 >
                                   Add One-time
@@ -1155,13 +1466,20 @@ export function RecommendationsView({
                               </div>
                             ) : (
                               <a
-                                href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
+                                href={`/checkout?product=${item.product_id}&price=${item.price_option || (Number(item.product.monthly_price) > 0 ? 'monthly' : 'onetime')}${item.coupon_code ? `&coupon=${item.coupon_code}` : ''}${viewingAs ? `&viewingAs=${viewingAs}` : ''}`}
                                 className="btn-add-to-plan"
                               >
                                 Add to Plan
                               </a>
                             )}
                           </div>
+                          {/* Not interested button */}
+                          <button
+                            className="btn-not-interested"
+                            onClick={() => handleDeclineClick(item)}
+                          >
+                            Not interested at this time
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1175,7 +1493,81 @@ export function RecommendationsView({
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                   </svg>
-                  Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                </div>
+              )}
+            </div>
+          ) : smartRecommendation?.status === 'published' ? (
+            /* Client View - All recommendations reviewed (declined/purchased) */
+            <div className="smart-recommendations-client all-reviewed">
+              <div className="smart-rec-intro">
+                <div className="smart-rec-intro-icon completed">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div className="smart-rec-intro-content">
+                  <h2>All Caught Up!</h2>
+                  <p>You&apos;ve reviewed all current recommendations. We&apos;ll notify you when new personalized recommendations are available.</p>
+                </div>
+              </div>
+
+              {smartRecommendation?.next_refresh_at && (
+                <div className="refresh-info">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  Next recommendations update: {new Date(smartRecommendation.next_refresh_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
+                </div>
+              )}
+
+              {/* Show recommendation history for client */}
+              {recommendationHistory.length > 0 && (
+                <div className="smart-rec-history client-history">
+                  <div className="smart-rec-history-header">
+                    <h4>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                      </svg>
+                      Your Activity
+                    </h4>
+                  </div>
+                  <div className="smart-rec-history-list">
+                    {recommendationHistory.filter(e => e.action === 'declined' || e.action === 'purchased').map((entry) => (
+                      <div key={entry.id} className={`history-item ${entry.action}`}>
+                        <div className="history-item-icon">
+                          {entry.action === 'declined' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          )}
+                          {entry.action === 'purchased' && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                        <div className="history-item-content">
+                          <div className="history-item-action">
+                            {entry.action === 'declined' && 'Declined'}
+                            {entry.action === 'purchased' && 'Added to plan'}
+                            {entry.productName && <strong> {entry.productName}</strong>}
+                          </div>
+                          <div className="history-item-meta">
+                            {new Date(entry.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1870,7 +2262,7 @@ export function RecommendationsView({
           availableProducts={availableProducts.filter(
             p => !smartRecommendationItems.some(item => item.product_id === p.id)
           )}
-          onAdd={(productId, whyNote, priceOption) => handleAddProduct(productId, whyNote, priceOption)}
+          onAdd={(productId, whyNote, priceOption, couponCode) => handleAddProduct(productId, whyNote, priceOption, couponCode)}
           onClose={() => setShowAddProductModal(false)}
           saving={savingSmartRec}
         />
@@ -1880,7 +2272,7 @@ export function RecommendationsView({
       {editingItem && isAdmin && (
         <EditItemModal
           item={editingItem}
-          onSave={(whyNote, isFeatured) => handleUpdateItem(editingItem.id, whyNote, isFeatured)}
+          onSave={(whyNote, isFeatured, couponCode) => handleUpdateItem(editingItem.id, whyNote, isFeatured, couponCode)}
           onClose={() => setEditingItem(null)}
           saving={savingSmartRec}
         />
@@ -1932,6 +2324,121 @@ export function RecommendationsView({
           </div>
         </div>
       )}
+
+      {/* Password Modal for Add to Plan */}
+      {showPasswordModal && (
+        <div className="smart-rec-modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="smart-rec-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="smart-rec-modal-header">
+              <h3>Super Admin Verification</h3>
+              <button className="modal-close-btn" onClick={() => setShowPasswordModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="smart-rec-modal-body">
+              <p style={{ marginBottom: '1rem', color: '#666' }}>
+                Adding items to a client's plan requires super admin authorization. Please enter the admin password to continue.
+              </p>
+              {pendingAddToPlan && (
+                <p style={{ marginBottom: '1rem', fontWeight: 500 }}>
+                  Adding: <strong>{pendingAddToPlan.item.product.name}</strong> ({pendingAddToPlan.priceType})
+                </p>
+              )}
+              <div className="form-group">
+                <label htmlFor="admin-password">Admin Password</label>
+                <input
+                  type="password"
+                  id="admin-password"
+                  value={addToPlanPassword}
+                  onChange={(e) => {
+                    setAddToPlanPassword(e.target.value)
+                    setPasswordError('')
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && addToPlanPassword) {
+                      executeAddToPlan()
+                    }
+                  }}
+                  placeholder="Enter admin password"
+                  className="form-control"
+                  autoFocus
+                />
+                {passwordError && (
+                  <div style={{ color: '#DC2626', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                    {passwordError}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="smart-rec-modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setPendingAddToPlan(null)
+                }}
+                disabled={verifyingPassword}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={executeAddToPlan}
+                disabled={!addToPlanPassword || verifyingPassword}
+              >
+                {verifyingPassword ? 'Verifying...' : 'Add to Plan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Confirmation Modal */}
+      {showDeclineConfirm && pendingDecline && (
+        <div className="smart-rec-modal-overlay" onClick={() => setShowDeclineConfirm(false)}>
+          <div className="smart-rec-modal small" onClick={(e) => e.stopPropagation()}>
+            <div className="smart-rec-modal-header">
+              <h3>Decline Recommendation</h3>
+              <button className="modal-close-btn" onClick={() => setShowDeclineConfirm(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="smart-rec-modal-body">
+              <p style={{ marginBottom: '1rem' }}>
+                Are you sure you want to decline <strong>{pendingDecline.product.name}</strong>?
+              </p>
+              <p style={{ color: '#666', fontSize: '0.875rem' }}>
+                This recommendation will be removed from your view. You can always contact us if you change your mind.
+              </p>
+            </div>
+            <div className="smart-rec-modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDeclineConfirm(false)
+                  setPendingDecline(null)
+                }}
+                disabled={declining}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDeclineConfirm}
+                disabled={declining}
+              >
+                {declining ? 'Declining...' : 'Yes, Decline'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1944,13 +2451,14 @@ function AddProductModal({
   saving,
 }: {
   availableProducts: AvailableProduct[]
-  onAdd: (productId: string, whyNote: string, priceOption: string | null) => void
+  onAdd: (productId: string, whyNote: string, priceOption: string | null, couponCode: string | null) => void
   onClose: () => void
   saving: boolean
 }) {
   const [selectedProduct, setSelectedProduct] = useState<string>('')
   const [whyNote, setWhyNote] = useState('')
   const [priceOption, setPriceOption] = useState<string>('auto')
+  const [couponCode, setCouponCode] = useState('')
 
   // Get the selected product details
   const selectedProductData = availableProducts.find(p => p.id === selectedProduct)
@@ -1958,10 +2466,17 @@ function AddProductModal({
   const hasOnetime = selectedProductData && Number(selectedProductData.onetime_price) > 0
   const hasBothPrices = hasMonthly && hasOnetime
 
-  // Reset price option when product changes
+  // Reset price option and auto-populate why note when product changes
   const handleProductChange = (productId: string) => {
     setSelectedProduct(productId)
     setPriceOption('auto')
+    // Auto-populate why note from product's default text
+    const product = availableProducts.find(p => p.id === productId)
+    if (product?.smart_rec_why_text) {
+      setWhyNote(product.smart_rec_why_text)
+    } else {
+      setWhyNote('')
+    }
   }
 
   return (
@@ -2074,6 +2589,22 @@ function AddProductModal({
               rows={3}
             />
           </div>
+
+          <div className="form-group">
+            <label htmlFor="coupon-code">Discount Code (optional)</label>
+            <select
+              id="coupon-code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              className="form-control"
+            >
+              <option value="">No discount code</option>
+              {AVAILABLE_COUPON_CODES.map(c => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+            <small className="form-hint">Select a discount code to auto-apply at checkout</small>
+          </div>
         </div>
         <div className="smart-rec-modal-footer">
           <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
@@ -2081,7 +2612,10 @@ function AddProductModal({
           </button>
           <button
             className="btn btn-primary"
-            onClick={() => onAdd(selectedProduct, whyNote, priceOption === 'auto' ? null : priceOption)}
+            onClick={() => {
+              console.log('[DEBUG] Modal Add clicked - priceOption state:', priceOption, '- sending:', priceOption === 'auto' ? null : priceOption)
+              onAdd(selectedProduct, whyNote, priceOption === 'auto' ? null : priceOption, couponCode || null)
+            }}
             disabled={!selectedProduct || saving || (hasBothPrices && priceOption === 'auto')}
           >
             {saving ? 'Adding...' : 'Add Recommendation'}
@@ -2100,12 +2634,13 @@ function EditItemModal({
   saving,
 }: {
   item: SmartRecommendationItem
-  onSave: (whyNote: string, isFeatured: boolean) => void
+  onSave: (whyNote: string, isFeatured: boolean, couponCode: string | null) => void
   onClose: () => void
   saving: boolean
 }) {
   const [whyNote, setWhyNote] = useState(item.why_note || '')
   const [isFeatured, setIsFeatured] = useState(item.is_featured)
+  const [couponCode, setCouponCode] = useState(item.coupon_code || '')
 
   return (
     <div className="smart-rec-modal-overlay" onClick={onClose}>
@@ -2135,6 +2670,21 @@ function EditItemModal({
               rows={3}
             />
           </div>
+          <div className="form-group">
+            <label htmlFor="edit-coupon-code">Discount Code</label>
+            <select
+              id="edit-coupon-code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              className="form-control"
+            >
+              <option value="">No discount code</option>
+              {AVAILABLE_COUPON_CODES.map(c => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+            <small className="form-hint">Select a discount code to auto-apply at checkout</small>
+          </div>
           <div className="form-group checkbox-group">
             <label className="checkbox-label">
               <input
@@ -2153,7 +2703,7 @@ function EditItemModal({
           </button>
           <button
             className="btn btn-primary"
-            onClick={() => onSave(whyNote, isFeatured)}
+            onClick={() => onSave(whyNote, isFeatured, couponCode || null)}
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Changes'}

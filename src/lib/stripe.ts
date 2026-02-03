@@ -17,10 +17,40 @@ export const COUPON_CODES: Record<string, number> = {
   'TEST2': 100,      // 100% discount for testing
 }
 
+// Known promotion codes mapped to their Stripe promotion code IDs
+export const PROMOTION_CODE_IDS: Record<string, string> = {
+  'SAVE10': 'promo_1SwWW4G6lmzQA2EM4mlTKbvs',
+  'BIGDEAL100': 'promo_1SwWbPG6lmzQA2EMsLCs0AP8',
+}
+
+// Available coupon codes for admin UI dropdowns
+export const AVAILABLE_COUPON_CODES = [
+  { code: 'SAVE10', label: 'SAVE10 - 10% Off' },
+  { code: 'BIGDEAL100', label: 'BIGDEAL100' },
+]
+
 // Helper to get coupon/promotion code from Stripe
 export async function getOrCreateCoupon(code: string): Promise<string | null> {
   const upperCode = code.toUpperCase()
   const lowerCode = code.toLowerCase()
+
+  // Check if we have a known promotion code ID mapping
+  const knownPromoId = PROMOTION_CODE_IDS[upperCode]
+  if (knownPromoId) {
+    try {
+      console.log(`[Coupon] Looking up known promotion code ID: ${knownPromoId}`)
+      const promoCode = await stripe.promotionCodes.retrieve(knownPromoId, {
+        expand: ['coupon'],
+      }) as any
+      if (promoCode.active) {
+        const coupon = promoCode.coupon as { id: string }
+        console.log(`[Coupon] Found promotion code ${upperCode} -> coupon ${coupon.id}`)
+        return coupon.id
+      }
+    } catch (err) {
+      console.log(`[Coupon] Known promotion code lookup failed for ${upperCode}:`, err)
+    }
+  }
 
   // Try multiple case variations for Stripe Promotion Code lookup
   const codesToTry = [code, lowerCode, upperCode]

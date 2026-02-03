@@ -21,9 +21,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { clientId, email, name, billingCycle } = await request.json()
-    console.log('[SetupIntent] Request:', { clientId, email, name, billingCycle })
-    console.log('[SetupIntent] Payment methods for', billingCycle, ':', billingCycle === 'annual' ? 'ACH only' : 'card + ACH')
+    const { clientId, email, name, billingCycle, hasOnetimeItems } = await request.json()
+    console.log('[SetupIntent] Request:', { clientId, email, name, billingCycle, hasOnetimeItems })
+    const requiresACH = billingCycle === 'annual' || hasOnetimeItems
+    console.log('[SetupIntent] Payment methods:', requiresACH ? 'ACH only (annual or one-time)' : 'card + ACH')
 
     if (!clientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 })
@@ -90,17 +91,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a SetupIntent to collect payment method
-    // For annual billing, only allow ACH (bank transfer)
+    // For annual billing or one-time purchases, only allow ACH (bank transfer)
     // For monthly billing, allow card and ACH
     const setupIntentParams: Stripe.SetupIntentCreateParams = {
       customer: stripeCustomerId,
       metadata: {
         clientId: clientId,
         billingCycle: billingCycle || 'monthly',
+        hasOnetimeItems: hasOnetimeItems ? 'true' : 'false',
       },
-      ...(billingCycle === 'annual'
+      ...(requiresACH
         ? {
-            // Annual billing: ACH only
+            // Annual billing or one-time: ACH only
             payment_method_types: ['us_bank_account'],
           }
         : {

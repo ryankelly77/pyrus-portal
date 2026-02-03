@@ -130,8 +130,14 @@ export default function CheckoutPage() {
   const priceOption = searchParams.get('price') // 'monthly' or 'onetime'
   const tier = searchParams.get('tier') // 'good', 'better', or 'best'
   const urlCoupon = searchParams.get('coupon')
+  const fromPage = searchParams.get('from') // Track where user came from
   const { client, loading: clientLoading } = useClientData(viewingAs)
   usePageView({ page: '/checkout', pageName: 'Checkout' })
+
+  // Determine back link destination
+  const backHref = fromPage === 'welcome' || fromPage === 'getting-started'
+    ? `/getting-started${viewingAs ? `?viewingAs=${viewingAs}` : ''}`
+    : `/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`
 
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedTier, setSelectedTier] = useState<string | null>(tier)
@@ -149,6 +155,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [couponInput, setCouponInput] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [stripeCouponDiscount, setStripeCouponDiscount] = useState<{ type: 'percent' | 'amount'; value: number } | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [stripeError, setStripeError] = useState<string | null>(null)
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
@@ -451,54 +459,84 @@ export default function CheckoutPage() {
   )
   const freeItemsCount = cartItems.filter(item => item.isFree).length
 
-  // Validate and apply coupon
-  const validateCoupon = (code: string): { valid: boolean; error?: string } => {
-    const upperCode = code.toUpperCase()
-    console.log('Validating coupon:', upperCode)
-    console.log('Available coupons:', Object.keys(VALID_COUPONS))
-    const coupon = VALID_COUPONS[upperCode]
-    console.log('Found coupon:', coupon)
-    if (!coupon) {
-      return { valid: false, error: 'Invalid coupon code' }
+  // Validate coupon against Stripe
+  const validateCouponWithStripe = async (code: string): Promise<{ valid: boolean; error?: string; discount?: { type: 'percent' | 'amount'; value: number } }> => {
+    try {
+      const res = await fetch('/api/stripe/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+
+      if (!data.valid) {
+        return { valid: false, error: data.error || 'Invalid coupon code' }
+      }
+
+      // Check Growth Rewards minimum spend requirement
+      const upperCode = code.toUpperCase()
+      const growthRewardsCoupon = VALID_COUPONS[upperCode]
+      if (growthRewardsCoupon && baseMonthlyTotal < growthRewardsCoupon.minSpend) {
+        return {
+          valid: false,
+          error: `This coupon requires a minimum of $${growthRewardsCoupon.minSpend}/mo (current: $${baseMonthlyTotal}/mo)`
+        }
+      }
+
+      return { valid: true, discount: data.discount }
+    } catch (err) {
+      console.error('Coupon validation error:', err)
+      return { valid: false, error: 'Failed to validate coupon' }
     }
-    console.log('baseMonthlyTotal:', baseMonthlyTotal, 'minSpend:', coupon.minSpend)
-    if (baseMonthlyTotal < coupon.minSpend) {
-      return { valid: false, error: `This coupon requires a minimum of $${coupon.minSpend}/mo (current: $${baseMonthlyTotal}/mo)` }
-    }
-    return { valid: true }
   }
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     const code = couponInput.toUpperCase().trim()
     if (!code) return
 
-    const result = validateCoupon(code)
+    setCouponLoading(true)
+    setCouponError(null)
+
+    const result = await validateCouponWithStripe(code)
+
     if (result.valid) {
       setAppliedCoupon(code)
+      setStripeCouponDiscount(result.discount || null)
       setCouponError(null)
       setCouponInput('')
     } else {
       setCouponError(result.error || 'Invalid coupon')
       setAppliedCoupon(null)
+      setStripeCouponDiscount(null)
     }
+
+    setCouponLoading(false)
   }
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null)
     setCouponError(null)
+    setStripeCouponDiscount(null)
   }
 
   // Auto-apply coupon from URL when cart is loaded
+  // Validate against Stripe before applying
   useEffect(() => {
-    if (urlCoupon && cartItems.length > 0 && !appliedCoupon) {
-      const result = validateCoupon(urlCoupon)
-      if (result.valid) {
-        setAppliedCoupon(urlCoupon.toUpperCase())
-      } else {
-        setCouponError(result.error || 'Coupon not valid for this order')
+    if (urlCoupon && cartItems.length > 0 && !appliedCoupon && !couponLoading) {
+      const validateUrlCoupon = async () => {
+        setCouponLoading(true)
+        const result = await validateCouponWithStripe(urlCoupon)
+        if (result.valid) {
+          setAppliedCoupon(urlCoupon.toUpperCase())
+          setStripeCouponDiscount(result.discount || null)
+        } else {
+          setCouponError(result.error || 'Coupon not valid')
+        }
+        setCouponLoading(false)
       }
+      validateUrlCoupon()
     }
-  }, [urlCoupon, cartItems.length, appliedCoupon, baseMonthlyTotal])
+  }, [urlCoupon, cartItems.length, appliedCoupon, baseMonthlyTotal, couponLoading])
 
   // Fetch SetupIntent client secret for Stripe Elements
   // Re-fetch when billing cycle changes (different payment methods for annual vs monthly)
@@ -573,6 +611,7 @@ export default function CheckoutPage() {
             email: client.contactEmail,
             name: client.name,
             billingCycle,
+            hasOnetimeItems: currentOnetimeTotal > 0,
           }),
         })
         console.log('[Stripe] Response status:', res.status)
@@ -597,17 +636,32 @@ export default function CheckoutPage() {
     createSetupIntent()
   }, [cartItems, client.id, client.contactEmail, client.name, viewingAs, billingCycle, clientLoading, appliedCoupon, selectedPaymentMethodId, loadingPaymentMethods])
 
-  // Calculate discount
-  const couponDiscount = appliedCoupon && VALID_COUPONS[appliedCoupon]
-    ? Math.round(monthlyTotal * (VALID_COUPONS[appliedCoupon].discount / 100) * 100) / 100
+  // Calculate discount - use Stripe-validated discount if available, fallback to hardcoded
+  const couponDiscountPercent = stripeCouponDiscount?.type === 'percent'
+    ? stripeCouponDiscount.value
+    : (appliedCoupon && VALID_COUPONS[appliedCoupon]?.discount) || 0
+
+  // Apply discount to monthly total
+  const monthlyDiscount = couponDiscountPercent > 0
+    ? Math.round(monthlyTotal * (couponDiscountPercent / 100) * 100) / 100
     : 0
-  const discountedMonthlyTotal = monthlyTotal - couponDiscount
+  const discountedMonthlyTotal = monthlyTotal - monthlyDiscount
+
+  // Apply discount to one-time total
+  const onetimeDiscount = couponDiscountPercent > 0
+    ? Math.round(onetimeTotal * (couponDiscountPercent / 100) * 100) / 100
+    : 0
+  const discountedOnetimeTotal = onetimeTotal - onetimeDiscount
+
+  // Total coupon discount for display
+  const couponDiscount = monthlyDiscount + onetimeDiscount
+
   const annualTotal = discountedMonthlyTotal * 12 * 0.9 // 10% discount for annual
 
   // Calculate total due today - for detecting $0 orders
   const totalDueToday = billingCycle === 'monthly'
-    ? discountedMonthlyTotal + onetimeTotal
-    : annualTotal + onetimeTotal
+    ? discountedMonthlyTotal + discountedOnetimeTotal
+    : annualTotal + discountedOnetimeTotal
   const isZeroOrder = totalDueToday === 0
 
 
@@ -617,7 +671,7 @@ export default function CheckoutPage() {
       <>
         <div className="client-top-header">
           <div className="client-top-header-left">
-            <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+            <Link href={backHref} className="checkout-back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <path d="M19 12H5"></path>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -644,7 +698,7 @@ export default function CheckoutPage() {
       <>
         <div className="client-top-header">
           <div className="client-top-header-left">
-            <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+            <Link href={backHref} className="checkout-back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <path d="M19 12H5"></path>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -684,7 +738,7 @@ export default function CheckoutPage() {
       {/* Top Header Bar */}
       <div className="client-top-header">
         <div className="client-top-header-left">
-          <Link href={`/recommendations${viewingAs ? `?viewingAs=${viewingAs}` : ''}`} className="checkout-back-link">
+          <Link href={backHref} className="checkout-back-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <path d="M19 12H5"></path>
               <polyline points="12 19 5 12 12 5"></polyline>
@@ -743,51 +797,53 @@ export default function CheckoutPage() {
 
             </div>
 
-            {/* Billing Cycle */}
-            <div className="checkout-section">
-              <h2 className="checkout-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                Billing Cycle
-              </h2>
+            {/* Billing Cycle - Only show if there are monthly items */}
+            {monthlyTotal > 0 && (
+              <div className="checkout-section">
+                <h2 className="checkout-section-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  Billing Cycle
+                </h2>
 
-              <div className="billing-cycle-options">
-                <label className={`billing-option ${billingCycle === 'monthly' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="billingCycle"
-                    value="monthly"
-                    checked={billingCycle === 'monthly'}
-                    onChange={() => setBillingCycle('monthly')}
-                  />
-                  <div className="billing-option-content">
-                    <span className="billing-option-label">Monthly</span>
-                    <span className="billing-option-price">${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
-                  </div>
-                </label>
-                <label className={`billing-option ${billingCycle === 'annual' ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="billingCycle"
-                    value="annual"
-                    checked={billingCycle === 'annual'}
-                    onChange={() => setBillingCycle('annual')}
-                  />
-                  <div className="billing-option-content">
-                    <div className="billing-option-header">
-                      <span className="billing-option-label">Annual</span>
-                      <span className="billing-option-badge">Save 10%</span>
+                <div className="billing-cycle-options">
+                  <label className={`billing-option ${billingCycle === 'monthly' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="billingCycle"
+                      value="monthly"
+                      checked={billingCycle === 'monthly'}
+                      onChange={() => setBillingCycle('monthly')}
+                    />
+                    <div className="billing-option-content">
+                      <span className="billing-option-label">Monthly</span>
+                      <span className="billing-option-price">${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
                     </div>
-                    <span className="billing-option-price">${(annualTotal / 12).toLocaleString(undefined, { minimumFractionDigits: (annualTotal / 12) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
-                    <span className="billing-option-detail">Billed ${annualTotal.toLocaleString(undefined, { minimumFractionDigits: annualTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} annually</span>
-                  </div>
-                </label>
+                  </label>
+                  <label className={`billing-option ${billingCycle === 'annual' ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="billingCycle"
+                      value="annual"
+                      checked={billingCycle === 'annual'}
+                      onChange={() => setBillingCycle('annual')}
+                    />
+                    <div className="billing-option-content">
+                      <div className="billing-option-header">
+                        <span className="billing-option-label">Annual</span>
+                        <span className="billing-option-badge">Save 10%</span>
+                      </div>
+                      <span className="billing-option-price">${(annualTotal / 12).toLocaleString(undefined, { minimumFractionDigits: (annualTotal / 12) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo</span>
+                      <span className="billing-option-detail">Billed ${annualTotal.toLocaleString(undefined, { minimumFractionDigits: annualTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} annually</span>
+                    </div>
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Payment Method - Hidden for $0 orders */}
             {!isZeroOrder && (
@@ -808,10 +864,14 @@ export default function CheckoutPage() {
                     </div>
                   ) : (
                     <>
-                      {/* Saved Payment Methods */}
-                      {savedPaymentMethods.length > 0 && (
+                      {/* Saved Payment Methods - filter to ACH only for one-time or annual */}
+                      {savedPaymentMethods.filter(pm =>
+                        (billingCycle === 'annual' || onetimeTotal > 0) ? pm.type === 'us_bank_account' : true
+                      ).length > 0 && (
                         <div className="saved-payment-methods">
-                          {savedPaymentMethods.map((pm) => (
+                          {savedPaymentMethods.filter(pm =>
+                            (billingCycle === 'annual' || onetimeTotal > 0) ? pm.type === 'us_bank_account' : true
+                          ).map((pm) => (
                             <label
                               key={pm.id}
                               className={`payment-method-option ${selectedPaymentMethodId === pm.id ? 'selected' : ''}`}
@@ -971,7 +1031,7 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {billingCycle === 'annual' ? (
+                {(billingCycle === 'annual' || onetimeTotal > 0) && (
                   <div className="ach-notice">
                     <div className="ach-notice-icon">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
@@ -987,10 +1047,16 @@ export default function CheckoutPage() {
                     </div>
                     <div className="ach-notice-content">
                       <strong>Bank Transfer (ACH) Required</strong>
-                      <p>Annual billing requires payment via ACH bank transfer for security.</p>
+                      <p>
+                        {billingCycle === 'annual' && onetimeTotal > 0
+                          ? 'Annual billing and one-time purchases require payment via ACH bank transfer.'
+                          : billingCycle === 'annual'
+                            ? 'Annual billing requires payment via ACH bank transfer for security.'
+                            : 'One-time purchases require payment via ACH bank transfer. If you prefer credit or debit card, go back and try the monthly payment option.'}
+                      </p>
                     </div>
                   </div>
-                ) : null}
+                )}
               </div>
             )}
 
@@ -1069,7 +1135,13 @@ export default function CheckoutPage() {
               {onetimeTotal > 0 && (
                 <div className="order-summary-row">
                   <span>One-time fees</span>
-                  <span>${onetimeTotal.toLocaleString()}</span>
+                  <span>${discountedOnetimeTotal.toLocaleString()}</span>
+                </div>
+              )}
+              {onetimeDiscount > 0 && (
+                <div className="order-summary-row discount">
+                  <span>One-time discount ({couponDiscountPercent}% off)</span>
+                  <span>-${onetimeDiscount.toLocaleString()}</span>
                 </div>
               )}
 
@@ -1085,7 +1157,15 @@ export default function CheckoutPage() {
                         <line x1="7" y1="7" x2="7.01" y2="7"></line>
                       </svg>
                       <span className="coupon-code">{appliedCoupon}</span>
-                      <span className="coupon-discount">({VALID_COUPONS[appliedCoupon].discount}% off)</span>
+                      {stripeCouponDiscount?.type === 'percent' ? (
+                        <span className="coupon-discount">({stripeCouponDiscount.value}% off)</span>
+                      ) : VALID_COUPONS[appliedCoupon] ? (
+                        <span className="coupon-discount">({VALID_COUPONS[appliedCoupon].discount}% off)</span>
+                      ) : couponLoading ? (
+                        <span className="coupon-discount">(Validating...)</span>
+                      ) : (
+                        <span className="coupon-discount">(Applied at checkout)</span>
+                      )}
                     </div>
                     <button type="button" className="remove-coupon" onClick={handleRemoveCoupon}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
@@ -1101,11 +1181,17 @@ export default function CheckoutPage() {
                       placeholder="Coupon code"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      onKeyDown={(e) => e.key === 'Enter' && !couponLoading && handleApplyCoupon()}
                       className="coupon-input"
+                      disabled={couponLoading}
                     />
-                    <button type="button" className="btn btn-sm coupon-apply-btn" onClick={handleApplyCoupon}>
-                      Apply
+                    <button
+                      type="button"
+                      className="btn btn-sm coupon-apply-btn"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading}
+                    >
+                      {couponLoading ? 'Checking...' : 'Apply'}
                     </button>
                   </div>
                 )}
@@ -1138,27 +1224,27 @@ export default function CheckoutPage() {
                 <div className="total-amount">
                   <span className="amount">
                     ${(billingCycle === 'monthly'
-                      ? discountedMonthlyTotal + onetimeTotal
-                      : annualTotal + onetimeTotal
+                      ? discountedMonthlyTotal + discountedOnetimeTotal
+                      : annualTotal + discountedOnetimeTotal
                     ).toLocaleString(undefined, {
-                      minimumFractionDigits: (billingCycle === 'monthly' ? discountedMonthlyTotal + onetimeTotal : annualTotal + onetimeTotal) % 1 !== 0 ? 2 : 0,
+                      minimumFractionDigits: (billingCycle === 'monthly' ? discountedMonthlyTotal + discountedOnetimeTotal : annualTotal + discountedOnetimeTotal) % 1 !== 0 ? 2 : 0,
                       maximumFractionDigits: 2
                     })}
                   </span>
-                  {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && <span className="period">{onetimeTotal > 0 ? '' : '/mo'}</span>}
+                  {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && <span className="period">{discountedOnetimeTotal > 0 ? '' : '/mo'}</span>}
                 </div>
               </div>
 
               {billingCycle === 'annual' && discountedMonthlyTotal > 0 && (
                 <p className="order-summary-note">
-                  You&apos;ll be charged ${(annualTotal + onetimeTotal).toLocaleString()} today for 12 months of service{onetimeTotal > 0 ? ' plus one-time fees' : ''}.
+                  You&apos;ll be charged ${(annualTotal + discountedOnetimeTotal).toLocaleString()} today for 12 months of service{discountedOnetimeTotal > 0 ? ' plus one-time fees' : ''}.
                 </p>
               )}
 
               {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && (
                 <p className="order-summary-note">
-                  {onetimeTotal > 0 ? (
-                    <>You&apos;ll be charged ${(discountedMonthlyTotal + onetimeTotal).toLocaleString(undefined, { minimumFractionDigits: (discountedMonthlyTotal + onetimeTotal) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} today, then ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {(() => {
+                  {discountedOnetimeTotal > 0 ? (
+                    <>You&apos;ll be charged ${(discountedMonthlyTotal + discountedOnetimeTotal).toLocaleString(undefined, { minimumFractionDigits: (discountedMonthlyTotal + discountedOnetimeTotal) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} today, then ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {(() => {
                       const day = new Date().getDate()
                       const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
                       return `${day}${suffix}`
@@ -1170,6 +1256,13 @@ export default function CheckoutPage() {
                       return `${day}${suffix}`
                     })()} of each month.</>
                   )}
+                </p>
+              )}
+
+              {/* Note for one-time only purchases */}
+              {discountedMonthlyTotal === 0 && discountedOnetimeTotal > 0 && (
+                <p className="order-summary-note">
+                  This is a one-time purchase. You&apos;ll be charged ${discountedOnetimeTotal.toLocaleString()} today.
                 </p>
               )}
 

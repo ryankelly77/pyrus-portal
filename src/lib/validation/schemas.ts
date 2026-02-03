@@ -26,6 +26,7 @@ export const productCreateSchema = z.object({
   name: z.string().min(1).max(255),
   shortDesc: z.string().nullable().optional(),
   longDesc: z.string().nullable().optional(),
+  smartRecWhyText: z.string().nullable().optional(),
   category: z.string().min(1).max(100),
   status: z.string().nullable().optional(),
   monthlyPrice: z.preprocess((v) => (v === '' ? null : Number(v)), z.number().nullable().optional()),
