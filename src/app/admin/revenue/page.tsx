@@ -276,7 +276,8 @@ export default function AdminRevenuePage() {
 
         {/* Main Layout: Charts + Pipeline */}
         <div className="revenue-layout">
-          {/* Left: Charts */}
+          {/* Left Column: Charts + Scheduled Cancellations */}
+          <div className="revenue-left-column">
           <div className="revenue-charts-grid">
           {/* MRR Chart */}
           <div className="revenue-chart-card">
@@ -284,7 +285,17 @@ export default function AdminRevenuePage() {
               <div>
                 <span className="chart-label">MRR</span>
                 <div className="chart-value">
-                  {loading ? '...' : `$${stats.currentMRR.toLocaleString()}`}
+                  {loading ? '...' : (() => {
+                    const pendingBillingDate = new Date('2026-02-17')
+                    const hasPending = new Date() < pendingBillingDate
+                    const displayMRR = hasPending ? stats.currentMRR + 300 : stats.currentMRR
+                    return (
+                      <>
+                        ${displayMRR.toLocaleString()}
+                        {hasPending && <span className="pending-note"> (incl. $300 pending)</span>}
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
               <div className="chart-change">
@@ -310,7 +321,26 @@ export default function AdminRevenuePage() {
               <div>
                 <span className="chart-label">MRR growth rate</span>
                 <div className="chart-value">
-                  {loading ? '...' : `${stats.avgGrowthPercent >= 0 ? '+' : ''}${stats.avgGrowthPercent}%`}
+                  {loading ? '...' : (() => {
+                    const pendingBillingDate = new Date('2026-02-17')
+                    const hasPending = new Date() < pendingBillingDate
+
+                    if (hasPending) {
+                      // Adjust growth rate to include $300 pending
+                      const adjustedMRR = stats.currentMRR + 300
+                      const adjustmentFactor = adjustedMRR / stats.currentMRR
+                      const estimatedMonths = 12
+                      const adjustedRate = Math.pow(Math.pow(1 + stats.avgGrowthPercent/100, estimatedMonths) * adjustmentFactor, 1/estimatedMonths) - 1
+                      const adjustedPercent = Math.round(adjustedRate * 1000) / 10
+                      return (
+                        <>
+                          {adjustedPercent >= 0 ? '+' : ''}{adjustedPercent}%
+                          <span className="pending-note"> (incl. $300 pending)</span>
+                        </>
+                      )
+                    }
+                    return `${stats.avgGrowthPercent >= 0 ? '+' : ''}${stats.avgGrowthPercent}%`
+                  })()}
                 </div>
               </div>
               <div className="chart-change">
@@ -356,14 +386,24 @@ export default function AdminRevenuePage() {
               <div>
                 <span className="chart-label">Churn</span>
                 <div className="chart-value">
-                  {loading ? '...' : `${stats.churnRate}%`}
+                  {loading ? '...' : (() => {
+                    // Calculate real churn excluding test: (canceled-1)/(total-1)
+                    // total = canceled / (rate/100)
+                    const totalSubs = Math.round(stats.churnedSubscriptions / (stats.churnRate / 100))
+                    const realChurn = ((stats.churnedSubscriptions - 1) / (totalSubs - 1)) * 100
+                    return `${Math.round(realChurn * 10) / 10}%`
+                  })()}
+                  <span className="test-note"> ({stats.churnRate}% incl. test)</span>
                 </div>
               </div>
               <div className="chart-change">
-                {!loading && stats.churnedSubscriptions > 0 && (
+                {!loading && stats.churnedSubscriptions > 1 && (
                   <span className="negative">
-                    {stats.churnedSubscriptions} canceled
+                    {stats.churnedSubscriptions - 1} canceled (+ 1 test)
                   </span>
+                )}
+                {!loading && stats.churnedSubscriptions === 1 && (
+                  <span className="positive">No real cancellations</span>
                 )}
                 {!loading && stats.churnedSubscriptions === 0 && (
                   <span className="positive">No cancellations</span>
@@ -375,19 +415,29 @@ export default function AdminRevenuePage() {
                 <div className="churn-stat">
                   <span className="churn-stat-label">Lost MRR</span>
                   <span className="churn-stat-value negative">
-                    {loading ? '...' : `-$${stats.churnedMRR.toLocaleString()}`}
+                    {loading ? '...' : (
+                      <>
+                        ${(stats.churnedMRR - 300).toLocaleString()}
+                        <span className="test-note"> ($300 test)</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="churn-stat">
                   <span className="churn-stat-label">Canceled subscriptions</span>
                   <span className="churn-stat-value">
-                    {loading ? '...' : stats.churnedSubscriptions}
+                    {loading ? '...' : (
+                      <>
+                        {stats.churnedSubscriptions - 1}
+                        <span className="test-note"> (+ 1 test)</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="churn-stat">
                   <span className="churn-stat-label">Active subscriptions</span>
                   <span className="churn-stat-value positive">
-                    {loading ? '...' : stats.currentMRR > 0 ? Math.round(stats.currentMRR / (stats.currentMRR + stats.churnedMRR) * 100) + '%' : '100%'}
+                    {loading ? '...' : stats.currentMRR > 0 ? Math.round(stats.currentMRR / (stats.currentMRR + stats.churnedMRR - 300) * 100) + '%' : '100%'}
                   </span>
                 </div>
               </div>
@@ -462,6 +512,7 @@ export default function AdminRevenuePage() {
               </div>
             </div>
           )}
+          </div>
 
           {/* Right: Pipeline Table */}
           <div className="pipeline-section">
@@ -638,10 +689,6 @@ export default function AdminRevenuePage() {
                 </div>
               </div>
 
-              <div className="pipeline-footer">
-                <span className="pipeline-count">4 proposals awaiting response</span>
-                <button className="btn-view-all">View All</button>
-              </div>
             </div>
           </div>
         </div>
@@ -655,12 +702,18 @@ export default function AdminRevenuePage() {
           align-items: stretch;
         }
 
+        .revenue-left-column {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
         .revenue-charts-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 24px;
-          flex: 1;
-          min-width: 0;
         }
 
         /* Pipeline Section */
@@ -759,7 +812,7 @@ export default function AdminRevenuePage() {
 
         .pipeline-row {
           display: grid;
-          grid-template-columns: minmax(140px, 1fr) 70px 65px 65px 65px 60px 75px 70px 200px;
+          grid-template-columns: minmax(180px, 1.5fr) 70px 65px 65px 65px 60px 75px 70px minmax(120px, 1fr);
           gap: 10px;
           padding: 12px 16px;
           border-bottom: 1px solid #F3F4F6;
@@ -852,7 +905,10 @@ export default function AdminRevenuePage() {
         .client-info {
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
           min-width: 0;
+          overflow: hidden;
+          gap: 2px;
         }
 
         .client-name {
@@ -862,11 +918,21 @@ export default function AdminRevenuePage() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          line-height: 1.2;
+          padding: 0;
+          margin: 0;
         }
 
         .client-email {
-          font-size: 12px;
+          font-size: 11px;
           color: #9CA3AF;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.2;
+          padding: 0;
+          margin: 0;
+          text-indent: 0;
         }
 
         .col-tier {
@@ -1014,8 +1080,7 @@ export default function AdminRevenuePage() {
             flex-direction: column;
           }
 
-          .revenue-charts-grid {
-            flex: 1;
+          .revenue-left-column {
             width: 100%;
           }
 
@@ -1189,6 +1254,18 @@ export default function AdminRevenuePage() {
           color: #EF4444;
         }
 
+        .test-note {
+          font-size: 12px;
+          font-weight: 400;
+          color: #9CA3AF;
+        }
+
+        .pending-note {
+          font-size: 12px;
+          font-weight: 400;
+          color: #9CA3AF;
+        }
+
         .chart-wrapper {
           position: relative;
           height: 200px;
@@ -1315,8 +1392,7 @@ export default function AdminRevenuePage() {
 
         /* Scheduled Cancellations Styles */
         .scheduled-cancellations-section {
-          grid-column: 1 / -1;
-          margin-top: 8px;
+          flex: 1;
         }
 
         .scheduled-card {

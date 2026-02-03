@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const items = result.rows.map(row => {
       const termEndDate = new Date(row.term_end_date)
-      const monthsRemaining = Math.max(0, Math.ceil((termEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)))
+      const monthsRemaining = Math.max(0, Math.floor((termEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)))
 
       return {
         id: row.id,
