@@ -1544,28 +1544,35 @@ export default function CheckoutPage() {
                 </>
               ) : hasActiveSubscription ? (
                 // Existing client - add to subscription
-                <button
-                  type="button"
-                  onClick={handleAddToExistingSubscription}
-                  className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
-                  disabled={isPaymentProcessing || prorationLoading}
-                  style={{ width: '100%', marginTop: '1rem' }}
-                >
-                  {isPaymentProcessing ? (
-                    <>
-                      <span className="spinner"></span>
-                      Adding to Subscription...
-                    </>
-                  ) : (
-                    <>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                      Add to Subscription
-                    </>
+                <>
+                  {stripeError && (
+                    <div className="stripe-error" style={{ marginBottom: '1rem' }}>
+                      <p>{stripeError}</p>
+                    </div>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleAddToExistingSubscription}
+                    className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
+                    disabled={isPaymentProcessing || prorationLoading}
+                    style={{ width: '100%', marginTop: '1rem' }}
+                  >
+                    {isPaymentProcessing ? (
+                      <>
+                        <span className="spinner"></span>
+                        Adding to Subscription...
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add to Subscription
+                      </>
+                    )}
+                  </button>
+                </>
               ) : selectedPaymentMethodId !== 'new' ? (
                 // Using saved payment method
                 <button
