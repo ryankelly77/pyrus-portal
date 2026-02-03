@@ -117,7 +117,13 @@ export async function POST(
           console.error('Failed to add history entry:', historyError)
         }
 
-        return NextResponse.json({ item: reactivated })
+        // Fetch updated recommendation status
+        const updatedRecommendation = await prisma.smart_recommendations.findUnique({
+          where: { id: recommendation.id },
+          select: { id: true, status: true, published_at: true, next_refresh_at: true }
+        })
+
+        return NextResponse.json({ item: reactivated, recommendation: updatedRecommendation })
       }
 
       // Item exists and is active - can't add duplicate
@@ -200,7 +206,13 @@ export async function POST(
       console.error('Failed to add history entry:', historyError)
     }
 
-    return NextResponse.json({ item })
+    // Fetch updated recommendation status
+    const updatedRecommendation = await prisma.smart_recommendations.findUnique({
+      where: { id: recommendation.id },
+      select: { id: true, status: true, published_at: true, next_refresh_at: true }
+    })
+
+    return NextResponse.json({ item, recommendation: updatedRecommendation })
   } catch (error: any) {
     console.error('Error adding recommendation item:', error)
     return NextResponse.json(

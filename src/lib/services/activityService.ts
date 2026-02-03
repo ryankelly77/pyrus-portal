@@ -93,11 +93,13 @@ export async function getClientActivity(
     take: 50,
   })
 
-  // Fetch recommendation history events
+  // Fetch recommendation history events (only for published recommendations)
+  // item_added events should only show after publish, declined/purchased happen on published recs
   const recommendationHistory = await prisma.smart_recommendation_history.findMany({
     where: {
       recommendation: {
         client_id: clientId,
+        status: 'published', // Only show activity for published recommendations
       },
     },
     include: {

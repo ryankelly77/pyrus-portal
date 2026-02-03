@@ -611,6 +611,10 @@ export function RecommendationsView({
       if (res.ok) {
         const data = await res.json()
         setSmartRecommendationItems(prev => [...prev, data.item])
+        // Update recommendation status (may have been reset to draft)
+        if (data.recommendation) {
+          setSmartRecommendation(prev => prev ? { ...prev, ...data.recommendation } : data.recommendation)
+        }
         setShowAddProductModal(false)
       } else {
         const errorData = await res.json().catch(() => ({}))
