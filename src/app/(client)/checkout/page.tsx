@@ -275,6 +275,18 @@ export default function CheckoutPage() {
 
           if (hasExistingSub) {
             console.warn('[SAFEGUARD] hasActiveSubscription was false but client has active subscription — using add-to-subscription flow')
+            // Log alert for monitoring
+            fetch('/api/alerts/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                severity: 'warning',
+                category: 'subscription_safeguard',
+                message: 'Layer 2: hasActiveSubscription was false but verification found active subscription',
+                metadata: { flow: 'client_checkout', hasActiveSubscription },
+                clientId: effectiveClientId,
+              }),
+            }).catch(() => {}) // Fire and forget
             await handleAddToExistingSubscription()
             return
           }

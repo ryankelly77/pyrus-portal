@@ -454,6 +454,23 @@ export default function CheckoutPage() {
 
           if (!isGenuinelyNewClient) {
             console.warn(`[SAFEGUARD] Client ${clientId} has existing start_date or active status — preserving state`)
+            // Log alert for monitoring
+            fetch('/api/alerts/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                severity: 'warning',
+                category: 'state_reset_blocked',
+                message: 'Layer 3: Preserved client state - existing start_date or active status detected',
+                metadata: {
+                  flow: 'admin_checkout_payment_success',
+                  existingStatus: clientData.status,
+                  existingStartDate: clientData.start_date,
+                  hasActiveSubscription,
+                },
+                clientId,
+              }),
+            }).catch(() => {}) // Fire and forget
           }
         }
       } catch (error) {
@@ -528,6 +545,23 @@ export default function CheckoutPage() {
 
             if (!isGenuinelyNewClient) {
               console.warn(`[SAFEGUARD] Client ${clientId} has existing start_date or active status — preserving state`)
+              // Log alert for monitoring
+              fetch('/api/alerts/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  severity: 'warning',
+                  category: 'state_reset_blocked',
+                  message: 'Layer 3: Preserved client state - existing start_date or active status detected',
+                  metadata: {
+                    flow: 'admin_checkout_process_payment',
+                    existingStatus: clientData.status,
+                    existingStartDate: clientData.start_date,
+                    hasActiveSubscription,
+                  },
+                  clientId,
+                }),
+              }).catch(() => {}) // Fire and forget
             }
           }
         } catch (error) {

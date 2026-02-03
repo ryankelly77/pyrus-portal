@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { logCriticalError } from '@/lib/alerts'
 
 export interface ActivityItem {
   id: string
@@ -63,55 +64,103 @@ export async function getClientActivity(
 ): Promise<ActivityItem[]> {
   const { limit = 100 } = options
 
-  // Get client's basecamp_project_id
-  const client = await prisma.clients.findUnique({
-    where: { id: clientId },
-    select: { basecamp_project_id: true },
-  })
+  let basecampProjectId: string | null = null
+  let basecampActivities: any[] = []
+  let communications: any[] = []
+  let recommendationHistory: any[] = []
 
-  const basecampProjectId = client?.basecamp_project_id
+  // Get client's basecamp_project_id
+  try {
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { basecamp_project_id: true },
+    })
+    basecampProjectId = client?.basecamp_project_id || null
+  } catch (error) {
+    console.error('Error fetching client for activity:', error)
+    logCriticalError(
+      'data_integrity',
+      'Failed to fetch client data for activity aggregation',
+      { error: error instanceof Error ? error.message : String(error) },
+      clientId,
+      'activityService.ts:getClientActivity'
+    )
+  }
 
   // Fetch Basecamp activities
-  const basecampActivities = await prisma.basecamp_activities.findMany({
-    where: {
-      OR: [
-        { client_id: clientId },
-        ...(basecampProjectId ? [{ project_id: basecampProjectId }] : []),
-      ],
-    },
-    orderBy: [{ basecamp_created_at: 'desc' }, { created_at: 'desc' }],
-    take: limit,
-  })
+  try {
+    basecampActivities = await prisma.basecamp_activities.findMany({
+      where: {
+        OR: [
+          { client_id: clientId },
+          ...(basecampProjectId ? [{ project_id: basecampProjectId }] : []),
+        ],
+      },
+      orderBy: [{ basecamp_created_at: 'desc' }, { created_at: 'desc' }],
+      take: limit,
+    })
+  } catch (error) {
+    console.error('Error fetching Basecamp activities:', error)
+    logCriticalError(
+      'data_integrity',
+      'Failed to fetch Basecamp activities',
+      { error: error instanceof Error ? error.message : String(error) },
+      clientId,
+      'activityService.ts:getClientActivity'
+    )
+  }
 
   // Fetch communications (website status alerts only - result alerts shown separately)
-  const communications = await prisma.client_communications.findMany({
-    where: {
-      client_id: clientId,
-      comm_type: 'website_status',
-    },
-    orderBy: [{ sent_at: 'desc' }, { created_at: 'desc' }],
-    take: 50,
-  })
+  try {
+    communications = await prisma.client_communications.findMany({
+      where: {
+        client_id: clientId,
+        comm_type: 'website_status',
+      },
+      orderBy: [{ sent_at: 'desc' }, { created_at: 'desc' }],
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching communications:', error)
+    logCriticalError(
+      'data_integrity',
+      'Failed to fetch client communications',
+      { error: error instanceof Error ? error.message : String(error) },
+      clientId,
+      'activityService.ts:getClientActivity'
+    )
+  }
 
   // Fetch recommendation history events (only for published recommendations)
   // item_added events should only show after publish, declined/purchased happen on published recs
-  const recommendationHistory = await prisma.smart_recommendation_history.findMany({
-    where: {
-      recommendation: {
-        client_id: clientId,
-        status: 'published', // Only show activity for published recommendations
-      },
-    },
-    include: {
-      product: {
-        select: {
-          name: true,
+  try {
+    recommendationHistory = await prisma.smart_recommendation_history.findMany({
+      where: {
+        recommendation: {
+          client_id: clientId,
+          status: 'published', // Only show activity for published recommendations
         },
       },
-    },
-    orderBy: { created_at: 'desc' },
-    take: 50,
-  })
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching recommendation history:', error)
+    logCriticalError(
+      'data_integrity',
+      'Failed to fetch recommendation history',
+      { error: error instanceof Error ? error.message : String(error) },
+      clientId,
+      'activityService.ts:getClientActivity'
+    )
+  }
 
   // Map Basecamp activities to unified format
   const mappedBasecampActivities = basecampActivities.map((row) => {

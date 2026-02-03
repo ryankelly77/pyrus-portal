@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 type AdminRole = 'super_admin' | 'production_team' | 'sales'
 
@@ -13,6 +14,27 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ role, isSuperAdmin = true }: AdminSidebarProps) {
   const pathname = usePathname()
+  const [criticalAlertCount, setCriticalAlertCount] = useState(0)
+
+  // Fetch unresolved critical alert count
+  useEffect(() => {
+    const fetchAlertCount = async () => {
+      try {
+        const response = await fetch('/api/admin/alerts?severity=critical&unresolved=true&limit=100')
+        if (response.ok) {
+          const data = await response.json()
+          setCriticalAlertCount(data.alerts?.length || 0)
+        }
+      } catch (error) {
+        // Silently fail - badge just won't show
+      }
+    }
+
+    fetchAlertCount()
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchAlertCount, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Determine effective role - support both new role prop and legacy isSuperAdmin
   const effectiveRole: AdminRole = role || (isSuperAdmin ? 'super_admin' : 'production_team')
@@ -171,6 +193,38 @@ export function AdminSidebar({ role, isSuperAdmin = true }: AdminSidebarProps) {
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
               <span>Settings</span>
+            </Link>
+            <Link
+              href="/admin/alerts"
+              className={`admin-nav-item ${pathname === '/admin/alerts' || pathname.startsWith('/admin/alerts/') ? 'active' : ''}`}
+              style={{ position: 'relative' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span>System Alerts</span>
+              {criticalAlertCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: '12px',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: '#DC2626',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                  }}
+                >
+                  {criticalAlertCount > 99 ? '99+' : criticalAlertCount}
+                </span>
+              )}
             </Link>
           </>
         )}

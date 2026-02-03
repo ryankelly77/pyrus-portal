@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { logCriticalError, logSyncFailure } from '@/lib/alerts'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -199,6 +200,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch Stripe subscriptions:', error)
+    // Log critical Stripe API error
+    logCriticalError(
+      'stripe_error',
+      'Failed to fetch subscriptions from Stripe',
+      { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined },
+      undefined,
+      'stripe-subscriptions/route.ts:GET'
+    )
     return NextResponse.json(
       { error: 'Failed to fetch subscriptions from Stripe' },
       { status: 500 }
@@ -208,10 +217,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/clients/[id]/stripe-subscriptions - Add a product to the client's Stripe subscription
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const { id: clientId } = await params
   try {
     const auth = await requireAdmin()
     if ((auth as any)?.user === undefined) return auth as any
-    const { id: clientId } = await params
     const body = await request.json()
     const { product_id, price_id, billing_term_months } = body
 
@@ -327,6 +336,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       await syncStripeSubscriptions(clientId, client.stripe_customer_id)
     } catch (syncError) {
       console.error('Failed to sync subscription to local DB:', syncError)
+      logSyncFailure(
+        'Failed to sync updated subscription to local DB',
+        clientId,
+        { error: syncError instanceof Error ? syncError.message : String(syncError), stripeCustomerId: client.stripe_customer_id },
+        'stripe-subscriptions/route.ts:PUT:sync'
+      )
       // Continue anyway - the Stripe subscription was updated successfully
     }
 
@@ -390,6 +405,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error: any) {
     console.error('Failed to add product to subscription:', error)
+    logCriticalError(
+      'stripe_error',
+      'Failed to add product to subscription',
+      { error: error.message || String(error), stack: error.stack },
+      clientId,
+      'stripe-subscriptions/route.ts:PUT'
+    )
     return NextResponse.json(
       { error: error.message || 'Failed to add product to subscription' },
       { status: 500 }
@@ -399,10 +421,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // POST /api/admin/clients/[id]/stripe-subscriptions - Sync subscriptions from Stripe to local DB
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const { id: clientId } = await params
   try {
     const auth = await requireAdmin()
     if ((auth as any)?.user === undefined) return auth as any
-    const { id: clientId } = await params
 
     // Get client to find stripe_customer_id
     const client = await prisma.clients.findUnique({
@@ -434,6 +456,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to sync Stripe subscriptions:', error)
+    logSyncFailure(
+      'Failed to sync subscriptions from Stripe',
+      clientId,
+      { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined },
+      'stripe-subscriptions/route.ts:POST'
+    )
     return NextResponse.json(
       { error: 'Failed to sync subscriptions from Stripe' },
       { status: 500 }

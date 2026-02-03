@@ -1,6 +1,7 @@
 import { prisma, dbPool } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import type Stripe from 'stripe'
+import { logCriticalError } from '@/lib/alerts'
 
 interface ExpandedInvoice extends Stripe.Invoice {
   payment_intent?: Stripe.PaymentIntent | string | null
@@ -296,6 +297,13 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
       }
     } catch (stripeError) {
       console.error('Error fetching Stripe subscription:', stripeError)
+      logCriticalError(
+        'stripe_error',
+        'Error fetching Stripe subscription data',
+        { error: stripeError instanceof Error ? stripeError.message : String(stripeError), stripeCustomerId: client.stripe_customer_id },
+        clientId,
+        'subscriptionService.ts:getSubscriptionData'
+      )
       // Fall through to database fetch
     }
   }
@@ -421,6 +429,13 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
       )
     } catch (stripeError) {
       console.error('Error fetching Stripe data:', stripeError)
+      logCriticalError(
+        'stripe_error',
+        'Error fetching Stripe payment methods and invoices',
+        { error: stripeError instanceof Error ? stripeError.message : String(stripeError), stripeCustomerId: client.stripe_customer_id },
+        clientId,
+        'subscriptionService.ts:getSubscriptionData'
+      )
       // Continue without Stripe data
     }
   }
