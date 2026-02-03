@@ -180,6 +180,20 @@ function GrowthBarsChart({ data }: { data: MRRDataPoint[] }) {
   )
 }
 
+interface ScheduledCancellation {
+  id: string
+  subscriptionId: string
+  productId: string
+  productName: string
+  clientId: string
+  clientName: string
+  termEndDate: string
+  termEndDateFormatted: string
+  monthlyAmount: number
+  billingTermMonths: number
+  monthsRemaining: number
+}
+
 export default function AdminRevenuePage() {
   const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
   const [volumeData, setVolumeData] = useState<{ month: string; label: string; volume: number; cumulative: number }[]>([])
@@ -194,6 +208,12 @@ export default function AdminRevenuePage() {
     churnedMRR: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [scheduledCancellations, setScheduledCancellations] = useState<ScheduledCancellation[]>([])
+  const [scheduledStats, setScheduledStats] = useState({
+    totalItems: 0,
+    totalScheduledMRR: 0,
+    itemsEndingSoon: 0,
+  })
 
   useEffect(() => {
     async function fetchMRRData() {
@@ -220,6 +240,22 @@ export default function AdminRevenuePage() {
       }
     }
     fetchMRRData()
+  }, [])
+
+  useEffect(() => {
+    async function fetchScheduledCancellations() {
+      try {
+        const res = await fetch('/api/admin/scheduled-cancellations')
+        if (res.ok) {
+          const data = await res.json()
+          setScheduledCancellations(data.items || [])
+          setScheduledStats(data.summary || { totalItems: 0, totalScheduledMRR: 0, itemsEndingSoon: 0 })
+        }
+      } catch (error) {
+        console.error('Failed to fetch scheduled cancellations:', error)
+      }
+    }
+    fetchScheduledCancellations()
   }, [])
 
   return (
@@ -358,6 +394,74 @@ export default function AdminRevenuePage() {
             </div>
           </div>
           </div>
+
+          {/* Scheduled Cancellations Section */}
+          {scheduledCancellations.length > 0 && (
+            <div className="scheduled-cancellations-section">
+              <div className="scheduled-card">
+                <div className="scheduled-header">
+                  <div>
+                    <h2>Scheduled Cancellations</h2>
+                    <p className="scheduled-subtitle">Term-based subscriptions ending soon</p>
+                  </div>
+                  <div className="scheduled-summary">
+                    <div className="scheduled-stat">
+                      <span className="scheduled-total">{scheduledStats.totalItems}</span>
+                      <span className="scheduled-label">active terms</span>
+                    </div>
+                    <div className="scheduled-stat">
+                      <span className="scheduled-total warning">${scheduledStats.totalScheduledMRR.toLocaleString()}</span>
+                      <span className="scheduled-label">MRR at risk</span>
+                    </div>
+                    {scheduledStats.itemsEndingSoon > 0 && (
+                      <div className="scheduled-stat">
+                        <span className="scheduled-total alert">{scheduledStats.itemsEndingSoon}</span>
+                        <span className="scheduled-label">ending in 2 mo</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="scheduled-table">
+                  <div className="scheduled-row scheduled-row-header">
+                    <div className="scheduled-col col-client">Client</div>
+                    <div className="scheduled-col col-product">Product</div>
+                    <div className="scheduled-col col-amount">Monthly</div>
+                    <div className="scheduled-col col-term">Term</div>
+                    <div className="scheduled-col col-ends">Ends</div>
+                    <div className="scheduled-col col-remaining">Remaining</div>
+                  </div>
+
+                  {scheduledCancellations.map((item) => (
+                    <div key={item.id} className="scheduled-row">
+                      <div className="scheduled-col col-client">
+                        <div className="client-info">
+                          <span className="client-name">{item.clientName}</span>
+                        </div>
+                      </div>
+                      <div className="scheduled-col col-product">
+                        <span className="product-name">{item.productName}</span>
+                      </div>
+                      <div className="scheduled-col col-amount">
+                        <span className="amount-value">${item.monthlyAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="scheduled-col col-term">
+                        <span className="term-badge">{item.billingTermMonths} mo</span>
+                      </div>
+                      <div className="scheduled-col col-ends">
+                        <span className="date-value">{item.termEndDateFormatted}</span>
+                      </div>
+                      <div className="scheduled-col col-remaining">
+                        <span className={`remaining-badge ${item.monthsRemaining <= 2 ? 'urgent' : item.monthsRemaining <= 4 ? 'warning' : ''}`}>
+                          {item.monthsRemaining} mo left
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Right: Pipeline Table */}
           <div className="pipeline-section">
@@ -1207,6 +1311,168 @@ export default function AdminRevenuePage() {
           .revenue-charts-grid {
             grid-template-columns: 1fr;
           }
+        }
+
+        /* Scheduled Cancellations Styles */
+        .scheduled-cancellations-section {
+          grid-column: 1 / -1;
+          margin-top: 8px;
+        }
+
+        .scheduled-card {
+          background: white;
+          border: 1px solid #E5E7EB;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .scheduled-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #F3F4F6;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%);
+        }
+
+        .scheduled-header h2 {
+          font-size: 16px;
+          font-weight: 600;
+          color: #92400E;
+          margin: 0;
+        }
+
+        .scheduled-subtitle {
+          font-size: 13px;
+          color: #B45309;
+          margin: 4px 0 0 0;
+        }
+
+        .scheduled-summary {
+          display: flex;
+          gap: 24px;
+        }
+
+        .scheduled-stat {
+          text-align: right;
+        }
+
+        .scheduled-total {
+          display: block;
+          font-size: 18px;
+          font-weight: 700;
+          color: #92400E;
+        }
+
+        .scheduled-total.warning {
+          color: #D97706;
+        }
+
+        .scheduled-total.alert {
+          color: #DC2626;
+        }
+
+        .scheduled-label {
+          font-size: 10px;
+          color: #B45309;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .scheduled-table {
+          padding: 8px 0;
+        }
+
+        .scheduled-row {
+          display: grid;
+          grid-template-columns: minmax(140px, 1.5fr) minmax(160px, 2fr) 90px 70px 100px 100px;
+          gap: 12px;
+          padding: 12px 20px;
+          border-bottom: 1px solid #F3F4F6;
+          align-items: center;
+        }
+
+        .scheduled-row:last-child {
+          border-bottom: none;
+        }
+
+        .scheduled-row:hover:not(.scheduled-row-header) {
+          background: #FFFBEB;
+          cursor: pointer;
+        }
+
+        .scheduled-row-header {
+          padding: 10px 20px;
+          background: #F9FAFB;
+          border-bottom: 1px solid #E5E7EB;
+        }
+
+        .scheduled-row-header .scheduled-col {
+          font-size: 11px;
+          font-weight: 600;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .scheduled-col {
+          display: flex;
+          align-items: center;
+        }
+
+        .scheduled-col.col-amount,
+        .scheduled-col.col-term,
+        .scheduled-col.col-ends,
+        .scheduled-col.col-remaining {
+          justify-content: center;
+        }
+
+        .scheduled-row-header .col-amount,
+        .scheduled-row-header .col-term,
+        .scheduled-row-header .col-ends,
+        .scheduled-row-header .col-remaining {
+          justify-content: center;
+        }
+
+        .product-name {
+          font-size: 13px;
+          color: #374151;
+          font-weight: 500;
+        }
+
+        .amount-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #111827;
+        }
+
+        .term-badge {
+          font-size: 12px;
+          font-weight: 500;
+          color: #6B7280;
+          background: #F3F4F6;
+          padding: 4px 8px;
+          border-radius: 4px;
+        }
+
+        .remaining-badge {
+          padding: 4px 10px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 500;
+          background: #D1FAE5;
+          color: #065F46;
+        }
+
+        .remaining-badge.warning {
+          background: #FEF3C7;
+          color: #92400E;
+        }
+
+        .remaining-badge.urgent {
+          background: #FEE2E2;
+          color: #991B1B;
         }
       `}</style>
     </>

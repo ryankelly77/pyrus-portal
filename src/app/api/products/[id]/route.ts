@@ -19,6 +19,7 @@ export async function GET(
         monthly_price: true,
         onetime_price: true,
         stripe_product_id: true,
+        billing_term_months: true,
       },
     })
 
@@ -35,6 +36,7 @@ export async function GET(
       monthly_price: product.monthly_price ? Number(product.monthly_price) : null,
       onetime_price: product.onetime_price ? Number(product.onetime_price) : null,
       stripe_product_id: product.stripe_product_id,
+      billing_term_months: product.billing_term_months,
     })
   } catch (error) {
     console.error('Error fetching product:', error)

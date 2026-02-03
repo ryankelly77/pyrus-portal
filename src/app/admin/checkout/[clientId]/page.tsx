@@ -68,6 +68,13 @@ function getAvatarColor(str: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+// Helper to get ordinal suffix (1st, 2nd, 3rd, etc.)
+function getOrdinalSuffix(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return s[(v - 20) % 10] || s[v] || s[0]
+}
+
 export default function CheckoutPage() {
   const params = useParams()
   const router = useRouter()
@@ -89,6 +96,14 @@ export default function CheckoutPage() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isCardFormExpanded, setIsCardFormExpanded] = useState(false)
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [existingSubscription, setExistingSubscription] = useState<{
+    id: string
+    billingDate: number // day of month (1-31)
+    currentPeriodEnd: string
+    nextBillingDate: string
+  } | null>(null)
+  const [prorationAmount, setProrationAmount] = useState<number | null>(null)
+  const [prorationLoading, setProrationLoading] = useState(false)
 
   // Load client and cart items from sessionStorage
   useEffect(() => {
@@ -105,10 +120,21 @@ export default function CheckoutPage() {
             const subsRes = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`)
             if (subsRes.ok) {
               const subsData = await subsRes.json()
-              const hasActive = subsData.subscriptions?.some(
+              const activeSub = subsData.subscriptions?.find(
                 (sub: { status: string; items: unknown[] }) => sub.status === 'active' && sub.items.length > 0
               )
-              setHasActiveSubscription(hasActive)
+              if (activeSub) {
+                setHasActiveSubscription(true)
+                // Extract billing date from current period end
+                const periodEnd = new Date(activeSub.currentPeriodEnd)
+                const billingDate = periodEnd.getDate()
+                setExistingSubscription({
+                  id: activeSub.id,
+                  billingDate,
+                  currentPeriodEnd: activeSub.currentPeriodEnd,
+                  nextBillingDate: periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                })
+              }
             }
           }
         }
@@ -127,6 +153,43 @@ export default function CheckoutPage() {
 
     loadData()
   }, [clientId, tier])
+
+  // Fetch proration preview for existing clients when cart changes
+  useEffect(() => {
+    async function fetchProration() {
+      if (!hasActiveSubscription || !existingSubscription || cartItems.length === 0) {
+        return
+      }
+
+      // Only fetch if we have product IDs
+      const itemsWithProductId = cartItems.filter(item => item.productId)
+      if (itemsWithProductId.length === 0) {
+        return
+      }
+
+      setProrationLoading(true)
+      try {
+        const response = await fetch(`/api/admin/clients/${clientId}/proration-preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: itemsWithProductId.map(item => ({ productId: item.productId })),
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProrationAmount(data.prorationAmount)
+        }
+      } catch (error) {
+        console.error('Failed to fetch proration:', error)
+      } finally {
+        setProrationLoading(false)
+      }
+    }
+
+    fetchProration()
+  }, [hasActiveSubscription, existingSubscription, cartItems, clientId])
 
   // Valid coupon codes (client-side validation, server validates too)
   const VALID_COUPONS: Record<string, number> = {
@@ -736,10 +799,45 @@ export default function CheckoutPage() {
                           </svg>
                           <span>Using {client?.name}&apos;s existing payment method on file</span>
                         </div>
-                        <p className="proration-note">
-                          The prorated amount for this billing period will be charged to the card on file.
-                          Future charges will occur on the existing billing date.
+
+                        {/* Proration details */}
+                        <div className="proration-details" style={{
+                          backgroundColor: '#F0FDF4',
+                          border: '1px solid #BBF7D0',
+                          borderRadius: '8px',
+                          padding: '1rem',
+                          marginBottom: '1rem',
+                        }}>
+                          <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: '#166534' }}>
+                            Prorated Charge Today
+                          </div>
+                          {prorationLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                              <span>Calculating...</span>
+                            </div>
+                          ) : prorationAmount !== null ? (
+                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#166534' }}>
+                              ${prorationAmount.toFixed(2)}
+                            </div>
+                          ) : (
+                            <div style={{ color: '#666' }}>Unable to calculate proration</div>
+                          )}
+                          <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem', marginBottom: 0 }}>
+                            This covers the remaining days until the next billing date
+                            {existingSubscription?.nextBillingDate && (
+                              <> ({existingSubscription.nextBillingDate})</>
+                            )}
+                          </p>
+                        </div>
+
+                        <p className="proration-note" style={{ fontSize: '0.875rem', color: '#666', marginBottom: '1rem' }}>
+                          After today, the full ${monthlyTotal.toLocaleString()}/mo will be added to the regular billing cycle
+                          {existingSubscription?.billingDate && (
+                            <> on the {existingSubscription.billingDate}{getOrdinalSuffix(existingSubscription.billingDate)} of each month</>
+                          )}.
                         </p>
+
                         {paymentError && (
                           <div className="payment-error">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -753,7 +851,7 @@ export default function CheckoutPage() {
                         <button
                           className="btn btn-success btn-large btn-full"
                           onClick={addToExistingSubscription}
-                          disabled={isProcessing}
+                          disabled={isProcessing || prorationLoading}
                         >
                           {isProcessing ? (
                             <>
@@ -953,13 +1051,29 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="summary-total">
-                  <span>Due Today</span>
-                  <span className="total-amount">${finalDueToday.toLocaleString()}</span>
+                  <span>{hasActiveSubscription ? 'Prorated Due Today' : 'Due Today'}</span>
+                  {hasActiveSubscription ? (
+                    prorationLoading ? (
+                      <span className="total-amount" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                      </span>
+                    ) : prorationAmount !== null ? (
+                      <span className="total-amount">${prorationAmount.toFixed(2)}</span>
+                    ) : (
+                      <span className="total-amount">--</span>
+                    )
+                  ) : (
+                    <span className="total-amount">${finalDueToday.toLocaleString()}</span>
+                  )}
                 </div>
 
                 {monthlyTotal > 0 && (
                   <p className="recurring-note">
-                    Then ${monthlyTotal.toLocaleString()}/mo each month
+                    {hasActiveSubscription && existingSubscription ? (
+                      <>Then ${monthlyTotal.toLocaleString()}/mo on the {existingSubscription.billingDate}{getOrdinalSuffix(existingSubscription.billingDate)}</>
+                    ) : (
+                      <>Then ${monthlyTotal.toLocaleString()}/mo each month</>
+                    )}
                   </p>
                 )}
 

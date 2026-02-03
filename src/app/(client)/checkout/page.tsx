@@ -25,6 +25,7 @@ interface CartItem {
   billingPeriod: 'monthly' | 'one-time'
   category: string
   isFree?: boolean
+  billingTermMonths?: number | null // 12 = 12-month term, null = ongoing
 }
 
 interface RecommendationItem {
@@ -122,6 +123,13 @@ const VALID_COUPONS: Record<string, { discount: number; minSpend: number; stripe
   'TEST2': { discount: 100, minSpend: 0, stripePromoId: 'promo_1R3gHLG6lmzQA2EMFa3v79yi' },
 }
 
+// Helper to get ordinal suffix (1st, 2nd, 3rd, etc.)
+function getOrdinalSuffix(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return s[(v - 20) % 10] || s[v] || s[0]
+}
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
@@ -180,6 +188,18 @@ export default function CheckoutPage() {
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true)
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | 'new'>('new')
 
+  // Existing subscription state (for adding products to existing clients)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [subscriptionCheckComplete, setSubscriptionCheckComplete] = useState(false)
+  const [existingSubscription, setExistingSubscription] = useState<{
+    id: string
+    billingDate: number
+    currentPeriodEnd: string
+    nextBillingDate: string
+  } | null>(null)
+  const [prorationAmount, setProrationAmount] = useState<number | null>(null)
+  const [prorationLoading, setProrationLoading] = useState(false)
+
   // Handle $0 order submission (no payment needed)
   const handleFreeOrderSubmit = async () => {
     setIsFreeOrderProcessing(true)
@@ -237,6 +257,13 @@ export default function CheckoutPage() {
 
     try {
       const effectiveClientId = viewingAs || client.id
+
+      // For existing clients with active subscriptions, add to existing subscription
+      if (hasActiveSubscription) {
+        await handleAddToExistingSubscription()
+        return
+      }
+
       const response = await fetch('/api/stripe/create-subscription-from-setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -275,6 +302,52 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Saved payment method error:', err)
       setStripeError('An unexpected error occurred')
+      setIsPaymentProcessing(false)
+    }
+  }
+
+  // Handle adding items to existing Stripe subscription with proration
+  const handleAddToExistingSubscription = async () => {
+    setIsPaymentProcessing(true)
+    setStripeError(null)
+
+    try {
+      const effectiveClientId = viewingAs || client.id
+
+      // Add each cart item to the subscription
+      // Term products (12-month) use no proration, ongoing products use proration
+      for (const item of cartItems) {
+        if (!item.id || item.isFree) continue
+
+        const response = await fetch(`/api/admin/clients/${effectiveClientId}/stripe-subscriptions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: item.id,
+            billing_term_months: item.billingTermMonths || null,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to add ${item.name} to subscription`)
+        }
+      }
+
+      // Redirect to success page
+      const successUrl = new URL('/checkout/success', window.location.origin)
+      successUrl.searchParams.set('tier', selectedTier || '')
+      if (viewingAs) {
+        successUrl.searchParams.set('viewingAs', viewingAs)
+      }
+      successUrl.searchParams.set('redirect_status', 'succeeded')
+      successUrl.searchParams.set('existing', 'true')
+
+      window.location.href = successUrl.toString()
+    } catch (err) {
+      console.error('Add to subscription error:', err)
+      setStripeError(err instanceof Error ? err.message : 'Failed to add to subscription')
       setIsPaymentProcessing(false)
     }
   }
@@ -318,6 +391,7 @@ export default function CheckoutPage() {
               price,
               billingPeriod,
               category: product.category || 'service',
+              billingTermMonths: product.billing_term_months || null,
             }
             setCartItems([cartItem])
           }
@@ -404,14 +478,14 @@ export default function CheckoutPage() {
     fetchRecommendationItems()
   }, [tier, viewingAs, client.id, itemId, productId, priceOption, clientLoading])
 
-  // Fetch saved payment methods
+  // Fetch saved payment methods and check for existing subscriptions
   useEffect(() => {
     const effectiveClientId = viewingAs || client.id
     if (!effectiveClientId || clientLoading) {
       return
     }
 
-    async function fetchPaymentMethods() {
+    async function fetchPaymentMethodsAndSubscription() {
       try {
         const res = await fetch(`/api/client/subscription?clientId=${effectiveClientId}`)
         if (res.ok) {
@@ -427,16 +501,74 @@ export default function CheckoutPage() {
               setSelectedPaymentMethodId(data.paymentMethods[0].id)
             }
           }
+
+          // Check if client has an active subscription
+          if (data.subscription && data.subscription.status === 'active') {
+            setHasActiveSubscription(true)
+            // Parse billing date from currentPeriodEnd
+            const periodEnd = data.subscription.currentPeriodEnd
+              ? new Date(data.subscription.currentPeriodEnd)
+              : null
+            if (periodEnd) {
+              const billingDate = periodEnd.getDate()
+              setExistingSubscription({
+                id: data.subscription.id,
+                billingDate,
+                currentPeriodEnd: data.subscription.currentPeriodEnd,
+                nextBillingDate: periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+              })
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to fetch payment methods:', error)
       } finally {
         setLoadingPaymentMethods(false)
+        setSubscriptionCheckComplete(true)
       }
     }
 
-    fetchPaymentMethods()
+    fetchPaymentMethodsAndSubscription()
   }, [viewingAs, client.id, clientLoading])
+
+  // Fetch proration preview for existing clients
+  useEffect(() => {
+    if (!hasActiveSubscription || !existingSubscription || cartItems.length === 0) {
+      return
+    }
+
+    const effectiveClientId = viewingAs || client.id
+    if (!effectiveClientId) return
+
+    // Only fetch if we have product IDs
+    const itemsWithId = cartItems.filter(item => item.id)
+    if (itemsWithId.length === 0) return
+
+    setProrationLoading(true)
+
+    async function fetchProration() {
+      try {
+        const response = await fetch(`/api/admin/clients/${effectiveClientId}/proration-preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: itemsWithId.map(item => ({ productId: item.id })),
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProrationAmount(data.prorationAmount)
+        }
+      } catch (error) {
+        console.error('Failed to fetch proration:', error)
+      } finally {
+        setProrationLoading(false)
+      }
+    }
+
+    fetchProration()
+  }, [hasActiveSubscription, existingSubscription, cartItems, viewingAs, client.id])
 
   // Calculate base monthly total (excluding Analytics which is always free)
   const baseMonthlyTotal = cartItems.reduce((sum, item) => {
@@ -664,6 +796,18 @@ export default function CheckoutPage() {
     : annualTotal + discountedOnetimeTotal
   const isZeroOrder = totalDueToday === 0
 
+  // Check if all monthly items in cart are term products (12-month term)
+  // Term products for existing clients: $0 due today, starts on next billing date
+  const allItemsAreTermProducts = cartItems
+    .filter(item => item.billingPeriod === 'monthly' && !item.isFree)
+    .every(item => item.billingTermMonths && item.billingTermMonths > 0)
+
+  // For existing clients with term products, due today is $0
+  const isTermProductCheckout = hasActiveSubscription && allItemsAreTermProducts && cartItems.some(item => item.billingTermMonths)
+
+  // Check if this is a one-time only purchase (no monthly items)
+  const isOnetimeOnlyPurchase = discountedMonthlyTotal === 0 && discountedOnetimeTotal > 0
+
 
   // Loading state when mounting or fetching recommendation items
   if (!mounted || clientLoading || isLoading) {
@@ -787,7 +931,13 @@ export default function CheckoutPage() {
                       ) : (
                         <>
                           <span className="price">${item.price.toLocaleString()}</span>
-                          <span className="period">{item.billingPeriod === 'monthly' ? '/mo' : ''}</span>
+                          <span className="period">
+                            {item.billingPeriod === 'monthly'
+                              ? item.billingTermMonths
+                                ? `/mo for ${item.billingTermMonths} months`
+                                : '/mo'
+                              : ' one-time'}
+                          </span>
                         </>
                       )}
                     </div>
@@ -797,8 +947,8 @@ export default function CheckoutPage() {
 
             </div>
 
-            {/* Billing Cycle - Only show if there are monthly items */}
-            {monthlyTotal > 0 && (
+            {/* Billing Cycle - Only show if there are monthly items and not a term-only or one-time purchase */}
+            {monthlyTotal > 0 && !isTermProductCheckout && !isOnetimeOnlyPurchase && (
               <div className="checkout-section">
                 <h2 className="checkout-section-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
@@ -857,7 +1007,71 @@ export default function CheckoutPage() {
                 </h2>
 
                 <div className="payment-form">
-                  {loadingPaymentMethods ? (
+                  {/* For existing clients with active subscriptions adding monthly items, show their existing payment method */}
+                  {/* One-time purchases require ACH, so they go through the regular payment selection flow */}
+                  {hasActiveSubscription && savedPaymentMethods.length > 0 && !isOnetimeOnlyPurchase ? (
+                    <div className="existing-client-payment">
+                      <div style={{
+                        backgroundColor: '#F0FDF4',
+                        border: '1px solid #BBF7D0',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                      }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2" width="20" height="20">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span style={{ color: '#166534' }}>Using your existing payment method on file</span>
+                      </div>
+                      {savedPaymentMethods[0] && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
+                          backgroundColor: '#F9FAFB',
+                          borderRadius: '8px',
+                          border: '1px solid #E5E7EB',
+                        }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                          </svg>
+                          <div>
+                            <div style={{ fontWeight: 500 }}>
+                              {savedPaymentMethods[0].brand.charAt(0).toUpperCase() + savedPaymentMethods[0].brand.slice(1)} ending in {savedPaymentMethods[0].last4}
+                            </div>
+                            {savedPaymentMethods[0].expMonth > 0 && savedPaymentMethods[0].expYear > 0 && (
+                              <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                                Expires {savedPaymentMethods[0].expMonth}/{savedPaymentMethods[0].expYear}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {prorationAmount !== null && prorationAmount > 0 && !isOnetimeOnlyPurchase && !isTermProductCheckout && (
+                        <div style={{
+                          marginTop: '1rem',
+                          padding: '1rem',
+                          backgroundColor: '#FEF3C7',
+                          borderRadius: '8px',
+                          border: '1px solid #FCD34D',
+                        }}>
+                          <div style={{ fontWeight: 600, color: '#92400E', marginBottom: '0.25rem' }}>
+                            Prorated charge: ${prorationAmount.toFixed(2)}
+                          </div>
+                          <div style={{ fontSize: '0.875rem', color: '#92400E' }}>
+                            This covers the remaining days until your next billing date
+                            {existingSubscription?.nextBillingDate && <> ({existingSubscription.nextBillingDate})</>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : loadingPaymentMethods ? (
                     <div className="stripe-loading">
                       <div className="spinner" style={{ width: 24, height: 24 }}></div>
                       <p>Loading payment methods...</p>
@@ -1220,18 +1434,44 @@ export default function CheckoutPage() {
               <div className="order-summary-divider"></div>
 
               <div className="order-summary-total">
-                <span>Total Due Today</span>
+                <span>{hasActiveSubscription && !isOnetimeOnlyPurchase ? (isTermProductCheckout ? 'Due Today' : 'Prorated Due Today') : 'Total Due Today'}</span>
                 <div className="total-amount">
-                  <span className="amount">
-                    ${(billingCycle === 'monthly'
-                      ? discountedMonthlyTotal + discountedOnetimeTotal
-                      : annualTotal + discountedOnetimeTotal
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: (billingCycle === 'monthly' ? discountedMonthlyTotal + discountedOnetimeTotal : annualTotal + discountedOnetimeTotal) % 1 !== 0 ? 2 : 0,
-                      maximumFractionDigits: 2
-                    })}
-                  </span>
-                  {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && <span className="period">{discountedOnetimeTotal > 0 ? '' : '/mo'}</span>}
+                  {!subscriptionCheckComplete ? (
+                    // Still checking for existing subscription
+                    <span className="amount" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                    </span>
+                  ) : isOnetimeOnlyPurchase ? (
+                    // One-time only purchase - show full one-time total (no proration)
+                    <span className="amount">${discountedOnetimeTotal.toLocaleString()}</span>
+                  ) : hasActiveSubscription ? (
+                    // Existing client with monthly items
+                    isTermProductCheckout ? (
+                      // Term product - $0 due today, starts on next billing date
+                      <span className="amount">$0.00</span>
+                    ) : prorationLoading ? (
+                      <span className="amount" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="spinner" style={{ width: 16, height: 16 }}></span>
+                      </span>
+                    ) : prorationAmount !== null ? (
+                      <span className="amount">${prorationAmount.toFixed(2)}</span>
+                    ) : (
+                      <span className="amount">--</span>
+                    )
+                  ) : (
+                    <>
+                      <span className="amount">
+                        ${(billingCycle === 'monthly'
+                          ? discountedMonthlyTotal + discountedOnetimeTotal
+                          : annualTotal + discountedOnetimeTotal
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: (billingCycle === 'monthly' ? discountedMonthlyTotal + discountedOnetimeTotal : annualTotal + discountedOnetimeTotal) % 1 !== 0 ? 2 : 0,
+                          maximumFractionDigits: 2
+                        })}
+                      </span>
+                      {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && <span className="period">{discountedOnetimeTotal > 0 ? '' : '/mo'}</span>}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1241,9 +1481,15 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && (
+              {billingCycle === 'monthly' && discountedMonthlyTotal > 0 && subscriptionCheckComplete && (
                 <p className="order-summary-note">
-                  {discountedOnetimeTotal > 0 ? (
+                  {hasActiveSubscription && existingSubscription && isTermProductCheckout ? (
+                    // Term product for existing client - starts on next billing date
+                    <>Billing starts {existingSubscription.nextBillingDate} at ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo for 12 months (${(discountedMonthlyTotal * 12).toLocaleString()} total).</>
+                  ) : hasActiveSubscription && existingSubscription ? (
+                    // Ongoing product for existing client - show proration message
+                    <>then, ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {existingSubscription.billingDate}{getOrdinalSuffix(existingSubscription.billingDate)} of each month.</>
+                  ) : discountedOnetimeTotal > 0 ? (
                     <>You&apos;ll be charged ${(discountedMonthlyTotal + discountedOnetimeTotal).toLocaleString(undefined, { minimumFractionDigits: (discountedMonthlyTotal + discountedOnetimeTotal) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })} today, then ${discountedMonthlyTotal.toLocaleString(undefined, { minimumFractionDigits: discountedMonthlyTotal % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}/mo on the {(() => {
                       const day = new Date().getDate()
                       const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
@@ -1266,7 +1512,7 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              {/* Complete Purchase Button - Different for $0 vs paid orders vs saved payment method */}
+              {/* Complete Purchase Button - Different for $0 vs paid orders vs saved payment method vs existing subscription */}
               {isZeroOrder ? (
                 <>
                   {freeOrderError && (
@@ -1296,6 +1542,30 @@ export default function CheckoutPage() {
                     )}
                   </button>
                 </>
+              ) : hasActiveSubscription ? (
+                // Existing client - add to subscription
+                <button
+                  type="button"
+                  onClick={handleAddToExistingSubscription}
+                  className={`btn btn-primary btn-lg checkout-btn ${isPaymentProcessing ? 'processing' : ''}`}
+                  disabled={isPaymentProcessing || prorationLoading}
+                  style={{ width: '100%', marginTop: '1rem' }}
+                >
+                  {isPaymentProcessing ? (
+                    <>
+                      <span className="spinner"></span>
+                      Adding to Subscription...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Add to Subscription
+                    </>
+                  )}
+                </button>
               ) : selectedPaymentMethodId !== 'new' ? (
                 // Using saved payment method
                 <button

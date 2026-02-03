@@ -120,6 +120,7 @@ model products {
   includes_website        Boolean?  @default(false)
   website_services        Json?     @db.JsonB
   smart_rec_why_text      String?   // Default "why you need this" text for smart recommendations
+  billing_term_months     Int?      // Number of months for term billing (null = ongoing, 12 = 12-month term)
   created_at              DateTime? @default(now()) @db.Timestamptz(6)
   updated_at              DateTime? @default(now()) @db.Timestamptz(6)
 
@@ -394,6 +395,7 @@ model subscription_items {
   stripe_subscription_item_id String?
   quantity                    Int?      @default(1)
   unit_amount                 Decimal?  @db.Decimal
+  term_end_date               DateTime? @db.Timestamptz(6) // For 12-month term products, when to cancel
   created_at                  DateTime? @default(now()) @db.Timestamptz(6)
 
   subscription subscriptions @relation(fields: [subscription_id], references: [id])

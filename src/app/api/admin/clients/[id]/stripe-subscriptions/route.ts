@@ -149,15 +149,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       // Cast to any to access snake_case properties that may not be in TypeScript types
       const subAny = sub as any
 
+      // Period dates are on subscription items, not the subscription itself
+      const firstItem = sub.items.data[0] as any
+      const periodStart = firstItem?.current_period_start
+        ? new Date(firstItem.current_period_start * 1000).toISOString()
+        : null
+      const periodEnd = firstItem?.current_period_end
+        ? new Date(firstItem.current_period_end * 1000).toISOString()
+        : null
+
       return {
         id: sub.id,
         status: sub.status,
-        currentPeriodStart: subAny.current_period_start
-          ? new Date(subAny.current_period_start * 1000).toISOString()
-          : null,
-        currentPeriodEnd: subAny.current_period_end
-          ? new Date(subAny.current_period_end * 1000).toISOString()
-          : null,
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
         canceledAt: sub.canceled_at
           ? new Date(sub.canceled_at * 1000).toISOString()
@@ -208,11 +213,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
     const body = await request.json()
-    const { product_id, price_id } = body
+    const { product_id, price_id, billing_term_months } = body
 
     if (!product_id) {
       return NextResponse.json({ error: 'product_id is required' }, { status: 400 })
     }
+
+    // Term products (like 12-month plans) don't prorate - they start on next billing date
+    const isTermProduct = billing_term_months && billing_term_months > 0
 
     // Get client to find stripe_customer_id
     const client = await prisma.clients.findUnique({
@@ -290,16 +298,42 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 })
     }
 
-    // Add the item to the subscription with immediate proration invoice
+    // Add the item to the subscription
+    // Term products: no proration, starts on next billing date
+    // Ongoing products: prorate immediately
     const subscriptionItem = await stripe.subscriptionItems.create({
       subscription: subscription.id,
       price: stripePriceId,
       quantity: 1,
-      proration_behavior: 'always_invoice', // Charge prorated amount immediately
+      proration_behavior: isTermProduct ? 'none' : 'always_invoice',
     })
+
+    // For term products, calculate term_end_date
+    let termEndDate: Date | null = null
+    if (isTermProduct) {
+      // Get the next billing date from the subscription
+      const firstItem = subscription.items.data[0] as any
+      const nextBillingTimestamp = firstItem?.current_period_end
+      if (nextBillingTimestamp) {
+        const nextBillingDate = new Date(nextBillingTimestamp * 1000)
+        // Term ends billing_term_months after the next billing date
+        termEndDate = new Date(nextBillingDate)
+        termEndDate.setMonth(termEndDate.getMonth() + billing_term_months)
+      }
+    }
 
     // Sync the updated subscription to local DB
     await syncStripeSubscriptions(clientId, client.stripe_customer_id)
+
+    // If this is a term product, update the subscription_item with term_end_date
+    if (termEndDate) {
+      await dbPool.query(
+        `UPDATE subscription_items
+         SET term_end_date = $1, updated_at = NOW()
+         WHERE stripe_subscription_item_id = $2`,
+        [termEndDate.toISOString(), subscriptionItem.id]
+      )
+    }
 
     // Mark any matching smart recommendation item as 'purchased'
     try {
