@@ -142,6 +142,7 @@ export async function getClientActivity(
       timestamp: date.getTime(),
       iconStyle,
       metadata: {
+        source: 'basecamp',
         kind: row.kind,
         status: row.recording_status,
         content: row.recording_content,
@@ -172,6 +173,7 @@ export async function getClientActivity(
       timestamp: date.getTime(),
       iconStyle,
       metadata: {
+        source: 'communication',
         commType: row.comm_type,
         highlightType: row.highlight_type,
         ...((row.metadata && typeof row.metadata === 'object') ? (row.metadata as Record<string, unknown>) : {}),
@@ -221,6 +223,7 @@ export async function getClientActivity(
       timestamp: date.getTime(),
       iconStyle,
       metadata: {
+        source: 'recommendation_history',
         action: row.action,
         productId: row.product_id,
         itemId: row.item_id,

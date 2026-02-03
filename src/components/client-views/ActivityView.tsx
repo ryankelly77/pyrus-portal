@@ -122,7 +122,7 @@ export function ActivityView({ clientId, isAdmin = false, isDemo = false, client
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: activity?.metadata?.commType ? 'communication' : 'basecamp',
+          source: activity?.metadata?.source || 'basecamp',
         }),
       })
 

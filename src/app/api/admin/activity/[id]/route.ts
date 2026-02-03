@@ -14,28 +14,44 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
 
-    // Get the type from request body to know which table to delete from
+    // Get the source from request body to know which table to delete from
     const body = await request.json().catch(() => ({}))
-    const { type } = body as { type?: 'communication' | 'basecamp' }
+    const { source } = body as { source?: 'basecamp' | 'communication' | 'recommendation_history' }
 
-    // Try to delete from the appropriate table
-    if (type === 'communication') {
-      // Delete from client_communications
-      await prisma.client_communications.delete({
-        where: { id },
-      })
-    } else {
-      // Default: try basecamp_activities first, then client_communications
-      try {
-        await prisma.basecamp_activities.delete({
-          where: { id },
-        })
-      } catch {
-        // If not found in basecamp_activities, try client_communications
+    // Delete from the appropriate table based on source
+    switch (source) {
+      case 'communication':
         await prisma.client_communications.delete({
           where: { id },
         })
-      }
+        break
+      case 'recommendation_history':
+        await prisma.smart_recommendation_history.delete({
+          where: { id },
+        })
+        break
+      case 'basecamp':
+        await prisma.basecamp_activities.delete({
+          where: { id },
+        })
+        break
+      default:
+        // Fallback: try each table in order
+        try {
+          await prisma.basecamp_activities.delete({
+            where: { id },
+          })
+        } catch {
+          try {
+            await prisma.client_communications.delete({
+              where: { id },
+            })
+          } catch {
+            await prisma.smart_recommendation_history.delete({
+              where: { id },
+            })
+          }
+        }
     }
 
     return NextResponse.json({ success: true })
