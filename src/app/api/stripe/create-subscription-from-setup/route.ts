@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getOrCreateCoupon } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logSubscriptionSafeguard, logStateResetBlocked } from '@/lib/alerts'
 
 interface CartItem {
   name: string
@@ -57,7 +58,13 @@ export async function POST(request: NextRequest) {
       })
 
       if (existingSubscriptions.data.length > 0) {
-        console.warn(`[BLOCKED] Attempted to create new subscription for client ${clientId} who already has active subscription ${existingSubscriptions.data[0].id}`)
+        // Log alert for monitoring - don't await to avoid blocking the response
+        logSubscriptionSafeguard(
+          `Blocked duplicate subscription creation - client already has active subscription`,
+          clientId,
+          { existingSubscriptionId: existingSubscriptions.data[0].id, stripeCustomerId },
+          'create-subscription-from-setup/route.ts'
+        )
         return NextResponse.json(
           {
             error: 'Client already has an active subscription. Use the add-to-subscription flow instead.',
@@ -260,7 +267,12 @@ export async function POST(request: NextRequest) {
       })
     } else {
       // Existing client - only update status if needed, preserve start_date and growth_stage
-      console.warn(`[SAFEGUARD] Client ${clientId} already has start_date or active status - preserving existing state`)
+      logStateResetBlocked(
+        `Preserved existing client state - client already has start_date or active status`,
+        clientId,
+        { existingStatus: clientAny.status, existingStartDate: clientAny.start_date, existingGrowthStage: clientAny.growth_stage },
+        'create-subscription-from-setup/route.ts'
+      )
       if (clientAny.status !== 'active') {
         await prisma.clients.update({
           where: { id: clientId },
