@@ -98,6 +98,25 @@ model profiles {
   content_revisions content_revisions[]
   notifications     notifications[]
   recommendations   recommendations[]
+  user_invites      user_invites[]
+}
+
+model user_invites {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String
+  full_name     String?
+  phone         String?
+  role          String    // 'client', 'admin', 'super_admin', 'production_team', 'sales'
+  client_ids    String[]  @default([]) @db.Uuid // Array of client IDs for client users
+  invite_token  String    @unique
+  status        String    @default("pending") // 'pending', 'accepted', 'expired'
+  invited_by    String?   @db.Uuid
+  sent_at       DateTime? @db.Timestamptz(6)
+  expires_at    DateTime  @db.Timestamptz(6)
+  accepted_at   DateTime? @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+
+  inviter     profiles?  @relation(fields: [invited_by], references: [id])
 }
 
 // ============ Products & Bundles ============
@@ -459,9 +478,15 @@ model revenue_records {
 }
 
 model role_permissions {
-  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role       String
-  permission String
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role       String   // 'super_admin', 'admin', 'production_team', 'sales'
+  menu_key   String   // 'dashboard', 'recommendations', 'clients', etc.
+  has_access Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([role, menu_key])
+  @@index([role])
 }
 
 model settings {
