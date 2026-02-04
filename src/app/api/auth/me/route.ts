@@ -43,12 +43,29 @@ export async function GET() {
 
     const profile = profileResult.rows[0]
 
+    // Fetch role permissions for non-super_admin users
+    let permissions: Record<string, boolean> = {}
+    if (profile.role && profile.role !== 'super_admin' && profile.role !== 'client') {
+      try {
+        const permResult = await dbPool.query(
+          `SELECT menu_key, has_access FROM role_permissions WHERE role = $1`,
+          [profile.role]
+        )
+        for (const row of permResult.rows) {
+          permissions[row.menu_key] = row.has_access
+        }
+      } catch (e) {
+        console.error('Failed to fetch permissions:', e)
+      }
+    }
+
     return NextResponse.json({
       id: profile.id,
       email: profile.email,
       fullName: profile.full_name,
       role: profile.role,
       clientId: profile.client_id,
+      permissions,
     })
   } catch (error) {
     console.error('Error fetching user info:', error)

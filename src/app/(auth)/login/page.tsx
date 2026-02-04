@@ -50,7 +50,7 @@ function LoginForm() {
     try {
       const meRes = await fetch('/api/auth/me')
       if (meRes.ok) {
-        const profile: { role?: string } = await meRes.json()
+        const profile: { role?: string; permissions?: Record<string, boolean> } = await meRes.json()
 
         // Admin roles go to /admin, clients go to /getting-started
         const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
@@ -60,38 +60,28 @@ function LoginForm() {
             finalRedirect = '/admin/dashboard'
           } else {
             // For other admin roles, find their first accessible page
-            try {
-              const permRes = await fetch('/api/admin/role-permissions')
-              if (permRes.ok) {
-                const permData = await permRes.json()
-                const userPerms = permData.permissions?.[profile.role] || {}
+            const userPerms = profile.permissions || {}
 
-                // Menu items in order of priority
-                const menuOrder = [
-                  { key: 'dashboard', path: '/admin/dashboard' },
-                  { key: 'recommendations', path: '/admin/recommendations' },
-                  { key: 'clients', path: '/admin/clients' },
-                  { key: 'users', path: '/admin/users' },
-                  { key: 'content', path: '/admin/content' },
-                  { key: 'websites', path: '/admin/websites' },
-                  { key: 'notifications', path: '/admin/notifications' },
-                  { key: 'products', path: '/admin/products' },
-                  { key: 'rewards', path: '/admin/rewards' },
-                  { key: 'revenue', path: '/admin/revenue' },
-                  { key: 'performance', path: '/admin/performance' },
-                  { key: 'settings', path: '/admin/settings' },
-                  { key: 'alerts', path: '/admin/alerts' },
-                ]
+            // Menu items in order of priority
+            const menuOrder = [
+              { key: 'dashboard', path: '/admin/dashboard' },
+              { key: 'recommendations', path: '/admin/recommendations' },
+              { key: 'clients', path: '/admin/clients' },
+              { key: 'users', path: '/admin/users' },
+              { key: 'content', path: '/admin/content' },
+              { key: 'websites', path: '/admin/websites' },
+              { key: 'notifications', path: '/admin/notifications' },
+              { key: 'products', path: '/admin/products' },
+              { key: 'rewards', path: '/admin/rewards' },
+              { key: 'revenue', path: '/admin/revenue' },
+              { key: 'performance', path: '/admin/performance' },
+              { key: 'settings', path: '/admin/settings' },
+              { key: 'alerts', path: '/admin/alerts' },
+            ]
 
-                // Find first accessible page
-                const firstAccessible = menuOrder.find(item => userPerms[item.key] === true)
-                finalRedirect = firstAccessible?.path || '/admin/recommendations'
-              } else {
-                finalRedirect = '/admin/recommendations' // Fallback
-              }
-            } catch {
-              finalRedirect = '/admin/recommendations' // Fallback on error
-            }
+            // Find first accessible page
+            const firstAccessible = menuOrder.find(item => userPerms[item.key] === true)
+            finalRedirect = firstAccessible?.path || '/admin/recommendations'
           }
         } else if (!searchParams.get('redirect')) {
           // Only default to /getting-started if no explicit redirect was requested
