@@ -4,12 +4,19 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-// Initialize Supabase admin client for user creation
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+// Lazy initialize Supabase admin client for user creation
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error('Missing Supabase configuration')
+  }
+
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
 
 // GET /api/accept-invite/[token] - Validate invite and return data
 export async function GET(
@@ -147,6 +154,17 @@ export async function POST(
     }
 
     // Create user in Supabase Auth
+    let supabaseAdmin
+    try {
+      supabaseAdmin = getSupabaseAdmin()
+    } catch (configError) {
+      console.error('Supabase admin config error:', configError)
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: invite.email,
       password: password,
@@ -172,18 +190,27 @@ export async function POST(
       ? invite.client_ids[0]
       : null
 
-    await dbPool.query(
-      `INSERT INTO profiles (id, email, full_name, phone, role, client_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
-      [
-        userId,
-        invite.email.toLowerCase(),
-        invite.full_name,
-        invite.phone,
-        invite.role,
-        clientId
-      ]
-    )
+    try {
+      await dbPool.query(
+        `INSERT INTO profiles (id, email, full_name, role, client_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+        [
+          userId,
+          invite.email.toLowerCase(),
+          invite.full_name,
+          invite.role,
+          clientId
+        ]
+      )
+    } catch (profileError) {
+      console.error('Failed to create profile:', profileError)
+      // User was created in auth but profile failed - try to clean up
+      await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {})
+      return NextResponse.json(
+        { error: 'Failed to create user profile' },
+        { status: 500 }
+      )
+    }
 
     // If client user has multiple clients, we might need to handle that separately
     // For now, primary client is set in profile
