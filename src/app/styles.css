@@ -29698,14 +29698,13 @@ input[type="date"].form-control {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--pyrus-brown-light, rgba(136, 84, 48, 0.1));
+    background: var(--pyrus-brown);
     border-radius: 50%;
     margin-bottom: 20px;
 }
 
 .empty-state-banner .empty-state-icon svg {
-    color: var(--pyrus-brown);
-    opacity: 0.8;
+    color: white;
 }
 
 .empty-state-banner h3 {
