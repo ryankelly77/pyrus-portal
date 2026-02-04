@@ -50,6 +50,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Sales/production_team can only invite client users
+    if (!['super_admin', 'admin'].includes(auth.profile.role) && role !== 'client') {
+      return NextResponse.json(
+        { error: 'You can only invite client users' },
+        { status: 403 }
+      )
+    }
+
     // Client role requires at least one client
     if (role === 'client' && (!clientIds || clientIds.length === 0)) {
       return NextResponse.json(

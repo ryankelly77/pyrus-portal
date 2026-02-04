@@ -11,8 +11,20 @@ export async function GET() {
     if (auth instanceof NextResponse) return auth
     const { user, profile } = auth
 
+    // For sales/production_team, only show clients they've created recommendations for
+    let clientIdFilter: string[] | null = null
+    if (!['super_admin', 'admin'].includes(profile.role)) {
+      const userRecommendations = await prisma.recommendations.findMany({
+        where: { created_by: user.id },
+        select: { client_id: true },
+        distinct: ['client_id'],
+      })
+      clientIdFilter = userRecommendations.map(r => r.client_id)
+    }
+
     // Fetch clients with their active subscription items count
     const clients = await prisma.clients.findMany({
+      where: clientIdFilter ? { id: { in: clientIdFilter } } : undefined,
       orderBy: { name: 'asc' },
       include: {
         subscriptions: {

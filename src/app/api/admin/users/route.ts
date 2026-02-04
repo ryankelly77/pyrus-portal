@@ -9,40 +9,46 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
-    // Auth already verified by requireAdmin - user and profile available if needed
+    const { user, profile } = auth
 
-    // Fetch admin users
-    const adminsResult = await dbPool.query(
-      `SELECT
-        p.id,
-        p.full_name as name,
-        p.email,
-        p.role,
-        p.avatar_url,
-        p.created_at
-      FROM profiles p
-      WHERE p.role IN ('admin', 'super_admin', 'production_team', 'sales')
-      ORDER BY p.created_at ASC`
-    )
+    // Sales/production_team can only see client users, not admin users
+    const canSeeAdminUsers = ['super_admin', 'admin'].includes(profile.role)
 
-    const adminUsers = adminsResult.rows.map(admin => {
-      const initials = (admin.name || admin.email || 'U')
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
+    // Fetch admin users (only for super_admin and admin roles)
+    let adminUsers: any[] = []
+    if (canSeeAdminUsers) {
+      const adminsResult = await dbPool.query(
+        `SELECT
+          p.id,
+          p.full_name as name,
+          p.email,
+          p.role,
+          p.avatar_url,
+          p.created_at
+        FROM profiles p
+        WHERE p.role IN ('admin', 'super_admin', 'production_team', 'sales')
+        ORDER BY p.created_at ASC`
+      )
 
-      return {
-        id: admin.id,
-        name: admin.name || admin.email?.split('@')[0] || 'Unknown',
-        initials,
-        email: admin.email,
-        role: admin.role || 'admin',
-        status: 'registered',
-        avatarColor: getAvatarColor(admin.id),
-      }
-    })
+      adminUsers = adminsResult.rows.map(admin => {
+        const initials = (admin.name || admin.email || 'U')
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2)
+
+        return {
+          id: admin.id,
+          name: admin.name || admin.email?.split('@')[0] || 'Unknown',
+          initials,
+          email: admin.email,
+          role: admin.role || 'admin',
+          status: 'registered',
+          avatarColor: getAvatarColor(admin.id),
+        }
+      })
+    }
 
     // Fetch client users (profiles with client_id set)
     const clientUsersResult = await dbPool.query(
@@ -90,6 +96,11 @@ export async function GET(request: NextRequest) {
     const clients = clientsResult.rows.map(c => ({ id: c.id, name: c.name }))
 
     // Fetch pending invites
+    // Sales/production_team can only see client invites, not admin invites
+    const inviteRoleFilter = canSeeAdminUsers
+      ? ''
+      : "AND ui.role = 'client'"
+
     const pendingInvitesResult = await dbPool.query(
       `SELECT
         ui.id,
@@ -104,6 +115,7 @@ export async function GET(request: NextRequest) {
       FROM user_invites ui
       LEFT JOIN profiles p ON p.id = ui.invited_by
       WHERE ui.status = 'pending' AND ui.expires_at > NOW()
+      ${inviteRoleFilter}
       ORDER BY ui.created_at DESC`
     )
 
