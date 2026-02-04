@@ -630,7 +630,11 @@ export default function ClientsPage() {
         {/* No Results */}
         {!isLoading && filteredAndSortedClients.length === 0 && (
           <div className="no-results">
-            <p>No clients found matching your criteria.</p>
+            <p>
+              {clients.length === 0
+                ? "We don't have any clients that you've signed up yet."
+                : "No clients found matching your criteria."}
+            </p>
           </div>
         )}
 

@@ -672,7 +672,8 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        {/* Admin Users Section */}
+        {/* Admin Users Section - Only show if user can see admin users */}
+        {adminUsers.length > 0 && (
         <div className="admin-users-section">
           <h3>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
@@ -748,6 +749,7 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </div>
+        )}
 
         {/* Client Users Section */}
         <div className="client-users-section">
