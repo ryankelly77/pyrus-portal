@@ -95,6 +95,43 @@ export default function AcceptInvitePage() {
     }
   }
 
+  const pageStyles = `
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-page);
+      padding: 20px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-card {
+      background: var(--bg-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 40px;
+      border: 1px solid var(--border-light);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--pyrus-brown);
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .login-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+  `
+
   if (loading) {
     return (
       <div className="login-page">
@@ -113,6 +150,7 @@ export default function AcceptInvitePage() {
             </div>
           </div>
         </div>
+        <style>{pageStyles}</style>
       </div>
     )
   }
@@ -140,6 +178,7 @@ export default function AcceptInvitePage() {
             </div>
           </div>
         </div>
+        <style>{pageStyles}</style>
       </div>
     )
   }
@@ -150,7 +189,7 @@ export default function AcceptInvitePage() {
         <div className="login-container">
           <div className="login-card">
             <div className="login-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="48" height="48" style={{ margin: '0 auto' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="48" height="48" style={{ margin: '0 auto', display: 'block' }}>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
@@ -159,6 +198,7 @@ export default function AcceptInvitePage() {
             </div>
           </div>
         </div>
+        <style>{pageStyles}</style>
       </div>
     )
   }
@@ -237,7 +277,7 @@ export default function AcceptInvitePage() {
 
             <button
               type="submit"
-              className="login-button"
+              className="btn btn-primary login-btn"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
@@ -249,6 +289,125 @@ export default function AcceptInvitePage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .login-page {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-page);
+          padding: 20px;
+        }
+
+        .login-container {
+          width: 100%;
+          max-width: 400px;
+        }
+
+        .login-card {
+          background: var(--bg-white);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-lg);
+          padding: 40px;
+          border: 1px solid var(--border-light);
+        }
+
+        .login-header {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+
+        .login-header h1 {
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--pyrus-brown);
+          margin-top: 16px;
+          margin-bottom: 8px;
+        }
+
+        .login-header p {
+          font-size: 14px;
+          color: var(--text-secondary);
+        }
+
+        .login-error {
+          background: var(--error-bg);
+          border: 1px solid var(--error-border);
+          color: var(--error-text);
+          padding: 12px 16px;
+          border-radius: var(--radius-sm);
+          font-size: 13px;
+          margin-bottom: 20px;
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .form-group label {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+
+        .form-group input {
+          padding: 10px 14px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          font-size: 14px;
+          font-family: inherit;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-group input:focus {
+          outline: none;
+          border-color: var(--pyrus-brown);
+          box-shadow: 0 0 0 3px rgba(136, 84, 48, 0.1);
+        }
+
+        .form-group input::placeholder {
+          color: var(--text-muted);
+        }
+
+        .login-btn {
+          width: 100%;
+          height: 44px;
+          font-size: 14px;
+          font-weight: 600;
+          margin-top: 8px;
+        }
+
+        .login-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .login-footer {
+          text-align: center;
+          margin-top: 24px;
+          font-size: 14px;
+          color: var(--text-secondary);
+        }
+
+        .login-footer :global(a) {
+          color: var(--pyrus-brown);
+          text-decoration: none;
+          font-weight: 500;
+        }
+
+        .login-footer :global(a:hover) {
+          text-decoration: underline;
+        }
+      `}</style>
     </div>
   )
 }
