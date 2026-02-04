@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
   // Fetch role permissions when roles tab is active and user is super_admin
   useEffect(() => {
     if (activeTab === 'roles' && currentUserRole === 'super_admin') {
-      async function fetchPermissions() {
+      const fetchPermissions = async () => {
         setPermissionsLoading(true)
         try {
           const res = await fetch('/api/admin/role-permissions')
