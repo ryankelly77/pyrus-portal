@@ -23,6 +23,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // For non-admin roles, verify they own this recommendation
+    if (!['super_admin', 'admin'].includes(profile.role)) {
+      const recommendation = await prisma.recommendations.findUnique({
+        where: { id },
+        select: { created_by: true },
+      })
+      if (!recommendation || recommendation.created_by !== user.id) {
+        return NextResponse.json(
+          { error: 'You can only delete your own recommendations' },
+          { status: 403 }
+        )
+      }
+    }
+
     // Delete invites first (foreign key constraint) - skip if table doesn't exist
     try {
       await prisma.recommendation_invites.deleteMany({
@@ -58,7 +72,15 @@ export async function GET() {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
     const { user, profile } = auth
+
+    // Build query filter based on role
+    // super_admin and admin see all, sales and production_team see only their own
+    const whereClause = ['super_admin', 'admin'].includes(profile.role)
+      ? {}
+      : { created_by: user.id }
+
     const recommendations = await prisma.recommendations.findMany({
+      where: whereClause,
       include: {
         client: true,
         creator: {
@@ -137,11 +159,13 @@ export async function POST(request: NextRequest) {
     const pricingType = validPricingTypes.includes(tierName) ? tierName : null
 
     // Check for existing recommendation for this client (draft or sent - allow editing both)
+    // For non-admin roles, only find their own recommendations
+    const whereClause = ['super_admin', 'admin'].includes(profile.role)
+      ? { client_id: clientId, status: { in: ['draft', 'sent'] } }
+      : { client_id: clientId, status: { in: ['draft', 'sent'] }, created_by: user.id }
+
     const existingRecommendation = await prisma.recommendations.findFirst({
-      where: {
-        client_id: clientId,
-        status: { in: ['draft', 'sent'] },
-      },
+      where: whereClause,
       orderBy: { updated_at: 'desc' },
     })
 
