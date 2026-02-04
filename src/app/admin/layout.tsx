@@ -114,6 +114,9 @@ export default async function AdminPrefixLayout({
     const headersList = await headers()
     const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || ''
 
+    console.log('[AdminLayout Debug] pathname:', pathname)
+    console.log('[AdminLayout Debug] permissions:', JSON.stringify(permissions))
+
     // Find the menu key for the current path
     let currentMenuKey: string | null = null
     for (const [path, key] of Object.entries(pathToMenuKey)) {
@@ -123,9 +126,12 @@ export default async function AdminPrefixLayout({
       }
     }
 
+    console.log('[AdminLayout Debug] currentMenuKey:', currentMenuKey)
+
     // If we found a menu key and user doesn't have access, redirect to first accessible page
     if (currentMenuKey && permissions[currentMenuKey] === false) {
       const firstAccessible = menuOrder.find(item => permissions[item.key] === true)
+      console.log('[AdminLayout Debug] No access, redirecting to:', firstAccessible?.path)
       if (firstAccessible) {
         redirect(firstAccessible.path)
       }

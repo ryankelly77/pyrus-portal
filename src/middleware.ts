@@ -11,20 +11,35 @@ export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   const path = request.nextUrl.pathname
 
-  // Add pathname to response headers for use in layouts
-  supabaseResponse.headers.set('x-pathname', path)
+  // Add pathname to request headers so server components can read it
+  // This is done by setting it on the request object that gets passed through
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', path)
 
   // Protect admin API routes: return 401 JSON for unauthenticated requests
   if (path.startsWith('/api/admin')) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    return supabaseResponse
+    // Copy supabase cookies to the response
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    })
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return response
   }
 
   // Allow public routes
   if (publicRoutes.some(route => path.startsWith(route))) {
-    return supabaseResponse
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    })
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return response
   }
 
   // Redirect to login if not authenticated
@@ -34,7 +49,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  return supabaseResponse
+  // Return response with pathname header for authenticated routes
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
+  supabaseResponse.cookies.getAll().forEach(cookie => {
+    response.cookies.set(cookie.name, cookie.value, cookie)
+  })
+  return response
 }
 
 export const config = {
