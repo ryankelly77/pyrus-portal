@@ -25,8 +25,8 @@ import {
   computeMultiInviteBonus,
   daysBetween,
   hoursBetween,
-} from './scoring-engine';
-import { DEFAULT_CONFIG } from './default-config';
+} from '../scoring-engine';
+import { DEFAULT_CONFIG } from '../default-config';
 import type {
   ScoringInput,
   CallScoreInputs,
