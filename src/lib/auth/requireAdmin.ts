@@ -29,7 +29,8 @@ export async function requireAdmin(): Promise<NextResponse | { user: User; profi
       select: { role: true },
     })
 
-    if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+    const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
+    if (!profile || !adminRoles.includes(profile.role)) {
       logAuthError(
         'Admin auth check failed: Insufficient permissions',
         'warning',
