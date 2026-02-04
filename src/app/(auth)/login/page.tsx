@@ -48,9 +48,7 @@ function LoginForm() {
     // Fetch user's profile and permissions to determine redirect
     let finalRedirect = redirectUrl
     try {
-      console.log('[Login Debug] Fetching /api/auth/me...')
       const meRes = await fetch('/api/auth/me')
-      console.log('[Login Debug] /api/auth/me status:', meRes.status, meRes.ok)
       if (meRes.ok) {
         const profile: { role?: string; permissions?: Record<string, boolean> } = await meRes.json()
 
@@ -84,24 +82,14 @@ function LoginForm() {
             // Find first accessible page
             const firstAccessible = menuOrder.find(item => userPerms[item.key] === true)
             finalRedirect = firstAccessible?.path || '/admin/recommendations'
-
-            // Debug: log what we're doing
-            console.log('[Login Debug] Role:', profile.role)
-            console.log('[Login Debug] Permissions:', JSON.stringify(userPerms))
-            console.log('[Login Debug] First accessible:', firstAccessible?.key, '->', firstAccessible?.path)
-            console.log('[Login Debug] Final redirect:', finalRedirect)
           }
         } else if (!searchParams.get('redirect')) {
           // Only default to /getting-started if no explicit redirect was requested
           finalRedirect = '/getting-started'
         }
-      } else {
-        console.log('[Login Debug] /api/auth/me failed, status:', meRes.status)
-        const errText = await meRes.text()
-        console.log('[Login Debug] Error response:', errText)
       }
     } catch (e) {
-      console.error('[Login Debug] Failed to fetch profile for redirect:', e)
+      console.error('Failed to fetch profile for redirect:', e)
       fetch('/api/alerts/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,7 +121,6 @@ function LoginForm() {
       console.error('Failed to log login activity:', e)
     }
 
-    console.log('[Login Debug] Pushing to:', finalRedirect)
     router.push(finalRedirect)
     router.refresh()
   }
