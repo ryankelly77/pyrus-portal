@@ -10,6 +10,10 @@ const superAdminRoutes = ['/products', '/rewards', '/settings']
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   const path = request.nextUrl.pathname
+
+  // Add pathname to response headers for use in layouts
+  supabaseResponse.headers.set('x-pathname', path)
+
   // Protect admin API routes: return 401 JSON for unauthenticated requests
   if (path.startsWith('/api/admin')) {
     if (!user) {

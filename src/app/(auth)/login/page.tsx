@@ -45,7 +45,7 @@ function LoginForm() {
       return
     }
 
-    // Fetch user's profile to determine role
+    // Fetch user's profile and permissions to determine redirect
     let finalRedirect = redirectUrl
     try {
       const meRes = await fetch('/api/auth/me')
@@ -55,7 +55,44 @@ function LoginForm() {
         // Admin roles go to /admin, clients go to /getting-started
         const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
         if (profile.role && adminRoles.includes(profile.role)) {
-          finalRedirect = '/admin'
+          // Super admin always goes to dashboard
+          if (profile.role === 'super_admin') {
+            finalRedirect = '/admin/dashboard'
+          } else {
+            // For other admin roles, find their first accessible page
+            try {
+              const permRes = await fetch('/api/admin/role-permissions')
+              if (permRes.ok) {
+                const permData = await permRes.json()
+                const userPerms = permData.permissions?.[profile.role] || {}
+
+                // Menu items in order of priority
+                const menuOrder = [
+                  { key: 'dashboard', path: '/admin/dashboard' },
+                  { key: 'recommendations', path: '/admin/recommendations' },
+                  { key: 'clients', path: '/admin/clients' },
+                  { key: 'users', path: '/admin/users' },
+                  { key: 'content', path: '/admin/content' },
+                  { key: 'websites', path: '/admin/websites' },
+                  { key: 'notifications', path: '/admin/notifications' },
+                  { key: 'products', path: '/admin/products' },
+                  { key: 'rewards', path: '/admin/rewards' },
+                  { key: 'revenue', path: '/admin/revenue' },
+                  { key: 'performance', path: '/admin/performance' },
+                  { key: 'settings', path: '/admin/settings' },
+                  { key: 'alerts', path: '/admin/alerts' },
+                ]
+
+                // Find first accessible page
+                const firstAccessible = menuOrder.find(item => userPerms[item.key] === true)
+                finalRedirect = firstAccessible?.path || '/admin/recommendations'
+              } else {
+                finalRedirect = '/admin/recommendations' // Fallback
+              }
+            } catch {
+              finalRedirect = '/admin/recommendations' // Fallback on error
+            }
+          }
         } else if (!searchParams.get('redirect')) {
           // Only default to /getting-started if no explicit redirect was requested
           finalRedirect = '/getting-started'

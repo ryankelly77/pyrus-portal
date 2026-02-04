@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { AdminSidebar } from '@/components/layout'
@@ -9,6 +10,41 @@ type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
 interface MenuPermissions {
   [menuKey: string]: boolean
 }
+
+// Map URL paths to menu keys
+const pathToMenuKey: { [path: string]: string } = {
+  '/admin/dashboard': 'dashboard',
+  '/admin/recommendations': 'recommendations',
+  '/admin/recommendation-builder': 'recommendations',
+  '/admin/clients': 'clients',
+  '/admin/users': 'users',
+  '/admin/content': 'content',
+  '/admin/websites': 'websites',
+  '/admin/notifications': 'notifications',
+  '/admin/products': 'products',
+  '/admin/rewards': 'rewards',
+  '/admin/revenue': 'revenue',
+  '/admin/performance': 'performance',
+  '/admin/settings': 'settings',
+  '/admin/alerts': 'alerts',
+}
+
+// Menu items in order of priority for finding first accessible
+const menuOrder = [
+  { key: 'dashboard', path: '/admin/dashboard' },
+  { key: 'recommendations', path: '/admin/recommendations' },
+  { key: 'clients', path: '/admin/clients' },
+  { key: 'users', path: '/admin/users' },
+  { key: 'content', path: '/admin/content' },
+  { key: 'websites', path: '/admin/websites' },
+  { key: 'notifications', path: '/admin/notifications' },
+  { key: 'products', path: '/admin/products' },
+  { key: 'rewards', path: '/admin/rewards' },
+  { key: 'revenue', path: '/admin/revenue' },
+  { key: 'performance', path: '/admin/performance' },
+  { key: 'settings', path: '/admin/settings' },
+  { key: 'alerts', path: '/admin/alerts' },
+]
 
 export default async function AdminPrefixLayout({
   children,
@@ -71,6 +107,29 @@ export default async function AdminPrefixLayout({
   } catch (error) {
     // If permissions fetch fails, fallback to empty (sidebar will use default logic)
     console.error('Failed to fetch role permissions:', error)
+  }
+
+  // Check if user has access to the current page (super_admin always has access)
+  if (sidebarRole !== 'super_admin' && Object.keys(permissions).length > 0) {
+    const headersList = await headers()
+    const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || ''
+
+    // Find the menu key for the current path
+    let currentMenuKey: string | null = null
+    for (const [path, key] of Object.entries(pathToMenuKey)) {
+      if (pathname.startsWith(path)) {
+        currentMenuKey = key
+        break
+      }
+    }
+
+    // If we found a menu key and user doesn't have access, redirect to first accessible page
+    if (currentMenuKey && permissions[currentMenuKey] === false) {
+      const firstAccessible = menuOrder.find(item => permissions[item.key] === true)
+      if (firstAccessible) {
+        redirect(firstAccessible.path)
+      }
+    }
   }
 
   return (
