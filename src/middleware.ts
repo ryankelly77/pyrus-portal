@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Routes that don't require authentication
-const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback', '/test', '/api/client', '/view-proposal', '/api/proposal', '/api/mailgun/webhook', '/api/webhooks']
+const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback', '/test', '/api/client', '/view-proposal', '/api/proposal', '/api/mailgun/webhook', '/api/webhooks', '/accept-invite', '/api/accept-invite']
 
 // Routes only accessible by super_admin
 const superAdminRoutes = ['/products', '/rewards', '/settings']
