@@ -51,20 +51,44 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch client users (profiles with client_id set)
-    const clientUsersResult = await dbPool.query(
-      `SELECT
-        p.id,
-        p.full_name as name,
-        p.email,
-        p.client_id,
-        p.created_at,
-        c.name as client_name
-      FROM profiles p
-      JOIN clients c ON c.id = p.client_id
-      WHERE p.client_id IS NOT NULL
-        AND (p.role IS NULL OR p.role NOT IN ('admin', 'super_admin', 'production_team', 'sales'))
-      ORDER BY p.created_at DESC`
-    )
+    // For sales/production_team, only show users belonging to clients they have recommendations for
+    let clientUsersResult: { rows: any[] }
+
+    if (canSeeAdminUsers) {
+      // Admin/super_admin sees all client users
+      clientUsersResult = await dbPool.query(
+        `SELECT
+          p.id,
+          p.full_name as name,
+          p.email,
+          p.client_id,
+          p.created_at,
+          c.name as client_name
+        FROM profiles p
+        JOIN clients c ON c.id = p.client_id
+        WHERE p.client_id IS NOT NULL
+          AND (p.role IS NULL OR p.role NOT IN ('admin', 'super_admin', 'production_team', 'sales'))
+        ORDER BY p.created_at DESC`
+      )
+    } else {
+      // Sales/production_team only sees users for clients they have recommendations for
+      clientUsersResult = await dbPool.query(
+        `SELECT
+          p.id,
+          p.full_name as name,
+          p.email,
+          p.client_id,
+          p.created_at,
+          c.name as client_name
+        FROM profiles p
+        JOIN clients c ON c.id = p.client_id
+        WHERE p.client_id IS NOT NULL
+          AND (p.role IS NULL OR p.role NOT IN ('admin', 'super_admin', 'production_team', 'sales'))
+          AND p.client_id IN (SELECT DISTINCT client_id FROM recommendations WHERE created_by = $1)
+        ORDER BY p.created_at DESC`,
+        [user.id]
+      )
+    }
 
     const clientUsers = clientUsersResult.rows.map(clientUser => {
       const initials = (clientUser.name || clientUser.email || 'U')
@@ -87,37 +111,66 @@ export async function GET(request: NextRequest) {
     })
 
     // Get list of unique clients for the filter dropdown
-    const clientsResult = await dbPool.query(
-      `SELECT DISTINCT c.id, c.name
-       FROM clients c
-       JOIN profiles p ON p.client_id = c.id
-       ORDER BY c.name`
-    )
+    // For sales/production_team, only show their clients
+    let clientsResult
+    if (canSeeAdminUsers) {
+      clientsResult = await dbPool.query(
+        `SELECT DISTINCT c.id, c.name
+         FROM clients c
+         JOIN profiles p ON p.client_id = c.id
+         ORDER BY c.name`
+      )
+    } else {
+      clientsResult = await dbPool.query(
+        `SELECT DISTINCT c.id, c.name
+         FROM clients c
+         WHERE c.id IN (SELECT DISTINCT client_id FROM recommendations WHERE created_by = $1)
+         ORDER BY c.name`,
+        [user.id]
+      )
+    }
     const clients = clientsResult.rows.map(c => ({ id: c.id, name: c.name }))
 
     // Fetch pending invites
-    // Sales/production_team can only see client invites, not admin invites
-    const inviteRoleFilter = canSeeAdminUsers
-      ? ''
-      : "AND ui.role = 'client'"
-
-    const pendingInvitesResult = await dbPool.query(
-      `SELECT
-        ui.id,
-        ui.email,
-        ui.full_name as name,
-        ui.role,
-        ui.client_ids,
-        ui.status,
-        ui.created_at,
-        ui.expires_at,
-        p.full_name as invited_by_name
-      FROM user_invites ui
-      LEFT JOIN profiles p ON p.id = ui.invited_by
-      WHERE ui.status = 'pending' AND ui.expires_at > NOW()
-      ${inviteRoleFilter}
-      ORDER BY ui.created_at DESC`
-    )
+    // Sales/production_team can only see client invites they sent
+    let pendingInvitesResult
+    if (canSeeAdminUsers) {
+      pendingInvitesResult = await dbPool.query(
+        `SELECT
+          ui.id,
+          ui.email,
+          ui.full_name as name,
+          ui.role,
+          ui.client_ids,
+          ui.status,
+          ui.created_at,
+          ui.expires_at,
+          p.full_name as invited_by_name
+        FROM user_invites ui
+        LEFT JOIN profiles p ON p.id = ui.invited_by
+        WHERE ui.status = 'pending' AND ui.expires_at > NOW()
+        ORDER BY ui.created_at DESC`
+      )
+    } else {
+      pendingInvitesResult = await dbPool.query(
+        `SELECT
+          ui.id,
+          ui.email,
+          ui.full_name as name,
+          ui.role,
+          ui.client_ids,
+          ui.status,
+          ui.created_at,
+          ui.expires_at,
+          p.full_name as invited_by_name
+        FROM user_invites ui
+        LEFT JOIN profiles p ON p.id = ui.invited_by
+        WHERE ui.status = 'pending' AND ui.expires_at > NOW()
+          AND ui.role = 'client' AND ui.invited_by = $1
+        ORDER BY ui.created_at DESC`,
+        [user.id]
+      )
+    }
 
     const pendingInvites = pendingInvitesResult.rows.map(invite => {
       const initials = (invite.name || invite.email || 'U')
