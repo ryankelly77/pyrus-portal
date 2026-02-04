@@ -31,6 +31,20 @@ interface ClientUser {
   status: UserStatus
 }
 
+interface PendingInvite {
+  id: string
+  name: string
+  initials: string
+  avatarColor: string
+  email: string
+  role: string
+  clientIds: string[]
+  status: 'pending'
+  invitedBy: string
+  createdAt: string
+  expiresAt: string
+}
+
 interface ClientOption {
   id: string
   name: string
@@ -60,6 +74,7 @@ export default function AdminUsersPage() {
 
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [clientUsers, setClientUsers] = useState<ClientUser[]>([])
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
 
   // Current user role (fetched from admin users)
@@ -91,11 +106,10 @@ export default function AdminUsersPage() {
           const data = await res.json()
           setAdminUsers(data.adminUsers || [])
           setClientUsers(data.clientUsers || [])
+          setPendingInvites(data.pendingInvites || [])
           setClients(data.clients || [])
 
           // Find current user's role from their session
-          // The current user is typically determined by their session, but we can check
-          // if they're super_admin by looking at the admin users list
           if (data.currentUserRole) {
             setCurrentUserRole(data.currentUserRole)
           }
@@ -362,6 +376,12 @@ export default function AdminUsersPage() {
     })
   }
 
+  const handleResendInvite = async (inviteId: string) => {
+    // TODO: Implement resend invite API
+    console.log('Resend invite:', inviteId)
+    alert('Resend functionality coming soon')
+  }
+
   const totalUsers = filteredAdminUsers.length + filteredClientUsers.length
 
   if (isLoading) {
@@ -583,6 +603,74 @@ export default function AdminUsersPage() {
             ))}
           </select>
         </div>
+
+        {/* Pending Invites Section */}
+        {pendingInvites.length > 0 && (
+          <div className="pending-invites-section" style={{ marginBottom: '32px' }}>
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Pending Invites ({pendingInvites.length})
+            </h3>
+            <div className="users-table-container">
+              <table className="users-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Invited By</th>
+                    <th>Expires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingInvites.map((invite) => {
+                    const roleContent = getRoleBadgeContent(invite.role as AdminRole)
+                    const expiresDate = new Date(invite.expiresAt)
+                    const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                    return (
+                      <tr key={invite.id}>
+                        <td className="user-name">
+                          <div className="user-avatar" style={{ background: invite.avatarColor, opacity: 0.7 }}>
+                            {invite.initials}
+                          </div>
+                          <span>{invite.name}</span>
+                        </td>
+                        <td>
+                          <span className={`role-badge ${roleContent.className}`}>
+                            {roleContent.icon}
+                            {roleContent.label}
+                          </span>
+                        </td>
+                        <td>{invite.email}</td>
+                        <td style={{ color: 'var(--text-secondary)' }}>{invite.invitedBy || '-'}</td>
+                        <td>
+                          <span style={{
+                            color: daysLeft <= 2 ? 'var(--error-color)' : 'var(--text-secondary)',
+                            fontSize: '13px'
+                          }}>
+                            {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendInvite(invite.id)}
+                          >
+                            Resend
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Admin Users Section */}
         <div className="admin-users-section">

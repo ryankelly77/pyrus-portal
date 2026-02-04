@@ -89,9 +89,51 @@ export async function GET(request: NextRequest) {
     )
     const clients = clientsResult.rows.map(c => ({ id: c.id, name: c.name }))
 
+    // Fetch pending invites
+    const pendingInvitesResult = await dbPool.query(
+      `SELECT
+        ui.id,
+        ui.email,
+        ui.full_name as name,
+        ui.role,
+        ui.client_ids,
+        ui.status,
+        ui.created_at,
+        ui.expires_at,
+        p.full_name as invited_by_name
+      FROM user_invites ui
+      LEFT JOIN profiles p ON p.id = ui.invited_by
+      WHERE ui.status = 'pending' AND ui.expires_at > NOW()
+      ORDER BY ui.created_at DESC`
+    )
+
+    const pendingInvites = pendingInvitesResult.rows.map(invite => {
+      const initials = (invite.name || invite.email || 'U')
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+
+      return {
+        id: invite.id,
+        name: invite.name || invite.email?.split('@')[0] || 'Unknown',
+        initials,
+        email: invite.email,
+        role: invite.role,
+        clientIds: invite.client_ids || [],
+        status: 'pending',
+        invitedBy: invite.invited_by_name,
+        createdAt: invite.created_at,
+        expiresAt: invite.expires_at,
+        avatarColor: getAvatarColor(invite.id),
+      }
+    })
+
     return NextResponse.json({
       adminUsers,
       clientUsers,
+      pendingInvites,
       clients,
       currentUserRole: auth.profile.role,
     })
