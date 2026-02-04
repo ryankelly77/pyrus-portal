@@ -31,6 +31,16 @@ function LoginForm() {
 
     if (error) {
       setError(error.message)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'info',
+          category: 'auth_error',
+          message: `Login failed: ${error.message}`,
+          metadata: { email, error: error.message, step: 'sign_in' },
+        }),
+      }).catch(() => {})
       setLoading(false)
       return
     }
@@ -53,6 +63,16 @@ function LoginForm() {
       }
     } catch (e) {
       console.error('Failed to fetch profile for redirect:', e)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'info',
+          category: 'auth_error',
+          message: `Profile fetch for redirect failed: ${e instanceof Error ? e.message : 'Unknown error'}`,
+          metadata: { email, error: e instanceof Error ? e.message : String(e), step: 'fetch_profile_redirect' },
+        }),
+      }).catch(() => {})
     }
 
     // Log the login activity

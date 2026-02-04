@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
+import { logEmailError } from '@/lib/alerts'
 
 // POST /api/admin/clients/[id]/resend-invite - Resend invitation email to client
 export async function POST(
@@ -164,8 +165,14 @@ export async function POST(
           },
         },
       })
-    } catch (commError) {
+    } catch (commError: any) {
       console.error('Failed to log communication:', commError)
+      logEmailError(
+        'Failed to log communication for resend invite',
+        clientId,
+        { error: commError.message },
+        'admin/clients/[id]/resend-invite/route.ts'
+      )
     }
 
     // Add history entry
@@ -177,8 +184,14 @@ export async function POST(
           details: `Resent to ${recipientName} (${recipientEmail})`,
         },
       })
-    } catch (historyError) {
+    } catch (historyError: any) {
       console.error('Failed to create recommendation history entry:', historyError)
+      logEmailError(
+        'Failed to create history entry for resend invite',
+        clientId,
+        { recommendationId: recommendation.id, error: historyError.message },
+        'admin/clients/[id]/resend-invite/route.ts'
+      )
     }
 
     return NextResponse.json({
@@ -188,8 +201,14 @@ export async function POST(
       recipientEmail,
       recipientName,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to resend invite:', error)
+    logEmailError(
+      `Resend invite failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/clients/[id]/resend-invite/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to resend invite' },
       { status: 500 }

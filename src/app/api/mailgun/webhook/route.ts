@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { logEmailError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -258,8 +259,14 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Mailgun Webhook] Error processing webhook:', error)
+    logEmailError(
+      `Mailgun webhook processing failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'api/mailgun/webhook/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to process webhook' },
       { status: 500 }

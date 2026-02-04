@@ -17,18 +17,44 @@ export default function ForgotPasswordPage() {
     setError(null)
     setLoading(true)
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-    })
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'info',
+            category: 'auth_error',
+            message: `Password reset request failed: ${error.message}`,
+            metadata: { email, error: error.message, step: 'reset_password_email' },
+          }),
+        }).catch(() => {})
+        setLoading(false)
+        return
+      }
+
+      setSuccess(true)
       setLoading(false)
-      return
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMsg)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'info',
+          category: 'auth_error',
+          message: `Password reset request exception: ${errorMsg}`,
+          metadata: { email, error: errorMsg, step: 'reset_password_email' },
+        }),
+      }).catch(() => {})
+      setLoading(false)
     }
-
-    setSuccess(true)
-    setLoading(false)
   }
 
   return (

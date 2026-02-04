@@ -147,6 +147,8 @@ export default function AlertsPage() {
     'stripe_error',
     'auth_error',
     'data_integrity',
+    'checkout_error',
+    'billing_sync_failure',
   ]
 
   const unresolvedCriticalCount = alerts.filter(

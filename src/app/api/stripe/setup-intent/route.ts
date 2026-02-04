@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
+import { logCheckoutError } from '@/lib/alerts'
 
 // Check for Stripe secret key
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY
@@ -11,6 +12,7 @@ if (!stripeSecretKey) {
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null
 
 export async function POST(request: NextRequest) {
+  let clientId: string | undefined
   try {
     // Check if Stripe is configured
     if (!stripe) {
@@ -21,7 +23,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { clientId, email, name, billingCycle, hasOnetimeItems } = await request.json()
+    const body = await request.json()
+    clientId = body.clientId
+    const { email, name, billingCycle, hasOnetimeItems } = body
     console.log('[SetupIntent] Request:', { clientId, email, name, billingCycle, hasOnetimeItems })
     const requiresACH = billingCycle === 'annual' || hasOnetimeItems
     console.log('[SetupIntent] Payment methods:', requiresACH ? 'ACH only (annual or one-time)' : 'card + ACH')
@@ -128,6 +132,12 @@ export async function POST(request: NextRequest) {
     // Return more specific error messages
     if (error instanceof Stripe.errors.StripeError) {
       console.error('[SetupIntent] Stripe error type:', error.type, 'message:', error.message)
+      logCheckoutError(
+        `Setup intent creation failed: ${error.message}`,
+        clientId,
+        { step: 'create_setup_intent', error: error.message, stripeErrorType: error.type },
+        'setup-intent/route.ts'
+      )
       return NextResponse.json(
         { error: `Stripe error: ${error.message}` },
         { status: error.statusCode || 500 }
@@ -136,6 +146,12 @@ export async function POST(request: NextRequest) {
 
     // Generic error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logCheckoutError(
+      `Setup intent creation failed: ${errorMessage}`,
+      clientId,
+      { step: 'create_setup_intent', error: errorMessage },
+      'setup-intent/route.ts'
+    )
     return NextResponse.json(
       { error: `Failed to initialize payment: ${errorMessage}` },
       { status: 500 }

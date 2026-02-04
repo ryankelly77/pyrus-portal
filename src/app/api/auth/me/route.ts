@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
+import { logAuthError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,17 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError) {
+      logAuthError(
+        `Profile fetch failed: Auth error - ${authError.message}`,
+        'warning',
+        { error: authError.message, step: 'get_user' },
+        'auth/me/route.ts'
+      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,6 +32,12 @@ export async function GET() {
     )
 
     if (profileResult.rows.length === 0) {
+      logAuthError(
+        'Profile fetch failed: Profile not found',
+        'warning',
+        { userId: user.id, step: 'fetch_profile' },
+        'auth/me/route.ts'
+      )
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
@@ -35,6 +52,12 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Error fetching user info:', error)
+    logAuthError(
+      `Profile fetch exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'warning',
+      { error: error instanceof Error ? error.message : String(error), step: 'me_handler' },
+      'auth/me/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to fetch user info' },
       { status: 500 }

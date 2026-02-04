@@ -30,9 +30,45 @@ export async function updateSession(request: NextRequest) {
   )
 
   // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Note: Can't log to DB from Edge runtime, so we log to console and let it gracefully fail
+  let user = null
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (error) {
+      console.error('[AUTH] Session refresh failed in middleware:', {
+        error: error.message,
+        path: request.nextUrl.pathname,
+      })
+      // Fire-and-forget alert to API (async, don't await)
+      fetch(new URL('/api/alerts/log', request.url), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'critical',
+          category: 'auth_error',
+          message: `Session refresh failed in middleware: ${error.message}`,
+          metadata: { path: request.nextUrl.pathname, error: error.message },
+        }),
+      }).catch(() => {})
+    }
+    user = data.user
+  } catch (error) {
+    console.error('[AUTH] Session refresh exception in middleware:', {
+      error: error instanceof Error ? error.message : String(error),
+      path: request.nextUrl.pathname,
+    })
+    // Fire-and-forget alert to API
+    fetch(new URL('/api/alerts/log', request.url), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        severity: 'critical',
+        category: 'auth_error',
+        message: `Session refresh exception in middleware: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        metadata: { path: request.nextUrl.pathname, error: error instanceof Error ? error.message : String(error) },
+      }),
+    }).catch(() => {})
+  }
 
   return { supabaseResponse, user }
 }

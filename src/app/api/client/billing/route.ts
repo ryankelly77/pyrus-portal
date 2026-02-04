@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { logCheckoutError } from '@/lib/alerts'
 
 // PUT /api/client/billing - Update billing information
 export async function PUT(request: NextRequest) {
+  let clientId: string | undefined
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -16,8 +18,6 @@ export async function PUT(request: NextRequest) {
     // Get the client ID - either from query param (admin viewing as) or from user profile
     const searchParams = request.nextUrl.searchParams
     const viewingAsClientId = searchParams.get('clientId')
-
-    let clientId: string
 
     if (viewingAsClientId) {
       // Admin viewing as client - verify admin role
@@ -101,8 +101,14 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating billing:', error)
+    logCheckoutError(
+      'Failed to update billing information',
+      clientId,
+      { step: 'update_billing', error: error.message },
+      'client/billing/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to update billing information' },
       { status: 500 }

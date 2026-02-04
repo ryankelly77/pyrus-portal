@@ -31,23 +31,49 @@ export default function ResetPasswordPage() {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    })
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'info',
+            category: 'auth_error',
+            message: `Password update failed: ${error.message}`,
+            metadata: { error: error.message, step: 'update_password' },
+          }),
+        }).catch(() => {})
+        setLoading(false)
+        return
+      }
+
+      setSuccess(true)
       setLoading(false)
-      return
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(errorMsg)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'info',
+          category: 'auth_error',
+          message: `Password update exception: ${errorMsg}`,
+          metadata: { error: errorMsg, step: 'update_password' },
+        }),
+      }).catch(() => {})
+      setLoading(false)
     }
-
-    setSuccess(true)
-    setLoading(false)
-
-    // Redirect to login after 2 seconds
-    setTimeout(() => {
-      router.push('/login')
-    }, 2000)
   }
 
   return (

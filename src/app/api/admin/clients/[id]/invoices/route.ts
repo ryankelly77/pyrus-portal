@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { logCheckoutError } from '@/lib/alerts'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -43,8 +44,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       if ((customer as any).deleted) {
         customer = null
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to fetch Stripe customer:', e)
+      logCheckoutError(
+        'Failed to fetch Stripe customer for invoices',
+        clientId,
+        { step: 'fetch_stripe_customer', error: e.message },
+        'admin/clients/[id]/invoices/route.ts'
+      )
     }
 
     // Fetch invoices from Stripe
@@ -108,8 +115,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       customer: customerData,
       stripeCustomerId: client.stripe_customer_id,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch invoices:', error)
+    logCheckoutError(
+      `Invoice fetch failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { step: 'fetch_invoices', error: error.message },
+      'admin/clients/[id]/invoices/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },
       { status: 500 }

@@ -58,6 +58,16 @@ function RegisterForm() {
 
     if (signUpError) {
       setError(signUpError.message)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'info',
+          category: 'auth_error',
+          message: `Registration failed: ${signUpError.message}`,
+          metadata: { email, error: signUpError.message, step: 'sign_up' },
+        }),
+      }).catch(() => {})
       setLoading(false)
       return
     }
@@ -99,6 +109,16 @@ function RegisterForm() {
           localStorage.removeItem('pyrus_invite_token')
         } catch (e) {
           console.error('Failed to associate client:', e)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'info',
+              category: 'auth_error',
+              message: `Client association by token failed: ${e instanceof Error ? e.message : 'Unknown error'}`,
+              metadata: { email, error: e instanceof Error ? e.message : String(e), step: 'associate_by_token' },
+            }),
+          }).catch(() => {})
         }
       } else if (pendingClientId) {
         // Fallback to old method if we have clientId but no token
@@ -115,6 +135,16 @@ function RegisterForm() {
           localStorage.removeItem('pyrus_invite_token')
         } catch (e) {
           console.error('Failed to associate client:', e)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'info',
+              category: 'auth_error',
+              message: `Client association failed: ${e instanceof Error ? e.message : 'Unknown error'}`,
+              metadata: { email, error: e instanceof Error ? e.message : String(e), step: 'associate_client' },
+            }),
+          }).catch(() => {})
         }
       }
 

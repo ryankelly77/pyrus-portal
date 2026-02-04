@@ -1,6 +1,8 @@
 // UptimeRobot API client
 // API documentation: https://uptimerobot.com/api/
 
+import { logUptimeError } from '@/lib/alerts'
+
 const UPTIMEROBOT_API_URL = 'https://api.uptimerobot.com/v2'
 
 interface UptimeRobotMonitor {
@@ -92,8 +94,14 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
       status,
       monitorName: monitor.friendly_name,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching UptimeRobot data:', error)
+    logUptimeError(
+      `UptimeRobot API request failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { monitorId, error: error.message },
+      'lib/uptimerobot/client.ts'
+    )
     return null
   }
 }

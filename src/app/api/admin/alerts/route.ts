@@ -12,6 +12,8 @@ export type AlertCategory =
   | 'stripe_error'
   | 'auth_error'
   | 'data_integrity'
+  | 'checkout_error'
+  | 'billing_sync_failure'
 
 export interface CreateAlertRequest {
   severity: AlertSeverity

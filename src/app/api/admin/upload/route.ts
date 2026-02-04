@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { uploadSchema } from '@/lib/validation/schemas'
+import { logStorageError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,6 +81,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase storage error:', error)
+      logStorageError(
+        `File upload failed: ${error.message}`,
+        { bucket, filePath, fileType: file.type, fileSize: file.size, error: error.message },
+        'api/admin/upload/route.ts'
+      )
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -96,8 +102,13 @@ export async function POST(request: NextRequest) {
       size: file.size,
       type: file.type,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error)
+    logStorageError(
+      `File upload exception: ${error.message || 'Unknown error'}`,
+      { error: error.message },
+      'api/admin/upload/route.ts'
+    )
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
   }
 }
@@ -124,12 +135,22 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Supabase delete error:', error)
+      logStorageError(
+        `File delete failed: ${error.message}`,
+        { bucket, path, error: error.message },
+        'api/admin/upload/route.ts'
+      )
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete error:', error)
+    logStorageError(
+      `File delete exception: ${error.message || 'Unknown error'}`,
+      { error: error.message },
+      'api/admin/upload/route.ts'
+    )
     return NextResponse.json({ error: 'Failed to delete file' }, { status: 500 })
   }
 }

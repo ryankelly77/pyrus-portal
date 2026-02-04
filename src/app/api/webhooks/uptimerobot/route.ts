@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { logUptimeError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,8 +102,14 @@ export async function POST(request: NextRequest) {
     console.log(`Created website status notification for client: ${client.name}`)
 
     return NextResponse.json({ status: 'ok', client: client.name })
-  } catch (error) {
+  } catch (error: any) {
     console.error('UptimeRobot webhook error:', error)
+    logUptimeError(
+      `UptimeRobot webhook processing failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'api/webhooks/uptimerobot/route.ts'
+    )
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

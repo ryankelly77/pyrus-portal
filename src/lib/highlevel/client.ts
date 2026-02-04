@@ -13,6 +13,7 @@
  */
 
 import { Pool } from 'pg'
+import { logCrmError } from '@/lib/alerts'
 
 const HIGHLEVEL_API_V1_URL = 'https://rest.gohighlevel.com/v1'
 const HIGHLEVEL_API_V2_URL = 'https://services.leadconnectorhq.com'
@@ -95,8 +96,14 @@ async function getOAuthTokens(): Promise<OAuthTokens | null> {
     tokenCache = { tokens, fetchedAt: Date.now() }
 
     return tokens
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching OAuth tokens:', error)
+    logCrmError(
+      `Failed to fetch HighLevel OAuth tokens: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return null
   }
 }
@@ -165,8 +172,14 @@ async function refreshOAuthTokens(refreshToken: string): Promise<OAuthTokens | n
 
     console.log('HighLevel OAuth tokens refreshed successfully')
     return tokens
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error refreshing OAuth tokens:', error)
+    logCrmError(
+      `Failed to refresh HighLevel OAuth tokens: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return null
   }
 }
@@ -360,8 +373,14 @@ export async function getConversationsByContactId(
     }
 
     return response.conversations || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching conversations:', error)
+    logCrmError(
+      `Failed to fetch HighLevel conversations: ${error.message || 'Unknown error'}`,
+      'info',
+      { contactId, error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return []
   }
 }
@@ -391,8 +410,14 @@ export async function getMessagesByConversationId(
       return messagesData.messages
     }
     return []
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching messages:', error)
+    logCrmError(
+      `Failed to fetch HighLevel messages: ${error.message || 'Unknown error'}`,
+      'info',
+      { conversationId, error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return []
   }
 }
@@ -408,8 +433,14 @@ export async function getContactById(
       `/contacts/${contactId}`
     )
     return response.contact || null
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting contact by ID:', error)
+    logCrmError(
+      `Failed to get HighLevel contact by ID: ${error.message || 'Unknown error'}`,
+      'info',
+      { contactId, error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return null
   }
 }
@@ -433,8 +464,14 @@ export async function getContactByEmail(
     }
 
     return null
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error searching for contact by email:', error)
+    logCrmError(
+      `Failed to search HighLevel contact by email: ${error.message || 'Unknown error'}`,
+      'info',
+      { email, error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return null
   }
 }
@@ -476,8 +513,14 @@ export async function getAllMessagesForContact(
         if (Array.isArray(messages)) {
           allMessages.push(...messages)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error fetching messages for conversation ${conversation.id}:`, error)
+        logCrmError(
+          `Failed to fetch messages for conversation: ${error.message || 'Unknown error'}`,
+          'info',
+          { conversationId: conversation.id, error: error.message },
+          'lib/highlevel/client.ts'
+        )
       }
     }
 
@@ -489,8 +532,14 @@ export async function getAllMessagesForContact(
         return dateB - dateA
       })
       .slice(0, limit)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching all messages for contact:', error)
+    logCrmError(
+      `Failed to fetch all HighLevel messages for contact: ${error.message || 'Unknown error'}`,
+      'info',
+      { contactId, error: error.message },
+      'lib/highlevel/client.ts'
+    )
     return []
   }
 }

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getOrCreateCoupon } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logCheckoutError } from '@/lib/alerts'
 
 interface CartItem {
   id: string
@@ -87,8 +88,14 @@ export async function POST(request: NextRequest) {
           data: { stripe_customer_id: stripeCustomerId }
         })
         console.log(`Saved Stripe customer ${stripeCustomerId} for client ${clientId}`)
-      } catch (saveError) {
+      } catch (saveError: any) {
         console.error(`Failed to save Stripe customer ID for client ${clientId}:`, saveError)
+        logCheckoutError(
+          'Failed to save Stripe customer ID to database',
+          clientId,
+          { step: 'save_customer_id', error: saveError.message },
+          'create-subscription/route.ts'
+        )
         // Continue with checkout - customer was created in Stripe
       }
     } else {
@@ -211,8 +218,14 @@ export async function POST(request: NextRequest) {
       paymentIntentId,
       status: subscription.status,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating subscription:', error)
+    logCheckoutError(
+      `Subscription creation failed: ${error.message || 'Unknown error'}`,
+      clientId,
+      { step: 'create_subscription', error: error.message },
+      'create-subscription/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to create subscription' },
       { status: 500 }

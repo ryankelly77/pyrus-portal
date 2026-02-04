@@ -228,6 +228,17 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         setFreeOrderError(data.error || 'Failed to process order')
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Free order failed: ${data.error || 'Unknown error'}`,
+            metadata: { step: 'create_free_order', error: data.error },
+            clientId: effectiveClientId,
+          }),
+        }).catch(() => {})
         setIsFreeOrderProcessing(false)
         return
       }
@@ -244,6 +255,17 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Free order error:', err)
       setFreeOrderError('An unexpected error occurred')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Free order exception: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          metadata: { step: 'create_free_order_exception', error: err instanceof Error ? err.message : String(err) },
+          clientId: viewingAs || client.id,
+        }),
+      }).catch(() => {})
       setIsFreeOrderProcessing(false)
     }
   }
@@ -318,6 +340,17 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         setStripeError(data.error || 'Failed to create subscription')
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Subscription creation failed: ${data.error || 'Unknown error'}`,
+            metadata: { step: 'create_subscription_from_saved_payment', error: data.error },
+            clientId: effectiveClientId,
+          }),
+        }).catch(() => {})
         setIsPaymentProcessing(false)
         return
       }
@@ -334,6 +367,17 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Saved payment method error:', err)
       setStripeError('An unexpected error occurred')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Saved payment method exception: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          metadata: { step: 'saved_payment_method_exception', error: err instanceof Error ? err.message : String(err) },
+          clientId: viewingAs || client.id,
+        }),
+      }).catch(() => {})
       setIsPaymentProcessing(false)
     }
   }
@@ -380,6 +424,17 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Add to subscription error:', err)
       setStripeError(err instanceof Error ? err.message : 'Failed to add to subscription')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Add to subscription failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          metadata: { step: 'add_to_existing_subscription', error: err instanceof Error ? err.message : String(err) },
+          clientId: viewingAs || client.id,
+        }),
+      }).catch(() => {})
       setIsPaymentProcessing(false)
     }
   }
@@ -429,6 +484,17 @@ export default function CheckoutPage() {
           }
         } catch (error) {
           console.error('Failed to fetch product:', error)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: `Failed to fetch product for checkout: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              metadata: { step: 'fetch_product', productId, error: error instanceof Error ? error.message : String(error) },
+              clientId,
+            }),
+          }).catch(() => {})
         } finally {
           setIsLoading(false)
         }
@@ -502,6 +568,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to fetch recommendation:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Failed to fetch recommendation for checkout: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'fetch_recommendation', tier, error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
       } finally {
         setIsLoading(false)
       }
@@ -554,6 +631,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to fetch payment methods:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Failed to fetch payment methods: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'fetch_payment_methods', error: error instanceof Error ? error.message : String(error) },
+            clientId: effectiveClientId,
+          }),
+        }).catch(() => {})
       } finally {
         setLoadingPaymentMethods(false)
         setSubscriptionCheckComplete(true)
@@ -594,6 +682,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to fetch proration:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Failed to fetch proration preview: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'fetch_proration', error: error instanceof Error ? error.message : String(error) },
+            clientId: effectiveClientId,
+          }),
+        }).catch(() => {})
       } finally {
         setProrationLoading(false)
       }
@@ -650,6 +749,17 @@ export default function CheckoutPage() {
       return { valid: true, discount: data.discount }
     } catch (err) {
       console.error('Coupon validation error:', err)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Coupon validation failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          metadata: { step: 'validate_coupon_client', code, error: err instanceof Error ? err.message : String(err) },
+          clientId: viewingAs || client.id,
+        }),
+      }).catch(() => {})
       return { valid: false, error: 'Failed to validate coupon' }
     }
   }
@@ -787,13 +897,46 @@ export default function CheckoutPage() {
         } else if (data.error) {
           console.error('[Stripe] API error:', data.error)
           setStripeError(data.error)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: `SetupIntent API error: ${data.error}`,
+              metadata: { step: 'create_setup_intent_api_error', error: data.error, billingCycle },
+              clientId: effectiveClientId,
+            }),
+          }).catch(() => {})
         } else {
           console.error('[Stripe] Unexpected response:', data)
           setStripeError('Unexpected response from payment server')
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: 'SetupIntent unexpected response (no clientSecret or error)',
+              metadata: { step: 'create_setup_intent_unexpected', billingCycle, responseKeys: Object.keys(data) },
+              clientId: effectiveClientId,
+            }),
+          }).catch(() => {})
         }
       } catch (error) {
         console.error('[Stripe] Failed to create SetupIntent:', error)
         setStripeError('Failed to initialize payment form')
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `SetupIntent exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'create_setup_intent_exception', billingCycle, error: error instanceof Error ? error.message : String(error) },
+            clientId: effectiveClientId,
+          }),
+        }).catch(() => {})
       }
     }
 

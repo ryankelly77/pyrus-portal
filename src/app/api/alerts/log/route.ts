@@ -83,6 +83,13 @@ export async function POST(request: NextRequest) {
       'stripe_error',
       'auth_error',
       'data_integrity',
+      'checkout_error',
+      'billing_sync_failure',
+      'email_error',
+      'crm_error',
+      'basecamp_error',
+      'uptime_error',
+      'storage_error',
     ]
 
     if (!validSeverities.includes(severity)) {

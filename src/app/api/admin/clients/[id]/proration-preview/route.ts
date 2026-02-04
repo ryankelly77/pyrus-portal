@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { logCheckoutError } from '@/lib/alerts'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -9,10 +10,10 @@ interface RouteParams {
 
 // POST /api/admin/clients/[id]/proration-preview - Get proration preview for adding items
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const { id: clientId } = await params
   try {
     const auth = await requireAdmin()
     if ((auth as any)?.user === undefined) return auth as any
-    const { id: clientId } = await params
     const body = await request.json()
     const { items } = body // Array of { productId, priceId? }
 
@@ -133,6 +134,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error: any) {
     console.error('Failed to get proration preview:', error)
+    logCheckoutError(
+      'Failed to get proration preview',
+      clientId,
+      { step: 'proration_preview', error: error.message },
+      'proration-preview/route.ts'
+    )
     return NextResponse.json(
       { error: error.message || 'Failed to calculate proration' },
       { status: 500 }

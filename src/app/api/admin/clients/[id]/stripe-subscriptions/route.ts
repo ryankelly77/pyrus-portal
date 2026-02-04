@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { logCriticalError, logSyncFailure } from '@/lib/alerts'
+import { logCriticalError, logSyncFailure, logCheckoutError, logBillingSyncFailure } from '@/lib/alerts'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -310,12 +310,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Add the item to the subscription
     // Term products: no proration, starts on next billing date
     // Ongoing products: prorate immediately
-    const subscriptionItem = await stripe.subscriptionItems.create({
-      subscription: subscription.id,
-      price: stripePriceId,
-      quantity: 1,
-      proration_behavior: isTermProduct ? 'none' : 'always_invoice',
-    })
+    let subscriptionItem
+    try {
+      subscriptionItem = await stripe.subscriptionItems.create({
+        subscription: subscription.id,
+        price: stripePriceId,
+        quantity: 1,
+        proration_behavior: isTermProduct ? 'none' : 'always_invoice',
+      })
+    } catch (error: any) {
+      logCheckoutError(
+        'Failed to add item to subscription in Stripe',
+        clientId,
+        { step: 'add_subscription_item', error: error.message, productId: product_id, stripePriceId },
+        'stripe-subscriptions/route.ts:PUT'
+      )
+      throw error
+    }
 
     // For term products, calculate term_end_date
     let termEndDate: Date | null = null
@@ -332,14 +343,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Sync the updated subscription to local DB (don't fail if this errors)
+    // CRITICAL: Money has moved in Stripe - sync failure means data drift
     try {
       await syncStripeSubscriptions(clientId, client.stripe_customer_id)
     } catch (syncError) {
       console.error('Failed to sync subscription to local DB:', syncError)
-      logSyncFailure(
-        'Failed to sync updated subscription to local DB',
+      logBillingSyncFailure(
+        'CRITICAL: Subscription item added in Stripe but failed to sync to database',
         clientId,
-        { error: syncError instanceof Error ? syncError.message : String(syncError), stripeCustomerId: client.stripe_customer_id },
+        { step: 'sync_after_add_item', error: syncError instanceof Error ? syncError.message : String(syncError), stripeCustomerId: client.stripe_customer_id, subscriptionItemId: subscriptionItem.id },
         'stripe-subscriptions/route.ts:PUT:sync'
       )
       // Continue anyway - the Stripe subscription was updated successfully

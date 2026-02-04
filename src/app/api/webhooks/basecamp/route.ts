@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logBasecampError } from '@/lib/alerts'
 
 interface BasecampWebhookPayload {
   id: string
@@ -111,8 +112,14 @@ export async function POST(request: NextRequest) {
         client: client?.name || 'unlinked',
       })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Basecamp webhook error:', error)
+    logBasecampError(
+      `Basecamp webhook processing failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'api/webhooks/basecamp/route.ts'
+    )
     return NextResponse.json(
       {
         success: false,

@@ -10,6 +10,13 @@ export type AlertCategory =
   | 'stripe_error'
   | 'auth_error'
   | 'data_integrity'
+  | 'checkout_error'
+  | 'billing_sync_failure'
+  | 'email_error'
+  | 'crm_error'
+  | 'basecamp_error'
+  | 'uptime_error'
+  | 'storage_error'
 
 export interface AlertOptions {
   severity: AlertSeverity
@@ -137,6 +144,154 @@ export async function logCriticalError(
     category,
     message,
     clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for checkout errors (warning severity)
+ */
+export async function logCheckoutError(
+  message: string,
+  clientId?: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'warning',
+    category: 'checkout_error',
+    message,
+    clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for billing sync failures (critical - money moved but DB didn't update)
+ */
+export async function logBillingSyncFailure(
+  message: string,
+  clientId?: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'critical',
+    category: 'billing_sync_failure',
+    message,
+    clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for auth errors
+ */
+export async function logAuthError(
+  message: string,
+  severity: AlertSeverity = 'warning',
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity,
+    category: 'auth_error',
+    message,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for email errors
+ */
+export async function logEmailError(
+  message: string,
+  clientId?: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'warning',
+    category: 'email_error',
+    message,
+    clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for CRM (HighLevel) errors
+ */
+export async function logCrmError(
+  message: string,
+  clientId?: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'warning',
+    category: 'crm_error',
+    message,
+    clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for Basecamp errors
+ */
+export async function logBasecampError(
+  message: string,
+  clientId?: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'warning',
+    category: 'basecamp_error',
+    message,
+    clientId,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for uptime monitoring errors
+ */
+export async function logUptimeError(
+  message: string,
+  severity: AlertSeverity = 'info',
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity,
+    category: 'uptime_error',
+    message,
+    metadata,
+    sourceFile,
+  })
+}
+
+/**
+ * Quick helper for storage errors
+ */
+export async function logStorageError(
+  message: string,
+  metadata?: Record<string, unknown>,
+  sourceFile?: string
+): Promise<void> {
+  await logAlert({
+    severity: 'warning',
+    category: 'storage_error',
+    message,
     metadata,
     sourceFile,
   })

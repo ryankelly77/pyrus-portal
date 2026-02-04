@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { logBillingSyncFailure, logCheckoutError } from '@/lib/alerts'
 import Stripe from 'stripe'
 
 // Disable body parsing, we need raw body for webhook verification
@@ -35,6 +36,12 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
+    logCheckoutError(
+      'Stripe webhook signature verification failed',
+      undefined,
+      { step: 'webhook_signature_verify', error: err instanceof Error ? err.message : String(err) },
+      'stripe/webhook/route.ts'
+    )
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 }
@@ -168,6 +175,12 @@ export async function POST(request: NextRequest) {
 
           if (error) {
             console.error('Failed to upsert subscription:', error)
+            logBillingSyncFailure(
+              'CRITICAL: Stripe subscription created but failed to save to database (webhook)',
+              clientId,
+              { step: 'webhook_upsert_subscription', subscriptionId: subscription.id, error: error.message },
+              'stripe/webhook/route.ts'
+            )
           } else if (upsertedSub) {
             // Log subscription history
             await prisma.subscription_history.create({
@@ -207,6 +220,12 @@ export async function POST(request: NextRequest) {
 
         if (error) {
           console.error('Failed to update subscription:', error)
+          logBillingSyncFailure(
+            'CRITICAL: Stripe subscription updated but failed to sync to database (webhook)',
+            undefined,
+            { step: 'webhook_update_subscription', subscriptionId: subscription.id, status: subscription.status, error: error.message },
+            'stripe/webhook/route.ts'
+          )
         }
 
         // If subscription became active, update recommendation status and capture purchase info
@@ -369,6 +388,12 @@ export async function POST(request: NextRequest) {
 
         if (error) {
           console.error('Failed to update canceled subscription:', error)
+          logBillingSyncFailure(
+            'Stripe subscription canceled but failed to update database (webhook)',
+            undefined,
+            { step: 'webhook_update_canceled_subscription', subscriptionId: subscription.id, error: error.message },
+            'stripe/webhook/route.ts'
+          )
         }
         break
       }
@@ -433,6 +458,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook handler error:', error)
+    logCheckoutError(
+      `Stripe webhook handler exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      undefined,
+      { step: 'webhook_handler_main', eventType: event.type, error: error instanceof Error ? error.message : String(error) },
+      'stripe/webhook/route.ts'
+    )
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

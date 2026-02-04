@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
       adminUsers,
       clientUsers,
       clients,
+      currentUserRole: auth.profile.role,
     })
   } catch (error) {
     console.error('Error fetching users:', error)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { logCrmError } from '@/lib/alerts'
 
 /**
  * HighLevel OAuth Callback Handler
@@ -125,8 +126,14 @@ export async function GET(request: NextRequest) {
       new URL('/admin?success=highlevel_connected', request.url)
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('HighLevel OAuth callback error:', error)
+    logCrmError(
+      `HighLevel OAuth callback failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'api/auth/crm/callback/route.ts'
+    )
     return NextResponse.redirect(
       new URL('/admin?error=highlevel_oauth_error', request.url)
     )

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logCheckoutError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,8 +74,14 @@ export async function GET(request: NextRequest) {
       clientSecret: setupIntent.client_secret,
       customerId: stripeCustomerId,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating SetupIntent:', error)
+    logCheckoutError(
+      `SetupIntent creation failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { step: 'create_setup_intent', error: error.message },
+      'client/payment-method/route.ts'
+    )
     return NextResponse.json({ error: 'Failed to initialize payment form' }, { status: 500 })
   }
 }
@@ -158,8 +165,14 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating payment method:', error)
+    logCheckoutError(
+      `Payment method update failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { step: 'update_payment_method', error: error.message },
+      'client/payment-method/route.ts'
+    )
     return NextResponse.json({ error: 'Failed to update payment method' }, { status: 500 })
   }
 }

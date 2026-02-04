@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logCheckoutError } from '@/lib/alerts'
 
 interface AddToSubscriptionRequest {
   clientId: string
@@ -192,8 +193,14 @@ export async function POST(request: NextRequest) {
       billingType: productMapping.billingType,
       message: `${productName} will be added to your plan on your next billing date`,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding to subscription:', error)
+    logCheckoutError(
+      `Add to subscription failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { step: 'add_to_subscription', error: error.message },
+      'add-to-subscription/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to add product to subscription' },
       { status: 500 }

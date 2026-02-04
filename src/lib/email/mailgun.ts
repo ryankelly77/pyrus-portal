@@ -1,5 +1,6 @@
 import Mailgun from 'mailgun.js'
 import FormData from 'form-data'
+import { logEmailError } from '@/lib/alerts'
 
 // Initialize Mailgun client
 const mailgun = new Mailgun(FormData)
@@ -72,6 +73,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     return { success: true, messageId: result.id }
   } catch (error) {
     console.error('Failed to send email:', error)
+    logEmailError(
+      `Email send failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'warning',
+      { to: options.to, subject: options.subject, error: error instanceof Error ? error.message : String(error) },
+      'lib/email/mailgun.ts'
+    )
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

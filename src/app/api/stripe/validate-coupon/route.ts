@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, COUPON_CODES, PROMOTION_CODE_IDS } from '@/lib/stripe'
+import { logCheckoutError } from '@/lib/alerts'
 
 export async function POST(request: NextRequest) {
+  let code: string | undefined
   try {
     const body = await request.json()
-    const { code } = body as { code: string }
+    code = (body as { code: string }).code
 
     if (!code) {
       return NextResponse.json(
@@ -130,8 +132,14 @@ export async function POST(request: NextRequest) {
       error: 'Invalid coupon code',
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error validating coupon:', error)
+    logCheckoutError(
+      'Coupon validation failed',
+      undefined, // No clientId available
+      { step: 'validate_coupon', error: error.message, code },
+      'validate-coupon/route.ts'
+    )
     return NextResponse.json(
       { valid: false, error: 'Failed to validate coupon' },
       { status: 500 }

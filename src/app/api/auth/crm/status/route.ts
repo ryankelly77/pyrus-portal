@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
+import { logCrmError } from '@/lib/alerts'
 
 /**
  * HighLevel OAuth Status Endpoint
@@ -48,8 +49,14 @@ export async function GET() {
         ? 'Token expired - refresh needed'
         : 'Connected and ready',
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking HighLevel OAuth status:', error)
+    logCrmError(
+      `HighLevel OAuth status check failed: ${error.message || 'Unknown error'}`,
+      'warning',
+      { error: error.message },
+      'api/auth/crm/status/route.ts'
+    )
     return NextResponse.json({
       connected: false,
       error: 'Database error checking OAuth status',

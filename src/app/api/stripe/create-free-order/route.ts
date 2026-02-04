@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe, getOrCreateCoupon } from '@/lib/stripe'
+import { logCheckoutError } from '@/lib/alerts'
 
 interface CartItem {
   name: string
@@ -272,8 +273,14 @@ export async function POST(request: NextRequest) {
       status: 'active',
       isFreeOrder: true,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[FreeOrder] Error processing free order:', error)
+    logCheckoutError(
+      `Free order processing failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { step: 'create_free_order', error: error.message },
+      'create-free-order/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to process order' },
       { status: 500 }

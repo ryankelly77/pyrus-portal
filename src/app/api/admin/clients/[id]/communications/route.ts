@@ -11,6 +11,7 @@ import {
   getContactByEmail,
   transformHighLevelMessage,
 } from '@/lib/highlevel/client'
+import { logCrmError, logEmailError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -132,8 +133,14 @@ export async function GET(
               [highlevelContactId, clientId]
             )
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error looking up HighLevel contact by email:', error)
+          logCrmError(
+            `HighLevel contact lookup by email failed: ${error.message || 'Unknown error'}`,
+            clientId,
+            { email: client.contact_email, error: error.message },
+            'admin/clients/[id]/communications/route.ts'
+          )
         }
       }
 
@@ -162,8 +169,14 @@ export async function GET(
               direction: transformed.direction,
             }
           })
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error fetching HighLevel messages:', error)
+          logCrmError(
+            `HighLevel messages fetch failed: ${error.message || 'Unknown error'}`,
+            clientId,
+            { highlevelContactId, error: error.message },
+            'admin/clients/[id]/communications/route.ts'
+          )
           // Continue without HighLevel messages
         }
       }
@@ -192,8 +205,14 @@ export async function GET(
     }
 
     return NextResponse.json(filteredCommunications)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching communications:', error)
+    logCrmError(
+      `Communications fetch failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/clients/[id]/communications/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to fetch communications' },
       { status: 500 }
@@ -267,8 +286,14 @@ export async function POST(
           emailStatus = 'failed'
           console.error(`[Communications] Failed to send result alert: ${result.error}`)
         }
-      } catch (emailError) {
+      } catch (emailError: any) {
         console.error('[Communications] Error sending result alert email:', emailError)
+        logEmailError(
+          `Result alert email send failed: ${emailError.message || 'Unknown error'}`,
+          clientId,
+          { recipientEmail, error: emailError.message },
+          'admin/clients/[id]/communications/route.ts'
+        )
         emailStatus = 'failed'
       }
     }
@@ -306,8 +331,14 @@ export async function POST(
       sentAt: communication.sent_at,
       createdAt: communication.created_at,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating communication:', error)
+    logCrmError(
+      `Communication create failed: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/clients/[id]/communications/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to create communication' },
       { status: 500 }

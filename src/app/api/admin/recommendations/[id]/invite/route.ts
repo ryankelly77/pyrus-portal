@@ -6,6 +6,7 @@ import { recommendationInviteSchema } from '@/lib/validation/schemas'
 import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
+import { logEmailError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,8 +27,14 @@ export async function GET(
     })
 
     return NextResponse.json(invites)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch invites:', error)
+    logEmailError(
+      `Failed to fetch invites: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/recommendations/[id]/invite/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to fetch invites' },
       { status: 500 }
@@ -106,8 +113,14 @@ export async function POST(
             details: `Sent to ${firstName} ${lastName} (${email})`,
           },
         })
-      } catch (historyError) {
+      } catch (historyError: any) {
         console.error('Failed to create recommendation history entry:', historyError)
+        logEmailError(
+          'Failed to create history entry for invite',
+          undefined,
+          { recommendationId: id, error: historyError.message },
+          'admin/recommendations/[id]/invite/route.ts'
+        )
       }
     }
 
@@ -158,8 +171,14 @@ export async function POST(
           },
         },
       })
-    } catch (commError) {
+    } catch (commError: any) {
       console.error('Failed to log communication:', commError)
+      logEmailError(
+        'Failed to log communication for invite',
+        undefined,
+        { recommendationId: id, error: commError.message },
+        'admin/recommendations/[id]/invite/route.ts'
+      )
       // Don't fail the request if communication logging fails
     }
 
@@ -168,8 +187,14 @@ export async function POST(
       emailSent,
       emailError,
     }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create invite:', error)
+    logEmailError(
+      `Failed to create invite: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/recommendations/[id]/invite/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to create invite' },
       { status: 500 }
@@ -217,8 +242,14 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to delete invite:', error)
+    logEmailError(
+      `Failed to delete invite: ${error.message || 'Unknown error'}`,
+      undefined,
+      { error: error.message },
+      'admin/recommendations/[id]/invite/route.ts'
+    )
     return NextResponse.json(
       { error: 'Failed to delete invite' },
       { status: 500 }

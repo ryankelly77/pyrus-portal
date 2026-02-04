@@ -146,6 +146,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to load checkout data:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Admin checkout failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'load_checkout_data', error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
       } finally {
         setIsLoading(false)
       }
@@ -183,6 +194,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to fetch proration:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Admin checkout proration fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'fetch_proration_admin', error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
       } finally {
         setProrationLoading(false)
       }
@@ -294,6 +316,17 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error creating payment:', error)
       setPaymentError(error instanceof Error ? error.message : 'Failed to initialize payment')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Admin checkout payment intent creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { step: 'create_payment_intent_admin', error: error instanceof Error ? error.message : String(error) },
+          clientId,
+        }),
+      }).catch(() => {})
     } finally {
       setIsCreatingPayment(false)
     }
@@ -341,6 +374,17 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error adding to subscription:', error)
       setPaymentError(error instanceof Error ? error.message : 'Failed to add to subscription')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Admin checkout add to subscription failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { step: 'add_to_existing_subscription_admin', error: error instanceof Error ? error.message : String(error) },
+          clientId,
+        }),
+      }).catch(() => {})
     } finally {
       setIsProcessing(false)
     }
@@ -433,9 +477,31 @@ export default function CheckoutPage() {
       })
       if (!subscriptionRes.ok) {
         console.error('Failed to create subscription record')
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: 'Admin checkout failed to create subscription record',
+            metadata: { step: 'create_subscription_record_admin', tier },
+            clientId,
+          }),
+        }).catch(() => {})
       }
     } catch (error) {
       console.error('Failed to create subscription:', error)
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Admin checkout subscription creation exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { step: 'create_subscription_record_exception_admin', error: error instanceof Error ? error.message : String(error) },
+          clientId,
+        }),
+      }).catch(() => {})
     }
 
     // LAYER 3: Only update growth stage for GENUINELY new clients
@@ -475,6 +541,17 @@ export default function CheckoutPage() {
         }
       } catch (error) {
         console.error('Failed to fetch client data for state check:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Admin checkout state check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'state_check_admin', error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
         // On error, be conservative and don't reset state
         isGenuinelyNewClient = false
       }
@@ -490,6 +567,17 @@ export default function CheckoutPage() {
         })
       } catch (error) {
         console.error('Failed to update client stage:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Admin checkout stage update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'update_client_stage_admin', error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
       }
 
       // Redirect to onboarding form (new clients only)
@@ -503,6 +591,17 @@ export default function CheckoutPage() {
 
   const handlePaymentError = (error: string) => {
     setPaymentError(error)
+    fetch('/api/alerts/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        severity: 'warning',
+        category: 'checkout_error',
+        message: `Admin checkout payment error: ${error}`,
+        metadata: { step: 'handle_payment_error_admin', error },
+        clientId,
+      }),
+    }).catch(() => {})
   }
 
   const handleProcessPayment = async () => {
@@ -527,9 +626,31 @@ export default function CheckoutPage() {
         })
         if (!subscriptionRes.ok) {
           console.error('Failed to create subscription record')
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: 'Admin checkout (card on file) failed to create subscription record',
+              metadata: { step: 'create_subscription_record_process_payment', tier },
+              clientId,
+            }),
+          }).catch(() => {})
         }
       } catch (error) {
         console.error('Failed to create subscription:', error)
+        fetch('/api/alerts/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'warning',
+            category: 'checkout_error',
+            message: `Admin checkout (card on file) subscription creation exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            metadata: { step: 'create_subscription_exception_process_payment', error: error instanceof Error ? error.message : String(error) },
+            clientId,
+          }),
+        }).catch(() => {})
       }
 
       // LAYER 3: Only update growth stage for GENUINELY new clients
@@ -566,6 +687,17 @@ export default function CheckoutPage() {
           }
         } catch (error) {
           console.error('Failed to fetch client data for state check:', error)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: `Admin checkout (card on file) state check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              metadata: { step: 'state_check_process_payment', error: error instanceof Error ? error.message : String(error) },
+              clientId,
+            }),
+          }).catch(() => {})
           isGenuinelyNewClient = false
         }
       }
@@ -580,6 +712,17 @@ export default function CheckoutPage() {
           })
         } catch (error) {
           console.error('Failed to update client stage:', error)
+          fetch('/api/alerts/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              severity: 'warning',
+              category: 'checkout_error',
+              message: `Admin checkout (card on file) stage update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              metadata: { step: 'update_stage_process_payment', error: error instanceof Error ? error.message : String(error) },
+              clientId,
+            }),
+          }).catch(() => {})
         }
 
         // Redirect to onboarding (new clients only)
@@ -592,6 +735,17 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Payment failed:', error)
       setPaymentError('Payment failed. Please try again.')
+      fetch('/api/alerts/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          severity: 'warning',
+          category: 'checkout_error',
+          message: `Admin checkout (card on file) payment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { step: 'process_payment_main', error: error instanceof Error ? error.message : String(error) },
+          clientId,
+        }),
+      }).catch(() => {})
     } finally {
       setIsProcessing(false)
     }
