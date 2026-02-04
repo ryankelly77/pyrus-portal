@@ -602,8 +602,27 @@ export default function RecommendationsPage() {
         {!isLoading && (
           <div className="recommendations-list">
             {filteredAndSortedRecommendations.length === 0 ? (
-              <div className="no-results">
-                <p>No recommendations found. Create your first recommendation!</p>
+              <div className="empty-state-banner">
+                <div className="empty-state-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3>{recommendations.length === 0 ? "No recommendations yet" : "No recommendations found"}</h3>
+                <p>
+                  {recommendations.length === 0
+                    ? "Create your first recommendation to get started!"
+                    : "Try adjusting your filters to see more results."}
+                </p>
+                {recommendations.length === 0 && (
+                  <Link href="/admin/recommendation-builder" className="btn btn-primary" style={{ marginTop: '16px' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Create Recommendation
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="accordion-list">

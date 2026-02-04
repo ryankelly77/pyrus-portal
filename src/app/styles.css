@@ -29678,6 +29678,50 @@ input[type="date"].form-control {
     margin: 0;
 }
 
+/* Empty State Banner */
+.empty-state-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, var(--bg-page) 0%, var(--bg-white) 100%);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    margin: 20px 0;
+}
+
+.empty-state-banner .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pyrus-brown-light, rgba(136, 84, 48, 0.1));
+    border-radius: 50%;
+    margin-bottom: 20px;
+}
+
+.empty-state-banner .empty-state-icon svg {
+    color: var(--pyrus-brown);
+    opacity: 0.8;
+}
+
+.empty-state-banner h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.empty-state-banner p {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 400px;
+}
+
 /* Notifications Page Filters */
 .notifications-filters {
     display: flex;
