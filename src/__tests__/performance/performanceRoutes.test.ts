@@ -348,6 +348,7 @@ describe('Performance Dashboard Response Validation', () => {
           },
           velocity_modifier: 1.05,
           last_alert_at: null,
+          last_alert_type: null,
           flags: [],
         },
       ],
