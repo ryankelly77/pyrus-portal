@@ -22495,14 +22495,30 @@ input[type="date"].form-control {
 }
 
 /* Recommendation Status Badges */
-.status-badge.open {
+.status-badge.draft {
+    background: var(--border-light);
+    color: var(--text-muted);
+}
+
+.status-badge.sent {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.status-badge.approved,
+.status-badge.accepted {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.status-badge.declined {
     background: #FEF3C7;
     color: #92400E;
 }
 
-.status-badge.approved {
-    background: #D1FAE5;
-    color: #065F46;
+.status-badge.archived {
+    background: #F3F4F6;
+    color: #6B7280;
 }
 
 /* Client Link in Recommendations */
@@ -25846,8 +25862,8 @@ input[type="date"].form-control {
 
 .accordion-list-header {
     display: grid;
-    grid-template-columns: 32px minmax(160px, 1.5fr) 90px 70px 70px 80px 80px 80px 200px 100px 140px;
-    gap: 20px;
+    grid-template-columns: 32px minmax(180px, 1.5fr) 85px 75px 55px 70px 70px 70px minmax(140px, 1fr) 90px 140px;
+    gap: 16px;
     align-items: center;
     padding: 12px 24px;
     background: var(--bg-page);
@@ -25864,8 +25880,8 @@ input[type="date"].form-control {
 
 .accordion-header {
     display: grid;
-    grid-template-columns: 32px minmax(160px, 1.5fr) 90px 70px 70px 80px 80px 80px 200px 100px 140px;
-    gap: 20px;
+    grid-template-columns: 32px minmax(180px, 1.5fr) 85px 75px 55px 70px 70px 70px minmax(140px, 1fr) 90px 140px;
+    gap: 16px;
     align-items: center;
     padding: 16px 24px;
     cursor: pointer;
@@ -26113,7 +26129,84 @@ input[type="date"].form-control {
 .recommendation-actions {
     display: flex;
     gap: 8px;
-    justify-content: flex-start;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.recommendation-actions .btn {
+    justify-content: center;
+    white-space: nowrap;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.recommendation-actions .btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Actions Dropdown */
+.actions-dropdown {
+    position: relative;
+}
+
+.dropdown-trigger {
+    padding: 6px 10px !important;
+    min-width: auto !important;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    min-width: 150px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-page);
+}
+
+.dropdown-item svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.dropdown-item-danger {
+    color: var(--error-text);
+}
+
+.dropdown-item-danger:hover {
+    background: var(--error-bg);
+}
+
+.dropdown-item-danger svg {
+    color: var(--error-text);
 }
 
 .btn-danger {
@@ -26123,6 +26216,128 @@ input[type="date"].form-control {
 .btn-danger:hover {
     background: var(--error-bg) !important;
     border-color: var(--error) !important;
+}
+
+/* Post-Call Button States */
+.btn-post-call-pending {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.btn-post-call-pending:hover {
+    background: var(--bg-page);
+    border-color: var(--text-muted);
+    color: var(--text-secondary);
+}
+
+.btn-post-call-complete {
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success-text);
+}
+
+.btn-post-call-complete:hover {
+    background: #BBF7D0;
+    border-color: var(--success-text);
+}
+
+/* Archive Button State */
+.btn-archive {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.btn-archive:hover {
+    background: var(--warning-bg);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
+}
+
+/* Tier Selection Grid (Post-Call Modal) */
+.tier-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.tier-option {
+    padding: 20px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.tier-option:hover {
+    border-color: var(--pyrus-brown-light);
+    background: var(--pyrus-brown-wash);
+}
+
+.tier-option.selected {
+    border-color: var(--success-border);
+    background: var(--success-bg);
+}
+
+.tier-option .tier-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.tier-option.selected .tier-label {
+    color: var(--success-text);
+}
+
+.tier-option .tier-price-display {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pyrus-brown);
+    margin-top: 8px;
+}
+
+.tier-option.selected .tier-price-display {
+    color: var(--success-text);
+}
+
+.tier-option .tier-onetime-display {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.tier-option .tier-item-count {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Call Score Grid (Post-Call Modal) */
+.call-score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.call-score-grid .form-group {
+    margin-bottom: 0;
+}
+
+.call-score-grid .form-control {
+    font-size: 13px;
 }
 
 /* Accordion Content */

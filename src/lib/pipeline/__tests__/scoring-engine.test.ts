@@ -35,7 +35,7 @@ import type {
   CommunicationData,
   DealData,
   ScoringConfig,
-} from './types';
+} from '../types';
 
 // --- Test Helpers ---
 
@@ -207,9 +207,9 @@ describe('Base Score: Call Factors', () => {
 
   it('mediocre call scores appropriately', () => {
     const score = computeBaseScore(MEDIOCRE_CALL, DEFAULT_CONFIG);
-    // vague(0.5×25) + some(0.5×20) + medium(0.55×25) + medium(0.6×30)
-    // = 12.5 + 10 + 13.75 + 18 = 54.25
-    expect(score).toBeCloseTo(54.25, 2);
+    // vague(0.5×25) + some(0.5×20) + medium(0.70×25) + medium(0.65×30)
+    // = 12.5 + 10 + 17.5 + 19.5 = 59.5
+    expect(score).toBeCloseTo(59.5, 2);
   });
 
   it('terrible call = minimum points', () => {
@@ -258,12 +258,12 @@ describe('Base Score: Call Factors', () => {
 describe('Penalty: Email Not Opened [NOT_OPENED]', () => {
   const penaltyConfig = DEFAULT_CONFIG.penalties.email_not_opened;
 
-  it('no penalty within 24-hour grace period', () => {
+  it('no penalty within 48-hour grace period', () => {
     const penalty = computeEmailNotOpenedPenalty(
       T0,
       NO_MILESTONES,
       penaltyConfig,
-      hoursFromNow(T0, 23) // 23 hours after sent
+      hoursFromNow(T0, 47) // 47 hours after sent
     );
     expect(penalty).toBe(0);
   });
@@ -278,15 +278,15 @@ describe('Penalty: Email Not Opened [NOT_OPENED]', () => {
     expect(penalty).toBe(0);
   });
 
-  it('penalty starts after 24 hours', () => {
+  it('penalty starts after 48 hours', () => {
     const penalty = computeEmailNotOpenedPenalty(
       T0,
       NO_MILESTONES,
       penaltyConfig,
-      hoursFromNow(T0, 48) // 48 hours after sent = 1 day past grace
+      hoursFromNow(T0, 72) // 72 hours after sent = 1 day past grace
     );
-    // 1 day past grace × 2.5/day = 2.5
-    expect(penalty).toBe(2.5);
+    // 1 day past grace × 0.5/day = 0.5
+    expect(penalty).toBe(0.5);
   });
 
   it('accumulates daily', () => {
@@ -294,20 +294,20 @@ describe('Penalty: Email Not Opened [NOT_OPENED]', () => {
       T0,
       NO_MILESTONES,
       penaltyConfig,
-      daysFromNow(T0, 5) // 5 days after sent = 4 days past grace
+      daysFromNow(T0, 12) // 12 days after sent = 10 days past grace
     );
-    // 4 days past grace × 2.5/day = 10
-    expect(penalty).toBe(10);
+    // 10 days past grace × 0.5/day = 5
+    expect(penalty).toBe(5);
   });
 
-  it('caps at max_penalty (35)', () => {
+  it('caps at max_penalty (25)', () => {
     const penalty = computeEmailNotOpenedPenalty(
       T0,
       NO_MILESTONES,
       penaltyConfig,
-      daysFromNow(T0, 60) // 60 days — way past max
+      daysFromNow(T0, 100) // 100 days — way past max
     );
-    expect(penalty).toBe(35);
+    expect(penalty).toBe(25);
   });
 
   it('no penalty if not sent yet', () => {
@@ -325,7 +325,7 @@ describe('Penalty: Email Not Opened [NOT_OPENED]', () => {
       T0,
       NO_MILESTONES,
       penaltyConfig,
-      hoursFromNow(T0, 24) // exactly at 24h boundary
+      hoursFromNow(T0, 48) // exactly at 48h boundary
     );
     expect(penalty).toBe(0);
   });
@@ -361,7 +361,7 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
     expect(penalty).toBe(0);
   });
 
-  it('no penalty within 48-hour grace period after email open', () => {
+  it('no penalty within 120-hour (5-day) grace period after email open', () => {
     const emailOpenedAt = hoursFromNow(T0, 12);
     const penalty = computeProposalNotViewedPenalty(
       {
@@ -370,12 +370,12 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
         first_proposal_viewed_at: null,
       },
       penaltyConfig,
-      hoursFromNow(emailOpenedAt, 47) // within 48h grace
+      hoursFromNow(emailOpenedAt, 119) // within 120h grace
     );
     expect(penalty).toBe(0);
   });
 
-  it('penalty starts after 48 hours post email open', () => {
+  it('penalty starts after 120 hours (5 days) post email open', () => {
     const emailOpenedAt = hoursFromNow(T0, 12);
     const penalty = computeProposalNotViewedPenalty(
       {
@@ -384,13 +384,13 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
         first_proposal_viewed_at: null,
       },
       penaltyConfig,
-      hoursFromNow(emailOpenedAt, 72) // 24h past grace = 1 day
+      hoursFromNow(emailOpenedAt, 144) // 24h past 120h grace = 1 day
     );
-    // 1 day past grace × 2/day = 2
-    expect(penalty).toBe(2);
+    // 1 day past grace × 0.5/day = 0.5
+    expect(penalty).toBe(0.5);
   });
 
-  it('caps at max_penalty (25)', () => {
+  it('caps at max_penalty (20)', () => {
     const emailOpenedAt = hoursFromNow(T0, 12);
     const penalty = computeProposalNotViewedPenalty(
       {
@@ -399,9 +399,9 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
         first_proposal_viewed_at: null,
       },
       penaltyConfig,
-      daysFromNow(emailOpenedAt, 60) // way past max
+      daysFromNow(emailOpenedAt, 100) // way past max
     );
-    expect(penalty).toBe(25);
+    expect(penalty).toBe(20);
   });
 
   it('uses account_created_at as anchor if email_opened_at is null', () => {
@@ -413,9 +413,10 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
         first_proposal_viewed_at: null,
       },
       penaltyConfig,
-      hoursFromNow(accountCreatedAt, 72) // 24h past grace
+      hoursFromNow(accountCreatedAt, 144) // 24h past 120h grace
     );
-    expect(penalty).toBe(2);
+    // 1 day past grace × 0.5/day = 0.5
+    expect(penalty).toBe(0.5);
   });
 
   it('uses earliest anchor when both email_opened and account_created exist', () => {
@@ -428,10 +429,11 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
         first_proposal_viewed_at: null,
       },
       penaltyConfig,
-      hoursFromNow(emailOpenedAt, 72) // 24h past grace from EARLIER anchor
+      hoursFromNow(emailOpenedAt, 144) // 24h past 120h grace from EARLIER anchor
     );
     // Should use emailOpenedAt as anchor (earlier)
-    expect(penalty).toBe(2);
+    // 1 day past grace × 0.5/day = 0.5
+    expect(penalty).toBe(0.5);
   });
 });
 
@@ -443,24 +445,24 @@ describe('Penalty: Proposal Not Viewed [NOT_VIEWED]', () => {
 describe('Penalty: Silence [SILENCE]', () => {
   const penaltyConfig = DEFAULT_CONFIG.penalties.silence;
 
-  it('no penalty within 5-day grace period', () => {
+  it('no penalty within 10-day grace period', () => {
     const penalty = computeSilencePenalty(
       T0,
       NO_COMMS,
       penaltyConfig,
-      daysFromNow(T0, 4)
+      daysFromNow(T0, 9)
     );
     expect(penalty).toBe(0);
   });
 
-  it('penalty starts after 5-day grace period', () => {
+  it('penalty starts after 10-day grace period', () => {
     const penalty = computeSilencePenalty(
       T0,
       NO_COMMS,
       penaltyConfig,
-      daysFromNow(T0, 7) // 2 days past grace
+      daysFromNow(T0, 15) // 5 days past grace
     );
-    // 2 days × 3/day = 6
+    // 5 days × 1.2/day = 6
     expect(penalty).toBe(6);
   });
 
@@ -474,7 +476,7 @@ describe('Penalty: Silence [SILENCE]', () => {
         followup_count_since_last_reply: 0,
       },
       penaltyConfig,
-      daysFromNow(lastContact, 3) // 3 days since last contact, within grace
+      daysFromNow(lastContact, 8) // 8 days since last contact, within 10-day grace
     );
     expect(penalty).toBe(0);
   });
@@ -489,35 +491,35 @@ describe('Penalty: Silence [SILENCE]', () => {
         followup_count_since_last_reply: 0,
       },
       penaltyConfig,
-      daysFromNow(lastContact, 8) // 3 days past grace
+      daysFromNow(lastContact, 15) // 5 days past grace
     );
-    // 3 days × 3/day = 9
-    expect(penalty).toBe(9);
+    // 5 days × 1.2/day = 6
+    expect(penalty).toBe(6);
   });
 
-  it('caps at max_penalty (80)', () => {
+  it('caps at max_penalty (60)', () => {
     const penalty = computeSilencePenalty(
       T0,
       NO_COMMS,
       penaltyConfig,
       daysFromNow(T0, 100) // extreme silence
     );
-    expect(penalty).toBe(80);
+    expect(penalty).toBe(60);
   });
 
-  it('accelerates penalty after 2+ follow-ups with no reply', () => {
+  it('accelerates penalty after 3+ follow-ups with no reply', () => {
     const penalty = computeSilencePenalty(
       T0,
       {
         last_prospect_contact_at: null,
         last_team_contact_at: daysFromNow(T0, 8),
-        followup_count_since_last_reply: 3, // past threshold of 2
+        followup_count_since_last_reply: 4, // past threshold of 3
       },
       penaltyConfig,
-      daysFromNow(T0, 10) // 5 days past grace
+      daysFromNow(T0, 20) // 10 days past grace
     );
-    // 5 days × (3 × 1.5 = 4.5/day) = 22.5
-    expect(penalty).toBe(22.5);
+    // 10 days × (1.2 × 1.5 = 1.8/day) = 18
+    expect(penalty).toBe(18);
   });
 
   it('does not accelerate below follow-up threshold', () => {
@@ -526,13 +528,13 @@ describe('Penalty: Silence [SILENCE]', () => {
       {
         last_prospect_contact_at: null,
         last_team_contact_at: daysFromNow(T0, 8),
-        followup_count_since_last_reply: 1, // below threshold of 2
+        followup_count_since_last_reply: 2, // below threshold of 3
       },
       penaltyConfig,
-      daysFromNow(T0, 10) // 5 days past grace
+      daysFromNow(T0, 20) // 10 days past grace
     );
-    // 5 days × 3/day = 15 (no acceleration)
-    expect(penalty).toBe(15);
+    // 10 days × 1.2/day = 12 (no acceleration)
+    expect(penalty).toBe(12);
   });
 
   it('no penalty if not sent', () => {
@@ -617,60 +619,60 @@ describe('Full Scoring: Integration', () => {
     expect(result.total_penalties).toBe(0);
   });
 
-  it('perfect call, all milestones hit, no communication, 10 days later', () => {
+  it('perfect call, all milestones hit, no communication, 20 days later', () => {
     const result = computePipelineScore(
       makeInput({
         communications: NO_COMMS,
-        now: daysFromNow(T0, 10), // 5 days past silence grace
+        now: daysFromNow(T0, 20), // 10 days past silence grace
       })
     );
     // Base: 100
     // Email: 0 (opened)
     // View: 0 (viewed)
-    // Silence: 5 days past grace × 3/day = 15
-    // Final: 100 - 15 = 85
-    expect(result.confidence_score).toBe(85);
-    expect(result.penalty_breakdown.silence).toBe(15);
-    expect(result.weighted_monthly).toBe(425);
+    // Silence: 10 days past grace × 1.2/day = 12
+    // Final: 100 - 12 = 88
+    expect(result.confidence_score).toBe(88);
+    expect(result.penalty_breakdown.silence).toBe(12);
+    expect(result.weighted_monthly).toBe(440);
   });
 
-  it('mediocre call, no milestones, 7 days after sent', () => {
+  it('mediocre call, no milestones, 14 days after sent', () => {
     const result = computePipelineScore(
       makeInput({
         call_scores: MEDIOCRE_CALL,
         milestones: NO_MILESTONES,
         invite_stats: SINGLE_INVITE_NONE,
         communications: NO_COMMS,
-        now: daysFromNow(T0, 7),
+        now: daysFromNow(T0, 14),
       })
     );
-    // Base: 54.25
-    // Email: (7 days = 168h, grace = 24h, 144h past = 6 days) × 2.5 = 15
+    // Base: 59.5 → 60 rounded
+    // Email: (14 days = 336h, grace = 48h, 288h past = 12 days) × 0.5 = 6
     // View: 0 (no email opened yet, so this penalty doesn't apply)
-    // Silence: 2 days past grace × 3/day = 6
-    // Final: 54.25 - 15 - 6 = 33.25 → rounded = 33
-    expect(result.base_score).toBe(54);
-    expect(result.penalty_breakdown.email_not_opened).toBe(15);
+    // Silence: 4 days past 10-day grace × 1.2/day = 4.8
+    // Final: 59.5 - 6 - 4.8 = 48.7 → rounded = 49
+    expect(result.base_score).toBe(60);
+    expect(result.penalty_breakdown.email_not_opened).toBe(6);
     expect(result.penalty_breakdown.proposal_not_viewed).toBe(0); // correctly skipped
-    expect(result.penalty_breakdown.silence).toBe(6);
-    expect(result.confidence_score).toBe(33);
+    expect(result.penalty_breakdown.silence).toBeCloseTo(4.8, 1);
+    expect(result.confidence_score).toBe(49);
   });
 
-  it('terrible call, nothing happening, 14 days = very low score', () => {
+  it('terrible call, nothing happening, 30 days = very low score', () => {
     const result = computePipelineScore(
       makeInput({
         call_scores: TERRIBLE_CALL,
         milestones: NO_MILESTONES,
         invite_stats: SINGLE_INVITE_NONE,
         communications: NO_COMMS,
-        now: daysFromNow(T0, 14),
+        now: daysFromNow(T0, 30),
       })
     );
     // Base: 6.75
-    // Email: (14 days = 336h, grace=24h, 312h past = 13 days) × 2.5 = 32.5
+    // Email: (30 days = 720h, grace=48h, 672h = 28 days) × 0.5 = 14, but max 25
     // View: 0 (email not opened)
-    // Silence: 9 days past grace × 3/day = 27
-    // Raw: 6.75 - 32.5 - 27 = -52.75 → clamped to 0
+    // Silence: 20 days past 10-day grace × 1.2/day = 24
+    // Raw: 6.75 - 14 - 24 = -31.25 → clamped to 0
     expect(result.confidence_score).toBe(0);
     expect(result.weighted_monthly).toBe(0);
     expect(result.weighted_onetime).toBe(0);
@@ -699,19 +701,19 @@ describe('Full Scoring: Integration', () => {
           viewed_count: 3,
         },
         communications: NO_COMMS,
-        now: daysFromNow(T0, 10), // silence penalty applies
+        now: daysFromNow(T0, 20), // silence penalty applies (10 days past grace)
       })
     );
     // Base: 100
-    // Silence: 5 days past grace × 3 = 15
+    // Silence: 10 days past grace × 1.2 = 12
     // Bonus: 3 (all opened) + 5 (all viewed) = 8
-    // Final: 100 - 15 + 8 = 93
-    expect(result.confidence_score).toBe(93);
+    // Final: 100 - 12 + 8 = 96
+    expect(result.confidence_score).toBe(96);
     expect(result.total_bonus).toBe(8);
     expect(result.penalty_breakdown.multi_invite_bonus).toBe(8);
   });
 
-  it('email opened but proposal not viewed, 5 days after email open', () => {
+  it('email opened but proposal not viewed, 10 days after email open', () => {
     const emailOpenedAt = hoursFromNow(T0, 12);
     const result = computePipelineScore(
       makeInput({
@@ -722,35 +724,35 @@ describe('Full Scoring: Integration', () => {
         },
         invite_stats: { total_invites: 1, opened_count: 1, accounts_created_count: 0, viewed_count: 0 },
         communications: { last_prospect_contact_at: emailOpenedAt, last_team_contact_at: null, followup_count_since_last_reply: 0 },
-        now: daysFromNow(emailOpenedAt, 5),
+        now: daysFromNow(emailOpenedAt, 10),
       })
     );
     // Base: 100
     // Email: 0 (opened)
-    // View: (5 days = 120h, grace = 48h, 72h past = 3 days) × 2 = 6
-    // Silence: from last contact (emailOpenedAt), 5 days since, so 0 (at grace boundary)
+    // View: (10 days = 240h, grace = 120h, 120h past = 5 days) × 0.5 = 2.5
+    // Silence: from last contact (emailOpenedAt), 10 days since, so 0 (at grace boundary)
     expect(result.penalty_breakdown.email_not_opened).toBe(0);
-    expect(result.penalty_breakdown.proposal_not_viewed).toBe(6);
+    expect(result.penalty_breakdown.proposal_not_viewed).toBe(2.5);
   });
 
-  it('accelerated silence: 3 follow-ups no reply, 15 days after sent', () => {
+  it('accelerated silence: 4 follow-ups no reply, 30 days after sent', () => {
     const result = computePipelineScore(
       makeInput({
         communications: {
           last_prospect_contact_at: null,
-          last_team_contact_at: daysFromNow(T0, 12),
-          followup_count_since_last_reply: 3,
+          last_team_contact_at: daysFromNow(T0, 20),
+          followup_count_since_last_reply: 4,
         },
-        now: daysFromNow(T0, 15),
+        now: daysFromNow(T0, 30),
       })
     );
     // Base: 100
     // Email: 0 (opened)
     // View: 0 (viewed)
-    // Silence: 10 days past grace × (3 × 1.5 = 4.5/day) = 45
-    // Final: 100 - 45 = 55
-    expect(result.penalty_breakdown.silence).toBe(45);
-    expect(result.confidence_score).toBe(55);
+    // Silence: 20 days past grace × (1.2 × 1.5 = 1.8/day) = 36
+    // Final: 100 - 36 = 64
+    expect(result.penalty_breakdown.silence).toBe(36);
+    expect(result.confidence_score).toBe(64);
   });
 
   it('weighted values scale linearly with confidence', () => {
@@ -758,13 +760,13 @@ describe('Full Scoring: Integration', () => {
       makeInput({
         deal: makeDeal({ predicted_monthly: 1000, predicted_onetime: 2000 }),
         communications: NO_COMMS,
-        now: daysFromNow(T0, 10),
+        now: daysFromNow(T0, 20), // 10 days past silence grace
       })
     );
-    // Score 85 → 0.85
-    expect(result.confidence_percent).toBe(0.85);
-    expect(result.weighted_monthly).toBe(850);
-    expect(result.weighted_onetime).toBe(1700);
+    // Score 88 → 0.88
+    expect(result.confidence_percent).toBe(0.88);
+    expect(result.weighted_monthly).toBe(880);
+    expect(result.weighted_onetime).toBe(1760);
   });
 });
 
@@ -919,7 +921,7 @@ describe('Edge Cases', () => {
 
   it('all three penalties stack but respect individual caps', () => {
     // Set up a deal where all three penalties are maxed
-    const emailOpenedAt = hoursFromNow(T0, 36); // opened after 36h
+    const emailOpenedAt = hoursFromNow(T0, 60); // opened after 60h (within 48h grace = no email penalty)
     const result = computePipelineScore(
       makeInput({
         milestones: {
@@ -929,34 +931,34 @@ describe('Edge Cases', () => {
         },
         invite_stats: { total_invites: 1, opened_count: 1, accounts_created_count: 0, viewed_count: 0 },
         communications: NO_COMMS,
-        now: daysFromNow(T0, 60), // 60 days later
+        now: daysFromNow(T0, 100), // 100 days later
       })
     );
     // Email: 0 (was opened)
-    // View: capped at 25
-    // Silence: capped at 80
-    // Total penalties should be 25 + 80 = 105
+    // View: capped at 20
+    // Silence: capped at 60
+    // Total penalties should be 20 + 60 = 80
     expect(result.penalty_breakdown.email_not_opened).toBe(0);
-    expect(result.penalty_breakdown.proposal_not_viewed).toBe(25);
-    expect(result.penalty_breakdown.silence).toBe(80);
-    expect(result.total_penalties).toBe(105);
-    // Base 100 - 105 = -5, clamped to 0
-    expect(result.confidence_score).toBe(0);
+    expect(result.penalty_breakdown.proposal_not_viewed).toBe(20);
+    expect(result.penalty_breakdown.silence).toBe(60);
+    expect(result.total_penalties).toBe(80);
+    // Base 100 - 80 = 20
+    expect(result.confidence_score).toBe(20);
   });
 
-  it('large deal: $5000/mo, $25000 one-time, 72% confidence', () => {
+  it('large deal: $5000/mo, $25000 one-time at 76% confidence', () => {
     const result = computePipelineScore(
       makeInput({
         deal: makeDeal({ predicted_monthly: 5000, predicted_onetime: 25000 }),
         communications: NO_COMMS,
-        now: daysFromNow(T0, 14), // silence penalty: 9 days past grace × 3 = 27
+        now: daysFromNow(T0, 30), // silence penalty: 20 days past 10-day grace × 1.2 = 24
         // but email and view are fine (all milestones hit)
       })
     );
-    // Base 100, silence 27, no other penalties → 73
-    expect(result.confidence_score).toBe(73);
-    expect(result.weighted_monthly).toBe(3650); // 5000 × 0.73
-    expect(result.weighted_onetime).toBe(18250); // 25000 × 0.73
+    // Base 100, silence 24, no other penalties → 76
+    expect(result.confidence_score).toBe(76);
+    expect(result.weighted_monthly).toBe(3800); // 5000 × 0.76
+    expect(result.weighted_onetime).toBe(19000); // 25000 × 0.76
   });
 });
 
