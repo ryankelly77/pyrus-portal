@@ -1140,7 +1140,7 @@ export default function PipelineDashboardPage() {
                                 width={75}
                               />
                               <Tooltip
-                                formatter={(value: number) => [`$${value.toLocaleString()}/mo`, 'Lost MRR']}
+                                formatter={(value) => [`$${(value as number)?.toLocaleString() ?? 0}/mo`, 'Lost MRR']}
                                 labelFormatter={(label) => ARCHIVE_REASON_LABELS[label as ArchiveReason] || label}
                               />
                               <Bar dataKey="mrr_lost" radius={[0, 4, 4, 0]}>

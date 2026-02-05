@@ -122,9 +122,9 @@ async function fetchStripeData(now: number): Promise<CachedMRRData> {
       items: sub.items.data.map(item => ({
         price: {
           unit_amount: item.price.unit_amount,
-          recurring: item.price.recurring ? { interval: item.price.recurring.interval } : null,
+          recurring: item.price.recurring ? { interval: item.price.recurring.interval as string } : null,
         },
-        quantity: item.quantity,
+        quantity: item.quantity ?? null,
       })),
     });
 
