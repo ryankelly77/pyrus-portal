@@ -59,6 +59,11 @@ const TRIGGER_ICONS: Record<string, string> = {
   tracking_event: '📍',
   daily_cron: '⏰',
   manual_refresh: '🔄',
+  deal_snoozed: '😴',
+  snooze_cancelled: '⏰',
+  deal_archived: '📦',
+  deal_revived: '🔄',
+  predicted_tier_updated: '🎯',
   unknown: '•',
 }
 
@@ -70,6 +75,23 @@ function generateExplanation(event: AuditEvent, isFirst: boolean): string {
 
   const { trigger_source, deltas, breakdown } = event
   const scoreDelta = deltas?.score_delta ?? 0
+
+  // Handle special events - don't interpret penalty changes
+  if (trigger_source === 'deal_snoozed') {
+    return 'Deal snoozed (penalties frozen)'
+  }
+  if (trigger_source === 'snooze_cancelled') {
+    return 'Snooze cancelled (penalties resumed)'
+  }
+  if (trigger_source === 'deal_archived') {
+    return 'Deal archived (removed from pipeline)'
+  }
+  if (trigger_source === 'deal_revived') {
+    return 'Deal revived (fresh scoring from today)'
+  }
+  if (trigger_source === 'predicted_tier_updated') {
+    return 'Predicted tier updated'
+  }
 
   // Build explanation from specific changes if available
   if (deltas && deltas.changes.length > 0) {
@@ -161,6 +183,16 @@ function generateExplanation(event: AuditEvent, isFirst: boolean): string {
       return 'Status changed'
     case 'communication_logged':
       return 'Communication logged'
+    case 'deal_snoozed':
+      return 'Deal snoozed'
+    case 'snooze_cancelled':
+      return 'Snooze cancelled'
+    case 'deal_archived':
+      return 'Deal archived'
+    case 'deal_revived':
+      return 'Deal revived'
+    case 'predicted_tier_updated':
+      return 'Predicted tier updated'
     default:
       return 'Score recalculated'
   }
@@ -317,11 +349,41 @@ export function ScoreAuditFeed({ recommendationId }: ScoreAuditFeedProps) {
             </div>
 
             <div className="row-right">
-              {scoreDelta !== undefined && scoreDelta !== 0 && (
-                <span className={`delta ${scoreDelta > 0 ? 'positive' : 'negative'}`}>
-                  {scoreDelta > 0 ? '+' : ''}{scoreDelta}
-                </span>
-              )}
+              {(() => {
+                // Compute precise delta from penalty breakdowns if available
+                const prevEvent = i < events.length - 1 ? events[i + 1] : null
+                let preciseDelta: number | null = null
+
+                if (prevEvent?.breakdown && event.breakdown) {
+                  const prevTotal = prevEvent.breakdown.total_penalties || 0
+                  const currTotal = event.breakdown.total_penalties || 0
+                  const penaltyChange = currTotal - prevTotal
+
+                  const prevBonus = prevEvent.breakdown.total_bonus || 0
+                  const currBonus = event.breakdown.total_bonus || 0
+                  const bonusChange = currBonus - prevBonus
+
+                  const prevBase = prevEvent.breakdown.base_score || 0
+                  const currBase = event.breakdown.base_score || 0
+                  const baseChange = currBase - prevBase
+
+                  preciseDelta = baseChange - penaltyChange + bonusChange
+                } else if (scoreDelta !== undefined) {
+                  preciseDelta = scoreDelta
+                }
+
+                if (preciseDelta !== null && Math.abs(preciseDelta) >= 0.1) {
+                  const formatted = preciseDelta > 0
+                    ? `+${preciseDelta.toFixed(1)}`
+                    : preciseDelta.toFixed(1)
+                  return (
+                    <span className={`delta ${preciseDelta > 0 ? 'positive' : 'negative'}`}>
+                      {formatted}
+                    </span>
+                  )
+                }
+                return null
+              })()}
               <span className={`score ${getScoreColor(event.confidence_score)}`}>
                 {event.confidence_score}
               </span>

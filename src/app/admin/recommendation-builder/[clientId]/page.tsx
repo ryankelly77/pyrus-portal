@@ -93,6 +93,7 @@ interface DBRecommendation {
   id: string
   client_id: string
   status: string | null
+  predicted_tier: string | null
   recommendation_items: DBRecommendationItem[]
 }
 
@@ -183,6 +184,7 @@ export default function RecommendationBuilderPage() {
 
   // Local state
   const [dragOverTier, setDragOverTier] = useState<TierName | null>(null)
+  const [predictedTier, setPredictedTier] = useState<TierName | null>(null)
 
   // Fetch clients and products from database
   useEffect(() => {
@@ -298,6 +300,11 @@ export default function RecommendationBuilderPage() {
             if (existingRec && existingRec.id) {
               // Store the recommendation ID so Share button shows
               setSavedRecommendationId(existingRec.id)
+
+              // Load predicted tier if set
+              if (existingRec.predicted_tier) {
+                setPredictedTier(existingRec.predicted_tier as TierName)
+              }
 
               // Pre-fill share form with client contact info
               if (currentClient?.contact_name) {

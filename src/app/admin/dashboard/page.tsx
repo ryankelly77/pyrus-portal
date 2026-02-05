@@ -453,7 +453,20 @@ export default function SuperAdminDashboard() {
               <div>
                 <h3>Monthly Recurring Revenue</h3>
                 <div className="sa-dash-mrr-value">
-                  <span className="sa-dash-mrr-amount">${loading ? '...' : stats.mrr.toLocaleString()}</span>
+                  <span className="sa-dash-mrr-amount">
+                    {loading ? '...' : (() => {
+                      const pendingBillingDate = new Date('2026-02-17')
+                      const hasPending = new Date() < pendingBillingDate
+                      const pendingAmount = 300
+                      const displayMRR = hasPending ? stats.mrr + pendingAmount : stats.mrr
+                      return `$${displayMRR.toLocaleString()}`
+                    })()}
+                  </span>
+                  {!loading && (() => {
+                    const pendingBillingDate = new Date('2026-02-17')
+                    const hasPending = new Date() < pendingBillingDate
+                    return hasPending && <span className="sa-dash-mrr-pending">(incl. $300 pending)</span>
+                  })()}
                   {stats.mrrChange !== 0 && (
                     <span className={`sa-dash-mrr-change ${stats.mrrChange >= 0 ? 'positive' : 'negative'}`}>
                       {stats.mrrChange >= 0 ? '+' : ''}${stats.mrrChange.toLocaleString()}

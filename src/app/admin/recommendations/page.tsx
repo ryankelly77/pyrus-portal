@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { SnoozeDealForm } from '@/components/pipeline/snooze-deal-form'
 
-type RecommendationStatus = 'draft' | 'sent' | 'approved'
+type RecommendationStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'closed_lost'
 type SortOption = 'date-desc' | 'date-asc' | 'client'
-type FilterOption = 'all' | RecommendationStatus
+type FilterOption = 'all' | 'open' | 'archived'
 
 interface InvitedUser {
   id: string
@@ -41,6 +42,7 @@ interface DBRecommendation {
   notes: string | null
   created_at: string
   sent_at: string | null
+  predicted_tier: string | null
   client: {
     id: string
     name: string
@@ -65,6 +67,13 @@ interface DBRecommendation {
     addon: { id: string; name: string } | null
   }[]
   recommendation_invites: DBRecommendationInvite[]
+  call_scores: {
+    id: string
+    budget_clarity: string | null
+    competition: string | null
+    engagement: string | null
+    plan_fit: string | null
+  } | null
 }
 
 interface TierPricing {
@@ -96,6 +105,10 @@ interface Recommendation {
     name: string
     role: string
   } | null
+  hasCallScores: boolean
+  predictedTier: 'good' | 'better' | 'best' | null
+  snoozedUntil: string | null
+  snoozeReason: string | null
 }
 
 // Helper to generate initials from name
@@ -196,11 +209,12 @@ export default function RecommendationsPage() {
 
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<FilterOption>(initialStatus || 'all')
+  const [statusFilter, setStatusFilter] = useState<FilterOption>(initialStatus || 'open')
   const [sortBy, setSortBy] = useState<SortOption>('date-desc')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false)
@@ -222,6 +236,173 @@ export default function RecommendationsPage() {
     growthStage: string
   } | null>(null)
   const [isSavingClient, setIsSavingClient] = useState(false)
+
+  // Post-Call Questionnaire modal state
+  const [showCallScoreModal, setShowCallScoreModal] = useState(false)
+  const [callScoreRecId, setCallScoreRecId] = useState<string | null>(null)
+  const [callScoreForm, setCallScoreForm] = useState<{
+    budget_clarity: 'clear' | 'vague' | 'none' | 'no_budget' | null
+    competition: 'none' | 'some' | 'many' | null
+    engagement: 'high' | 'medium' | 'low' | null
+    plan_fit: 'strong' | 'medium' | 'weak' | 'poor' | null
+    predicted_tier: 'good' | 'better' | 'best' | null
+  }>({
+    budget_clarity: null,
+    competition: null,
+    engagement: null,
+    plan_fit: null,
+    predicted_tier: null,
+  })
+  const [isSavingCallScore, setIsSavingCallScore] = useState(false)
+
+  // Archive modal state
+  const [showArchiveModal, setShowArchiveModal] = useState(false)
+  const [archiveRecId, setArchiveRecId] = useState<string | null>(null)
+  const [archiveReason, setArchiveReason] = useState('')
+  const [isArchiving, setIsArchiving] = useState(false)
+
+  // Snooze modal state
+  const [showSnoozeModal, setShowSnoozeModal] = useState(false)
+  const [snoozeRec, setSnoozeRec] = useState<Recommendation | null>(null)
+
+  // Open snooze modal for a specific recommendation
+  const openSnoozeModal = (rec: Recommendation) => {
+    setSnoozeRec(rec)
+    setShowSnoozeModal(true)
+  }
+
+  // Handle snooze update (close modal and update local state)
+  const handleSnoozeUpdate = async () => {
+    if (snoozeRec) {
+      // Fetch updated snooze data for this recommendation
+      try {
+        const res = await fetch(`/api/admin/recommendations/${snoozeRec.id}/call-scores`)
+        if (res.ok) {
+          const data = await res.json()
+          setRecommendations(prev => prev.map(rec => {
+            if (rec.id === snoozeRec.id) {
+              return {
+                ...rec,
+                snoozedUntil: data.snoozed_until || null,
+                snoozeReason: data.snooze_reason || null,
+              }
+            }
+            return rec
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to refresh snooze data:', error)
+      }
+    }
+    setShowSnoozeModal(false)
+    setSnoozeRec(null)
+  }
+
+  // Open archive modal for a specific recommendation
+  const openArchiveModal = (recId: string) => {
+    setArchiveRecId(recId)
+    setArchiveReason('')
+    setShowArchiveModal(true)
+  }
+
+  // Handle archiving recommendation
+  const handleArchive = async () => {
+    if (!archiveRecId) return
+
+    setIsArchiving(true)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${archiveRecId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'closed_lost',
+          reason: archiveReason || 'No reason provided',
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to archive recommendation')
+
+      // Update local state to reflect the change
+      setRecommendations(prev => prev.map(rec => {
+        if (rec.id === archiveRecId) {
+          return { ...rec, status: 'closed_lost' as RecommendationStatus }
+        }
+        return rec
+      }))
+
+      setShowArchiveModal(false)
+    } catch (error) {
+      console.error('Failed to archive recommendation:', error)
+      alert('Failed to archive recommendation')
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
+  // Call score modal tier pricing state
+  const [callScoreTierPricing, setCallScoreTierPricing] = useState<{
+    good: TierPricing
+    better: TierPricing
+    best: TierPricing
+  } | null>(null)
+
+  // Open call score modal for a specific recommendation
+  const openCallScoreModal = (
+    recId: string,
+    predictedTier: 'good' | 'better' | 'best' | null,
+    tierPricing: { good: TierPricing; better: TierPricing; best: TierPricing }
+  ) => {
+    setCallScoreRecId(recId)
+    setCallScoreTierPricing(tierPricing)
+    setCallScoreForm({
+      budget_clarity: null,
+      competition: null,
+      engagement: null,
+      plan_fit: null,
+      predicted_tier: predictedTier,
+    })
+    setShowCallScoreModal(true)
+  }
+
+  // Handle saving call scores
+  const handleSaveCallScore = async () => {
+    if (!callScoreRecId) return
+
+    if (!callScoreForm.predicted_tier) {
+      alert('Please select which tier you predict they will choose')
+      return
+    }
+
+    setIsSavingCallScore(true)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${callScoreRecId}/call-scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(callScoreForm),
+      })
+
+      if (!res.ok) throw new Error('Failed to save call scores')
+
+      // Update the local state to reflect the change
+      setRecommendations(prev => prev.map(rec => {
+        if (rec.id === callScoreRecId) {
+          return {
+            ...rec,
+            hasCallScores: true,
+            predictedTier: callScoreForm.predicted_tier,
+          }
+        }
+        return rec
+      }))
+
+      setShowCallScoreModal(false)
+    } catch (error) {
+      console.error('Failed to save call scores:', error)
+      alert('Failed to save call scores')
+    } finally {
+      setIsSavingCallScore(false)
+    }
+  }
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -392,6 +573,15 @@ export default function RecommendationsPage() {
     }
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null)
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [openMenuId])
+
   // Fetch recommendations
   useEffect(() => {
     async function fetchRecommendations() {
@@ -452,6 +642,10 @@ export default function RecommendationsPage() {
               name: rec.creator.full_name || 'Unknown',
               role: rec.creator.role || 'user',
             } : null,
+            hasCallScores: !!rec.call_scores,
+            predictedTier: rec.predicted_tier as 'good' | 'better' | 'best' | null,
+            snoozedUntil: (rec as any).snoozed_until || null,
+            snoozeReason: (rec as any).snooze_reason || null,
           }
         })
 
@@ -469,7 +663,7 @@ export default function RecommendationsPage() {
   // Update filter when URL changes
   useEffect(() => {
     const urlStatus = searchParams.get('status') as FilterOption | null
-    if (urlStatus === 'draft' || urlStatus === 'sent' || urlStatus === 'approved') {
+    if (urlStatus === 'open' || urlStatus === 'archived') {
       setStatusFilter(urlStatus)
     }
   }, [searchParams])
@@ -483,9 +677,13 @@ export default function RecommendationsPage() {
       result = result.filter(rec => rec.client.toLowerCase().includes(query))
     }
 
-    // Filter by status
-    if (statusFilter !== 'all') {
-      result = result.filter(rec => rec.status === statusFilter)
+    // Filter by open vs archived
+    if (statusFilter === 'open') {
+      // Open = not closed_lost (draft, sent, approved, declined)
+      result = result.filter(rec => rec.status !== 'closed_lost')
+    } else if (statusFilter === 'archived') {
+      // Archived = closed_lost
+      result = result.filter(rec => rec.status === 'closed_lost')
     }
 
     // Sort
@@ -559,22 +757,16 @@ export default function RecommendationsPage() {
               All
             </button>
             <button
-              className={`filter-btn ${statusFilter === 'draft' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('draft')}
+              className={`filter-btn ${statusFilter === 'open' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('open')}
             >
-              Draft
+              Open
             </button>
             <button
-              className={`filter-btn ${statusFilter === 'sent' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('sent')}
+              className={`filter-btn ${statusFilter === 'archived' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('archived')}
             >
-              Sent
-            </button>
-            <button
-              className={`filter-btn ${statusFilter === 'approved' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('approved')}
-            >
-              Approved
+              Archived
             </button>
           </div>
           <div className="sort-dropdown">
@@ -696,8 +888,8 @@ export default function RecommendationsPage() {
                         </span>
                       </div>
                       <div className="recommendation-status">
-                        <span className={`status-badge ${rec.status}`}>
-                          {rec.status.charAt(0).toUpperCase() + rec.status.slice(1)}
+                        <span className={`status-badge ${rec.status === 'closed_lost' ? 'archived' : rec.status}`}>
+                          {rec.status === 'closed_lost' ? 'Archived' : rec.status.charAt(0).toUpperCase() + rec.status.slice(1)}
                         </span>
                       </div>
                       <div className="recommendation-items-count">
@@ -746,19 +938,97 @@ export default function RecommendationsPage() {
                         {formatDate(rec.createdAt)}
                       </div>
                       <div className="recommendation-actions" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          href={`/admin/recommendation-builder/${rec.clientId}`}
-                          className="btn btn-sm btn-secondary"
-                        >
-                          Edit
-                        </Link>
                         <button
-                          className="btn btn-sm btn-secondary btn-danger"
-                          onClick={(e) => handleDelete(rec.id, e)}
-                          disabled={deletingId === rec.id}
+                          className={`btn btn-sm ${rec.hasCallScores ? 'btn-post-call-complete' : 'btn-post-call-pending'}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openCallScoreModal(rec.id, rec.predictedTier, rec.tierPricing)
+                          }}
+                          title={rec.hasCallScores ? 'Post-call completed' : 'Fill out post-call questionnaire'}
                         >
-                          {deletingId === rec.id ? '...' : 'Delete'}
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                          </svg>
+                          Post-Call
                         </button>
+                        <div className="actions-dropdown">
+                          <button
+                            className="btn btn-sm btn-secondary dropdown-trigger"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setOpenMenuId(openMenuId === rec.id ? null : rec.id)
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <circle cx="12" cy="12" r="1"></circle>
+                              <circle cx="19" cy="12" r="1"></circle>
+                              <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                          </button>
+                          {openMenuId === rec.id && (
+                            <div className="dropdown-menu">
+                              <Link
+                                href={`/admin/recommendation-builder/${rec.clientId}`}
+                                className="dropdown-item"
+                                onClick={() => setOpenMenuId(null)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                              </Link>
+                              {rec.status === 'sent' && (
+                                <button
+                                  className="dropdown-item"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenMenuId(null)
+                                    openSnoozeModal(rec)
+                                  }}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                    <path d="M12 6v6l4 2"></path>
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                  </svg>
+                                  {rec.snoozedUntil && new Date(rec.snoozedUntil) > new Date() ? 'Manage Snooze' : 'Snooze Deal'}
+                                </button>
+                              )}
+                              {rec.status !== 'closed_lost' && (
+                                <button
+                                  className="dropdown-item"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenMenuId(null)
+                                    openArchiveModal(rec.id)
+                                  }}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                    <rect x="1" y="3" width="22" height="5"></rect>
+                                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                                  </svg>
+                                  Archive
+                                </button>
+                              )}
+                              <button
+                                className="dropdown-item dropdown-item-danger"
+                                onClick={(e) => {
+                                  setOpenMenuId(null)
+                                  handleDelete(rec.id, e)
+                                }}
+                                disabled={deletingId === rec.id}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                {deletingId === rec.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1024,6 +1294,227 @@ export default function RecommendationsPage() {
                 </svg>
                 {isSavingClient ? 'Saving...' : 'Save Changes'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-Call Questionnaire Modal */}
+      {showCallScoreModal && (
+        <div className="modal-overlay active" onClick={() => setShowCallScoreModal(false)}>
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Post-Call Questionnaire</h2>
+              <button className="modal-close" onClick={() => setShowCallScoreModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                Record your assessment from the sales call to help predict deal probability.
+              </p>
+
+              {/* Predicted Tier Selection */}
+              <div className="form-group">
+                <label>Which tier do you predict they will choose? <span className="required">*</span></label>
+                <div className="tier-selection-grid">
+                  {(['good', 'better', 'best'] as const).map((tier) => {
+                    const pricing = callScoreTierPricing?.[tier]
+                    return (
+                      <button
+                        key={tier}
+                        type="button"
+                        className={`tier-option ${callScoreForm.predicted_tier === tier ? 'selected' : ''}`}
+                        onClick={() => setCallScoreForm({ ...callScoreForm, predicted_tier: tier })}
+                      >
+                        <span className="tier-label">{tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+                        {pricing && pricing.monthly > 0 && (
+                          <span className="tier-price-display">${pricing.monthly.toLocaleString()}/mo</span>
+                        )}
+                        {pricing && pricing.onetime > 0 && (
+                          <span className="tier-onetime-display">+ ${pricing.onetime.toLocaleString()} one-time</span>
+                        )}
+                        {pricing && pricing.itemCount > 0 && (
+                          <span className="tier-item-count">{pricing.itemCount} {pricing.itemCount === 1 ? 'item' : 'items'}</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Optional Call Factors */}
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-light)' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  Optional: Rate these factors from your call
+                </p>
+
+                <div className="call-score-grid">
+                  <div className="form-group">
+                    <label>Budget Clarity</label>
+                    <select
+                      className="form-control"
+                      value={callScoreForm.budget_clarity || ''}
+                      onChange={(e) => setCallScoreForm({ ...callScoreForm, budget_clarity: e.target.value as typeof callScoreForm.budget_clarity || null })}
+                    >
+                      <option value="">Not assessed</option>
+                      <option value="clear">Clear budget</option>
+                      <option value="vague">Vague budget</option>
+                      <option value="none">No budget discussed</option>
+                      <option value="no_budget">No budget available</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Competition</label>
+                    <select
+                      className="form-control"
+                      value={callScoreForm.competition || ''}
+                      onChange={(e) => setCallScoreForm({ ...callScoreForm, competition: e.target.value as typeof callScoreForm.competition || null })}
+                    >
+                      <option value="">Not assessed</option>
+                      <option value="none">No competition</option>
+                      <option value="some">Some competition</option>
+                      <option value="many">Heavy competition</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Engagement Level</label>
+                    <select
+                      className="form-control"
+                      value={callScoreForm.engagement || ''}
+                      onChange={(e) => setCallScoreForm({ ...callScoreForm, engagement: e.target.value as typeof callScoreForm.engagement || null })}
+                    >
+                      <option value="">Not assessed</option>
+                      <option value="high">High engagement</option>
+                      <option value="medium">Medium engagement</option>
+                      <option value="low">Low engagement</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Plan Fit</label>
+                    <select
+                      className="form-control"
+                      value={callScoreForm.plan_fit || ''}
+                      onChange={(e) => setCallScoreForm({ ...callScoreForm, plan_fit: e.target.value as typeof callScoreForm.plan_fit || null })}
+                    >
+                      <option value="">Not assessed</option>
+                      <option value="strong">Strong fit</option>
+                      <option value="medium">Medium fit</option>
+                      <option value="weak">Weak fit</option>
+                      <option value="poor">Poor fit</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowCallScoreModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveCallScore}
+                disabled={!callScoreForm.predicted_tier || isSavingCallScore}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {isSavingCallScore ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Modal */}
+      {showArchiveModal && (
+        <div className="modal-overlay active" onClick={() => setShowArchiveModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Archive Recommendation</h2>
+              <button className="modal-close" onClick={() => setShowArchiveModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                Mark this deal as closed/lost. This will set the confidence score to 0% and move it to the Archived section.
+              </p>
+              <div className="form-group">
+                <label htmlFor="archiveReason">Reason (optional)</label>
+                <textarea
+                  id="archiveReason"
+                  className="form-control"
+                  placeholder="e.g., Went with competitor, Budget constraints, etc."
+                  value={archiveReason}
+                  onChange={(e) => setArchiveReason(e.target.value)}
+                  rows={3}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowArchiveModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleArchive}
+                disabled={isArchiving}
+                style={{ background: 'var(--warning-text)', borderColor: 'var(--warning-text)' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                  <rect x="1" y="3" width="22" height="5"></rect>
+                  <line x1="10" y1="12" x2="14" y2="12"></line>
+                </svg>
+                {isArchiving ? 'Archiving...' : 'Archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Snooze Modal */}
+      {showSnoozeModal && snoozeRec && (
+        <div className="modal-overlay active" onClick={() => setShowSnoozeModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{snoozeRec.snoozedUntil && new Date(snoozeRec.snoozedUntil) > new Date() ? 'Manage Snooze' : 'Snooze Deal'}</h2>
+              <span style={{ fontSize: '14px', color: 'var(--text-secondary)', marginLeft: 'auto', marginRight: '12px' }}>
+                {snoozeRec.client}
+              </span>
+              <button className="modal-close" onClick={() => setShowSnoozeModal(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <SnoozeDealForm
+                recommendationId={snoozeRec.id}
+                currentSnooze={snoozeRec.snoozedUntil ? {
+                  snoozed_until: snoozeRec.snoozedUntil,
+                  reason: snoozeRec.snoozeReason,
+                } : null}
+                onUpdate={handleSnoozeUpdate}
+              />
             </div>
           </div>
         </div>

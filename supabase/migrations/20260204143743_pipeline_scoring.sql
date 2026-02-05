@@ -357,8 +357,7 @@ CREATE POLICY "Clients can view own recommendation communications"
 CREATE OR REPLACE VIEW public.pipeline_reps AS
 SELECT DISTINCT
   p.id,
-  p.first_name,
-  p.last_name,
+  p.full_name,
   p.email,
   p.role,
   p.avatar_url

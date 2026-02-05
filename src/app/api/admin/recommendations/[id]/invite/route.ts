@@ -7,6 +7,7 @@ import { randomBytes } from 'crypto'
 import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
 import { logEmailError } from '@/lib/alerts'
+import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
 
 export const dynamic = 'force-dynamic'
 
@@ -181,6 +182,9 @@ export async function POST(
       )
       // Don't fail the request if communication logging fails
     }
+
+    // Trigger score recalculation (non-blocking)
+    triggerRecalculation(id, 'invite_sent').catch(console.error)
 
     return NextResponse.json({
       ...invite,

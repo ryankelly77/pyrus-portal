@@ -4,11 +4,20 @@ import { useState, useEffect, useCallback } from 'react'
 import { AdminHeader } from '@/components/layout'
 import { ScoreHistoryChart } from '@/components/pipeline/score-history-chart'
 import { ScoreAuditFeed } from '@/components/pipeline/score-audit-feed'
+import { SnoozeDealForm } from '@/components/pipeline/snooze-deal-form'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import type {
   PipelineDeal,
   PipelineAggregates,
   PipelineRep,
   PipelineFilters,
+  ArchiveReason,
+  ArchiveAnalytics,
+} from '@/lib/pipeline/pipeline-view-types'
+import {
+  ARCHIVE_REASON_OPTIONS,
+  ARCHIVE_REASON_LABELS,
+  ARCHIVE_REASON_COLORS,
 } from '@/lib/pipeline/pipeline-view-types'
 
 type SortKey = 'confidence_score' | 'predicted_monthly' | 'weighted_monthly' | 'age_days' | 'sent_at' | 'client_name'
@@ -101,6 +110,18 @@ function getCallScoreClass(type: string, value: string): string {
   return 'poor'
 }
 
+function isSnoozed(snoozedUntil: string | null): boolean {
+  if (!snoozedUntil) return false
+  return new Date(snoozedUntil) > new Date()
+}
+
+function getSnoozeRemainingDays(snoozedUntil: string): number {
+  const date = new Date(snoozedUntil)
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
+}
+
 export default function PipelineDashboardPage() {
   const [deals, setDeals] = useState<PipelineDeal[]>([])
   const [aggregates, setAggregates] = useState<PipelineAggregates>({
@@ -118,6 +139,18 @@ export default function PipelineDashboardPage() {
   const [expandedDealId, setExpandedDealId] = useState<string | null>(null)
   const [showScoringModal, setShowScoringModal] = useState(false)
   const [historyTab, setHistoryTab] = useState<'chart' | 'audit'>('chart')
+  const [snoozeDeal, setSnoozeDeal] = useState<PipelineDeal | null>(null)
+  const [archiveDeal, setArchiveDeal] = useState<PipelineDeal | null>(null)
+  const [archiveReason, setArchiveReason] = useState<ArchiveReason | ''>('')
+  const [archiveNotes, setArchiveNotes] = useState('')
+  const [archiving, setArchiving] = useState(false)
+  const [archivedDeals, setArchivedDeals] = useState<PipelineDeal[]>([])
+  const [showArchived, setShowArchived] = useState(false)
+  const [reviving, setReviving] = useState<string | null>(null)
+  const [archiveTab, setArchiveTab] = useState<'deals' | 'analytics'>('deals')
+  const [archiveAnalytics, setArchiveAnalytics] = useState<ArchiveAnalytics | null>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [reasonFilter, setReasonFilter] = useState<ArchiveReason | null>(null)
 
   // Filters
   const [selectedRep, setSelectedRep] = useState<string>('all')
@@ -164,6 +197,51 @@ export default function PipelineDashboardPage() {
     fetchPipelineData()
   }, [fetchPipelineData])
 
+  const fetchArchivedDeals = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/pipeline?archived=archived')
+      if (res.ok) {
+        const data = await res.json()
+        setArchivedDeals(data.deals || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch archived deals:', error)
+    }
+  }, [])
+
+  // Fetch archived deals on mount (for count in toggle)
+  useEffect(() => {
+    fetchArchivedDeals()
+  }, [fetchArchivedDeals])
+
+  const fetchArchiveAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (sentAfter) params.set('archived_after', sentAfter)
+      if (sentBefore) params.set('archived_before', sentBefore)
+      if (selectedRep !== 'all') params.set('rep_id', selectedRep)
+
+      const url = `/api/admin/pipeline/archive-analytics${params.toString() ? `?${params}` : ''}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setArchiveAnalytics(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch archive analytics:', error)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }, [sentAfter, sentBefore, selectedRep])
+
+  // Fetch analytics when tab is opened or filters change
+  useEffect(() => {
+    if (showArchived && archiveTab === 'analytics') {
+      fetchArchiveAnalytics()
+    }
+  }, [showArchived, archiveTab, fetchArchiveAnalytics])
+
   const handleRefreshScores = async () => {
     setRefreshing(true)
     try {
@@ -188,6 +266,79 @@ export default function PipelineDashboardPage() {
     } else {
       setSortKey(key)
       setSortDir(key === 'client_name' ? 'asc' : 'desc')
+    }
+  }
+
+  const handleSnoozeClick = (deal: PipelineDeal) => {
+    setSnoozeDeal(deal)
+  }
+
+  const handleSnoozeUpdate = () => {
+    setSnoozeDeal(null)
+    fetchPipelineData()
+  }
+
+  const handleArchiveClick = (deal: PipelineDeal) => {
+    setArchiveDeal(deal)
+    setArchiveReason('')
+    setArchiveNotes('')
+  }
+
+  const handleArchiveConfirm = async () => {
+    if (!archiveDeal || !archiveReason) return
+
+    // Validate notes required for 'other'
+    if (archiveReason === 'other' && !archiveNotes.trim()) {
+      alert('Please provide notes when selecting "Other" as the reason')
+      return
+    }
+
+    setArchiving(true)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${archiveDeal.id}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: archiveReason,
+          notes: archiveNotes.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        setArchiveDeal(null)
+        setArchiveReason('')
+        setArchiveNotes('')
+        fetchPipelineData()
+        fetchArchivedDeals()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to archive deal')
+      }
+    } catch (error) {
+      console.error('Failed to archive deal:', error)
+      alert('Failed to archive deal')
+    } finally {
+      setArchiving(false)
+    }
+  }
+
+  const handleRevive = async (dealId: string) => {
+    setReviving(dealId)
+    try {
+      const res = await fetch(`/api/admin/recommendations/${dealId}/archive`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        fetchPipelineData()
+        fetchArchivedDeals()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to revive deal')
+      }
+    } catch (error) {
+      console.error('Failed to revive deal:', error)
+      alert('Failed to revive deal')
+    } finally {
+      setReviving(null)
     }
   }
 
@@ -446,7 +597,14 @@ export default function PipelineDashboardPage() {
                           {getInitials(deal.client_name)}
                         </div>
                         <div className="client-info">
-                          <span className="client-name">{deal.client_name}</span>
+                          <div className="client-name-row">
+                            <span className="client-name">{deal.client_name}</span>
+                            {isSnoozed(deal.snoozed_until) && (
+                              <span className="snooze-badge" title={deal.snooze_reason || 'Snoozed'}>
+                                😴 {getSnoozeRemainingDays(deal.snoozed_until!)}d
+                              </span>
+                            )}
+                          </div>
                           {deal.client_email && (
                             <span className="client-email">{deal.client_email}</span>
                           )}
@@ -533,6 +691,24 @@ export default function PipelineDashboardPage() {
                     {/* Expanded Details */}
                     {expandedDealId === deal.id && (
                       <div className="deal-details">
+                        {/* Snooze Banner */}
+                        {isSnoozed(deal.snoozed_until) && (
+                          <div className="deal-snooze-banner">
+                            <span className="snooze-icon">😴</span>
+                            <div className="snooze-content">
+                              <span className="snooze-title">
+                                Deal Snoozed for {getSnoozeRemainingDays(deal.snoozed_until!)} days
+                              </span>
+                              <span className="snooze-until">
+                                Until {formatShortDate(deal.snoozed_until)}
+                              </span>
+                            </div>
+                            {deal.snooze_reason && (
+                              <span className="snooze-reason">{deal.snooze_reason}</span>
+                            )}
+                          </div>
+                        )}
+
                         <div className="details-grid details-grid-4col">
                           {/* Milestones */}
                           <div className="details-section">
@@ -565,6 +741,37 @@ export default function PipelineDashboardPage() {
                                 </span>
                                 <span className="milestone-label">Account Created</span>
                                 <span className="milestone-date">{formatShortDate(deal.first_account_created_at)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Call Scores */}
+                          <div className="details-section">
+                            <h4>Call Factors {!deal.call_budget_clarity && <span className="not-set">(Not Set)</span>}</h4>
+                            <div className="call-score-items">
+                              <div className="call-score-item">
+                                <span className="call-score-label">Budget Clarity</span>
+                                <span className={`call-score-value ${deal.call_budget_clarity ? getCallScoreClass('budget', deal.call_budget_clarity) : 'muted'}`}>
+                                  {formatCallScore(deal.call_budget_clarity)}
+                                </span>
+                              </div>
+                              <div className="call-score-item">
+                                <span className="call-score-label">Competition</span>
+                                <span className={`call-score-value ${deal.call_competition ? getCallScoreClass('competition', deal.call_competition) : 'muted'}`}>
+                                  {formatCallScore(deal.call_competition)}
+                                </span>
+                              </div>
+                              <div className="call-score-item">
+                                <span className="call-score-label">Engagement</span>
+                                <span className={`call-score-value ${deal.call_engagement ? getCallScoreClass('engagement', deal.call_engagement) : 'muted'}`}>
+                                  {formatCallScore(deal.call_engagement)}
+                                </span>
+                              </div>
+                              <div className="call-score-item">
+                                <span className="call-score-label">Plan Fit</span>
+                                <span className={`call-score-value ${deal.call_plan_fit ? getCallScoreClass('plan_fit', deal.call_plan_fit) : 'muted'}`}>
+                                  {formatCallScore(deal.call_plan_fit)}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -609,37 +816,6 @@ export default function PipelineDashboardPage() {
                                 <span className="score-label">Final Score</span>
                                 <span className={`score-value ${getConfidenceColor(deal.confidence_score)}`}>
                                   {deal.confidence_score ?? '—'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Call Scores */}
-                          <div className="details-section">
-                            <h4>Call Factors {!deal.call_budget_clarity && <span className="not-set">(Not Set)</span>}</h4>
-                            <div className="call-score-items">
-                              <div className="call-score-item">
-                                <span className="call-score-label">Budget Clarity</span>
-                                <span className={`call-score-value ${deal.call_budget_clarity ? getCallScoreClass('budget', deal.call_budget_clarity) : 'muted'}`}>
-                                  {formatCallScore(deal.call_budget_clarity)}
-                                </span>
-                              </div>
-                              <div className="call-score-item">
-                                <span className="call-score-label">Competition</span>
-                                <span className={`call-score-value ${deal.call_competition ? getCallScoreClass('competition', deal.call_competition) : 'muted'}`}>
-                                  {formatCallScore(deal.call_competition)}
-                                </span>
-                              </div>
-                              <div className="call-score-item">
-                                <span className="call-score-label">Engagement</span>
-                                <span className={`call-score-value ${deal.call_engagement ? getCallScoreClass('engagement', deal.call_engagement) : 'muted'}`}>
-                                  {formatCallScore(deal.call_engagement)}
-                                </span>
-                              </div>
-                              <div className="call-score-item">
-                                <span className="call-score-label">Plan Fit</span>
-                                <span className={`call-score-value ${deal.call_plan_fit ? getCallScoreClass('plan_fit', deal.call_plan_fit) : 'muted'}`}>
-                                  {formatCallScore(deal.call_plan_fit)}
                                 </span>
                               </div>
                             </div>
@@ -700,17 +876,29 @@ export default function PipelineDashboardPage() {
 
                         <div className="details-actions">
                           <a
-                            href={`/admin/recommendations?client=${deal.client_id}`}
+                            href={`/admin/recommendation-builder/${deal.client_id}`}
                             className="btn-view-recommendation"
                           >
                             View Recommendation
                           </a>
-                          <a
-                            href={`/admin/clients/${deal.client_id}`}
-                            className="btn-view-client"
+                          <button
+                            className="btn-snooze-deal"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSnoozeClick(deal)
+                            }}
                           >
-                            View Client
-                          </a>
+                            {isSnoozed(deal.snoozed_until) ? 'Manage Snooze' : 'Snooze Deal'}
+                          </button>
+                          <button
+                            className="btn-archive-deal"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleArchiveClick(deal)
+                            }}
+                          >
+                            Archive Deal
+                          </button>
                         </div>
                       </div>
                     )}
@@ -719,6 +907,331 @@ export default function PipelineDashboardPage() {
               </>
             )}
           </div>
+        </div>
+
+        {/* Archived Section */}
+        <div className="archived-section">
+          <button
+            className="archived-toggle"
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={showArchived ? 'chevron-open' : ''}
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+            <span>Archived Deals</span>
+            {archivedDeals.length > 0 && (
+              <>
+                <span className="archived-count">{archivedDeals.length}</span>
+                <span className="archived-lost-stats">
+                  Lost: ${archivedDeals.reduce((sum, d) => sum + d.predicted_monthly, 0).toLocaleString()}/mo
+                  {archivedDeals.reduce((sum, d) => sum + d.predicted_onetime, 0) > 0 && (
+                    <> + ${archivedDeals.reduce((sum, d) => sum + d.predicted_onetime, 0).toLocaleString()} one-time</>
+                  )}
+                </span>
+              </>
+            )}
+          </button>
+
+          {showArchived && (
+            <div className="archived-content">
+              {/* Tab Navigation */}
+              <div className="archive-tabs">
+                <button
+                  className={`archive-tab ${archiveTab === 'deals' ? 'active' : ''}`}
+                  onClick={() => setArchiveTab('deals')}
+                >
+                  Deals
+                </button>
+                <button
+                  className={`archive-tab ${archiveTab === 'analytics' ? 'active' : ''}`}
+                  onClick={() => setArchiveTab('analytics')}
+                >
+                  Reasons Lost
+                </button>
+              </div>
+
+              {/* Deals Tab */}
+              {archiveTab === 'deals' && (
+                <div className="archived-list">
+                  {archivedDeals.length === 0 ? (
+                    <p className="archived-empty">No archived deals</p>
+                  ) : (
+                    <table className="archived-table">
+                      <thead>
+                        <tr>
+                          <th>Client</th>
+                          <th>Reason</th>
+                          <th>Archived</th>
+                          <th>Last Score</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {archivedDeals.map((deal) => (
+                          <tr key={deal.id}>
+                            <td>
+                              <div className="archived-client">
+                                <div
+                                  className="archived-avatar"
+                                  style={{ background: deal.client_avatar_color || getAvatarColor(deal.client_id) }}
+                                >
+                                  {getInitials(deal.client_name)}
+                                </div>
+                                <span>{deal.client_name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="archived-reason-badge">
+                                {deal.archive_reason === 'other' && deal.archive_notes
+                                  ? `Other — ${deal.archive_notes}`
+                                  : deal.archive_reason
+                                    ? ARCHIVE_REASON_LABELS[deal.archive_reason]
+                                    : '—'}
+                              </span>
+                            </td>
+                            <td className="archived-date">
+                              {deal.archived_at ? formatRelativeDate(deal.archived_at) : '—'}
+                            </td>
+                            <td className="archived-score">
+                              {deal.confidence_score !== null ? deal.confidence_score : '—'}
+                            </td>
+                            <td>
+                              <button
+                                className="btn-revive"
+                                onClick={() => handleRevive(deal.id)}
+                                disabled={reviving === deal.id}
+                              >
+                                {reviving === deal.id ? 'Reviving...' : 'Revive'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              {/* Analytics Tab */}
+              {archiveTab === 'analytics' && (
+                <div className="archive-analytics">
+                  {analyticsLoading ? (
+                    <div className="analytics-loading">Loading analytics...</div>
+                  ) : !archiveAnalytics || archiveAnalytics.total_archived === 0 ? (
+                    <div className="analytics-empty">
+                      <p>No archived deals in this period.</p>
+                      <p className="analytics-empty-sub">Deals that are archived will appear here with analytics on why they were lost.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Summary Cards */}
+                      <div className="analytics-summary-cards">
+                        <div className="analytics-card">
+                          <div className="analytics-card-value">{archiveAnalytics.total_archived}</div>
+                          <div className="analytics-card-label">Total Archived</div>
+                          <div className="analytics-card-sub">in selected period</div>
+                        </div>
+                        <div className="analytics-card">
+                          <div className="analytics-card-value">${archiveAnalytics.lost_mrr.toLocaleString()}/mo</div>
+                          <div className="analytics-card-label">Lost MRR</div>
+                          {archiveAnalytics.lost_onetime > 0 && (
+                            <div className="analytics-card-sub">+ ${archiveAnalytics.lost_onetime.toLocaleString()} one-time</div>
+                          )}
+                        </div>
+                        <div className="analytics-card">
+                          <div className="analytics-card-value">{archiveAnalytics.avg_days_to_archive}</div>
+                          <div className="analytics-card-label">Avg Days to Close</div>
+                          <div className="analytics-card-sub">from proposal sent</div>
+                        </div>
+                        <div className="analytics-card">
+                          <div className="analytics-card-value">
+                            {archiveAnalytics.top_reason ? ARCHIVE_REASON_LABELS[archiveAnalytics.top_reason] : '—'}
+                          </div>
+                          <div className="analytics-card-label">Top Reason</div>
+                          <div className="analytics-card-sub">{archiveAnalytics.top_reason_percentage}% of losses</div>
+                        </div>
+                      </div>
+
+                      {/* Charts Row */}
+                      <div className="analytics-charts-row">
+                        {/* Donut Chart */}
+                        <div className="analytics-chart-container">
+                          <h4 className="analytics-chart-title">Reasons by Count</h4>
+                          <div className="analytics-donut-wrapper">
+                            <ResponsiveContainer width="100%" height={280}>
+                              <PieChart>
+                                <Pie
+                                  data={archiveAnalytics.reasons_breakdown}
+                                  dataKey="count"
+                                  nameKey="reason"
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={100}
+                                  paddingAngle={2}
+                                  onClick={(data) => {
+                                    if (reasonFilter === data.reason) {
+                                      setReasonFilter(null)
+                                    } else {
+                                      setReasonFilter(data.reason)
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  {archiveAnalytics.reasons_breakdown.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={ARCHIVE_REASON_COLORS[entry.reason]}
+                                      stroke={reasonFilter === entry.reason ? '#000' : 'none'}
+                                      strokeWidth={reasonFilter === entry.reason ? 2 : 0}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0].payload
+                                      return (
+                                        <div className="analytics-tooltip">
+                                          <strong>{ARCHIVE_REASON_LABELS[data.reason as ArchiveReason]}</strong>
+                                          <div>{data.count} deals (${data.mrr_lost.toLocaleString()}/mo lost)</div>
+                                        </div>
+                                      )
+                                    }
+                                    return null
+                                  }}
+                                />
+                                <Legend
+                                  verticalAlign="bottom"
+                                  height={36}
+                                  formatter={(value: string) => ARCHIVE_REASON_LABELS[value as ArchiveReason] || value}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="donut-center-label">
+                              <span className="donut-center-value">{archiveAnalytics.total_archived}</span>
+                              <span className="donut-center-text">Total</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bar Chart */}
+                        <div className="analytics-chart-container">
+                          <h4 className="analytics-chart-title">Lost MRR by Reason</h4>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <BarChart
+                              data={[...archiveAnalytics.reasons_breakdown].sort((a, b) => b.mrr_lost - a.mrr_lost)}
+                              layout="vertical"
+                              margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+                            >
+                              <XAxis type="number" tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                              <YAxis
+                                type="category"
+                                dataKey="reason"
+                                tickFormatter={(v) => ARCHIVE_REASON_LABELS[v as ArchiveReason] || v}
+                                width={75}
+                              />
+                              <Tooltip
+                                formatter={(value: number) => [`$${value.toLocaleString()}/mo`, 'Lost MRR']}
+                                labelFormatter={(label) => ARCHIVE_REASON_LABELS[label as ArchiveReason] || label}
+                              />
+                              <Bar dataKey="mrr_lost" radius={[0, 4, 4, 0]}>
+                                {archiveAnalytics.reasons_breakdown.map((entry, index) => (
+                                  <Cell key={`bar-${index}`} fill={ARCHIVE_REASON_COLORS[entry.reason]} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Filtered Table */}
+                      <div className="analytics-filtered-table">
+                        {reasonFilter && (
+                          <div className="filter-badge-row">
+                            <span className="filter-badge">
+                              Showing: {ARCHIVE_REASON_LABELS[reasonFilter]}
+                              <button onClick={() => setReasonFilter(null)} className="filter-badge-clear">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </span>
+                          </div>
+                        )}
+                        <table className="archived-table">
+                          <thead>
+                            <tr>
+                              <th>Client</th>
+                              <th>Reason</th>
+                              <th>MRR</th>
+                              <th>Archived</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {archivedDeals
+                              .filter((deal) => !reasonFilter || deal.archive_reason === reasonFilter)
+                              .map((deal) => (
+                                <tr key={deal.id}>
+                                  <td>
+                                    <div className="archived-client">
+                                      <div
+                                        className="archived-avatar"
+                                        style={{ background: deal.client_avatar_color || getAvatarColor(deal.client_id) }}
+                                      >
+                                        {getInitials(deal.client_name)}
+                                      </div>
+                                      <span>{deal.client_name}</span>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <span
+                                      className="archived-reason-badge clickable"
+                                      style={{ backgroundColor: deal.archive_reason ? ARCHIVE_REASON_COLORS[deal.archive_reason] + '20' : undefined }}
+                                      onClick={() => deal.archive_reason && setReasonFilter(deal.archive_reason)}
+                                    >
+                                      {deal.archive_reason === 'other' && deal.archive_notes
+                                        ? `Other — ${deal.archive_notes}`
+                                        : deal.archive_reason
+                                          ? ARCHIVE_REASON_LABELS[deal.archive_reason]
+                                          : '—'}
+                                    </span>
+                                  </td>
+                                  <td className="archived-mrr">
+                                    ${deal.predicted_monthly.toLocaleString()}/mo
+                                  </td>
+                                  <td className="archived-date">
+                                    {deal.archived_at ? formatRelativeDate(deal.archived_at) : '—'}
+                                  </td>
+                                  <td>
+                                    <button
+                                      className="btn-revive"
+                                      onClick={() => handleRevive(deal.id)}
+                                      disabled={reviving === deal.id}
+                                    >
+                                      {reviving === deal.id ? 'Reviving...' : 'Revive'}
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* How Scoring Works Modal */}
@@ -738,93 +1251,234 @@ export default function PipelineDashboardPage() {
                   <h3>Overview</h3>
                   <p>
                     The confidence score (0–100) estimates how likely a deal is to close based on rep inputs,
-                    prospect engagement, and time-based signals. It&apos;s used to calculate <strong>Weighted MRR</strong> (Monthly × Score%),
-                    giving leadership a realistic pipeline value instead of raw totals.
+                    prospect engagement, and time-based signals. It&apos;s used to calculate Weighted MRR:
+                  </p>
+                  <p className="scoring-formula-highlight">
+                    <strong>Weighted MRR = Monthly Amount × (Confidence Score ÷ 100)</strong>
+                  </p>
+                  <p>
+                    This gives leadership a realistic pipeline value instead of raw totals. A $500/mo deal at 80% confidence
+                    contributes $400 in weighted MRR. A $500/mo deal at 20% confidence contributes $100.
+                  </p>
+                  <p>
+                    Scores recalculate automatically whenever a scoring event occurs (call score updated, communication logged,
+                    email opened, etc.) and once daily at midnight CST (6:00 AM UTC) to apply time-based decay.
                   </p>
                 </section>
 
                 <section className="scoring-section">
                   <h3>Base Score (0–100 points)</h3>
                   <p>
-                    The base comes from the rep&apos;s <strong>call scoring</strong> — four factors rated after discovery/sales calls.
-                    Each factor is weighted and multiplied by its score:
+                    After a discovery or sales call, reps rate four factors. The average becomes the base score.
                   </p>
-                  {/* Values from default-config.ts - update if config changes */}
                   <div className="scoring-factors">
                     <div className="scoring-factor">
-                      <span className="factor-name">Budget Clarity <span className="factor-weight">(25%)</span></span>
-                      <span className="factor-values">Clear (100%) → Vague (50%) → None (20%) → No Budget (0%)</span>
+                      <span className="factor-name">Budget Clarity <span className="factor-weight">(25% of base)</span></span>
+                      <ul className="factor-options">
+                        <li><strong>Clear</strong> — They have budget and told you the amount (100%)</li>
+                        <li><strong>Vague</strong> — They have budget but were fuzzy on the number (50%)</li>
+                        <li><strong>Unknown</strong> — Budget hasn&apos;t been discussed yet (20%)</li>
+                        <li><strong>No Budget</strong> — They explicitly said they have no budget (0%)</li>
+                      </ul>
                     </div>
                     <div className="scoring-factor">
-                      <span className="factor-name">Competition <span className="factor-weight">(20%)</span></span>
-                      <span className="factor-values">None (100%) → Some (50%) → Many (15%)</span>
+                      <span className="factor-name">Competition <span className="factor-weight">(20% of base)</span></span>
+                      <ul className="factor-options">
+                        <li><strong>None</strong> — We&apos;re the only option they&apos;re considering (100%)</li>
+                        <li><strong>Some</strong> — They&apos;re comparing a few options (50%)</li>
+                        <li><strong>Many</strong> — Competitive situation with multiple vendors (15%)</li>
+                      </ul>
                     </div>
                     <div className="scoring-factor">
-                      <span className="factor-name">Engagement <span className="factor-weight">(25%)</span></span>
-                      <span className="factor-values">High (100%) → Medium (55%) → Low (15%)</span>
+                      <span className="factor-name">Engagement <span className="factor-weight">(25% of base)</span></span>
+                      <ul className="factor-options">
+                        <li><strong>High</strong> — Responsive, asking questions, driving the process (100%)</li>
+                        <li><strong>Medium</strong> — Engaged but not urgent, responding at their pace (70%)</li>
+                        <li><strong>Low</strong> — Slow to respond, minimal interest signals (15%)</li>
+                      </ul>
                     </div>
                     <div className="scoring-factor">
-                      <span className="factor-name">Plan Fit <span className="factor-weight">(30%)</span></span>
-                      <span className="factor-values">Strong (100%) → Medium (60%) → Weak (25%) → Poor (0%)</span>
+                      <span className="factor-name">Plan Fit <span className="factor-weight">(30% of base)</span></span>
+                      <ul className="factor-options">
+                        <li><strong>Strong</strong> — Perfect fit, we solve their exact problems (100%)</li>
+                        <li><strong>Medium</strong> — Good fit with some gaps (65%)</li>
+                        <li><strong>Weak</strong> — Partial fit, significant gaps (25%)</li>
+                        <li><strong>Poor</strong> — Fundamental mismatch (0%)</li>
+                      </ul>
                     </div>
                   </div>
                   <p className="scoring-note">
-                    If no call score is entered, the base defaults to <strong>50</strong>.
+                    If no call score has been entered, the base defaults to <strong>50</strong>.
+                  </p>
+                  <p className="scoring-example">
+                    <strong>Example:</strong> Budget=Clear (25), Competition=None (20), Engagement=Medium (17.5), Plan Fit=Medium (19.5) → Base = <strong>82</strong>
                   </p>
                 </section>
 
                 <section className="scoring-section">
-                  <h3>Multi-Invite Bonuses</h3>
-                  <p>When multiple decision-makers are invited and all engage:</p>
-                  {/* Values from default-config.ts multi_invite_bonus */}
+                  <h3>Tier Multiplier</h3>
+                  <p>The predicted closing tier adjusts the base score:</p>
                   <ul className="scoring-list">
-                    <li><span className="bonus">+3</span> if all invitees opened the email</li>
-                    <li><span className="bonus">+5</span> if all invitees viewed the proposal</li>
+                    <li><strong>Good:</strong> ×0.85 (lower deal value = slightly less confidence weight)</li>
+                    <li><strong>Better:</strong> ×1.00 (neutral)</li>
+                    <li><strong>Best:</strong> ×1.15 (higher deal value = slightly more confidence weight)</li>
                   </ul>
                 </section>
 
                 <section className="scoring-section">
+                  <h3>Milestone Bonuses (up to +15 points)</h3>
+                  <p>Points awarded when prospects hit engagement milestones:</p>
+                  <ul className="scoring-list">
+                    <li><span className="bonus">+3</span> Email Opened</li>
+                    <li><span className="bonus">+5</span> Proposal Viewed</li>
+                    <li><span className="bonus">+7</span> Account Created</li>
+                  </ul>
+                  <p className="scoring-note">
+                    These are one-time bonuses — they don&apos;t go away once earned.
+                  </p>
+                </section>
+
+                <section className="scoring-section">
                   <h3>Time-Based Penalties</h3>
-                  <p>Penalties accumulate daily after the grace period until reaching the max:</p>
-                  {/* Values from default-config.ts penalties */}
+                  <p>Penalties accumulate daily when expected engagement doesn&apos;t happen. These are tuned for a 45–60 day sales cycle.</p>
                   <table className="scoring-table">
                     <thead>
                       <tr>
-                        <th>Penalty</th>
-                        <th>Rate</th>
-                        <th>Starts After</th>
-                        <th>Max</th>
+                        <th>Signal</th>
+                        <th>Grace Period</th>
+                        <th>Penalty Rate</th>
+                        <th>Maximum</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
                         <td>Email not opened</td>
-                        <td className="penalty">−2.5/day</td>
-                        <td>24 hours</td>
-                        <td className="penalty">−35</td>
-                      </tr>
-                      <tr>
-                        <td>Proposal not viewed</td>
-                        <td className="penalty">−2/day</td>
                         <td>48 hours</td>
+                        <td className="penalty">−0.5/day</td>
                         <td className="penalty">−25</td>
                       </tr>
                       <tr>
-                        <td>Silence (no prospect reply)</td>
-                        <td className="penalty">−3/day</td>
+                        <td>Proposal not viewed</td>
                         <td>5 days</td>
-                        <td className="penalty">−80</td>
+                        <td className="penalty">−0.5/day</td>
+                        <td className="penalty">−20</td>
                       </tr>
                       <tr>
-                        <td>Silence + 2+ follow-ups</td>
-                        <td className="penalty">−4.5/day</td>
-                        <td>5 days</td>
-                        <td className="penalty">−80</td>
+                        <td>No prospect reply (silence)</td>
+                        <td>10 days</td>
+                        <td className="penalty">−1.2/day</td>
+                        <td className="penalty">−60</td>
+                      </tr>
+                      <tr>
+                        <td>Excessive follow-ups</td>
+                        <td>After 3+ unanswered</td>
+                        <td className="penalty">−5 each</td>
+                        <td className="penalty">−25</td>
                       </tr>
                     </tbody>
                   </table>
                   <p className="scoring-note">
-                    The silence penalty accelerates by 1.5× after 2+ unanswered follow-ups.
+                    <strong>Grace periods</strong> mean no penalty accumulates during that window — prospects need time to respond.
+                  </p>
+                  <p className="scoring-note">
+                    <strong>Silence</strong> is the biggest factor. Any inbound communication from the prospect resets the silence timer completely, giving the deal a fresh runway.
+                  </p>
+                  <p className="scoring-note">
+                    <strong>Excessive follow-ups</strong> trigger when you&apos;ve sent 3+ outbound messages with no inbound reply. Each additional unanswered follow-up costs 5 points. A single prospect reply resets this counter.
+                  </p>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Quick Response Bonus</h3>
+                  <p>
+                    If the prospect replies within 48 hours of the invite being sent: <span className="bonus">+10 points</span>
+                  </p>
+                  <p className="scoring-note">
+                    This rewards deals where the prospect is immediately engaged.
+                  </p>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Snoozing Deals</h3>
+                  <p>
+                    When a prospect indicates interest but needs time — budget cycles, internal approvals, seasonal timing,
+                    &quot;call me back in 30 days&quot; — reps can <strong>snooze</strong> a deal until a specific date.
+                  </p>
+                  <h4>During the snooze:</h4>
+                  <ul className="scoring-list">
+                    <li>All time-based penalties are frozen at zero — the score won&apos;t decay</li>
+                    <li>Base score, milestone bonuses, and tier multiplier remain active</li>
+                    <li>The deal shows a ⏸️ indicator on the dashboard</li>
+                    <li>Daily recalculations still run but penalties evaluate to zero</li>
+                  </ul>
+                  <h4>When the snooze expires:</h4>
+                  <ul className="scoring-list">
+                    <li>Penalty clocks restart from zero, as if the deal was freshly sent</li>
+                    <li>The prospect gets a full fresh runway (up to 60 days before full decay)</li>
+                  </ul>
+                  <h4>When to snooze:</h4>
+                  <ul className="scoring-list do-list">
+                    <li>✅ Prospect explicitly communicated a timeline (&quot;Let&apos;s revisit in March&quot;)</li>
+                    <li>✅ Known budget cycle or approval process with a target date</li>
+                    <li>✅ Seasonal business — they&apos;ll be ready after a specific event or date</li>
+                  </ul>
+                  <h4>When NOT to snooze:</h4>
+                  <ul className="scoring-list dont-list">
+                    <li>❌ Prospect went silent and you&apos;re hoping they&apos;ll come back — archive it instead</li>
+                    <li>❌ You don&apos;t want the score to drop — that&apos;s what the score is designed to show</li>
+                    <li>❌ No specific date in mind — if there&apos;s no timeline, the deal should reflect that</li>
+                  </ul>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Archiving Deals</h3>
+                  <p>
+                    When a deal is truly dead, archive it with a reason. This removes it from the active pipeline and stops daily recalculations.
+                  </p>
+                  <h4>Archive reasons:</h4>
+                  <ul className="scoring-list archive-reasons">
+                    <li><strong>Went Dark</strong> — stopped responding</li>
+                    <li><strong>Budget</strong> — can&apos;t afford it or budget got cut</li>
+                    <li><strong>Timing</strong> — not now, no specific date</li>
+                    <li><strong>Chose Competitor</strong> — went with another vendor</li>
+                    <li><strong>Handling In-House</strong> — doing it internally</li>
+                    <li><strong>Not a Fit</strong> — services don&apos;t match needs</li>
+                    <li><strong>Key Contact Left</strong> — champion left or changed roles</li>
+                    <li><strong>Business Closed</strong> — company shut down or pivoted</li>
+                    <li><strong>Duplicate</strong> — already exists elsewhere</li>
+                    <li><strong>Other</strong> — with notes</li>
+                  </ul>
+                  <h4>Archived deals:</h4>
+                  <ul className="scoring-list">
+                    <li>Stop counting toward pipeline KPIs (weighted MRR, deal count, avg confidence)</li>
+                    <li>Stop receiving daily score recalculations</li>
+                    <li>Preserve their full history (score timeline, audit log, communications)</li>
+                    <li>Appear in the Archived section with analytics on reasons lost</li>
+                  </ul>
+                  <p className="scoring-note">
+                    <strong>Reasons Lost analytics</strong> — The &quot;Reasons Lost&quot; tab on the archived section shows a breakdown of why deals were lost, including total lost MRR by reason. Use this to spot patterns (e.g., losing too many deals to budget may signal a pricing issue).
+                  </p>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Reviving Deals</h3>
+                  <p>
+                    When a prospect resurfaces after being archived — even months later — revive the deal instead of creating a new recommendation. This preserves the full history while giving the deal a fresh start.
+                  </p>
+                  <h4>What happens on revival:</h4>
+                  <ul className="scoring-list">
+                    <li>The deal moves back to the active pipeline</li>
+                    <li>All time-based penalties reset to zero (fresh runway from today)</li>
+                    <li>Call scores are preserved — the base score returns to its original post-call value</li>
+                    <li>Milestone bonuses from previous engagement are preserved</li>
+                    <li>Score history shows the full lifecycle including the archive gap</li>
+                  </ul>
+                  <p className="scoring-example">
+                    <strong>Example:</strong> A deal archived at score 12 after 45 days of silence. Prospect emails back 3 months later.
+                    Revive the deal → score returns to ~82 (original call score with zero penalties) → fresh 60-day runway begins.
+                  </p>
+                  <p className="scoring-note">
+                    Don&apos;t create a new recommendation for a revived prospect — revive the original to keep the complete story in one place.
                   </p>
                 </section>
 
@@ -834,1055 +1488,222 @@ export default function PipelineDashboardPage() {
                     <li><strong>Accepted:</strong> Score fixed at <span className="bonus">100</span> (deal won)</li>
                     <li><strong>Closed Lost:</strong> Score fixed at <span className="penalty">0</span> (deal lost)</li>
                   </ul>
+                  <p className="scoring-note">
+                    These override all other calculations. Use &quot;Accepted&quot; when the deal closes. Use &quot;Closed Lost&quot; when it&apos;s definitively lost (different from archiving — closed lost is a final outcome, archived is removing from active pipeline).
+                  </p>
                 </section>
 
                 <section className="scoring-section">
-                  <h3>Score Calculation</h3>
+                  <h3>Score Calculation Summary</h3>
                   <div className="scoring-formula">
-                    <code>Final Score = clamp(0, 100, Base + Bonuses − Penalties)</code>
+                    <code>Adjusted Base = (Call Score Average) × (Tier Multiplier)</code>
+                    <code>Bonuses = Milestone Bonuses + Quick Response Bonus</code>
+                    <code>Penalties = Email + Proposal + Silence + Follow-ups</code>
+                    <code className="formula-note">(0 if snoozed or revived today)</code>
+                    <code>Raw Score = Adjusted Base + Bonuses − Penalties</code>
+                    <code>Final Score = clamp(0, 100)</code>
                     <code>Weighted MRR = Monthly Amount × (Final Score ÷ 100)</code>
+                  </div>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Degradation Example</h3>
+                  <p>
+                    A deal scored at 82 (good discovery call, Best tier) where the prospect viewed the proposal but hasn&apos;t responded:
+                  </p>
+                  <table className="scoring-table degradation-table">
+                    <thead>
+                      <tr>
+                        <th>Timeline</th>
+                        <th>Score</th>
+                        <th>What&apos;s happening</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Week 1</td>
+                        <td>~78</td>
+                        <td>Grace periods active, minimal penalties</td>
+                      </tr>
+                      <tr>
+                        <td>Week 2–3</td>
+                        <td>~61</td>
+                        <td>Silence and email penalties accumulating</td>
+                      </tr>
+                      <tr>
+                        <td>Week 4</td>
+                        <td>~44</td>
+                        <td>Steady decline, deal cooling</td>
+                      </tr>
+                      <tr>
+                        <td>Week 6</td>
+                        <td>~27</td>
+                        <td>Deal at risk</td>
+                      </tr>
+                      <tr>
+                        <td>Week 8</td>
+                        <td>~10</td>
+                        <td>Near zero without engagement</td>
+                      </tr>
+                      <tr>
+                        <td>~Day 60</td>
+                        <td>0</td>
+                        <td>Full decay — no engagement for 60 days</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p className="scoring-highlight">
+                    <strong>A single prospect reply at any point resets the silence penalty and can recover 30+ points instantly.</strong>
+                  </p>
+                  <p className="scoring-note">
+                    If the prospect says &quot;I need 30 days,&quot; snooze the deal. If they go completely dark, archive it. If they come back later, revive it.
+                  </p>
+                </section>
+
+                <section className="scoring-section">
+                  <h3>Deal Lifecycle</h3>
+                  <p>A typical deal flows through these stages:</p>
+                  <div className="lifecycle-flow">
+                    <div className="lifecycle-stage">
+                      <strong>Active</strong>
+                      <span>Rep fills out call scores, prospect engages, score reflects reality</span>
+                    </div>
+                    <div className="lifecycle-arrow">↓</div>
+                    <div className="lifecycle-stage optional">
+                      <strong>Snooze</strong> <span className="optional-tag">(optional)</span>
+                      <span>Prospect needs time, score freezes, resumes on target date</span>
+                    </div>
+                    <div className="lifecycle-arrow">↓</div>
+                    <div className="lifecycle-branch">
+                      <div className="lifecycle-stage won">
+                        <strong>Accepted</strong> <span className="status-tag">(won)</span>
+                        <span>Score locks at 100 ✅</span>
+                      </div>
+                      <div className="lifecycle-or">— or —</div>
+                      <div className="lifecycle-stage lost">
+                        <strong>Archived</strong> <span className="status-tag">(lost/stale)</span>
+                        <span>Removed from active pipeline with a reason</span>
+                      </div>
+                    </div>
+                    <div className="lifecycle-arrow">↓</div>
+                    <div className="lifecycle-stage optional">
+                      <strong>Revived</strong> <span className="optional-tag">(optional)</span>
+                      <span>Prospect resurfaces, deal returns to active with fresh scoring</span>
+                    </div>
                   </div>
                 </section>
 
                 <section className="scoring-section tips-section">
                   <h3>Tips for Reps</h3>
                   <ul className="scoring-list tips-list">
-                    <li>Fill out call scores after every discovery call — it replaces the default 50 with your actual read on the deal</li>
-                    <li>Log inbound communications to reset the silence penalty</li>
-                    <li>Deals over 15 days old with no engagement will trend toward 0 — follow up or close them out</li>
+                    <li><strong>Fill out call scores after every discovery call</strong> — it replaces the default 50 with your actual read on the deal and usually boosts the score significantly</li>
+                    <li><strong>Log inbound communications</strong> to reset the silence penalty — even a short &quot;still interested&quot; email counts</li>
+                    <li><strong>Use snooze</strong> when prospects give you a specific timeline — don&apos;t let good deals decay unnecessarily</li>
+                    <li><strong>Don&apos;t over-follow-up</strong> — 3+ unanswered outbound messages starts costing points</li>
+                    <li><strong>Archive dead deals</strong> with the right reason — this feeds the Reasons Lost analytics and keeps the active pipeline clean</li>
+                    <li><strong>Revive, don&apos;t recreate</strong> — when a prospect comes back, revive the archived deal to keep the full history</li>
+                    <li><strong>Deals over 30 days old with no engagement</strong> will be trending toward zero — follow up, snooze with a reason, or archive them</li>
                   </ul>
                 </section>
               </div>
             </div>
           </div>
         )}
+
+        {/* Snooze Modal */}
+        {snoozeDeal && (
+          <div className="snooze-modal-overlay" onClick={() => setSnoozeDeal(null)}>
+            <div className="snooze-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="snooze-modal-header">
+                <h2>{isSnoozed(snoozeDeal.snoozed_until) ? 'Manage Snooze' : 'Snooze Deal'}</h2>
+                <span className="snooze-modal-client">{snoozeDeal.client_name}</span>
+                <button className="snooze-modal-close" onClick={() => setSnoozeDeal(null)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="snooze-modal-body">
+                <SnoozeDealForm
+                  recommendationId={snoozeDeal.id}
+                  currentSnooze={snoozeDeal.snoozed_until ? {
+                    snoozed_until: snoozeDeal.snoozed_until,
+                    reason: snoozeDeal.snooze_reason,
+                  } : null}
+                  onUpdate={handleSnoozeUpdate}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Archive Modal */}
+        {archiveDeal && (
+          <div className="archive-modal-overlay" onClick={() => setArchiveDeal(null)}>
+            <div className="archive-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="archive-modal-header">
+                <h2>Archive Deal</h2>
+                <span className="archive-modal-client">{archiveDeal.client_name}</span>
+                <button className="archive-modal-close" onClick={() => setArchiveDeal(null)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="archive-modal-body">
+                <p className="archive-description">
+                  Archived deals are removed from the active pipeline and will no longer be scored.
+                  You can revive them later if the opportunity becomes active again.
+                </p>
+                <label className="archive-reason-label">
+                  Reason *
+                  <select
+                    className="archive-reason-select"
+                    value={archiveReason}
+                    onChange={(e) => setArchiveReason(e.target.value as ArchiveReason | '')}
+                  >
+                    <option value="">Select a reason...</option>
+                    {ARCHIVE_REASON_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} — {opt.description}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {archiveReason === 'other' && (
+                  <label className="archive-notes-label">
+                    Notes *
+                    <textarea
+                      className="archive-notes-input"
+                      value={archiveNotes}
+                      onChange={(e) => setArchiveNotes(e.target.value)}
+                      placeholder="Tell us why..."
+                      rows={3}
+                    />
+                  </label>
+                )}
+                <div className="archive-modal-actions">
+                  <button
+                    className="btn-cancel"
+                    onClick={() => setArchiveDeal(null)}
+                    disabled={archiving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn-confirm-archive"
+                    onClick={handleArchiveConfirm}
+                    disabled={archiving || !archiveReason || (archiveReason === 'other' && !archiveNotes.trim())}
+                  >
+                    {archiving ? 'Archiving...' : 'Archive Deal'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <style jsx>{`
-        .pipeline-kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 20px;
-          margin-bottom: 24px;
-        }
-
-        .kpi-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 20px;
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 12px;
-        }
-
-        .kpi-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          flex-shrink: 0;
-        }
-
-        .kpi-content {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .kpi-value {
-          font-size: 24px;
-          font-weight: 700;
-          color: #111827;
-        }
-
-        .kpi-label {
-          font-size: 12px;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .pipeline-filters {
-          display: flex;
-          align-items: flex-end;
-          gap: 16px;
-          margin-bottom: 24px;
-          padding: 16px 20px;
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 12px;
-          flex-wrap: wrap;
-        }
-
-        .filter-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .filter-label {
-          font-size: 11px;
-          font-weight: 600;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .filter-select,
-        .filter-input {
-          padding: 8px 12px;
-          font-size: 13px;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          background: white;
-          color: #374151;
-          cursor: pointer;
-          outline: none;
-          transition: border-color 0.15s ease;
-          min-width: 140px;
-        }
-
-        .filter-select:hover,
-        .filter-input:hover {
-          border-color: #D1D5DB;
-        }
-
-        .filter-select:focus,
-        .filter-input:focus {
-          border-color: #059669;
-          box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
-        }
-
-        .btn-how-scoring {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: white;
-          color: #374151;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          margin-left: auto;
-        }
-
-        .btn-how-scoring:hover {
-          background: #F9FAFB;
-          border-color: #D1D5DB;
-        }
-
-        .btn-how-scoring svg {
-          color: #6B7280;
-        }
-
-        .btn-refresh {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: #111827;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .btn-refresh:hover:not(:disabled) {
-          background: #1F2937;
-        }
-
-        .btn-refresh:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        .btn-refresh svg {
-          flex-shrink: 0;
-        }
-
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .pipeline-table-card {
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .pipeline-table-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .pipeline-table-header h2 {
-          font-size: 16px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-        }
-
-        .pipeline-summary-stats {
-          display: flex;
-          gap: 24px;
-        }
-
-        .summary-stat {
-          text-align: right;
-        }
-
-        .summary-value {
-          display: block;
-          font-size: 18px;
-          font-weight: 700;
-          color: #059669;
-        }
-
-        .summary-label {
-          font-size: 10px;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .pipeline-table {
-          overflow-x: auto;
-        }
-
-        .table-loading,
-        .table-empty {
-          padding: 60px 20px;
-          text-align: center;
-          color: #6B7280;
-          font-size: 14px;
-        }
-
-        .pipeline-row {
-          display: grid;
-          grid-template-columns: minmax(200px, 1.5fr) minmax(100px, 130px) 65px 65px 65px 70px 85px 45px minmax(100px, 1fr);
-          gap: 10px;
-          padding: 12px 20px;
-          border-bottom: 1px solid #F3F4F6;
-          transition: background 0.15s ease;
-          align-items: center;
-        }
-
-        .pipeline-row:hover:not(.pipeline-row-header) {
-          background: #F9FAFB;
-          cursor: pointer;
-        }
-
-        .pipeline-row.expanded {
-          background: #F0FDF4;
-          border-bottom-color: #D1FAE5;
-        }
-
-        .pipeline-row-header {
-          padding: 12px 20px;
-          background: #F9FAFB;
-          border-bottom: 1px solid #E5E7EB;
-          position: sticky;
-          top: 0;
-          z-index: 1;
-        }
-
-        .pipeline-row-header .pipeline-col {
-          font-size: 11px;
-          font-weight: 600;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .pipeline-col {
-          display: flex;
-          align-items: center;
-        }
-
-        .col-client {
-          gap: 10px;
-        }
-
-        .client-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          font-weight: 600;
-          flex-shrink: 0;
-        }
-
-        .client-info {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          justify-content: center;
-          min-width: 0;
-          gap: 2px;
-        }
-
-        .client-name {
-          font-size: 14px;
-          font-weight: 600;
-          color: #111827;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          line-height: 1.2;
-        }
-
-        .client-email {
-          font-size: 11px;
-          color: #6B7280;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          line-height: 1.2;
-        }
-
-        .col-rep {
-          gap: 6px;
-        }
-
-        .rep-avatar {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 9px;
-          font-weight: 600;
-        }
-
-        .rep-name {
-          font-size: 13px;
-          color: #374151;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .rep-name.muted {
-          color: #9CA3AF;
-        }
-
-        .col-tier-price {
-          justify-content: center;
-        }
-
-        .tier-price {
-          font-size: 13px;
-          font-weight: 500;
-          color: #374151;
-          padding: 4px 8px;
-          border-radius: 16px;
-          border: 2px solid transparent;
-        }
-
-        .tier-price.predicted {
-          background: #D1FAE5;
-          border-color: #059669;
-          color: #065F46;
-          font-weight: 600;
-        }
-
-        .col-amount {
-          justify-content: flex-end;
-        }
-
-        .amount-value {
-          font-size: 13px;
-          font-weight: 600;
-          color: #374151;
-        }
-
-        .col-date {
-          justify-content: center;
-        }
-
-        .date-value {
-          font-size: 12px;
-          color: #6B7280;
-        }
-
-        .col-days {
-          justify-content: center;
-        }
-
-        .days-badge {
-          padding: 4px 8px;
-          border-radius: 10px;
-          font-size: 11px;
-          font-weight: 500;
-        }
-
-        .days-badge.green {
-          background: #D1FAE5;
-          color: #065F46;
-        }
-
-        .days-badge.yellow {
-          background: #FEF3C7;
-          color: #92400E;
-        }
-
-        .days-badge.red {
-          background: #FEE2E2;
-          color: #991B1B;
-        }
-
-        .col-confidence {
-          gap: 8px;
-        }
-
-        .confidence-display {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          width: 100%;
-        }
-
-        .confidence-meter {
-          flex: 1;
-          height: 6px;
-          background: #E5E7EB;
-          border-radius: 3px;
-          overflow: hidden;
-        }
-
-        .confidence-fill {
-          height: 100%;
-          border-radius: 3px;
-          transition: width 0.5s ease;
-        }
-
-        .confidence-fill.green {
-          background: linear-gradient(90deg, #10B981 0%, #059669 100%);
-        }
-
-        .confidence-fill.yellow {
-          background: linear-gradient(90deg, #FBBF24 0%, #EAB308 100%);
-        }
-
-        .confidence-fill.red {
-          background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%);
-        }
-
-        .confidence-label {
-          font-size: 14px;
-          font-weight: 700;
-          min-width: 28px;
-          text-align: right;
-        }
-
-        .confidence-label.green {
-          color: #059669;
-        }
-
-        .confidence-label.yellow {
-          color: #CA8A04;
-        }
-
-        .confidence-label.red {
-          color: #DC2626;
-        }
-
-        .col-weighted {
-          justify-content: flex-end;
-        }
-
-        .weighted-value {
-          font-size: 13px;
-          font-weight: 600;
-          color: #059669;
-        }
-
-        /* Expanded Details */
-        .deal-details {
-          padding: 20px 20px 20px 62px;
-          background: #F9FAFB;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
-          margin-bottom: 20px;
-        }
-
-        .details-grid-4col {
-          grid-template-columns: repeat(4, 1fr);
-        }
-
-        .details-section-full {
-          margin-top: 20px;
-          margin-bottom: 20px;
-        }
-
-        .history-tabs {
-          display: flex;
-          gap: 0;
-          margin-bottom: 12px;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .history-tab {
-          padding: 8px 16px;
-          font-size: 12px;
-          font-weight: 500;
-          color: #6B7280;
-          background: transparent;
-          border: none;
-          border-bottom: 2px solid transparent;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .history-tab:hover {
-          color: #374151;
-        }
-
-        .history-tab.active {
-          color: #059669;
-          border-bottom-color: #059669;
-        }
-
-        .audit-container {
-          max-height: 400px;
-          overflow-y: auto;
-        }
-
-        .details-section h4 {
-          font-size: 12px;
-          font-weight: 600;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin: 0 0 12px 0;
-        }
-
-        .score-items,
-        .timeline-items,
-        .pricing-items {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .score-item,
-        .timeline-item,
-        .pricing-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 6px 0;
-        }
-
-        .score-item.total,
-        .pricing-item.weighted {
-          border-top: 1px solid #E5E7EB;
-          padding-top: 10px;
-          margin-top: 4px;
-        }
-
-        .score-label,
-        .timeline-label,
-        .pricing-label {
-          font-size: 13px;
-          color: #6B7280;
-        }
-
-        .score-value,
-        .timeline-value,
-        .pricing-value {
-          font-size: 13px;
-          font-weight: 600;
-          color: #111827;
-        }
-
-        .score-value.negative {
-          color: #DC2626;
-        }
-
-        .score-value.positive {
-          color: #059669;
-        }
-
-        .score-value.green {
-          color: #059669;
-        }
-
-        .score-value.yellow {
-          color: #CA8A04;
-        }
-
-        .score-value.red {
-          color: #DC2626;
-        }
-
-        .followup-badge {
-          font-size: 10px;
-          font-weight: 500;
-          color: #6B7280;
-          background: #F3F4F6;
-          padding: 2px 6px;
-          border-radius: 4px;
-          margin-left: 4px;
-        }
-
-        /* Milestones */
-        .milestone-items {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .milestone-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .milestone-status {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          flex-shrink: 0;
-        }
-
-        .milestone-status.complete {
-          background: #D1FAE5;
-          color: #065F46;
-          font-weight: 700;
-        }
-
-        .milestone-status.pending {
-          background: #F3F4F6;
-          color: #9CA3AF;
-        }
-
-        .milestone-label {
-          font-size: 13px;
-          color: #374151;
-          flex: 1;
-        }
-
-        .milestone-date {
-          font-size: 11px;
-          color: #6B7280;
-        }
-
-        /* Call Scores */
-        .call-score-items {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .call-score-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 6px 0;
-        }
-
-        .call-score-label {
-          font-size: 13px;
-          color: #6B7280;
-        }
-
-        .call-score-value {
-          font-size: 12px;
-          font-weight: 600;
-          padding: 3px 8px;
-          border-radius: 4px;
-        }
-
-        .call-score-value.good {
-          background: #D1FAE5;
-          color: #065F46;
-        }
-
-        .call-score-value.medium {
-          background: #FEF3C7;
-          color: #92400E;
-        }
-
-        .call-score-value.poor {
-          background: #FEE2E2;
-          color: #991B1B;
-        }
-
-        .call-score-value.muted {
-          background: #F3F4F6;
-          color: #9CA3AF;
-        }
-
-        .not-set {
-          font-weight: 400;
-          font-size: 10px;
-          color: #9CA3AF;
-        }
-
-        .details-actions {
-          display: flex;
-          gap: 12px;
-        }
-
-        .btn-view-recommendation,
-        .btn-view-client {
-          padding: 8px 16px;
-          font-size: 13px;
-          font-weight: 500;
-          border-radius: 6px;
-          text-decoration: none;
-          transition: all 0.15s ease;
-        }
-
-        .btn-view-recommendation {
-          background: #059669;
-          color: white;
-        }
-
-        .btn-view-recommendation:hover {
-          background: #047857;
-        }
-
-        .btn-view-client {
-          background: white;
-          color: #374151;
-          border: 1px solid #E5E7EB;
-        }
-
-        .btn-view-client:hover {
-          background: #F9FAFB;
-          border-color: #D1D5DB;
-        }
-
-        @media (max-width: 1400px) {
-          .details-grid-4col {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 1200px) {
-          .pipeline-kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .details-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .details-grid-4col {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .pipeline-kpi-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .pipeline-filters {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .filter-group {
-            width: 100%;
-          }
-
-          .filter-select,
-          .filter-input {
-            width: 100%;
-          }
-
-          .btn-refresh,
-          .btn-how-scoring {
-            margin-left: 0;
-            justify-content: center;
-          }
-
-          .pipeline-row {
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-          }
-
-          .pipeline-row-header {
-            display: none;
-          }
-
-          .pipeline-col::before {
-            content: attr(data-label);
-            font-size: 10px;
-            color: #6B7280;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 2px;
-          }
-        }
-
-        /* Scoring Modal */
-        .scoring-modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .scoring-modal {
-          background: white;
-          border-radius: 12px;
-          max-width: 700px;
-          width: 100%;
-          max-height: 85vh;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .scoring-modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 24px;
-          border-bottom: 1px solid #E5E7EB;
-          flex-shrink: 0;
-        }
-
-        .scoring-modal-header h2 {
-          font-size: 18px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-        }
-
-        .scoring-modal-close {
-          background: none;
-          border: none;
-          padding: 8px;
-          cursor: pointer;
-          color: #6B7280;
-          border-radius: 6px;
-          transition: all 0.15s ease;
-        }
-
-        .scoring-modal-close:hover {
-          background: #F3F4F6;
-          color: #111827;
-        }
-
-        .scoring-modal-body {
-          padding: 24px;
-          overflow-y: auto;
-          flex: 1;
-        }
-
-        .scoring-section {
-          margin-bottom: 24px;
-        }
-
-        .scoring-section:last-child {
-          margin-bottom: 0;
-        }
-
-        .scoring-section h3 {
-          font-size: 14px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0 0 10px 0;
-        }
-
-        .scoring-section p {
-          font-size: 13px;
-          color: #4B5563;
-          line-height: 1.6;
-          margin: 0 0 12px 0;
-        }
-
-        .scoring-factors {
-          background: #F9FAFB;
-          border-radius: 8px;
-          padding: 12px 16px;
-          margin: 12px 0;
-        }
-
-        .scoring-factor {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          padding: 8px 0;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .scoring-factor:last-child {
-          border-bottom: none;
-        }
-
-        .factor-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: #111827;
-        }
-
-        .factor-weight {
-          font-weight: 400;
-          color: #6B7280;
-        }
-
-        .factor-values {
-          font-size: 12px;
-          color: #6B7280;
-        }
-
-        .scoring-note {
-          font-size: 12px;
-          color: #6B7280;
-          font-style: italic;
-          margin-top: 8px;
-        }
-
-        .scoring-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .scoring-list li {
-          font-size: 13px;
-          color: #4B5563;
-          padding: 6px 0;
-          padding-left: 20px;
-          position: relative;
-        }
-
-        .scoring-list li::before {
-          content: "•";
-          position: absolute;
-          left: 0;
-          color: #9CA3AF;
-        }
-
-        .scoring-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 13px;
-          margin: 12px 0;
-        }
-
-        .scoring-table th,
-        .scoring-table td {
-          padding: 10px 12px;
-          text-align: left;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .scoring-table th {
-          background: #F9FAFB;
-          font-weight: 600;
-          color: #374151;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .scoring-table td {
-          color: #4B5563;
-        }
-
-        .scoring-table .penalty {
-          color: #DC2626;
-          font-weight: 500;
-        }
-
-        .scoring-table .bonus {
-          color: #059669;
-          font-weight: 500;
-        }
-
-        .bonus {
-          color: #059669;
-          font-weight: 600;
-        }
-
-        .penalty {
-          color: #DC2626;
-          font-weight: 600;
-        }
-
-        .scoring-formula {
-          background: #F3F4F6;
-          border-radius: 8px;
-          padding: 16px;
-          margin: 12px 0;
-        }
-
-        .scoring-formula code {
-          display: block;
-          font-family: 'SF Mono', Monaco, Consolas, monospace;
-          font-size: 12px;
-          color: #1F2937;
-          margin: 4px 0;
-        }
-
-        .tips-section {
-          background: #FEF3C7;
-          border-radius: 8px;
-          padding: 16px;
-          margin-top: 16px;
-        }
-
-        .tips-section h3 {
-          color: #92400E;
-        }
-
-        .tips-list li {
-          color: #78350F;
-        }
-
-        .tips-list li::before {
-          color: #D97706;
-        }
-      `}</style>
     </>
   )
 }

@@ -104,6 +104,14 @@ function RegisterForm() {
           if (!res.ok) {
             console.error('Association failed:', result.error)
           }
+
+          // Track account creation for pipeline scoring (fire-and-forget)
+          fetch('/api/pipeline/track-account-created', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inviteToken }),
+          }).catch(() => {})
+
           // Clear the pending data
           localStorage.removeItem('pyrus_pending_client_id')
           localStorage.removeItem('pyrus_invite_token')

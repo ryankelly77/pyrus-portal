@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
 
 // GET /api/proposal/[token] - Get recommendation by invite token (public)
 export async function GET(
@@ -86,6 +87,9 @@ export async function GET(
       } catch {
         // Don't fail if history creation fails
       }
+
+      // Trigger score recalculation (non-blocking)
+      triggerRecalculation(invite.recommendation_id, 'proposal_viewed').catch(console.error)
     }
 
     const recommendation = invite.recommendation

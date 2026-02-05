@@ -346,26 +346,52 @@ export function computePipelineScore(input: ScoringInput): ScoringResult {
     ? computeBaseScore(call_scores, config)
     : config.default_base_score;
 
-  // Step 2: Penalties
-  const emailPenalty = computeEmailNotOpenedPenalty(
-    deal.sent_at,
-    milestones,
-    config.penalties.email_not_opened,
-    now
-  );
+  // Step 2: Check for snooze and revival
+  // Priority for penalty reference date:
+  // 1. If snoozed_until is in the future → penalties are 0 (frozen)
+  // 2. If snoozed_until is in the past (expired) → use snoozed_until as reference
+  // 3. If revived_at is set and after sent_at → use revived_at as reference (fresh start)
+  // 4. Otherwise → use sent_at
+  const isSnoozed = deal.snoozed_until && new Date(deal.snoozed_until) > new Date(now);
+  const snoozeExpired = deal.snoozed_until && new Date(deal.snoozed_until) <= new Date(now);
+  const isRevived = deal.revived_at && deal.sent_at && new Date(deal.revived_at) > new Date(deal.sent_at);
 
-  const viewPenalty = computeProposalNotViewedPenalty(
-    milestones,
-    config.penalties.proposal_not_viewed,
-    now
-  );
+  // Determine the effective "sent" date for penalty calculations
+  let effectiveSentAt = deal.sent_at;
+  if (snoozeExpired && deal.snoozed_until) {
+    // Snooze expired: penalties restart from snooze expiry date
+    effectiveSentAt = deal.snoozed_until;
+  } else if (isRevived && deal.revived_at) {
+    // Deal was revived: penalties start fresh from revival date
+    effectiveSentAt = deal.revived_at;
+  }
 
-  const silencePenalty = computeSilencePenalty(
-    deal.sent_at,
-    communications,
-    config.penalties.silence,
-    now
-  );
+  // Step 3: Penalties (frozen to 0 if snoozed)
+  let emailPenalty = 0;
+  let viewPenalty = 0;
+  let silencePenalty = 0;
+
+  if (!isSnoozed) {
+    emailPenalty = computeEmailNotOpenedPenalty(
+      effectiveSentAt,
+      milestones,
+      config.penalties.email_not_opened,
+      now
+    );
+
+    viewPenalty = computeProposalNotViewedPenalty(
+      milestones,
+      config.penalties.proposal_not_viewed,
+      now
+    );
+
+    silencePenalty = computeSilencePenalty(
+      effectiveSentAt,
+      communications,
+      config.penalties.silence,
+      now
+    );
+  }
 
   const totalPenalties = emailPenalty + viewPenalty + silencePenalty;
 

@@ -68,6 +68,7 @@ export const recommendationItemSchema = z.object({
 export const recommendationCreateSchema = z.object({
   clientId: z.string().min(1),
   tierName: z.string().nullable().optional(),
+  predictedTier: z.enum(['good', 'better', 'best']).nullable().optional(),
   items: z.array(recommendationItemSchema).optional(),
   totalMonthly: z.preprocess((v) => (v === '' ? 0 : Number(v)), z.number().optional()),
   totalOnetime: z.preprocess((v) => (v === '' ? 0 : Number(v)), z.number().optional()),

@@ -17,9 +17,27 @@ interface AdminSidebarProps {
   permissions?: MenuPermissions // From database
 }
 
+const COLLAPSED_KEY = 'admin-sidebar-collapsed'
+
 export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSidebarProps) {
   const pathname = usePathname()
   const [criticalAlertCount, setCriticalAlertCount] = useState(0)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // Load collapsed state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(COLLAPSED_KEY)
+    if (saved === 'true') {
+      setIsCollapsed(true)
+    }
+  }, [])
+
+  // Save collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newValue = !isCollapsed
+    setIsCollapsed(newValue)
+    localStorage.setItem(COLLAPSED_KEY, String(newValue))
+  }
 
   // Fetch unresolved critical alert count
   useEffect(() => {
@@ -65,7 +83,7 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
   }
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="admin-logo">
         <Image
           src="/pyrus-logo-icon.png"
@@ -74,13 +92,14 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
           height={28}
           style={{ filter: 'brightness(0) invert(1)' }}
         />
-        <span>Pyrus Admin</span>
+        {!isCollapsed && <span>Pyrus Admin</span>}
       </div>
       <nav className="admin-nav">
         {hasAccess('dashboard') && (
           <Link
             href="/admin/dashboard"
             className={`admin-nav-item ${pathname === '/admin/dashboard' ? 'active' : ''}`}
+            title={isCollapsed ? 'Dashboard' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -88,24 +107,26 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
               <rect x="14" y="14" width="7" height="7"></rect>
               <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
-            <span>Dashboard</span>
+            {!isCollapsed && <span>Dashboard</span>}
           </Link>
         )}
         {hasAccess('recommendations') && (
           <Link
             href="/admin/recommendations"
             className={`admin-nav-item ${pathname === '/admin/recommendations' || pathname.startsWith('/admin/recommendation-builder') ? 'active' : ''}`}
+            title={isCollapsed ? 'Recommendations' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
-            <span>Recommendations</span>
+            {!isCollapsed && <span>Recommendations</span>}
           </Link>
         )}
         {hasAccess('clients') && (
           <Link
             href="/admin/clients"
             className={`admin-nav-item ${pathname === '/admin/clients' || pathname.startsWith('/admin/clients/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Clients' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -113,25 +134,27 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <span>Clients</span>
+            {!isCollapsed && <span>Clients</span>}
           </Link>
         )}
         {hasAccess('users') && (
           <Link
             href="/admin/users"
             className={`admin-nav-item ${pathname === '/admin/users' || pathname.startsWith('/admin/users/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Users' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>Users</span>
+            {!isCollapsed && <span>Users</span>}
           </Link>
         )}
         {hasAccess('content') && (
           <Link
             href="/admin/content"
             className={`admin-nav-item ${pathname === '/admin/content' || pathname.startsWith('/admin/content/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Content' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -140,51 +163,55 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
               <line x1="16" y1="17" x2="8" y2="17"></line>
               <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
-            <span>Content</span>
+            {!isCollapsed && <span>Content</span>}
           </Link>
         )}
         {hasAccess('websites') && (
           <Link
             href="/admin/websites"
             className={`admin-nav-item ${pathname === '/admin/websites' || pathname.startsWith('/admin/websites/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Websites' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
-            <span>Websites</span>
+            {!isCollapsed && <span>Websites</span>}
           </Link>
         )}
         {hasAccess('notifications') && (
           <Link
             href="/admin/notifications"
             className={`admin-nav-item ${pathname === '/admin/notifications' || pathname.startsWith('/admin/notifications/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Notifications' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            <span>Notifications</span>
+            {!isCollapsed && <span>Notifications</span>}
           </Link>
         )}
         {hasAccess('products') && (
           <Link
             href="/admin/products"
             className={`admin-nav-item ${pathname === '/admin/products' || pathname.startsWith('/admin/products/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Products' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
-            <span>Products</span>
+            {!isCollapsed && <span>Products</span>}
           </Link>
         )}
         {hasAccess('rewards') && (
           <Link
             href="/admin/rewards"
             className={`admin-nav-item ${pathname === '/admin/rewards' || pathname.startsWith('/admin/rewards/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Rewards' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="20 12 20 22 4 22 4 12"></polyline>
@@ -193,42 +220,57 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
               <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
             </svg>
-            <span>Rewards</span>
+            {!isCollapsed && <span>Rewards</span>}
           </Link>
         )}
         {hasAccess('revenue') && (
           <Link
             href="/admin/revenue"
             className={`admin-nav-item ${pathname === '/admin/revenue' || pathname.startsWith('/admin/revenue/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Revenue / MRR' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="1" x2="12" y2="23"></line>
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
-            <span>Revenue / MRR</span>
+            {!isCollapsed && <span>Revenue / MRR</span>}
+          </Link>
+        )}
+        {hasAccess('pipeline') && (
+          <Link
+            href="/admin/pipeline"
+            className={`admin-nav-item ${pathname === '/admin/pipeline' || pathname.startsWith('/admin/pipeline/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Sales Pipeline' : undefined}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            {!isCollapsed && <span>Sales Pipeline</span>}
           </Link>
         )}
         {hasAccess('performance') && (
           <Link
             href="/admin/performance"
             className={`admin-nav-item ${pathname === '/admin/performance' || pathname.startsWith('/admin/performance/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Client Performance' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
             </svg>
-            <span>Performance</span>
+            {!isCollapsed && <span>Client Performance</span>}
           </Link>
         )}
         {hasAccess('settings') && (
           <Link
             href="/admin/settings"
             className={`admin-nav-item ${pathname === '/admin/settings' || pathname.startsWith('/admin/settings/') ? 'active' : ''}`}
+            title={isCollapsed ? 'Settings' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
-            <span>Settings</span>
+            {!isCollapsed && <span>Settings</span>}
           </Link>
         )}
         {hasAccess('alerts') && (
@@ -236,45 +278,44 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
             href="/admin/alerts"
             className={`admin-nav-item ${pathname === '/admin/alerts' || pathname.startsWith('/admin/alerts/') ? 'active' : ''}`}
             style={{ position: 'relative' }}
+            title={isCollapsed ? 'System Alerts' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <span>System Alerts</span>
+            {!isCollapsed && <span>System Alerts</span>}
             {criticalAlertCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  right: '12px',
-                  transform: 'translateY(-50%)',
-                  backgroundColor: '#DC2626',
-                  color: 'white',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '2px 6px',
-                  borderRadius: '10px',
-                  minWidth: '18px',
-                  textAlign: 'center',
-                }}
-              >
+              <span className={`nav-alert-badge ${isCollapsed ? 'collapsed' : ''}`}>
                 {criticalAlertCount > 99 ? '99+' : criticalAlertCount}
               </span>
             )}
           </Link>
         )}
         <div className="nav-spacer"></div>
-        <Link href="/login" className="admin-nav-item nav-logout">
+        <Link href="/login" className="admin-nav-item nav-logout" title={isCollapsed ? 'Logout' : undefined}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
             <line x1="21" y1="12" x2="9" y2="12"></line>
           </svg>
-          <span>Logout</span>
+          {!isCollapsed && <span>Logout</span>}
         </Link>
       </nav>
+      <button
+        className="sidebar-toggle-tab"
+        onClick={toggleCollapsed}
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {isCollapsed ? (
+            <polyline points="9 18 15 12 9 6"></polyline>
+          ) : (
+            <polyline points="15 18 9 12 15 6"></polyline>
+          )}
+        </svg>
+      </button>
     </aside>
   )
 }

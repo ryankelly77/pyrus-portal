@@ -1087,3 +1087,137 @@ describe('Penalty Breakdown', () => {
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+
+// ============================================================
+// 9. Snooze Feature Tests
+// ============================================================
+
+describe('Snooze Feature', () => {
+  const T0 = '2025-01-01T10:00:00.000Z';
+
+  // Helper to create complete scoring input with snooze
+  function makeSnoozedInput(
+    overrides: Partial<{
+      snoozed_until: string | null;
+      sent_at: string | null;
+      now: string;
+      call_scores: CallScoreInputs | null;
+    }> = {}
+  ): ScoringInput {
+    return {
+      deal: {
+        status: 'sent',
+        sent_at: overrides.sent_at ?? T0,
+        predicted_monthly: 1000,
+        predicted_onetime: 500,
+        snoozed_until: overrides.snoozed_until ?? null,
+      },
+      call_scores: overrides.call_scores ?? PERFECT_CALL,
+      milestones: NO_MILESTONES,
+      invite_stats: SINGLE_INVITE_NONE,
+      communications: NO_COMMS,
+      config: DEFAULT_CONFIG,
+      now: overrides.now ?? T0,
+    };
+  }
+
+  it('freezes all penalties when snoozed_until is in the future', () => {
+    // Deal sent 20 days ago, snoozed until 10 days from now
+    const now = daysFromNow(T0, 20);
+    const snoozedUntil = daysFromNow(now, 10);
+
+    const result = computePipelineScore(makeSnoozedInput({
+      sent_at: T0,
+      snoozed_until: snoozedUntil,
+      now,
+    }));
+
+    // All penalties should be 0 because deal is snoozed
+    expect(result.penalty_breakdown.email_not_opened).toBe(0);
+    expect(result.penalty_breakdown.proposal_not_viewed).toBe(0);
+    expect(result.penalty_breakdown.silence).toBe(0);
+    expect(result.total_penalties).toBe(0);
+    // Score should equal base score
+    expect(result.confidence_score).toBe(result.base_score);
+  });
+
+  it('restarts penalties from snooze expiry date when snooze has expired', () => {
+    // Deal sent 30 days ago
+    // Snooze expired 5 days ago
+    const now = daysFromNow(T0, 30);
+    const snoozedUntil = daysFromNow(T0, 25); // Expired 5 days ago
+
+    const result = computePipelineScore(makeSnoozedInput({
+      sent_at: T0,
+      snoozed_until: snoozedUntil,
+      now,
+    }));
+
+    // Penalties should calculate from snooze expiry (5 days elapsed)
+    // With grace period of 10 days for silence, no silence penalty yet
+    // Email grace is 48 hours = 2 days, so about 3 days past = 1.5 pts
+    expect(result.penalty_breakdown.silence).toBe(0); // Still in 10-day grace
+    expect(result.penalty_breakdown.email_not_opened).toBeCloseTo(1.5, 1); // ~3 days × 0.5
+    expect(result.total_penalties).toBeGreaterThan(0);
+    expect(result.confidence_score).toBeLessThan(result.base_score);
+  });
+
+  it('no snooze effect when snoozed_until is null', () => {
+    const now = daysFromNow(T0, 20);
+
+    const result = computePipelineScore(makeSnoozedInput({
+      sent_at: T0,
+      snoozed_until: null,
+      now,
+    }));
+
+    // Penalties should accumulate normally
+    expect(result.total_penalties).toBeGreaterThan(0);
+    expect(result.confidence_score).toBeLessThan(result.base_score);
+  });
+
+  it('snoozed deal maintains base score from call factors', () => {
+    const now = daysFromNow(T0, 50);
+    const snoozedUntil = daysFromNow(now, 30);
+
+    const perfectResult = computePipelineScore(makeSnoozedInput({
+      sent_at: T0,
+      snoozed_until: snoozedUntil,
+      now,
+      call_scores: PERFECT_CALL,
+    }));
+
+    const mediocreResult = computePipelineScore(makeSnoozedInput({
+      sent_at: T0,
+      snoozed_until: snoozedUntil,
+      now,
+      call_scores: MEDIOCRE_CALL,
+    }));
+
+    // Perfect call should have higher base score than mediocre
+    expect(perfectResult.base_score).toBe(100);
+    expect(mediocreResult.base_score).toBe(60); // Updated based on new config
+    // Since snoozed, final scores should equal base scores
+    expect(perfectResult.confidence_score).toBe(100);
+    expect(mediocreResult.confidence_score).toBe(60);
+  });
+
+  it('expired snooze resets penalty clock completely', () => {
+    // Snooze expired exactly now (edge case)
+    const now = T0;
+    const snoozedUntil = T0;
+
+    const result = computePipelineScore(makeSnoozedInput({
+      sent_at: daysFromNow(T0, -100), // Sent 100 days ago (but shouldn't matter)
+      snoozed_until: snoozedUntil,
+      now,
+    }));
+
+    // Penalties should be 0 because snooze just expired
+    // (0 days since snooze expiry, within all grace periods)
+    expect(result.penalty_breakdown.email_not_opened).toBe(0);
+    expect(result.penalty_breakdown.silence).toBe(0);
+    expect(result.total_penalties).toBe(0);
+  });
+});

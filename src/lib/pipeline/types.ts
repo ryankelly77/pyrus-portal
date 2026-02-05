@@ -56,6 +56,10 @@ export interface DealData {
   /** Predicted tier pricing (cached on recommendations) */
   predicted_monthly: number;
   predicted_onetime: number;
+  /** When snoozed, penalties are frozen until this date. After expiry, penalties calculate from this date. */
+  snoozed_until?: string | null;
+  /** When set after revival from archive, used as the new baseline date for time-based penalty calculations. */
+  revived_at?: string | null;
 }
 
 // --- Scoring Configuration (from settings table) ---
@@ -155,8 +159,7 @@ export interface ScoringResult {
 
 export interface PipelineRep {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string | null;
   email: string;
   role: string;
   avatar_url: string | null;

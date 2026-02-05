@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/pipeline-scores",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

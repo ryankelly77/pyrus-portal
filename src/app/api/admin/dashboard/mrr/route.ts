@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { getStripeMRRData, getStripeInvoices } from '@/lib/stripe-mrr-cache'
 
 interface MRRDataPoint {
   month: string
@@ -19,22 +19,19 @@ export async function GET() {
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
-    const { user, profile } = auth
-    // Get all subscriptions (active and canceled) for historical data
-    const allSubscriptions = await stripe.subscriptions.list({
-      status: 'all',
-      limit: 100,
-    })
 
-    // Build a map of subscription -> actual monthly amount from invoices
-    const subMonthlyAmounts: Map<string, number> = new Map()
+    // Get cached Stripe data
+    const stripeData = await getStripeMRRData()
+    const allSubscriptions = stripeData.subscriptions
+
+    // Build maps for date tracking
     const subStartDates: Map<string, Date> = new Map()
     const subEndDates: Map<string, Date> = new Map()
 
     // Find the earliest subscription start date
     let earliestDate = new Date()
 
-    for (const sub of allSubscriptions.data) {
+    for (const sub of allSubscriptions) {
       const startDate = new Date(sub.created * 1000)
       subStartDates.set(sub.id, startDate)
 
@@ -49,32 +46,6 @@ export async function GET() {
         subEndDates.set(sub.id, new Date(sub.ended_at * 1000))
       } else {
         subEndDates.set(sub.id, new Date(9999, 11, 31))
-      }
-
-      // Get the actual amount from the most recent invoice
-      const invoices = await stripe.invoices.list({
-        subscription: sub.id,
-        status: 'paid',
-        limit: 1,
-      })
-
-      if (invoices.data.length > 0) {
-        subMonthlyAmounts.set(sub.id, invoices.data[0].amount_paid / 100)
-      } else {
-        // Fallback to subscription item prices if no invoice
-        let monthlyAmount = 0
-        for (const item of sub.items.data) {
-          const price = item.price
-          const quantity = item.quantity || 1
-          const unitAmount = price.unit_amount || 0
-
-          if (price.recurring?.interval === 'month') {
-            monthlyAmount += (unitAmount * quantity) / 100
-          } else if (price.recurring?.interval === 'year') {
-            monthlyAmount += (unitAmount * quantity) / 100 / 12
-          }
-        }
-        subMonthlyAmounts.set(sub.id, monthlyAmount)
       }
     }
 
@@ -104,10 +75,10 @@ export async function GET() {
     }
 
     // Calculate MRR for each month
-    for (const sub of allSubscriptions.data) {
+    for (const sub of allSubscriptions) {
       const subStart = subStartDates.get(sub.id)!
       const subEnd = subEndDates.get(sub.id)!
-      const monthlyAmount = subMonthlyAmounts.get(sub.id) || 0
+      const monthlyAmount = sub.monthlyAmount
 
       for (const monthData of months) {
         // Parse year-month and create local date (avoid UTC parsing issues)
@@ -126,14 +97,6 @@ export async function GET() {
     // Round MRR values
     for (const monthData of months) {
       monthData.mrr = Math.round(monthData.mrr)
-    }
-
-    // Calculate current MRR (sum of active subscriptions only)
-    let currentMRR = 0
-    for (const sub of allSubscriptions.data) {
-      if (sub.status === 'active' || sub.status === 'trialing') {
-        currentMRR += subMonthlyAmounts.get(sub.id) || 0
-      }
     }
 
     // Calculate MRR change
@@ -159,17 +122,14 @@ export async function GET() {
       }
     }
 
-    // Get all paid invoices for net volume
-    const allInvoices = await stripe.invoices.list({
-      status: 'paid',
-      limit: 100,
-    })
+    // Get cached invoices for net volume
+    const allInvoices = await getStripeInvoices()
 
     // Build volume data by month
     const volumeByMonth: Map<string, number> = new Map()
     let totalNetVolume = 0
 
-    for (const invoice of allInvoices.data) {
+    for (const invoice of allInvoices) {
       const invoiceDate = new Date(invoice.created * 1000)
       const year = invoiceDate.getFullYear()
       const month = String(invoiceDate.getMonth() + 1).padStart(2, '0')
@@ -195,34 +155,30 @@ export async function GET() {
     }
 
     // Calculate churn using actual invoice amounts (real MRR lost)
-    // This accounts for discounts/coupons that reduced actual billing
-    const canceledSubs = allSubscriptions.data.filter(s =>
-      s.status === 'canceled' &&
-      subMonthlyAmounts.get(s.id)! > 0 // Only count paid subscriptions
+    const canceledSubs = allSubscriptions.filter(s =>
+      s.status === 'canceled' && s.monthlyAmount > 0
     )
-    const totalPaidSubs = allSubscriptions.data.filter(s =>
-      subMonthlyAmounts.get(s.id)! > 0
-    )
+    const totalPaidSubs = allSubscriptions.filter(s => s.monthlyAmount > 0)
 
     // Churn rate = canceled / total (as percentage)
     const churnRate = totalPaidSubs.length > 0
       ? (canceledSubs.length / totalPaidSubs.length) * 100
       : 0
 
-    // Lost MRR from churned customers (using actual invoice amounts)
+    // Lost MRR from churned customers
     let churnedMRR = 0
     for (const sub of canceledSubs) {
-      churnedMRR += subMonthlyAmounts.get(sub.id) || 0
+      churnedMRR += sub.monthlyAmount
     }
 
     const churnedCount = canceledSubs.length
 
     return NextResponse.json({
       chartData: months,
-      currentMRR: Math.round(currentMRR),
+      currentMRR: stripeData.currentMRR,
       mrrChange: Math.round(mrrChange),
       avgGrowthPercent: Math.round(avgGrowthPercent * 10) / 10,
-      totalSubscriptions: allSubscriptions.data.filter(s => s.status === 'active').length,
+      totalSubscriptions: allSubscriptions.filter(s => s.status === 'active').length,
       // Net volume data
       volumeData,
       totalNetVolume: Math.round(totalNetVolume * 100) / 100,

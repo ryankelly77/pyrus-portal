@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
@@ -101,23 +101,38 @@ export async function GET() {
       orderBy: { created_at: 'desc' },
     })
 
-    // Fetch invites separately to handle schema mismatches
-    const recommendationsWithInvites = await Promise.all(
+    // Fetch invites and call_scores separately to handle schema mismatches
+    const recommendationsWithExtras = await Promise.all(
       recommendations.map(async (rec) => {
+        let invites: any[] = []
+        let callScores = null
+
         try {
-          const invites = await prisma.recommendation_invites.findMany({
+          invites = await prisma.recommendation_invites.findMany({
             where: { recommendation_id: rec.id },
             orderBy: { created_at: 'desc' },
           })
-          return { ...rec, recommendation_invites: invites }
         } catch (inviteError) {
           console.warn(`Could not fetch invites for recommendation ${rec.id}:`, inviteError)
-          return { ...rec, recommendation_invites: [] }
         }
+
+        try {
+          const scoresResult = await dbPool.query(
+            `SELECT id, budget_clarity, competition, engagement, plan_fit
+             FROM recommendation_call_scores
+             WHERE recommendation_id = $1`,
+            [rec.id]
+          )
+          callScores = scoresResult.rows[0] || null
+        } catch (scoresError) {
+          console.warn(`Could not fetch call scores for recommendation ${rec.id}:`, scoresError)
+        }
+
+        return { ...rec, recommendation_invites: invites, call_scores: callScores }
       })
     )
 
-    return NextResponse.json(recommendationsWithInvites)
+    return NextResponse.json(recommendationsWithExtras)
   } catch (error) {
     console.error('Failed to fetch recommendations:', error)
     return NextResponse.json(
@@ -140,6 +155,7 @@ export async function POST(request: NextRequest) {
     const {
       clientId,
       tierName,
+      predictedTier,
       items,
       totalMonthly,
       totalOnetime,
@@ -157,6 +173,18 @@ export async function POST(request: NextRequest) {
     // pricing_type must be 'good', 'better', 'best', or null (DB check constraint)
     const validPricingTypes = ['good', 'better', 'best']
     const pricingType = validPricingTypes.includes(tierName) ? tierName : null
+
+    // Calculate predicted_monthly and predicted_onetime from the predicted tier's items
+    let predictedMonthly = 0
+    let predictedOnetime = 0
+    if (predictedTier && items && items.length > 0) {
+      for (const item of items) {
+        if (item.tierName === predictedTier) {
+          predictedMonthly += Number(item.monthlyPrice || 0)
+          predictedOnetime += Number(item.onetimePrice || 0)
+        }
+      }
+    }
 
     // Check for existing recommendation for this client (draft or sent - allow editing both)
     // For non-admin roles, only find their own recommendations
@@ -178,18 +206,33 @@ export async function POST(request: NextRequest) {
         include: { product: true, bundle: true, addon: true },
       })
 
-      // Update existing recommendation
-      recommendation = await prisma.recommendations.update({
-        where: { id: existingRecommendation.id },
-        data: {
-          pricing_type: pricingType,
-          total_monthly: totalMonthly || 0,
-          total_onetime: totalOnetime || 0,
-          discount_applied: discountApplied || 0,
-          notes: notes || null,
-          updated_at: new Date(),
-        },
-      })
+      // Update existing recommendation using raw SQL for new columns
+      const updateResult = await dbPool.query(
+        `UPDATE recommendations SET
+           pricing_type = $1,
+           predicted_tier = $2,
+           predicted_monthly = $3,
+           predicted_onetime = $4,
+           total_monthly = $5,
+           total_onetime = $6,
+           discount_applied = $7,
+           notes = $8,
+           updated_at = NOW()
+         WHERE id = $9
+         RETURNING id, client_id, status, pricing_type, total_monthly, total_onetime, notes, created_at, updated_at`,
+        [
+          pricingType,
+          predictedTier || null,
+          predictedMonthly,
+          predictedOnetime,
+          totalMonthly || 0,
+          totalOnetime || 0,
+          discountApplied || 0,
+          notes || null,
+          existingRecommendation.id
+        ]
+      )
+      recommendation = updateResult.rows[0]
 
       // Delete old items
       await prisma.recommendation_items.deleteMany({
@@ -275,19 +318,29 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      // Create new recommendation
-      recommendation = await prisma.recommendations.create({
-        data: {
-          client_id: clientId,
-          created_by: (auth as any).user?.id || null,
-          status: 'draft',
-          pricing_type: pricingType,
-          total_monthly: totalMonthly || 0,
-          total_onetime: totalOnetime || 0,
-          discount_applied: discountApplied || 0,
-          notes: notes || null,
-        },
-      })
+      // Create new recommendation using raw SQL for new columns
+      const createResult = await dbPool.query(
+        `INSERT INTO recommendations (
+           client_id, created_by, status, pricing_type, predicted_tier,
+           predicted_monthly, predicted_onetime, total_monthly, total_onetime,
+           discount_applied, notes, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+         RETURNING id, client_id, status, pricing_type, total_monthly, total_onetime, notes, created_at, updated_at`,
+        [
+          clientId,
+          (auth as any).user?.id || null,
+          'draft',
+          pricingType,
+          predictedTier || null,
+          predictedMonthly,
+          predictedOnetime,
+          totalMonthly || 0,
+          totalOnetime || 0,
+          discountApplied || 0,
+          notes || null,
+        ]
+      )
+      recommendation = createResult.rows[0]
 
       // Add history entry for creation with user info
       const userName = (auth as any).profile?.full_name || 'Unknown User'
