@@ -84,6 +84,7 @@ export default function AdminSettingsPage() {
   const [profilePhotoUploading, setProfilePhotoUploading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
+  const [hasNotifications, setHasNotifications] = useState(false)
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -194,6 +195,22 @@ export default function AdminSettingsPage() {
       }
     }
     fetchVideoChapters()
+  }, [])
+
+  // Fetch notification count
+  useEffect(() => {
+    async function fetchNotificationCount() {
+      try {
+        const res = await fetch('/api/admin/notifications?limit=1')
+        if (res.ok) {
+          const data = await res.json()
+          setHasNotifications((data.summary?.unread || 0) > 0)
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    }
+    fetchNotificationCount()
   }, [])
 
   // Start editing a chapter
