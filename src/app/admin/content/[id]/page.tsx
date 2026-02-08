@@ -151,7 +151,7 @@ const contentData: Record<string, {
 }
 
 export default function ContentViewPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const contentId = params.id as string
   const content = contentData[contentId] || contentData['2'] // Default to item 2 for demo
@@ -181,7 +181,7 @@ export default function ContentViewPage() {
       <AdminHeader
         title=""
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
         breadcrumb={
           <div className="page-header-with-back">
             <Link href="/admin/content" className="back-link">

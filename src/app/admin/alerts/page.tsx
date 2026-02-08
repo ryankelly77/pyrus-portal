@@ -85,7 +85,7 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function AlertsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -162,7 +162,7 @@ export default function AlertsPage() {
       <AdminHeader
         title="System Alerts"
         user={user}
-        hasNotifications={unresolvedCriticalCount > 0}
+        hasNotifications={hasNotifications}
       />
       <div className="admin-content">
         <div style={{ padding: '24px' }}>

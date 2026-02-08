@@ -208,7 +208,7 @@ function MRRChart({ data }: { data: MRRDataPoint[] }) {
 }
 
 export default function SuperAdminDashboard() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [stats, setStats] = useState<DashboardStats>({
     mrr: 0,
     mrrChange: 0,
@@ -343,7 +343,7 @@ export default function SuperAdminDashboard() {
       <AdminHeader
         title="Dashboard"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

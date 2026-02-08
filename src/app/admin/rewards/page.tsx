@@ -35,7 +35,7 @@ const availableProducts = [
 ]
 
 export default function AdminRewardsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [thresholds, setThresholds] = useState(initialThresholds)
   const [freeProducts, setFreeProducts] = useState(initialFreeProducts)
   const [showThresholdModal, setShowThresholdModal] = useState(false)
@@ -110,7 +110,7 @@ export default function AdminRewardsPage() {
       <AdminHeader
         title="Reward Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

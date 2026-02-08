@@ -63,7 +63,7 @@ interface RolePermissions {
 }
 
 export default function AdminUsersPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [activeTab, setActiveTab] = useState<Tab>('users')
   const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'invited'>('all')
   const [clientFilter, setClientFilter] = useState('all')
@@ -392,7 +392,7 @@ export default function AdminUsersPage() {
         <AdminHeader
           title="Users"
           user={user}
-          hasNotifications={false}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -408,7 +408,7 @@ export default function AdminUsersPage() {
       <AdminHeader
         title="Users"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

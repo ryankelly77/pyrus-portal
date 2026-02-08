@@ -399,7 +399,7 @@ type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'curren
 type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
 
 export default function ClientDetailPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const clientId = params.id as string
@@ -1801,7 +1801,7 @@ export default function ClientDetailPage() {
         <AdminHeader
           title="Client Details"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
           breadcrumb={
             <>
               <Link href="/admin/clients">Clients</Link>
@@ -1828,7 +1828,7 @@ export default function ClientDetailPage() {
         <AdminHeader
           title="Client Details"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
           breadcrumb={
             <>
               <Link href="/admin/clients">Clients</Link>
@@ -1853,7 +1853,7 @@ export default function ClientDetailPage() {
       <AdminHeader
         title="Client Details"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
         breadcrumb={
           <>
             <Link href="/admin/clients">Clients</Link>

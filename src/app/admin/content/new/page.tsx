@@ -14,7 +14,7 @@ const clients = [
 ]
 
 export default function CreateContentPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>('website')
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
   const [basecampTask, setBasecampTask] = useState(true)
@@ -31,7 +31,7 @@ export default function CreateContentPage() {
       <AdminHeader
         title=""
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
         breadcrumb={
           <div className="page-header-with-back">
             <Link href="/admin/content" className="back-link">

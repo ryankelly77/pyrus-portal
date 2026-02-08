@@ -44,7 +44,7 @@ interface AddOn {
 }
 
 export default function AdminProductsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') as ViewTab | null
   const [activeTab, setActiveTab] = useState<ViewTab>(tabParam || 'products')
@@ -325,7 +325,7 @@ export default function AdminProductsPage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="page-header">
@@ -343,7 +343,7 @@ export default function AdminProductsPage() {
       <AdminHeader
         title="Product Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

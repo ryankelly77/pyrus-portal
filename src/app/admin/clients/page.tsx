@@ -79,7 +79,7 @@ const growthStageConfig: Record<GrowthStage, { icon: string; color: string; bg: 
 }
 
 export default function ClientsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -368,7 +368,7 @@ export default function ClientsPage() {
       <AdminHeader
         title="Clients"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

@@ -46,7 +46,7 @@ interface ProductOption {
 }
 
 export default function EditProductPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const productId = params.id as string
@@ -158,7 +158,7 @@ export default function EditProductPage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -175,7 +175,7 @@ export default function EditProductPage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -197,7 +197,7 @@ export default function EditProductPage() {
       <AdminHeader
         title="Product Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

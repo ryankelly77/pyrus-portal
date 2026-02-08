@@ -805,7 +805,7 @@ export default function AdminSettingsPage() {
           initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U',
           avatarUrl: profilePhotoUrl,
         }}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

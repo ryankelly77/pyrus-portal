@@ -124,7 +124,7 @@ function getSnoozeRemainingDays(snoozedUntil: string): number {
 }
 
 export default function PipelineDashboardPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [deals, setDeals] = useState<PipelineDeal[]>([])
   const [aggregates, setAggregates] = useState<PipelineAggregates>({
     total_weighted_mrr: 0,
@@ -397,7 +397,7 @@ export default function PipelineDashboardPage() {
       <AdminHeader
         title="Sales Pipeline"
         user={user}
-        hasNotifications={false}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

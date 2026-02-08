@@ -127,7 +127,7 @@ const tierTitles: Record<TierName, string> = {
 const categories: ServiceCategory[] = ['root', 'growth', 'cultivation', 'bundle', 'fertilizer']
 
 export default function RecommendationBuilderPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const clientId = params.clientId as string
@@ -711,7 +711,7 @@ export default function RecommendationBuilderPage() {
         <AdminHeader
           title="Recommendation Builder"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -727,7 +727,7 @@ export default function RecommendationBuilderPage() {
       <AdminHeader
         title="Recommendation Builder"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
         breadcrumb={
           <>
             <Link href="/admin/recommendations">Recommendations</Link>

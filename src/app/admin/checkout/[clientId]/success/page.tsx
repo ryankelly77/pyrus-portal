@@ -14,7 +14,7 @@ interface DBClient {
 }
 
 export default function CheckoutSuccessPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const searchParams = useSearchParams()
   const clientId = params.clientId as string
@@ -50,7 +50,7 @@ export default function CheckoutSuccessPage() {
         <AdminHeader
           title="Payment Complete"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="checkout-success-page">
@@ -66,7 +66,7 @@ export default function CheckoutSuccessPage() {
       <AdminHeader
         title="Payment Complete"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

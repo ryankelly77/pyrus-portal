@@ -205,7 +205,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default function RecommendationsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const searchParams = useSearchParams()
   const initialStatus = searchParams.get('status') as FilterOption | null
 
@@ -720,7 +720,7 @@ export default function RecommendationsPage() {
       <AdminHeader
         title="Recommendations"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

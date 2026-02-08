@@ -21,7 +21,7 @@ interface DraggableProduct {
 }
 
 export default function EditAddonPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const addonId = params.id as string
@@ -180,7 +180,7 @@ export default function EditAddonPage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -197,7 +197,7 @@ export default function EditAddonPage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -219,7 +219,7 @@ export default function EditAddonPage() {
       <AdminHeader
         title="Product Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

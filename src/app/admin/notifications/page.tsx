@@ -27,7 +27,7 @@ interface NotificationSummary {
 }
 
 export default function AdminNotificationsPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [summary, setSummary] = useState<NotificationSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -413,7 +413,7 @@ export default function AdminNotificationsPage() {
       <AdminHeader
         title="Notifications"
         user={user}
-        hasNotifications={getUnreadCount() > 0}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

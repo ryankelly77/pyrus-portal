@@ -18,7 +18,7 @@ interface ProductOption {
 }
 
 export default function NewProductPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const router = useRouter()
 
   const [productForm, setProductForm] = useState({
@@ -94,7 +94,7 @@ export default function NewProductPage() {
       <AdminHeader
         title="Product Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

@@ -97,7 +97,7 @@ const getCarePlanLabel = (carePlan: CarePlan) => {
 }
 
 export default function WebsitesPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [statusFilter, setStatusFilter] = useState<WebsiteStatus | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState<WebsiteType | 'all'>('all')
 
@@ -114,7 +114,7 @@ export default function WebsitesPage() {
       <AdminHeader
         title="Websites"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

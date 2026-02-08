@@ -40,7 +40,7 @@ interface Stats {
 }
 
 export default function AdminContentPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const [contentItems, setContentItems] = useState<ContentItem[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -162,7 +162,7 @@ export default function AdminContentPage() {
       <AdminHeader
         title="Content Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">

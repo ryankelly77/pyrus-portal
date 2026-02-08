@@ -77,7 +77,7 @@ function getOrdinalSuffix(n: number): string {
 }
 
 export default function CheckoutPage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -759,7 +759,7 @@ export default function CheckoutPage() {
         <AdminHeader
           title="Checkout"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="checkout-page">
@@ -776,7 +776,7 @@ export default function CheckoutPage() {
         <AdminHeader
           title="Checkout"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="checkout-page">
@@ -796,7 +796,7 @@ export default function CheckoutPage() {
         <AdminHeader
           title="Checkout"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
           breadcrumb={
             <>
               <Link href="/admin/recommendations">Recommendations</Link>
@@ -835,7 +835,7 @@ export default function CheckoutPage() {
       <AdminHeader
         title="Checkout"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
         breadcrumb={
           <>
             <Link href="/admin/recommendations">Recommendations</Link>

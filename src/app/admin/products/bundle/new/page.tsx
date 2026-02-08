@@ -21,7 +21,7 @@ interface DraggableProduct {
 }
 
 export default function NewBundlePage() {
-  const { user } = useUserProfile()
+  const { user, hasNotifications } = useUserProfile()
   const router = useRouter()
 
   const [bundleForm, setBundleForm] = useState({
@@ -182,7 +182,7 @@ export default function NewBundlePage() {
         <AdminHeader
           title="Product Management"
           user={user}
-          hasNotifications={true}
+          hasNotifications={hasNotifications}
         />
         <div className="admin-content">
           <div className="content-page-header">
@@ -198,7 +198,7 @@ export default function NewBundlePage() {
       <AdminHeader
         title="Product Management"
         user={user}
-        hasNotifications={true}
+        hasNotifications={hasNotifications}
       />
 
       <div className="admin-content">
