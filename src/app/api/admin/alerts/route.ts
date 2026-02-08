@@ -121,13 +121,22 @@ export async function PATCH(request: NextRequest) {
 
     // Support batch resolving
     if (alertIds && alertIds.length > 0) {
-      const result = await prisma.system_alerts.updateMany({
-        where: { id: { in: alertIds } },
-        data: {
-          resolved_at: resolved ? new Date() : null,
-        },
-      })
-      return NextResponse.json({ updated: result.count })
+      // Batch in chunks of 50 to avoid timeout
+      const chunkSize = 50
+      let totalUpdated = 0
+
+      for (let i = 0; i < alertIds.length; i += chunkSize) {
+        const chunk = alertIds.slice(i, i + chunkSize)
+        const result = await prisma.system_alerts.updateMany({
+          where: { id: { in: chunk } },
+          data: {
+            resolved_at: resolved ? new Date() : null,
+          },
+        })
+        totalUpdated += result.count
+      }
+
+      return NextResponse.json({ updated: totalUpdated })
     }
 
     // Single alert resolve (backwards compatible)
