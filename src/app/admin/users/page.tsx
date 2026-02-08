@@ -227,6 +227,19 @@ export default function AdminUsersPage() {
     })
   }, [adminUsers, statusFilter, searchQuery])
 
+  // Split admin users by role type
+  const adminOnlyUsers = useMemo(() => {
+    return filteredAdminUsers.filter(u => u.role === 'super_admin' || u.role === 'admin')
+  }, [filteredAdminUsers])
+
+  const salesUsers = useMemo(() => {
+    return filteredAdminUsers.filter(u => u.role === 'sales')
+  }, [filteredAdminUsers])
+
+  const productionUsers = useMemo(() => {
+    return filteredAdminUsers.filter(u => u.role === 'production_team')
+  }, [filteredAdminUsers])
+
   const filteredClientUsers = useMemo(() => {
     return clientUsers.filter((user) => {
       if (statusFilter !== 'all' && user.status !== statusFilter) return false
@@ -674,79 +687,210 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        {/* Admin Users Section - Only show if user can see admin users */}
-        {adminUsers.length > 0 && (
-        <div className="admin-users-section">
+        {/* Admin Users Section (Super Admin + Admin only) */}
+        {adminOnlyUsers.length > 0 && (
+        <div className="admin-users-section" style={{ marginBottom: '32px' }}>
           <h3>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            Admin Users ({filteredAdminUsers.length})
+            Admin Users ({adminOnlyUsers.length})
           </h3>
           <div className="users-table-container">
-            <table className="users-table">
+            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th style={{ width: '20%' }}>Name</th>
+                  <th style={{ width: '15%' }}>Role</th>
+                  <th style={{ width: '30%' }}>Email</th>
+                  <th style={{ width: '15%' }}>Status</th>
+                  <th style={{ width: '20%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAdminUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      No admin users found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAdminUsers.map((user) => {
-                    const roleContent = getRoleBadgeContent(user.role)
-                    return (
-                      <tr key={user.id}>
-                        <td className="user-name">
-                          <div className="user-avatar" style={{ background: user.avatarColor }}>
-                            {user.initials}
-                          </div>
-                          <span>{user.name}</span>
-                        </td>
-                        <td>
-                          <span className={`role-badge ${roleContent.className}`}>
-                            {roleContent.icon}
-                            {roleContent.label}
-                          </span>
-                        </td>
-                        <td>{user.email}</td>
-                        <td>
-                          <span className={`status-badge status-${user.status}`}>
-                            {user.status === 'registered' ? 'Active' : 'Invited'}
-                          </span>
-                        </td>
-                        <td>
-                          {user.isOwner ? (
-                            <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
-                          ) : user.status === 'invited' ? (
-                            <button
-                              className="btn btn-sm btn-outline"
-                              onClick={() => handleResendAdmin(user.id)}
-                            >
-                              Resend
-                            </button>
-                          ) : (
-                            <button
-                              className="btn btn-sm btn-outline"
-                              onClick={() => handleEditAdmin(user.id)}
-                            >
-                              Edit
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
+                {adminOnlyUsers.map((user) => {
+                  const roleContent = getRoleBadgeContent(user.role)
+                  return (
+                    <tr key={user.id}>
+                      <td className="user-name">
+                        <div className="user-avatar" style={{ background: user.avatarColor }}>
+                          {user.initials}
+                        </div>
+                        <span>{user.name}</span>
+                      </td>
+                      <td>
+                        <span className={`role-badge ${roleContent.className}`}>
+                          {roleContent.icon}
+                          {roleContent.label}
+                        </span>
+                      </td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className={`status-badge status-${user.status}`}>
+                          {user.status === 'registered' ? 'Active' : 'Invited'}
+                        </span>
+                      </td>
+                      <td>
+                        {user.isOwner ? (
+                          <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
+                        ) : user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleEditAdmin(user.id)}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        )}
+
+        {/* Sales Users Section */}
+        {salesUsers.length > 0 && (
+        <div className="admin-users-section" style={{ marginBottom: '32px' }}>
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Sales Users ({salesUsers.length})
+          </h3>
+          <div className="users-table-container">
+            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '20%' }}>Name</th>
+                  <th style={{ width: '15%' }}>Role</th>
+                  <th style={{ width: '30%' }}>Email</th>
+                  <th style={{ width: '15%' }}>Status</th>
+                  <th style={{ width: '20%' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salesUsers.map((user) => {
+                  const roleContent = getRoleBadgeContent(user.role)
+                  return (
+                    <tr key={user.id}>
+                      <td className="user-name">
+                        <div className="user-avatar" style={{ background: user.avatarColor }}>
+                          {user.initials}
+                        </div>
+                        <span>{user.name}</span>
+                      </td>
+                      <td>
+                        <span className={`role-badge ${roleContent.className}`}>
+                          {roleContent.icon}
+                          {roleContent.label}
+                        </span>
+                      </td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className={`status-badge status-${user.status}`}>
+                          {user.status === 'registered' ? 'Active' : 'Invited'}
+                        </span>
+                      </td>
+                      <td>
+                        {user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleEditAdmin(user.id)}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        )}
+
+        {/* Production Users Section */}
+        {productionUsers.length > 0 && (
+        <div className="admin-users-section" style={{ marginBottom: '32px' }}>
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+            Production Users ({productionUsers.length})
+          </h3>
+          <div className="users-table-container">
+            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '20%' }}>Name</th>
+                  <th style={{ width: '15%' }}>Role</th>
+                  <th style={{ width: '30%' }}>Email</th>
+                  <th style={{ width: '15%' }}>Status</th>
+                  <th style={{ width: '20%' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productionUsers.map((user) => {
+                  const roleContent = getRoleBadgeContent(user.role)
+                  return (
+                    <tr key={user.id}>
+                      <td className="user-name">
+                        <div className="user-avatar" style={{ background: user.avatarColor }}>
+                          {user.initials}
+                        </div>
+                        <span>{user.name}</span>
+                      </td>
+                      <td>
+                        <span className={`role-badge ${roleContent.className}`}>
+                          {roleContent.icon}
+                          {roleContent.label}
+                        </span>
+                      </td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span className={`status-badge status-${user.status}`}>
+                          {user.status === 'registered' ? 'Active' : 'Invited'}
+                        </span>
+                      </td>
+                      <td>
+                        {user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleEditAdmin(user.id)}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -765,15 +909,15 @@ export default function AdminUsersPage() {
             Client Users ({filteredClientUsers.length})
           </h3>
           <div className="users-table-container">
-            <table className="users-table">
+            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Client</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th style={{ width: '15%' }}>Name</th>
+                  <th style={{ width: '10%' }}>Client</th>
+                  <th style={{ width: '10%' }}>Phone</th>
+                  <th style={{ width: '30%' }}>Email</th>
+                  <th style={{ width: '15%' }}>Status</th>
+                  <th style={{ width: '20%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
