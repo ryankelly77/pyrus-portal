@@ -371,6 +371,8 @@ export default function AdminNotificationsPage() {
   // Group notifications by date
   function groupByDate(items: NotificationItem[]) {
     const groups: { [key: string]: NotificationItem[] } = {}
+    if (!items || items.length === 0) return groups
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const yesterday = new Date(today)
