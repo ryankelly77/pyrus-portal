@@ -106,18 +106,34 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/alerts - Resolve alert (admin only)
+// PATCH /api/admin/alerts - Resolve alert(s) (admin only)
 export async function PATCH(request: NextRequest) {
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
 
     const body = await request.json()
-    const { alertId, resolved } = body as { alertId: string; resolved: boolean }
+    const { alertId, alertIds, resolved } = body as {
+      alertId?: string
+      alertIds?: string[]
+      resolved: boolean
+    }
 
+    // Support batch resolving
+    if (alertIds && alertIds.length > 0) {
+      const result = await prisma.system_alerts.updateMany({
+        where: { id: { in: alertIds } },
+        data: {
+          resolved_at: resolved ? new Date() : null,
+        },
+      })
+      return NextResponse.json({ updated: result.count })
+    }
+
+    // Single alert resolve (backwards compatible)
     if (!alertId) {
       return NextResponse.json(
-        { error: 'alertId is required' },
+        { error: 'alertId or alertIds is required' },
         { status: 400 }
       )
     }

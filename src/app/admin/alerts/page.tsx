@@ -90,6 +90,8 @@ export default function AlertsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resolving, setResolving] = useState<string | null>(null)
+  const [resolvingAll, setResolvingAll] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Filters
   const [severityFilter, setSeverityFilter] = useState<string>('')
@@ -139,6 +141,70 @@ export default function AlertsPage() {
     } finally {
       setResolving(null)
     }
+  }
+
+  const handleResolveAll = async () => {
+    const unresolvedAlerts = alerts.filter((a) => !a.resolved_at)
+    if (unresolvedAlerts.length === 0) return
+
+    setResolvingAll(true)
+    try {
+      const response = await fetch('/api/admin/alerts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alertIds: unresolvedAlerts.map((a) => a.id),
+          resolved: true,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to resolve alerts')
+
+      // Refresh alerts
+      await fetchAlerts()
+    } catch (err) {
+      console.error('Failed to resolve all alerts:', err)
+    } finally {
+      setResolvingAll(false)
+    }
+  }
+
+  const copyAsMarkdown = () => {
+    const formatCategory = (cat: string) =>
+      cat
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+
+    const lines: string[] = []
+    lines.push('# System Alerts')
+    lines.push('')
+    lines.push(`Generated: ${new Date().toLocaleString()}`)
+    lines.push('')
+
+    if (alerts.length === 0) {
+      lines.push('No alerts to display.')
+    } else {
+      alerts.forEach((alert) => {
+        const status = alert.resolved_at ? '[RESOLVED]' : ''
+        const severity = alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)
+        lines.push(`## ${severity} ${status}`)
+        lines.push(`**Category:** ${formatCategory(alert.category)}`)
+        lines.push(`**Message:** ${alert.message}`)
+        if (alert.source_file) {
+          lines.push(`**Source:** ${alert.source_file}`)
+        }
+        if (alert.client?.name) {
+          lines.push(`**Client:** ${alert.client.name}`)
+        }
+        lines.push(`**Time:** ${formatRelativeTime(alert.created_at)}`)
+        lines.push('')
+      })
+    }
+
+    navigator.clipboard.writeText(lines.join('\n'))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const categories = [
@@ -234,12 +300,83 @@ export default function AlertsPage() {
               Show Resolved
             </label>
 
-            <div style={{ marginLeft: 'auto', fontSize: '14px', color: '#6B7280' }}>
-              {alerts.length} alert{alerts.length === 1 ? '' : 's'}
-              {unresolvedCriticalCount > 0 && (
-                <span style={{ color: '#DC2626', fontWeight: 600, marginLeft: '8px' }}>
-                  ({unresolvedCriticalCount} critical unresolved)
-                </span>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>
+                {alerts.length} alert{alerts.length === 1 ? '' : 's'}
+                {unresolvedCriticalCount > 0 && (
+                  <span style={{ color: '#DC2626', fontWeight: 600, marginLeft: '8px' }}>
+                    ({unresolvedCriticalCount} critical unresolved)
+                  </span>
+                )}
+              </span>
+
+              <button
+                onClick={copyAsMarkdown}
+                disabled={alerts.length === 0}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #D1D5DB',
+                  backgroundColor: copied ? '#D1FAE5' : 'white',
+                  color: copied ? '#059669' : '#374151',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: alerts.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: alerts.length === 0 ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                {copied ? 'Copied!' : 'Copy Markdown'}
+              </button>
+
+              {alerts.filter((a) => !a.resolved_at).length > 0 && (
+                <button
+                  onClick={handleResolveAll}
+                  disabled={resolvingAll}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#059669',
+                    color: 'white',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: resolvingAll ? 'wait' : 'pointer',
+                    opacity: resolvingAll ? 0.7 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {resolvingAll ? 'Resolving...' : 'Resolve All'}
+                </button>
               )}
             </div>
           </div>
