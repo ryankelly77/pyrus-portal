@@ -49,8 +49,8 @@ export function useUserProfile(): UseUserProfileReturn {
 
   return {
     user: {
-      name: profile?.fullName || 'User',
-      initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U',
+      name: loading ? '' : (profile?.fullName || 'User'),
+      initials: loading ? '' : (`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U'),
       avatarUrl: profile?.avatarUrl || null,
     },
     profile,

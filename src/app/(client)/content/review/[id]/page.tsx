@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ClientHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface ContentDetail {
   id: string
@@ -30,6 +31,7 @@ interface ContentDetail {
 }
 
 export default function ContentReviewPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const contentId = params.id as string
@@ -137,7 +139,7 @@ export default function ContentReviewPage() {
       <>
         <ClientHeader
           title="Content Review"
-          user={{ name: 'Loading...', initials: '...' }}
+          user={user}
         />
         <div className="client-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
           <div className="spinner" style={{ width: 40, height: 40 }}></div>
@@ -151,7 +153,7 @@ export default function ContentReviewPage() {
       <>
         <ClientHeader
           title="Content Review"
-          user={{ name: 'Error', initials: '!' }}
+          user={user}
         />
         <div className="client-content" style={{ textAlign: 'center', padding: '3rem' }}>
           <h2>Content Not Found</h2>
@@ -171,7 +173,7 @@ export default function ContentReviewPage() {
     <>
       <ClientHeader
         title="Content Review"
-        user={{ name: content.client_name || 'Client', initials: content.client_name?.charAt(0) || 'C' }}
+        user={user}
       />
 
       <div className="client-content">

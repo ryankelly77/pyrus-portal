@@ -41,14 +41,14 @@ export function AdminHeader({
           </svg>
         </Link>
         <Link href="/admin/settings" className="user-menu-link">
-          <div className="user-avatar-small" style={{ overflow: 'hidden' }}>
+          <div className="user-avatar-small" style={{ overflow: 'hidden', background: user.name ? undefined : '#e5e7eb' }}>
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
+            ) : user.initials ? (
               <span>{user.initials}</span>
-            )}
+            ) : null}
           </div>
-          <span className="user-name">{user.name}</span>
+          {user.name && <span className="user-name">{user.name}</span>}
         </Link>
       </div>
     </div>

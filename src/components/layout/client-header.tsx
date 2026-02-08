@@ -11,6 +11,7 @@ interface ClientHeaderProps {
   user?: {
     name: string
     initials: string
+    avatarUrl?: string | null
   }
   hasNotifications?: boolean
   isAdminPreview?: boolean
@@ -101,10 +102,14 @@ export function ClientHeader({
             href="/settings"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 rounded-full bg-client-primary flex items-center justify-center">
-              <span className="text-white text-sm font-medium">{user.initials}</span>
+            <div className="w-8 h-8 rounded-full bg-client-primary flex items-center justify-center overflow-hidden" style={{ background: user.name ? undefined : '#e5e7eb' }}>
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : user.initials ? (
+                <span className="text-white text-sm font-medium">{user.initials}</span>
+              ) : null}
             </div>
-            <span className="text-sm font-medium text-gray-700">{user.name}</span>
+            {user.name && <span className="text-sm font-medium text-gray-700">{user.name}</span>}
           </Link>
         </div>
       </header>
