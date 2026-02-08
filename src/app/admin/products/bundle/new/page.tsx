@@ -97,11 +97,14 @@ export default function NewBundlePage() {
     setDragOver(false)
 
     const data = e.dataTransfer.getData('text/plain')
-    const product: DraggableProduct = JSON.parse(data)
-
-    if (!includedProducts.find(p => p.id === product.id)) {
-      setIncludedProducts([...includedProducts, product])
-      setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
+    try {
+      const product: DraggableProduct = JSON.parse(data)
+      if (product && product.id && !includedProducts.find(p => p.id === product.id)) {
+        setIncludedProducts([...includedProducts, product])
+        setAvailableProducts(availableProducts.filter(p => p.id !== product.id))
+      }
+    } catch {
+      // Ignore invalid drag data (e.g., text selections)
     }
   }
 
