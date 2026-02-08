@@ -4,15 +4,20 @@ import { useState, useEffect } from 'react'
 import { AdminHeader } from '@/components/layout'
 
 const permissions = [
-  'Client Management',
-  'Content Workflow',
-  'Result Alerts',
-  'Revenue / MRR',
+  'Dashboard',
   'Recommendations',
-  'User Management',
-  'Admin Settings',
-  'Products Management',
-  'Rewards Management',
+  'Clients',
+  'Users',
+  'Content',
+  'Websites',
+  'Notifications',
+  'Products',
+  'Rewards',
+  'Revenue / MRR',
+  'Sales Pipeline',
+  'Client Performance',
+  'Settings',
+  'System Alerts',
 ]
 
 interface Product {
