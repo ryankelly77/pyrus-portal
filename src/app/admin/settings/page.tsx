@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AdminHeader } from '@/components/layout'
 
 const permissions = [
@@ -80,6 +80,9 @@ export default function AdminSettingsPage() {
   const [firstName, setFirstName] = useState('Ryan')
   const [lastName, setLastName] = useState('Kelly')
   const [email, setEmail] = useState('ryan@pyrusdigital.com')
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
+  const [profilePhotoUploading, setProfilePhotoUploading] = useState(false)
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null)
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -375,6 +378,53 @@ export default function AdminSettingsPage() {
   const hasNumber = /\d/.test(newPassword)
   const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword)
   const passwordsMatch = newPassword === confirmPassword && newPassword.length > 0
+
+  // Handle profile photo upload
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size must be less than 2MB')
+      return
+    }
+
+    setProfilePhotoUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setProfilePhotoUrl(data.url)
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to upload photo')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload photo')
+    } finally {
+      setProfilePhotoUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const removeProfilePhoto = () => {
+    setProfilePhotoUrl(null)
+  }
 
   // Fetch products on mount
   useEffect(() => {
@@ -801,22 +851,39 @@ export default function AdminSettingsPage() {
                 <div className="profile-photo-section">
                   <div className="profile-photo-current">
                     <div className="profile-photo-large">
-                      <span>RK</span>
+                      {profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      ) : (
+                        <span>{firstName.charAt(0)}{lastName.charAt(0)}</span>
+                      )}
                     </div>
                   </div>
                   <div className="profile-photo-actions">
                     <h4>Profile Photo</h4>
                     <p>JPG, PNG or GIF. Max size 2MB.</p>
                     <div className="photo-buttons">
-                      <button className="btn btn-secondary btn-sm">
+                      <input
+                        type="file"
+                        ref={profilePhotoInputRef}
+                        onChange={handleProfilePhotoUpload}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => profilePhotoInputRef.current?.click()}
+                        disabled={profilePhotoUploading}
+                      >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                           <polyline points="17 8 12 3 7 8"></polyline>
                           <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        Upload Photo
+                        {profilePhotoUploading ? 'Uploading...' : 'Upload Photo'}
                       </button>
-                      <button className="btn btn-outline btn-sm">Remove</button>
+                      {profilePhotoUrl && (
+                        <button className="btn btn-outline btn-sm" onClick={removeProfilePhoto}>Remove</button>
+                      )}
                     </div>
                   </div>
                 </div>
