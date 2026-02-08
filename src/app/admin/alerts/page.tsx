@@ -149,21 +149,30 @@ export default function AlertsPage() {
 
     setResolvingAll(true)
     try {
+      const alertIds = unresolvedAlerts.map((a) => a.id)
+      console.log('Resolving alerts:', alertIds)
+
       const response = await fetch('/api/admin/alerts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          alertIds: unresolvedAlerts.map((a) => a.id),
+          alertIds,
           resolved: true,
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to resolve alerts')
+      const data = await response.json()
+      console.log('Resolve response:', response.status, data)
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resolve alerts')
+      }
 
       // Refresh alerts
       await fetchAlerts()
     } catch (err) {
       console.error('Failed to resolve all alerts:', err)
+      setError(err instanceof Error ? err.message : 'Failed to resolve alerts')
     } finally {
       setResolvingAll(false)
     }
