@@ -91,6 +91,7 @@ export default function AlertsPage() {
   const [error, setError] = useState<string | null>(null)
   const [resolving, setResolving] = useState<string | null>(null)
   const [resolvingAll, setResolvingAll] = useState(false)
+  const [resolvingCount, setResolvingCount] = useState(0)
   const [copied, setCopied] = useState(false)
 
   // Filters
@@ -148,6 +149,7 @@ export default function AlertsPage() {
     if (unresolvedAlerts.length === 0) return
 
     setResolvingAll(true)
+    setResolvingCount(unresolvedAlerts.length)
     setError(null)
     try {
       const response = await fetch('/api/admin/alerts', {
@@ -171,6 +173,7 @@ export default function AlertsPage() {
       setError(err instanceof Error ? err.message : 'Failed to resolve alerts')
     } finally {
       setResolvingAll(false)
+      setResolvingCount(0)
     }
   }
 
@@ -380,7 +383,7 @@ export default function AlertsPage() {
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  {resolvingAll ? 'Resolving...' : 'Resolve All'}
+                  {resolvingAll ? `Resolving ${resolvingCount}...` : `Resolve All (${alerts.filter((a) => !a.resolved_at).length})`}
                 </button>
               )}
             </div>
