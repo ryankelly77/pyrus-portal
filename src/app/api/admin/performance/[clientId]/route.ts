@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import {
-
-export const dynamic = 'force-dynamic';
   calculateClientPerformance,
   getStageConfig,
   type PerformanceResult,
 } from '@/lib/performance'
+
+export const dynamic = 'force-dynamic';
 
 // GET /api/admin/performance/[clientId] - Single client performance detail
 export async function GET(
