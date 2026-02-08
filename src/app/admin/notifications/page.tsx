@@ -73,13 +73,13 @@ export default function AdminNotificationsPage() {
   }
 
   function getUnreadCount() {
-    return notifications.filter(n => isUnread(n)).length
+    return (notifications || []).filter(n => isUnread(n)).length
   }
 
   function handleExportActivity() {
     // Generate CSV from notifications
     const headers = ['Date', 'Type', 'Title', 'Description', 'Client', 'Status']
-    const rows = notifications.map(n => [
+    const rows = (notifications || []).map(n => [
       new Date(n.timestamp).toLocaleString(),
       n.type,
       n.title,
@@ -105,7 +105,7 @@ export default function AdminNotificationsPage() {
   }
 
   async function handleMarkAllRead() {
-    const unreadNotifications = notifications.filter(n => isUnread(n))
+    const unreadNotifications = (notifications || []).filter(n => isUnread(n))
     if (unreadNotifications.length === 0) return
 
     try {
@@ -400,11 +400,11 @@ export default function AdminNotificationsPage() {
 
   // Filter notifications by search query
   const filteredNotifications = searchQuery.trim()
-    ? notifications.filter(n =>
+    ? (notifications || []).filter(n =>
         n.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         n.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : notifications
+    : (notifications || [])
 
   const groupedNotifications = groupByDate(filteredNotifications)
 
@@ -546,7 +546,7 @@ export default function AdminNotificationsPage() {
             <div className="loading-state" style={{ padding: '3rem', textAlign: 'center' }}>
               <p>Loading activity...</p>
             </div>
-          ) : notifications.length === 0 ? (
+          ) : (notifications || []).length === 0 ? (
             <div className="empty-state">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
