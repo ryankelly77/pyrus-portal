@@ -39,22 +39,27 @@ export async function GET(request: NextRequest) {
     const unresolvedOnly = searchParams.get('unresolved') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    const alerts = await prisma.system_alerts.findMany({
-      where: {
-        ...(severity && { severity }),
-        ...(category && { category }),
-        ...(unresolvedOnly && { resolved_at: null }),
-      },
-      orderBy: { created_at: 'desc' },
-      take: Math.min(limit, 100),
-      include: {
-        client: {
-          select: { id: true, name: true },
-        },
-      },
-    })
+    const whereClause = {
+      ...(severity && { severity }),
+      ...(category && { category }),
+      ...(unresolvedOnly && { resolved_at: null }),
+    }
 
-    return NextResponse.json({ alerts })
+    const [alerts, totalCount] = await Promise.all([
+      prisma.system_alerts.findMany({
+        where: whereClause,
+        orderBy: { created_at: 'desc' },
+        take: Math.min(limit, 500),
+        include: {
+          client: {
+            select: { id: true, name: true },
+          },
+        },
+      }),
+      prisma.system_alerts.count({ where: whereClause }),
+    ])
+
+    return NextResponse.json({ alerts, totalCount })
   } catch (error) {
     console.error('Error fetching alerts:', error)
     return NextResponse.json(

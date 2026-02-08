@@ -93,6 +93,7 @@ export default function AlertsPage() {
   const [resolvingAll, setResolvingAll] = useState(false)
   const [resolvingCount, setResolvingCount] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
 
   // Filters
   const [severityFilter, setSeverityFilter] = useState<string>('')
@@ -105,13 +106,14 @@ export default function AlertsPage() {
       if (severityFilter) params.set('severity', severityFilter)
       if (categoryFilter) params.set('category', categoryFilter)
       if (!showResolved) params.set('unresolved', 'true')
-      params.set('limit', '100')
+      params.set('limit', '500')
 
       const response = await fetch(`/api/admin/alerts?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch alerts')
 
       const data = await response.json()
       setAlerts(data.alerts || [])
+      setTotalCount(data.totalCount || 0)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load alerts')
@@ -233,6 +235,12 @@ export default function AlertsPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       <AdminHeader
         title="System Alerts"
         user={user}
@@ -310,7 +318,8 @@ export default function AlertsPage() {
 
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                {alerts.length} alert{alerts.length === 1 ? '' : 's'}
+                {totalCount} alert{totalCount === 1 ? '' : 's'}
+                {alerts.length < totalCount && ` (showing ${alerts.length})`}
                 {unresolvedCriticalCount > 0 && (
                   <span style={{ color: '#DC2626', fontWeight: 600, marginLeft: '8px' }}>
                     ({unresolvedCriticalCount} critical unresolved)
@@ -360,29 +369,43 @@ export default function AlertsPage() {
                     padding: '8px 12px',
                     borderRadius: '6px',
                     border: 'none',
-                    backgroundColor: '#059669',
+                    backgroundColor: resolvingAll ? '#6B7280' : '#059669',
                     color: 'white',
                     fontSize: '13px',
                     fontWeight: 500,
                     cursor: resolvingAll ? 'wait' : 'pointer',
-                    opacity: resolvingAll ? 0.7 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
+                    minWidth: '140px',
                   }}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  {resolvingAll ? (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      style={{ animation: 'spin 1s linear infinite' }}
+                    >
+                      <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
                   {resolvingAll ? `Resolving ${resolvingCount}...` : `Resolve All (${alerts.filter((a) => !a.resolved_at).length})`}
                 </button>
               )}
