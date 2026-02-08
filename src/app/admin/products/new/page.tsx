@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Service {
   name: string
@@ -17,6 +18,7 @@ interface ProductOption {
 }
 
 export default function NewProductPage() {
+  const { user } = useUserProfile()
   const router = useRouter()
 
   const [productForm, setProductForm] = useState({
@@ -91,7 +93,7 @@ export default function NewProductPage() {
     <>
       <AdminHeader
         title="Product Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Product {
   id: string
@@ -20,6 +21,7 @@ interface DraggableProduct {
 }
 
 export default function NewBundlePage() {
+  const { user } = useUserProfile()
   const router = useRouter()
 
   const [bundleForm, setBundleForm] = useState({
@@ -179,7 +181,7 @@ export default function NewBundlePage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -195,7 +197,7 @@ export default function NewBundlePage() {
     <>
       <AdminHeader
         title="Product Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

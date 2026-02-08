@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import { SnoozeDealForm } from '@/components/pipeline/snooze-deal-form'
 
 type RecommendationStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'closed_lost'
@@ -204,6 +205,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default function RecommendationsPage() {
+  const { user } = useUserProfile()
   const searchParams = useSearchParams()
   const initialStatus = searchParams.get('status') as FilterOption | null
 
@@ -717,7 +719,7 @@ export default function RecommendationsPage() {
     <>
       <AdminHeader
         title="Recommendations"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

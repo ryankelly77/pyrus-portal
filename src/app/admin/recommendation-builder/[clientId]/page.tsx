@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import {
   CategoryColumn,
   SelectedItemsList,
@@ -126,6 +127,7 @@ const tierTitles: Record<TierName, string> = {
 const categories: ServiceCategory[] = ['root', 'growth', 'cultivation', 'bundle', 'fertilizer']
 
 export default function RecommendationBuilderPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const clientId = params.clientId as string
@@ -708,7 +710,7 @@ export default function RecommendationBuilderPage() {
       <>
         <AdminHeader
           title="Recommendation Builder"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -724,7 +726,7 @@ export default function RecommendationBuilderPage() {
     <>
       <AdminHeader
         title="Recommendation Builder"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
         breadcrumb={
           <>

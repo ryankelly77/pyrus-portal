@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import { CommunicationItem, formatTimelineDate } from '@/components'
 import { ContentView, ResultsView, WebsiteView, ActivityView, RecommendationsView, CommunicationView, WelcomeView } from '@/components/client-views'
 
@@ -398,6 +399,7 @@ type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'curren
 type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
 
 export default function ClientDetailPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const clientId = params.id as string
@@ -1798,7 +1800,7 @@ export default function ClientDetailPage() {
       <>
         <AdminHeader
           title="Client Details"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
           breadcrumb={
             <>
@@ -1825,7 +1827,7 @@ export default function ClientDetailPage() {
       <>
         <AdminHeader
           title="Client Details"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
           breadcrumb={
             <>
@@ -1850,7 +1852,7 @@ export default function ClientDetailPage() {
     <>
       <AdminHeader
         title="Client Details"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
         breadcrumb={
           <>

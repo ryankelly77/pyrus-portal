@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Activity {
   id: string
@@ -207,6 +208,7 @@ function MRRChart({ data }: { data: MRRDataPoint[] }) {
 }
 
 export default function SuperAdminDashboard() {
+  const { user } = useUserProfile()
   const [stats, setStats] = useState<DashboardStats>({
     mrr: 0,
     mrrChange: 0,
@@ -340,7 +342,7 @@ export default function SuperAdminDashboard() {
     <>
       <AdminHeader
         title="Dashboard"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

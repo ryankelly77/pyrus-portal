@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
 type UserStatus = 'registered' | 'invited'
@@ -62,6 +63,7 @@ interface RolePermissions {
 }
 
 export default function AdminUsersPage() {
+  const { user } = useUserProfile()
   const [activeTab, setActiveTab] = useState<Tab>('users')
   const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'invited'>('all')
   const [clientFilter, setClientFilter] = useState('all')
@@ -389,7 +391,7 @@ export default function AdminUsersPage() {
       <>
         <AdminHeader
           title="Users"
-          user={{ name: 'Loading...', initials: '...' }}
+          user={user}
           hasNotifications={false}
         />
         <div className="admin-content">
@@ -405,7 +407,7 @@ export default function AdminUsersPage() {
     <>
       <AdminHeader
         title="Users"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type ProductCategory = 'root' | 'growth' | 'cultivation'
 type ProductStatus = 'active' | 'draft' | 'inactive'
@@ -43,6 +44,7 @@ interface AddOn {
 }
 
 export default function AdminProductsPage() {
+  const { user } = useUserProfile()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') as ViewTab | null
   const [activeTab, setActiveTab] = useState<ViewTab>(tabParam || 'products')
@@ -322,7 +324,7 @@ export default function AdminProductsPage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -340,7 +342,7 @@ export default function AdminProductsPage() {
     <>
       <AdminHeader
         title="Product Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

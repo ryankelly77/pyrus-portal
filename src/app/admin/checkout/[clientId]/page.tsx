@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import CheckoutForm from './CheckoutForm'
 
 // Initialize Stripe
@@ -76,6 +77,7 @@ function getOrdinalSuffix(n: number): string {
 }
 
 export default function CheckoutPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -756,7 +758,7 @@ export default function CheckoutPage() {
       <>
         <AdminHeader
           title="Checkout"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -773,7 +775,7 @@ export default function CheckoutPage() {
       <>
         <AdminHeader
           title="Checkout"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -793,7 +795,7 @@ export default function CheckoutPage() {
       <>
         <AdminHeader
           title="Checkout"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
           breadcrumb={
             <>
@@ -832,7 +834,7 @@ export default function CheckoutPage() {
     <>
       <AdminHeader
         title="Checkout"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
         breadcrumb={
           <>

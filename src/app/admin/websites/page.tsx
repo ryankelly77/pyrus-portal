@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type WebsiteStatus = 'active' | 'development' | 'maintenance'
 type WebsiteType = 'seed-site' | 'sprout' | 'bloom' | 'harvest'
@@ -96,6 +97,7 @@ const getCarePlanLabel = (carePlan: CarePlan) => {
 }
 
 export default function WebsitesPage() {
+  const { user } = useUserProfile()
   const [statusFilter, setStatusFilter] = useState<WebsiteStatus | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState<WebsiteType | 'all'>('all')
 
@@ -111,7 +113,7 @@ export default function WebsitesPage() {
     <>
       <AdminHeader
         title="Websites"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

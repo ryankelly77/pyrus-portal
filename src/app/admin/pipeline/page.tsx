@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import { ScoreHistoryChart } from '@/components/pipeline/score-history-chart'
 import { ScoreAuditFeed } from '@/components/pipeline/score-audit-feed'
 import { SnoozeDealForm } from '@/components/pipeline/snooze-deal-form'
@@ -123,6 +124,7 @@ function getSnoozeRemainingDays(snoozedUntil: string): number {
 }
 
 export default function PipelineDashboardPage() {
+  const { user } = useUserProfile()
   const [deals, setDeals] = useState<PipelineDeal[]>([])
   const [aggregates, setAggregates] = useState<PipelineAggregates>({
     total_weighted_mrr: 0,
@@ -394,7 +396,7 @@ export default function PipelineDashboardPage() {
     <>
       <AdminHeader
         title="Sales Pipeline"
-        user={{ name: 'Admin', initials: 'A' }}
+        user={user}
         hasNotifications={false}
       />
 

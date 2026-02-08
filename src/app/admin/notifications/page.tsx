@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface NotificationItem {
   id: string
@@ -26,6 +27,7 @@ interface NotificationSummary {
 }
 
 export default function AdminNotificationsPage() {
+  const { user } = useUserProfile()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [summary, setSummary] = useState<NotificationSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -408,7 +410,7 @@ export default function AdminNotificationsPage() {
     <>
       <AdminHeader
         title="Notifications"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={getUnreadCount() > 0}
       />
 

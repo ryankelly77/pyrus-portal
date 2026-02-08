@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import {
   SummaryCards,
   GrowthStageCards,
@@ -15,6 +16,7 @@ import type { PerformanceData, ClientDetailData } from '@/components/admin/perfo
 import { PerformanceDashboardResponseSchema } from '@/lib/validation/performanceSchemas'
 
 export default function PerformanceDashboardPage() {
+  const { user } = useUserProfile()
   const [data, setData] = useState<PerformanceData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -154,7 +156,7 @@ export default function PerformanceDashboardPage() {
   if (loading && !data) {
     return (
       <>
-        <AdminHeader title="Performance" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+        <AdminHeader title="Performance" user={user} hasNotifications={true} />
         <div className="admin-content">
           <div style={{ padding: '60px', textAlign: 'center', color: '#6B7280' }}>
             <div className="spinner" style={{ width: 32, height: 32, margin: '0 auto 16px' }}></div>
@@ -168,7 +170,7 @@ export default function PerformanceDashboardPage() {
   if (error) {
     return (
       <>
-        <AdminHeader title="Performance" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+        <AdminHeader title="Performance" user={user} hasNotifications={true} />
         <div className="admin-content">
           <div style={{ padding: '60px', textAlign: 'center', color: '#dc2626' }}>
             Error: {error}
@@ -197,7 +199,7 @@ export default function PerformanceDashboardPage() {
 
   return (
     <>
-      <AdminHeader title="Performance Dashboard" user={{ name: 'Admin', initials: 'A' }} hasNotifications={true} />
+      <AdminHeader title="Performance Dashboard" user={user} hasNotifications={true} />
 
       <div className="admin-content">
         <SummaryCards summary={summary} avgScoreHistory={avgScoreHistory} />

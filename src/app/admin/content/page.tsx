@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type ContentStatus = 'draft' | 'pending_review' | 'revision' | 'approved' | 'published'
 
@@ -39,6 +40,7 @@ interface Stats {
 }
 
 export default function AdminContentPage() {
+  const { user } = useUserProfile()
   const [contentItems, setContentItems] = useState<ContentItem[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -159,7 +161,7 @@ export default function AdminContentPage() {
     <>
       <AdminHeader
         title="Content Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

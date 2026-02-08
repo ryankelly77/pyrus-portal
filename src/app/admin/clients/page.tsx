@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type ClientStatus = 'active' | 'inactive' | 'prospect' | 'paused'
 
@@ -78,6 +79,7 @@ const growthStageConfig: Record<GrowthStage, { icon: string; color: string; bg: 
 }
 
 export default function ClientsPage() {
+  const { user } = useUserProfile()
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -365,7 +367,7 @@ export default function ClientsPage() {
     <>
       <AdminHeader
         title="Clients"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

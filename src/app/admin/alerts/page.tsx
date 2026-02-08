@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Alert {
   id: string
@@ -84,6 +85,7 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function AlertsPage() {
+  const { user } = useUserProfile()
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -159,7 +161,7 @@ export default function AlertsPage() {
     <>
       <AdminHeader
         title="System Alerts"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={unresolvedCriticalCount > 0}
       />
       <div className="admin-content">

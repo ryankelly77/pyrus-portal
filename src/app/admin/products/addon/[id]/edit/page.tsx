@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Product {
   id: string
@@ -20,6 +21,7 @@ interface DraggableProduct {
 }
 
 export default function EditAddonPage() {
+  const { user } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const addonId = params.id as string
@@ -177,7 +179,7 @@ export default function EditAddonPage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -194,7 +196,7 @@ export default function EditAddonPage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -216,7 +218,7 @@ export default function EditAddonPage() {
     <>
       <AdminHeader
         title="Product Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

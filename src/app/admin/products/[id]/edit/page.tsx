@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface Service {
   name: string
@@ -45,6 +46,7 @@ interface ProductOption {
 }
 
 export default function EditProductPage() {
+  const { user } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const productId = params.id as string
@@ -155,7 +157,7 @@ export default function EditProductPage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -172,7 +174,7 @@ export default function EditProductPage() {
       <>
         <AdminHeader
           title="Product Management"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -194,7 +196,7 @@ export default function EditProductPage() {
     <>
       <AdminHeader
         title="Product Management"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

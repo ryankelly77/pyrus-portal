@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import { MRRChart, MRRDataPoint } from '@/components/charts/MRRChart'
 
 interface VolumeDataPoint {
@@ -233,6 +234,7 @@ interface ScheduledCancellation {
 }
 
 export default function AdminRevenuePage() {
+  const { user } = useUserProfile()
   const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
   const [volumeData, setVolumeData] = useState<{ month: string; label: string; volume: number; cumulative: number }[]>([])
   const [stats, setStats] = useState({
@@ -352,7 +354,7 @@ export default function AdminRevenuePage() {
     <>
       <AdminHeader
         title="Revenue / MRR"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 const clients = [
   { id: 'dlg', name: 'DLG Medical Services', hasAiMonitoring: true },
@@ -150,6 +151,7 @@ const contentData: Record<string, {
 }
 
 export default function ContentViewPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const contentId = params.id as string
   const content = contentData[contentId] || contentData['2'] // Default to item 2 for demo
@@ -178,7 +180,7 @@ export default function ContentViewPage() {
     <>
       <AdminHeader
         title=""
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
         breadcrumb={
           <div className="page-header-with-back">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 interface DBClient {
   id: string
@@ -13,6 +14,7 @@ interface DBClient {
 }
 
 export default function CheckoutSuccessPage() {
+  const { user } = useUserProfile()
   const params = useParams()
   const searchParams = useSearchParams()
   const clientId = params.clientId as string
@@ -47,7 +49,7 @@ export default function CheckoutSuccessPage() {
       <>
         <AdminHeader
           title="Payment Complete"
-          user={{ name: 'Ryan Kelly', initials: 'RK' }}
+          user={user}
           hasNotifications={true}
         />
         <div className="admin-content">
@@ -63,7 +65,7 @@ export default function CheckoutSuccessPage() {
     <>
       <AdminHeader
         title="Payment Complete"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
       />
 

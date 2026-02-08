@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 const clients = [
   { id: 'dlg', name: 'DLG Medical Services' },
@@ -13,6 +14,7 @@ const clients = [
 ]
 
 export default function CreateContentPage() {
+  const { user } = useUserProfile()
   const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>('website')
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
   const [basecampTask, setBasecampTask] = useState(true)
@@ -28,7 +30,7 @@ export default function CreateContentPage() {
     <>
       <AdminHeader
         title=""
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={user}
         hasNotifications={true}
         breadcrumb={
           <div className="page-header-with-back">
