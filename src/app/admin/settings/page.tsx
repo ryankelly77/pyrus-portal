@@ -850,9 +850,9 @@ export default function AdminSettingsPage() {
                 {/* Profile Photo */}
                 <div className="profile-photo-section">
                   <div className="profile-photo-current">
-                    <div className="profile-photo-large">
+                    <div className="profile-photo-large" style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 600, color: '#6B7280' }}>
                       {profilePhotoUrl ? (
-                        <img src={profilePhotoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        <img src={profilePhotoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span>{firstName.charAt(0)}{lastName.charAt(0)}</span>
                       )}
