@@ -8,6 +8,7 @@ interface AdminHeaderProps {
   user?: {
     name: string
     initials: string
+    avatarUrl?: string | null
   }
   hasNotifications?: boolean
   breadcrumb?: ReactNode
@@ -40,8 +41,12 @@ export function AdminHeader({
           </svg>
         </Link>
         <Link href="/admin/settings" className="user-menu-link">
-          <div className="user-avatar-small">
-            <span>{user.initials}</span>
+          <div className="user-avatar-small" style={{ overflow: 'hidden' }}>
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span>{user.initials}</span>
+            )}
           </div>
           <span className="user-name">{user.name}</span>
         </Link>

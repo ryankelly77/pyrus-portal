@@ -77,11 +77,12 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile')
 
   // Profile state
-  const [firstName, setFirstName] = useState('Ryan')
-  const [lastName, setLastName] = useState('Kelly')
-  const [email, setEmail] = useState('ryan@pyrusdigital.com')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
   const [profilePhotoUploading, setProfilePhotoUploading] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
 
   const [currentPassword, setCurrentPassword] = useState('')
@@ -409,6 +410,12 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         const data = await res.json()
         setProfilePhotoUrl(data.url)
+        // Save to database
+        await fetch('/api/auth/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: data.url }),
+        })
       } else {
         const error = await res.json()
         alert(error.error || 'Failed to upload photo')
@@ -422,9 +429,41 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const removeProfilePhoto = () => {
+  const removeProfilePhoto = async () => {
     setProfilePhotoUrl(null)
+    // Save to database
+    try {
+      await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: null }),
+      })
+    } catch (error) {
+      console.error('Failed to remove profile photo:', error)
+    }
   }
+
+  // Fetch profile on mount
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch('/api/auth/me')
+        if (res.ok) {
+          const data = await res.json()
+          const nameParts = (data.fullName || '').split(' ')
+          setFirstName(nameParts[0] || '')
+          setLastName(nameParts.slice(1).join(' ') || '')
+          setEmail(data.email || '')
+          setProfilePhotoUrl(data.avatarUrl || null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [])
 
   // Fetch products on mount
   useEffect(() => {
@@ -761,7 +800,11 @@ export default function AdminSettingsPage() {
     <>
       <AdminHeader
         title="Settings"
-        user={{ name: 'Ryan Kelly', initials: 'RK' }}
+        user={{
+          name: `${firstName} ${lastName}`.trim() || 'User',
+          initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U',
+          avatarUrl: profilePhotoUrl,
+        }}
         hasNotifications={true}
       />
 

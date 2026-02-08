@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { logAuthError } from '@/lib/alerts'
@@ -27,7 +27,7 @@ export async function GET() {
 
     // Get profile info
     const profileResult = await dbPool.query(
-      `SELECT id, email, full_name, role, client_id FROM profiles WHERE id = $1`,
+      `SELECT id, email, full_name, role, client_id, avatar_url FROM profiles WHERE id = $1`,
       [user.id]
     )
 
@@ -65,6 +65,7 @@ export async function GET() {
       fullName: profile.full_name,
       role: profile.role,
       clientId: profile.client_id,
+      avatarUrl: profile.avatar_url,
       permissions,
     })
   } catch (error) {
@@ -77,6 +78,56 @@ export async function GET() {
     )
     return NextResponse.json(
       { error: 'Failed to fetch user info' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/auth/me - Update current user's profile
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { fullName, avatarUrl } = body
+
+    // Build dynamic update query
+    const updates: string[] = []
+    const values: (string | null)[] = []
+    let paramIndex = 1
+
+    if (fullName !== undefined) {
+      updates.push(`full_name = $${paramIndex++}`)
+      values.push(fullName)
+    }
+
+    if (avatarUrl !== undefined) {
+      updates.push(`avatar_url = $${paramIndex++}`)
+      values.push(avatarUrl)
+    }
+
+    if (updates.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    updates.push(`updated_at = NOW()`)
+    values.push(user.id)
+
+    await dbPool.query(
+      `UPDATE profiles SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+      values
+    )
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    return NextResponse.json(
+      { error: 'Failed to update profile' },
       { status: 500 }
     )
   }
