@@ -6,6 +6,8 @@ import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
 import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
 import { logEmailError } from '@/lib/alerts'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/clients/[id]/resend-invite - Resend invitation email to client
 export async function POST(
   request: NextRequest,

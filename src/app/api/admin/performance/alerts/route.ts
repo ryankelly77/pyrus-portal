@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { CreateClientAlertSchema } from '@/lib/validation/performanceSchemas'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/performance/alerts - Create a client alert
 export async function POST(request: NextRequest) {
   try {

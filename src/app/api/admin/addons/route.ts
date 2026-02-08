@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { addonCreateSchema } from '@/lib/validation/schemas'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/addons - List all addons
 export async function GET() {
   try {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/clients/[id]/smart-recommendations
 // Returns the client's smart recommendations with items and products
 export async function GET(

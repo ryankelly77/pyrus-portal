@@ -9,6 +9,8 @@ import {
 } from '@/lib/performance'
 import { PerformanceDashboardQuerySchema } from '@/lib/validation/performanceSchemas'
 
+export const dynamic = 'force-dynamic';
+
 interface DashboardSummary {
   total_clients: number
   average_score: number

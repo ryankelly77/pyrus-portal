@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { getStripeMRRData } from '@/lib/stripe-mrr-cache';
 import { getPipelineRevenueSummary } from '@/lib/pipeline/get-pipeline-revenue-summary';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const auth = await requireAdmin();

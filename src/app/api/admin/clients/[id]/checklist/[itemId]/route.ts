@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // PATCH /api/admin/clients/[id]/checklist/[itemId] - Toggle completion or update notes
 export async function PATCH(
   request: NextRequest,

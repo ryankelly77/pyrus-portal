@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/recommendations/client/[clientId] - Get recommendation for a client
 export async function GET(
   request: NextRequest,

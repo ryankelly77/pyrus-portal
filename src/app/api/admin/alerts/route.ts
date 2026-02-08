@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import type { Prisma } from '@prisma/client'
 
+export const dynamic = 'force-dynamic';
+
 export type AlertSeverity = 'info' | 'warning' | 'critical'
 export type AlertCategory =
   | 'subscription_safeguard'

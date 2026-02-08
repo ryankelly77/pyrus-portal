@@ -3,6 +3,8 @@ import { prisma, dbPool } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to sync Stripe subscriptions to local database
 async function syncStripeSubscriptions(clientId: string, stripeCustomerId: string) {
   try {

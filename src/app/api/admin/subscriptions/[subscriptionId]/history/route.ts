@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { subscriptionHistorySchema } from '@/lib/validation/schemas'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/subscriptions/[subscriptionId]/history - Get history for a subscription
 export async function GET(
   request: NextRequest,

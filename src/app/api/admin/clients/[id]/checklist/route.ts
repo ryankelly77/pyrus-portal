@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { checklistGenerateSchema } from '@/lib/validation/schemas'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/clients/[id]/checklist - Get client's checklist items
 export async function GET(
   request: NextRequest,

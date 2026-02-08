@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/scheduled-cancellations - Get subscription items with term end dates
 export async function GET(request: NextRequest) {
   try {

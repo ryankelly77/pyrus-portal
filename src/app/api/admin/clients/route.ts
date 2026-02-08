@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { clientCreateSchema } from '@/lib/validation/schemas'
 import { validateRequest } from '@/lib/validation/validateRequest'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/clients - Get all clients
 export async function GET() {
   try {

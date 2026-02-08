@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { subscriptionCreateSchema } from '@/lib/validation/schemas'
 
+export const dynamic = 'force-dynamic';
+
 interface CartItem {
   id: string
   name: string

@@ -4,6 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { recommendationViewSchema } from '@/lib/validation/schemas'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/recommendations/[id]/view - Track when client views recommendation
 export async function POST(
   request: NextRequest,

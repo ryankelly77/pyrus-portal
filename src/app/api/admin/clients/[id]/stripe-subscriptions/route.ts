@@ -4,6 +4,8 @@ import { stripe } from '@/lib/stripe'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { logCriticalError, logSyncFailure, logCheckoutError, logBillingSyncFailure } from '@/lib/alerts'
 
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

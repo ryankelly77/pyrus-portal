@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/fix-purchased-tier - Fix a client's purchased_tier
 export async function POST(request: NextRequest) {
   try {

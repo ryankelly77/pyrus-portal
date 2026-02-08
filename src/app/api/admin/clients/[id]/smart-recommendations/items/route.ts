@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/clients/[id]/smart-recommendations/items
 // Add a single item to smart recommendations
 export async function POST(

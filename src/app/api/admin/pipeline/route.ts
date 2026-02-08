@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin';
 import { getPipelineData } from '@/lib/pipeline/get-pipeline-data';
 import type { PipelineFilters } from '@/lib/pipeline/pipeline-view-types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const auth = await requireAdmin();

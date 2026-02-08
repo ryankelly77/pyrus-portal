@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/admin/clients/[id]/checklist/sync - Re-sync checklist items based on onboarding responses
 export async function POST(
   request: NextRequest,

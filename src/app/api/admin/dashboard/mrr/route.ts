@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { getStripeMRRData, getStripeInvoices } from '@/lib/stripe-mrr-cache'
 
+export const dynamic = 'force-dynamic';
+
 interface MRRDataPoint {
   month: string
   label: string
