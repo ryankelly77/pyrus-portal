@@ -17,7 +17,7 @@ const MENU_ITEMS = [
   { key: 'rewards', label: 'Rewards' },
   { key: 'revenue', label: 'Revenue / MRR' },
   { key: 'pipeline', label: 'Sales Pipeline' },
-  { key: 'performance', label: 'Performance' },
+  { key: 'performance', label: 'Client Performance' },
   { key: 'settings', label: 'Settings' },
   { key: 'alerts', label: 'System Alerts' },
 ]
