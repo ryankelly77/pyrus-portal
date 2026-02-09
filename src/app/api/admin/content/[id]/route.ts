@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
+import { sendEmail } from '@/lib/email/mailgun'
+import { getContentReadyForReviewEmail, getRevisionResubmittedEmail } from '@/lib/email/templates/content-status'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +88,8 @@ export async function PUT(
       seoOptimized,
       aiOptimized,
       status,
-      clientId
+      clientId,
+      featuredImage
     } = body
 
     // Build dynamic update query
@@ -149,6 +152,10 @@ export async function PUT(
     if (clientId !== undefined) {
       updates.push(`client_id = $${paramIndex++}`)
       values.push(clientId)
+    }
+    if (featuredImage !== undefined) {
+      updates.push(`featured_image = $${paramIndex++}`)
+      values.push(featuredImage)
     }
 
     updates.push(`updated_at = NOW()`)
@@ -223,15 +230,22 @@ export async function PATCH(
     const values: (string | null)[] = []
     let paramIndex = 1
 
+    // Get content and client info for email notifications
+    const contentInfoResult = await dbPool.query(
+      `SELECT c.*, cl.name as client_name, cl.contact_email as client_email
+       FROM content c
+       LEFT JOIN clients cl ON cl.id = c.client_id
+       WHERE c.id = $1`,
+      [id]
+    )
+    const contentInfo = contentInfoResult.rows[0]
+    const isResubmission = contentInfo?.status === 'revisions_requested' || contentInfo?.status === 'revision'
+
     switch (action) {
       case 'submit':
-        newStatus = 'pending_review'
+        newStatus = 'sent_for_review'
         // Calculate deadline (5 days for standard, 1 day for urgent)
-        const contentResult = await dbPool.query(
-          'SELECT urgent FROM content WHERE id = $1',
-          [id]
-        )
-        const isUrgent = contentResult.rows[0]?.urgent
+        const isUrgent = contentInfo?.urgent
         const deadlineDays = isUrgent ? 1 : 5
         updates.push(`deadline = NOW() + INTERVAL '${deadlineDays} days'`)
         break
@@ -241,7 +255,7 @@ export async function PATCH(
         break
 
       case 'reject':
-        newStatus = 'revision'
+        newStatus = 'revisions_requested'
         if (feedback) {
           updates.push(`revision_feedback = $${paramIndex++}`)
           values.push(feedback)
@@ -250,7 +264,7 @@ export async function PATCH(
         break
 
       case 'publish':
-        newStatus = 'published'
+        newStatus = 'posted'
         updates.push(`published_at = NOW()`)
         if (publishedUrl) {
           updates.push(`published_url = $${paramIndex++}`)
@@ -281,6 +295,39 @@ export async function PATCH(
        SELECT id, body, $2 FROM content WHERE id = $1`,
       [id, `Status changed to ${newStatus}${feedback ? ': ' + feedback : ''}`]
     )
+
+    // Send email notifications for submit action
+    if (action === 'submit' && contentInfo?.client_email) {
+      try {
+        const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/portal/content/${id}`
+
+        const emailData = {
+          recipientName: contentInfo.client_name || 'there',
+          contentTitle: contentInfo.title || 'Content',
+          clientName: contentInfo.client_name || 'your company',
+          changedByName: profile.full_name || 'Pyrus Team',
+          portalUrl,
+          reviewRound: contentInfo.revision_count || 0,
+        }
+
+        const emailTemplate = isResubmission
+          ? getRevisionResubmittedEmail(emailData)
+          : getContentReadyForReviewEmail(emailData)
+
+        await sendEmail({
+          to: contentInfo.client_email,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+          tags: ['content-review', isResubmission ? 'resubmission' : 'new-content'],
+        })
+
+        console.log(`Review notification email sent to ${contentInfo.client_email}`)
+      } catch (emailError) {
+        // Log but don't fail the request if email fails
+        console.error('Failed to send review notification email:', emailError)
+      }
+    }
 
     return NextResponse.json({
       success: true,
