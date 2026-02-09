@@ -234,6 +234,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('=== PATCH /api/admin/content/[id] called ===')
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
@@ -241,6 +242,7 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
     const { action, feedback, publishedUrl } = body
+    console.log('PATCH request received:', { id, action, hasProfile: !!profile })
 
     let newStatus: string
     let updates: string[] = ['updated_at = NOW()']
