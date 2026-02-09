@@ -3,6 +3,8 @@ import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { contentCreateSchema } from '@/lib/validation/schemas'
+import { sendEmail } from '@/lib/email/mailgun'
+import { getContentReadyForReviewEmail } from '@/lib/email/templates/content-status'
 
 export const dynamic = 'force-dynamic'
 
@@ -243,7 +245,59 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    return NextResponse.json(result.rows[0], { status: 201 })
+    const newContent = result.rows[0]
+
+    // Send email notification if submitting directly for review
+    if (status === 'sent_for_review') {
+      try {
+        // Get client info for email
+        const clientResult = await dbPool.query(
+          'SELECT name, contact_email FROM clients WHERE id = $1',
+          [clientId]
+        )
+        const client = clientResult.rows[0]
+
+        console.log('POST: Checking email conditions:', {
+          status,
+          hasClientEmail: !!client?.contact_email,
+          clientEmail: client?.contact_email,
+          clientName: client?.name,
+        })
+
+        if (client?.contact_email) {
+          const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${newContent.id}`
+
+          const emailData = {
+            recipientName: client.name || 'there',
+            contentTitle: title,
+            clientName: client.name || 'your company',
+            changedByName: profile.full_name || 'Pyrus Team',
+            portalUrl,
+            reviewRound: 0,
+          }
+
+          const emailTemplate = getContentReadyForReviewEmail(emailData)
+
+          console.log('POST: Sending email to:', client.contact_email)
+
+          const emailResult = await sendEmail({
+            to: client.contact_email,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+            text: emailTemplate.text,
+            tags: ['content-review', 'new-content'],
+          })
+
+          console.log('POST: Email send result:', JSON.stringify(emailResult))
+        } else {
+          console.log('POST: No client email found - skipping notification')
+        }
+      } catch (emailError) {
+        console.error('POST: Failed to send review notification email:', emailError)
+      }
+    }
+
+    return NextResponse.json(newContent, { status: 201 })
   } catch (error) {
     console.error('Error creating content:', error)
     return NextResponse.json({ error: 'Failed to create content' }, { status: 500 })
