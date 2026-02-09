@@ -341,7 +341,7 @@ export async function PATCH(
 
           console.log('Sending email to:', contentInfo.client_email, 'Subject:', emailTemplate.subject)
 
-          await sendEmail({
+          const emailResult = await sendEmail({
             to: contentInfo.client_email,
             subject: emailTemplate.subject,
             html: emailTemplate.html,
@@ -349,7 +349,13 @@ export async function PATCH(
             tags: ['content-review', isResubmission ? 'resubmission' : 'new-content'],
           })
 
-          console.log(`Review notification email sent successfully to ${contentInfo.client_email}`)
+          console.log('Email send result:', JSON.stringify(emailResult))
+
+          if (emailResult.success) {
+            console.log(`Review notification email sent successfully to ${contentInfo.client_email}, messageId: ${emailResult.messageId}`)
+          } else {
+            console.error(`Email send failed: ${emailResult.error}`)
+          }
         } catch (emailError) {
           // Log but don't fail the request if email fails
           console.error('Failed to send review notification email:', emailError)
