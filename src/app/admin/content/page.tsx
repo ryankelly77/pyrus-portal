@@ -255,6 +255,7 @@ export default function AdminContentPage() {
       'ai-image': 'AI Image',
       ai_video: 'AI Video',
       'ai-video': 'AI Video',
+      '4 Graphics Package': '4 Graphics Package',
       // Other/misc
       other: 'Other',
       Other: 'Other',
@@ -262,22 +263,35 @@ export default function AdminContentPage() {
     return typeLabels[contentType] || contentType
   }
 
-  const getPlatformClass = (platform: string | null) => {
-    if (!platform) {
-      return 'default-platform'
+  const getPlatformClass = (platform: string | null, contentType: string | null) => {
+    // First check platform
+    if (platform) {
+      switch (platform) {
+        case 'website':
+          return 'website'
+        case 'gbp':
+          return 'gbp'
+        case 'social':
+          return 'social'
+        case 'ai-creative':
+          return 'ai-creative'
+      }
     }
-    switch (platform) {
-      case 'website':
-        return 'website'
-      case 'gbp':
-        return 'gbp'
-      case 'social':
-        return 'social'
-      case 'ai-creative':
-        return 'ai-creative'
-      default:
-        return 'default-platform'
+
+    // If no platform, infer from content type
+    if (contentType) {
+      const websiteTypes = ['blog', 'blog-post', 'Blog Post', 'landing_page', 'landing-page', 'Landing Page', 'service_page', 'service-page', 'Service Page', 'location_page', 'location-page', 'Location Page', 'website']
+      const gbpTypes = ['gbp', 'gbp_post', 'gbp-post', 'GBP Post', 'gbp_update', 'gbp-update', 'GBP Update']
+      const socialTypes = ['social', 'social_post', 'social-post', 'Social Post']
+      const aiCreativeTypes = ['ai-creative', 'ai_image', 'ai-image', 'AI Image', 'ai_video', 'ai-video', 'AI Video', '4 Graphics Package']
+
+      if (websiteTypes.includes(contentType)) return 'website'
+      if (gbpTypes.includes(contentType)) return 'gbp'
+      if (socialTypes.includes(contentType)) return 'social'
+      if (aiCreativeTypes.includes(contentType)) return 'ai-creative'
     }
+
+    return 'default-platform'
   }
 
   const formatDate = (dateStr: string) => {
@@ -547,7 +561,7 @@ export default function AdminContentPage() {
                   </td>
                   <td>{item.client_name}</td>
                   <td>
-                    <span className={`platform-badge ${getPlatformClass(item.platform ?? '')}`}>
+                    <span className={`platform-badge ${getPlatformClass(item.platform, item.content_type)}`}>
                       {getContentTypeLabel(item.content_type, item.platform)}
                     </span>
                   </td>
