@@ -63,7 +63,7 @@ export default function ContentReviewPage() {
   useEffect(() => {
     async function fetchContent() {
       try {
-        const res = await fetch(`/api/admin/content/${contentId}`)
+        const res = await fetch(`/api/content/${contentId}`)
         if (!res.ok) {
           throw new Error('Content not found')
         }
