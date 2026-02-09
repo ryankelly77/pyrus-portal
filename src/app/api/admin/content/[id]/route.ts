@@ -316,7 +316,7 @@ export async function PATCH(
     // Send email notifications for submit action
     if (action === 'submit' && contentInfo?.client_email) {
       try {
-        const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/portal/content/${id}`
+        const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
 
         const emailData = {
           recipientName: contentInfo.client_name || 'there',
