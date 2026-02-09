@@ -236,21 +236,28 @@ export default function AdminContentPage() {
       location_page: 'Location Page',
       'location-page': 'Location Page',
       'Location Page': 'Location Page',
+      website: 'Website',
       // GBP content types
+      gbp: 'GBP Post',
       gbp_post: 'GBP Post',
       'gbp-post': 'GBP Post',
       'GBP Post': 'GBP Post',
       gbp_update: 'GBP Update',
       'gbp-update': 'GBP Update',
       // Social content types
+      social: 'Social Post',
       social_post: 'Social Post',
       'social-post': 'Social Post',
       'Social Post': 'Social Post',
       // AI Creative types
+      'ai-creative': 'AI Creative',
       ai_image: 'AI Image',
       'ai-image': 'AI Image',
       ai_video: 'AI Video',
       'ai-video': 'AI Video',
+      // Other/misc
+      other: 'Other',
+      Other: 'Other',
     }
     return typeLabels[contentType] || contentType
   }
@@ -269,7 +276,7 @@ export default function AdminContentPage() {
       case 'ai-creative':
         return 'ai-creative'
       default:
-        return 'website'
+        return 'default-platform'
     }
   }
 
@@ -787,6 +794,42 @@ export default function AdminContentPage() {
         .status-badge.status-scheduled {
           background: #E0E7FF;
           color: #6366F1;
+        }
+
+        /* Platform/Type badges */
+        .platform-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .platform-badge.website {
+          background: #DBEAFE;
+          color: #1D4ED8;
+        }
+
+        .platform-badge.gbp {
+          background: #FEF3C7;
+          color: #B45309;
+        }
+
+        .platform-badge.social {
+          background: #F3E8FF;
+          color: #7C3AED;
+        }
+
+        .platform-badge.ai-creative {
+          background: #FCE7F3;
+          color: #BE185D;
+        }
+
+        .platform-badge.default-platform {
+          background: #F3F4F6;
+          color: #4B5563;
         }
 
         .legend-item {
