@@ -953,6 +953,80 @@ export default function AdminContentPage() {
         .dropdown-item-danger:hover {
           background: #FEF2F2;
         }
+
+        /* Modal styles */
+        .modal-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          max-width: 90vw;
+          max-height: 90vh;
+          overflow: auto;
+        }
+
+        .modal-content.modal-sm {
+          width: 400px;
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid #E5E7EB;
+        }
+
+        .modal-header h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          padding: 4px;
+          cursor: pointer;
+          color: #6B7280;
+          border-radius: 6px;
+          transition: all 0.15s ease;
+        }
+
+        .modal-close:hover {
+          background: #F3F4F6;
+          color: #111827;
+        }
+
+        .modal-close:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .modal-body {
+          padding: 20px;
+        }
+
+        .modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding: 16px 20px;
+          border-top: 1px solid #E5E7EB;
+        }
       `}</style>
     </>
   )
