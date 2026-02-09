@@ -210,6 +210,51 @@ export default function AdminContentPage() {
     return labelMap[status] || status
   }
 
+  const getContentTypeLabel = (contentType: string | null, platform: string | null) => {
+    if (!contentType) {
+      // Fallback to platform label if no content type
+      const platformLabels: Record<string, string> = {
+        website: 'Website',
+        gbp: 'Google Business',
+        social: 'Social',
+        'ai-creative': 'AI Creative',
+      }
+      return platformLabels[platform || ''] || 'Content'
+    }
+
+    const typeLabels: Record<string, string> = {
+      // Website content types
+      blog: 'Blog Post',
+      'blog-post': 'Blog Post',
+      'Blog Post': 'Blog Post',
+      landing_page: 'Landing Page',
+      'landing-page': 'Landing Page',
+      'Landing Page': 'Landing Page',
+      service_page: 'Service Page',
+      'service-page': 'Service Page',
+      'Service Page': 'Service Page',
+      location_page: 'Location Page',
+      'location-page': 'Location Page',
+      'Location Page': 'Location Page',
+      // GBP content types
+      gbp_post: 'GBP Post',
+      'gbp-post': 'GBP Post',
+      'GBP Post': 'GBP Post',
+      gbp_update: 'GBP Update',
+      'gbp-update': 'GBP Update',
+      // Social content types
+      social_post: 'Social Post',
+      'social-post': 'Social Post',
+      'Social Post': 'Social Post',
+      // AI Creative types
+      ai_image: 'AI Image',
+      'ai-image': 'AI Image',
+      ai_video: 'AI Video',
+      'ai-video': 'AI Video',
+    }
+    return typeLabels[contentType] || contentType
+  }
+
   const getPlatformClass = (platform: string | null) => {
     if (!platform) {
       return 'default-platform'
@@ -496,7 +541,7 @@ export default function AdminContentPage() {
                   <td>{item.client_name}</td>
                   <td>
                     <span className={`platform-badge ${getPlatformClass(item.platform ?? '')}`}>
-                      {item.content_type || item.platform}
+                      {getContentTypeLabel(item.content_type, item.platform)}
                     </span>
                   </td>
                   <td>
