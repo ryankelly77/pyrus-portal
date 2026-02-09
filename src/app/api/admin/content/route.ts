@@ -6,6 +6,12 @@ import { contentCreateSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
+// Status group mappings
+const STATUS_GROUPS: Record<string, string[]> = {
+  in_review: ['sent_for_review', 'client_reviewing', 'revisions_requested'],
+  in_production: ['approved', 'internal_review', 'final_optimization', 'image_selection'],
+}
+
 // GET - List all content with filters
 export async function GET(request: NextRequest) {
   try {
@@ -40,6 +46,11 @@ export async function GET(request: NextRequest) {
         c.ai_optimized,
         c.revision_feedback,
         c.revision_count,
+        c.approval_required,
+        c.review_round,
+        c.status_history,
+        c.status_changed_at,
+        c.assigned_to,
         c.created_at,
         c.updated_at,
         c.client_id,
@@ -51,9 +62,20 @@ export async function GET(request: NextRequest) {
     const params: (string | number)[] = []
     let paramIndex = 1
 
+    // Handle status filter - including group filters
     if (status) {
-      query += ` AND c.status = $${paramIndex++}`
-      params.push(status)
+      if (STATUS_GROUPS[status]) {
+        // Group filter (in_review or in_production)
+        const statuses = STATUS_GROUPS[status]
+        const placeholders = statuses.map((_, i) => `$${paramIndex + i}`).join(', ')
+        query += ` AND c.status IN (${placeholders})`
+        statuses.forEach(s => params.push(s))
+        paramIndex += statuses.length
+      } else {
+        // Single status filter
+        query += ` AND c.status = $${paramIndex++}`
+        params.push(status)
+      }
     }
     if (clientId) {
       query += ` AND c.client_id = $${paramIndex++}`
@@ -64,19 +86,27 @@ export async function GET(request: NextRequest) {
       params.push(platform)
     }
 
-    query += ` ORDER BY c.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`
+    query += ` ORDER BY c.status_changed_at DESC NULLS LAST, c.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`
     params.push(limit, offset)
 
     const result = await dbPool.query(query, params)
 
-    // Get total count
+    // Get total count with same filters
     let countQuery = 'SELECT COUNT(*) FROM content c WHERE 1=1'
     const countParams: string[] = []
     let countParamIndex = 1
 
     if (status) {
-      countQuery += ` AND c.status = $${countParamIndex++}`
-      countParams.push(status)
+      if (STATUS_GROUPS[status]) {
+        const statuses = STATUS_GROUPS[status]
+        const placeholders = statuses.map((_, i) => `$${countParamIndex + i}`).join(', ')
+        countQuery += ` AND c.status IN (${placeholders})`
+        statuses.forEach(s => countParams.push(s))
+        countParamIndex += statuses.length
+      } else {
+        countQuery += ` AND c.status = $${countParamIndex++}`
+        countParams.push(status)
+      }
     }
     if (clientId) {
       countQuery += ` AND c.client_id = $${countParamIndex++}`
@@ -90,14 +120,35 @@ export async function GET(request: NextRequest) {
     const countResult = await dbPool.query(countQuery, countParams)
     const total = parseInt(countResult.rows[0].count)
 
-    // Get stats
+    // Get stats with new groupings
     const statsResult = await dbPool.query(`
       SELECT
+        -- Active clients (distinct clients with non-posted content)
+        COUNT(DISTINCT client_id) FILTER (WHERE status != 'posted') as active_clients,
+
+        -- Drafts
         COUNT(*) FILTER (WHERE status = 'draft') as drafts,
-        COUNT(*) FILTER (WHERE status = 'pending_review') as pending_review,
-        COUNT(*) FILTER (WHERE status = 'revision') as revision,
+
+        -- In Review (sent_for_review + client_reviewing)
+        COUNT(*) FILTER (WHERE status IN ('sent_for_review', 'client_reviewing')) as in_review,
+
+        -- Revisions Requested
+        COUNT(*) FILTER (WHERE status = 'revisions_requested') as revisions,
+
+        -- In Production (approved + internal_review + final_optimization + image_selection)
+        COUNT(*) FILTER (WHERE status IN ('approved', 'internal_review', 'final_optimization', 'image_selection')) as in_production,
+
+        -- Posted This Month
+        COUNT(*) FILTER (
+          WHERE status = 'posted'
+          AND status_changed_at >= date_trunc('month', CURRENT_DATE)
+        ) as posted_this_month,
+
+        -- Legacy stats for backwards compatibility
+        COUNT(*) FILTER (WHERE status IN ('pending_review', 'sent_for_review')) as pending_review,
+        COUNT(*) FILTER (WHERE status IN ('revision', 'revisions_requested')) as revision,
         COUNT(*) FILTER (WHERE status = 'approved') as approved,
-        COUNT(*) FILTER (WHERE status = 'published') as published,
+        COUNT(*) FILTER (WHERE status IN ('published', 'posted')) as published,
         COUNT(DISTINCT client_id) as clients_with_content
       FROM content
     `)
@@ -144,17 +195,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client and title are required' }, { status: 400 })
     }
 
+    // Determine if approval is required based on client settings
+    let approvalRequired = true
+    try {
+      const clientResult = await dbPool.query(
+        'SELECT content_approval_mode, approval_threshold FROM clients WHERE id = $1',
+        [clientId]
+      )
+      if (clientResult.rows.length > 0) {
+        const client = clientResult.rows[0]
+        if (client.content_approval_mode === 'auto') {
+          approvalRequired = false
+        } else if (client.content_approval_mode === 'initial_approval' && client.approval_threshold) {
+          // Count approved content for this client
+          const countResult = await dbPool.query(
+            `SELECT COUNT(*) FROM content
+             WHERE client_id = $1
+             AND status IN ('approved', 'final_optimization', 'image_selection', 'scheduled', 'posted')`,
+            [clientId]
+          )
+          approvalRequired = parseInt(countResult.rows[0].count) < client.approval_threshold
+        }
+      }
+    } catch (err) {
+      console.error('Error checking client approval mode:', err)
+      // Default to requiring approval
+    }
+
+    // Handle wordCount - ensure it's a valid integer or null
+    const validWordCount = (wordCount !== undefined && wordCount !== null && !isNaN(wordCount))
+      ? parseInt(wordCount, 10)
+      : null
+
     const result = await dbPool.query(
       `INSERT INTO content (
         client_id, title, content_type, platform, body, excerpt,
         urgent, deadline, target_keyword, secondary_keywords,
-        word_count, seo_optimized, ai_optimized, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        word_count, seo_optimized, ai_optimized, status,
+        approval_required, review_round, status_history, status_changed_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
       RETURNING *`,
       [
-        clientId, title, contentType, platform, bodyContent, excerpt,
-        urgent || false, deadline || null, targetKeyword, secondaryKeywords,
-        wordCount, seoOptimized || false, aiOptimized || false, status
+        clientId, title, contentType || null, platform || null, bodyContent || null, excerpt || null,
+        urgent || false, deadline || null, targetKeyword || null, secondaryKeywords || null,
+        validWordCount, seoOptimized || false, aiOptimized || false, status,
+        approvalRequired, 0, JSON.stringify([{ status, changed_at: new Date().toISOString(), changed_by_name: profile.full_name || 'Unknown' }])
       ]
     )
 

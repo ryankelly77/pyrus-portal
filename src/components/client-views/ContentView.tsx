@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { StatusProgressBar } from '@/components/content'
+import { getStatusLabel } from '@/lib/content-workflow-helpers'
 
 interface SubscriptionService {
   id?: string
@@ -40,6 +42,14 @@ interface ContentViewProps {
   contentServices?: Service[]
 }
 
+interface StatusHistoryEntry {
+  status: string
+  changed_at: string
+  changed_by_id?: string | null
+  changed_by_name?: string
+  note?: string
+}
+
 interface ContentItem {
   id: string
   platform: string
@@ -53,6 +63,13 @@ interface ContentItem {
   scheduledDate?: string | null
   publishedDate?: string | null
   publishedUrl?: string | null
+  // New workflow fields
+  status: string
+  approval_required: boolean
+  review_round: number
+  status_history: StatusHistoryEntry[]
+  status_changed_at: string | null
+  urgent: boolean
 }
 
 interface ContentStats {
@@ -61,6 +78,10 @@ interface ContentStats {
   approved: number
   published: number
   total: number
+  // New workflow stats
+  needsReview?: number
+  inProduction?: number
+  postedThisMonth?: number
 }
 
 interface ContentData {
@@ -78,6 +99,8 @@ interface FileItem {
   date: string
 }
 
+type ContentFilter = 'all' | 'needs_review' | 'in_production' | 'posted_this_month'
+
 // Demo files data (Raptor Vending)
 const demoFiles: FileItem[] = [
   { id: 1, name: 'Raptor Vending Brand Strategy.pdf', type: 'docs', category: 'Branding Foundation', date: 'Jan 5, 2026' },
@@ -90,7 +113,7 @@ const demoFiles: FileItem[] = [
 ]
 
 
-// Demo content data
+// Demo content data with new workflow fields
 const demoContentData: ContentData = {
   urgentReviews: [
     {
@@ -101,7 +124,13 @@ const demoContentData: ContentData = {
       title: 'Why San Antonio Businesses Are Switching to Micromarkets',
       type: 'Blog Post',
       date: 'Jan 8',
-      preview: 'Discover why forward-thinking San Antonio companies are replacing traditional vending with 24/7 micromarket solutions...'
+      preview: 'Discover why forward-thinking San Antonio companies are replacing traditional vending with 24/7 micromarket solutions...',
+      status: 'sent_for_review',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date().toISOString(),
+      urgent: true
     },
     {
       id: '2',
@@ -111,7 +140,13 @@ const demoContentData: ContentData = {
       title: 'New Micromarket Installation in Stone Oak',
       type: 'Google Post',
       date: 'Jan 10',
-      preview: 'Excited to announce our latest micromarket installation! Employees now enjoy fresh food, healthy snacks, and premium coffee 24/7...'
+      preview: 'Excited to announce our latest micromarket installation! Employees now enjoy fresh food, healthy snacks, and premium coffee 24/7...',
+      status: 'client_reviewing',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date().toISOString(),
+      urgent: true
     }
   ],
   pendingApproval: [
@@ -123,7 +158,13 @@ const demoContentData: ContentData = {
       title: '5 Ways Micromarkets Boost Employee Productivity',
       type: 'Blog Post',
       date: 'Jan 6',
-      preview: 'Research shows that convenient access to healthy food options can improve workplace productivity by up to 25%...'
+      preview: 'Research shows that convenient access to healthy food options can improve workplace productivity by up to 25%...',
+      status: 'sent_for_review',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date().toISOString(),
+      urgent: false
     },
     {
       id: '4',
@@ -133,7 +174,13 @@ const demoContentData: ContentData = {
       title: 'January Social Media Calendar',
       type: '8 Posts',
       date: 'Jan 5',
-      preview: 'Your complete January social media package: New Year workplace wellness tips, micromarket features, and employee appreciation content...'
+      preview: 'Your complete January social media package: New Year workplace wellness tips, micromarket features, and employee appreciation content...',
+      status: 'sent_for_review',
+      approval_required: true,
+      review_round: 1,
+      status_history: [{ status: 'revisions_requested', changed_at: new Date(Date.now() - 86400000).toISOString(), note: 'Please update the hashtags' }],
+      status_changed_at: new Date().toISOString(),
+      urgent: false
     },
     {
       id: '5',
@@ -143,7 +190,13 @@ const demoContentData: ContentData = {
       title: 'Micromarket Feature Graphics Package',
       type: '4 Graphics',
       date: 'Jan 4',
-      preview: 'AI-generated visuals showcasing your micromarket amenities: fresh food displays, coffee stations, and convenient checkout...'
+      preview: 'AI-generated visuals showcasing your micromarket amenities: fresh food displays, coffee stations, and convenient checkout...',
+      status: 'client_reviewing',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date().toISOString(),
+      urgent: false
     }
   ],
   approved: [
@@ -155,7 +208,13 @@ const demoContentData: ContentData = {
       type: 'Blog Post',
       date: 'Jan 3',
       preview: 'Everything San Antonio businesses need to know about modernizing their break room with vending and micromarket options...',
-      scheduledDate: 'Jan 12'
+      scheduledDate: 'Jan 12',
+      status: 'final_optimization',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date().toISOString(),
+      urgent: false
     }
   ],
   published: [
@@ -167,7 +226,13 @@ const demoContentData: ContentData = {
       type: 'Blog Post',
       date: 'Dec 28',
       preview: 'Compare the benefits of modern micromarkets against traditional vending machines for your San Antonio workplace...',
-      daysAgo: '14 days ago'
+      daysAgo: '14 days ago',
+      status: 'posted',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date(Date.now() - 14 * 86400000).toISOString(),
+      urgent: false
     },
     {
       id: '8',
@@ -177,7 +242,13 @@ const demoContentData: ContentData = {
       type: 'Google Post',
       date: 'Dec 23',
       preview: 'Happy Holidays from Raptor Vending! Our micromarkets keep running 24/7 so your team always has access to fresh food and drinks...',
-      daysAgo: '19 days ago'
+      daysAgo: '19 days ago',
+      status: 'posted',
+      approval_required: true,
+      review_round: 0,
+      status_history: [],
+      status_changed_at: new Date(Date.now() - 19 * 86400000).toISOString(),
+      urgent: false
     }
   ]
 }
@@ -222,6 +293,24 @@ function PlatformIcon({ platform }: { platform: string }) {
   }
 }
 
+// Get contextual CTA for a content item
+function getContentCTA(status: string, id: string, isAdmin: boolean): { label: string; href: string; variant: 'primary' | 'warning' | 'ghost' } {
+  const basePath = isAdmin ? `/admin/content/${id}` : `/content/review/${id}`
+  switch (status) {
+    case 'sent_for_review':
+      return { label: 'Review Now', href: basePath, variant: 'primary' }
+    case 'client_reviewing':
+      return { label: 'Continue Review', href: basePath, variant: 'primary' }
+    case 'revisions_requested':
+      return { label: 'View Feedback', href: basePath, variant: 'warning' }
+    case 'posted':
+    case 'published':
+      return { label: 'View', href: basePath, variant: 'ghost' }
+    default:
+      return { label: 'View Details', href: basePath, variant: 'ghost' }
+  }
+}
+
 // Content item component for review sections
 function ContentItemCard({
   item,
@@ -232,6 +321,9 @@ function ContentItemCard({
   variant?: 'urgent' | 'pending' | 'approved' | 'published'
   isAdmin?: boolean
 }) {
+  const cta = getContentCTA(item.status, item.id, isAdmin)
+  const clientStatusLabel = getStatusLabel(item.status, 'client')
+
   return (
     <div className={`content-item ${variant}`}>
       <div className="content-item-header">
@@ -250,17 +342,36 @@ function ContentItemCard({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            Awaiting Publishing
+            {clientStatusLabel}
           </div>
         )}
         {variant === 'published' && (
           <div className="status-published">
-            <span className="published-label">Published</span>
+            <span className="published-label">{clientStatusLabel}</span>
             <span className="published-date">{item.daysAgo}</span>
           </div>
         )}
       </div>
-      <h4 className="content-title">{item.title}</h4>
+
+      <h4 className="content-title">
+        {item.title}
+        {item.review_round > 0 && (
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            marginLeft: '8px',
+            padding: '2px 8px',
+            background: '#FEF3C7',
+            color: '#D97706',
+            borderRadius: '9999px',
+            fontSize: '0.7rem',
+            fontWeight: '600'
+          }}>
+            R{item.review_round}
+          </span>
+        )}
+      </h4>
+
       <div className="content-meta">
         <span className="content-type">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
@@ -286,6 +397,17 @@ function ContentItemCard({
            variant === 'approved' ? `Approved ${item.date}` : `Added ${item.date}`}
         </span>
       </div>
+
+      {/* Compact Progress Bar */}
+      <div style={{ margin: '12px 0' }}>
+        <StatusProgressBar
+          currentStatus={item.status}
+          approvalRequired={item.approval_required}
+          reviewRound={item.review_round}
+          compact
+        />
+      </div>
+
       <p className="content-preview">{item.preview}</p>
 
       {variant === 'approved' && item.scheduledDate && (
@@ -301,63 +423,197 @@ function ContentItemCard({
       )}
 
       <div className="content-actions">
-        {(variant === 'urgent' || variant === 'pending') && (
-          <>
-            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-primary btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-              Review &amp; Edit
-            </Link>
-            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Quick Approve
-            </Link>
-          </>
+        {/* Primary CTA based on status */}
+        <Link
+          href={cta.href}
+          className={`btn btn-sm ${cta.variant === 'primary' ? 'btn-primary' : cta.variant === 'warning' ? 'btn-outline' : 'btn-outline'}`}
+          style={cta.variant === 'primary' ? { background: '#14B8A6', borderColor: '#14B8A6' } : cta.variant === 'warning' ? { borderColor: '#F59E0B', color: '#D97706' } : undefined}
+        >
+          {cta.variant === 'primary' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          )}
+          {cta.label}
+        </Link>
+
+        {/* Secondary actions based on variant */}
+        {(variant === 'urgent' || variant === 'pending') && item.status === 'sent_for_review' && (
+          <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Quick Approve
+          </Link>
         )}
         {variant === 'approved' && (
-          <>
-            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-              View Approved Version
-            </Link>
-            <button className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-              </svg>
-              Rush Publishing
-            </button>
-          </>
+          <button className="btn btn-outline btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Rush Publishing
+          </button>
         )}
-        {variant === 'published' && (
-          <>
-            {item.publishedUrl ? (
-              <a href={item.publishedUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
-                <PlatformIcon platform={item.platform} />
-                View on {item.platform === 'gbp' ? 'GBP' : 'Website'}
-              </a>
-            ) : (
-              <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-primary btn-sm">
-                <PlatformIcon platform={item.platform} />
-                View Content
-              </Link>
-            )}
-            <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-              {item.platform === 'gbp' ? 'Create Similar Post' : 'Request Update'}
-            </Link>
-          </>
+        {variant === 'published' && item.publishedUrl && (
+          <a href={item.publishedUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+            <PlatformIcon platform={item.platform} />
+            View Live
+          </a>
         )}
       </div>
+    </div>
+  )
+}
+
+// Summary filter bar component
+function SummaryFilterBar({
+  stats,
+  activeFilter,
+  onFilterChange
+}: {
+  stats: ContentStats
+  activeFilter: ContentFilter
+  onFilterChange: (filter: ContentFilter) => void
+}) {
+  const needsReview = stats.needsReview ?? stats.pendingApproval
+  const inProduction = stats.inProduction ?? stats.approved
+  const postedThisMonth = stats.postedThisMonth ?? 0
+
+  return (
+    <div className="content-filter-bar" style={{
+      display: 'flex',
+      gap: '12px',
+      marginBottom: '24px',
+      flexWrap: 'wrap',
+      alignItems: 'center'
+    }}>
+      <button
+        onClick={() => onFilterChange('needs_review')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '9999px',
+          border: activeFilter === 'needs_review' ? '2px solid #F59E0B' : '1px solid #E5E7EB',
+          background: needsReview > 0 ? '#FEF3C7' : 'white',
+          cursor: 'pointer',
+          fontWeight: '500',
+          fontSize: '0.875rem',
+          color: needsReview > 0 ? '#92400E' : '#6B7280',
+          transition: 'all 0.2s'
+        }}
+      >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: needsReview > 0 ? '#F59E0B' : '#E5E7EB',
+          color: needsReview > 0 ? 'white' : '#6B7280',
+          fontWeight: '700',
+          fontSize: '0.75rem'
+        }}>
+          {needsReview}
+        </span>
+        Needs Your Review
+      </button>
+
+      <button
+        onClick={() => onFilterChange('in_production')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '9999px',
+          border: activeFilter === 'in_production' ? '2px solid #14B8A6' : '1px solid #E5E7EB',
+          background: activeFilter === 'in_production' ? '#CCFBF1' : 'white',
+          cursor: 'pointer',
+          fontWeight: '500',
+          fontSize: '0.875rem',
+          color: '#0D9488',
+          transition: 'all 0.2s'
+        }}
+      >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: '#14B8A6',
+          color: 'white',
+          fontWeight: '700',
+          fontSize: '0.75rem'
+        }}>
+          {inProduction}
+        </span>
+        In Production
+      </button>
+
+      <button
+        onClick={() => onFilterChange('posted_this_month')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '9999px',
+          border: activeFilter === 'posted_this_month' ? '2px solid #22C55E' : '1px solid #E5E7EB',
+          background: activeFilter === 'posted_this_month' ? '#DCFCE7' : 'white',
+          cursor: 'pointer',
+          fontWeight: '500',
+          fontSize: '0.875rem',
+          color: '#16A34A',
+          transition: 'all 0.2s'
+        }}
+      >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: '#22C55E',
+          color: 'white',
+          fontWeight: '700',
+          fontSize: '0.75rem'
+        }}>
+          {postedThisMonth}
+        </span>
+        Posted This Month
+      </button>
+
+      {activeFilter !== 'all' && (
+        <button
+          onClick={() => onFilterChange('all')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 12px',
+            borderRadius: '9999px',
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontWeight: '500',
+            fontSize: '0.875rem',
+            color: '#6B7280',
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Clear Filter
+        </button>
+      )}
     </div>
   )
 }
@@ -378,6 +634,8 @@ export function ContentView({
   const [loading, setLoading] = useState(true)
   const [contentStats, setContentStats] = useState<ContentStats | null>(null)
   const [contentData, setContentData] = useState<ContentData | null>(null)
+  const [allContent, setAllContent] = useState<ContentItem[]>([])
+  const [contentFilter, setContentFilter] = useState<ContentFilter>('all')
 
   // Only show demo files in demo mode, otherwise empty (real files would come from API)
   const files = isDemo ? demoFiles : []
@@ -387,14 +645,38 @@ export function ContentView({
   useEffect(() => {
     async function fetchContent() {
       if (isDemo) {
+        // Combine all demo content into a flat list
+        const allDemoContent = [
+          ...demoContentData.urgentReviews,
+          ...demoContentData.pendingApproval,
+          ...demoContentData.approved,
+          ...demoContentData.published
+        ]
+
+        // Calculate demo stats
+        const needsReviewStatuses = ['sent_for_review', 'client_reviewing', 'pending_review']
+        const inProductionStatuses = ['approved', 'internal_review', 'final_optimization', 'image_selection']
+        const completedStatuses = ['posted', 'published']
+
+        const now = new Date()
+        const postedThisMonth = allDemoContent.filter(c => {
+          if (!completedStatuses.includes(c.status)) return false
+          const changedAt = new Date(c.status_changed_at || '')
+          return changedAt.getMonth() === now.getMonth() && changedAt.getFullYear() === now.getFullYear()
+        }).length
+
         setContentStats({
           urgentReviews: demoContentData.urgentReviews.length,
           pendingApproval: demoContentData.pendingApproval.length + demoContentData.urgentReviews.length,
           approved: demoContentData.approved.length,
           published: demoContentData.published.length,
-          total: 8
+          total: 8,
+          needsReview: allDemoContent.filter(c => needsReviewStatuses.includes(c.status)).length,
+          inProduction: allDemoContent.filter(c => inProductionStatuses.includes(c.status)).length,
+          postedThisMonth
         })
         setContentData(demoContentData)
+        setAllContent(allDemoContent)
         setLoading(false)
         return
       }
@@ -409,6 +691,7 @@ export function ContentView({
           const data = await res.json()
           setContentStats(data.stats)
           setContentData(data.content)
+          setAllContent(data.allContent || [])
         }
       } catch (err) {
         console.error('Error fetching content:', err)
@@ -418,6 +701,30 @@ export function ContentView({
     }
     fetchContent()
   }, [clientId, isDemo, isAdmin])
+
+  // Apply content filter
+  const getFilteredContent = (items: ContentItem[]): ContentItem[] => {
+    const needsReviewStatuses = ['sent_for_review', 'client_reviewing', 'pending_review']
+    const inProductionStatuses = ['approved', 'internal_review', 'final_optimization', 'image_selection']
+    const completedStatuses = ['posted', 'published']
+
+    switch (contentFilter) {
+      case 'needs_review':
+        return items.filter(item => needsReviewStatuses.includes(item.status))
+      case 'in_production':
+        return items.filter(item => inProductionStatuses.includes(item.status))
+      case 'posted_this_month': {
+        const now = new Date()
+        return items.filter(item => {
+          if (!completedStatuses.includes(item.status)) return false
+          const changedAt = new Date(item.status_changed_at || '')
+          return changedAt.getMonth() === now.getMonth() && changedAt.getFullYear() === now.getFullYear()
+        })
+      }
+      default:
+        return items
+    }
+  }
 
   if (loading) {
     return (
@@ -439,11 +746,28 @@ export function ContentView({
     pendingApproval: displayData.pendingApproval.length,
     approved: displayData.approved.length,
     published: displayData.published.length,
-    total: 0
+    total: 0,
+    needsReview: 0,
+    inProduction: 0,
+    postedThisMonth: 0
   }
+
+  // Filter content based on active filter
+  const filteredUrgent = getFilteredContent(displayData.urgentReviews)
+  const filteredPending = getFilteredContent(displayData.pendingApproval)
+  const filteredApproved = getFilteredContent(displayData.approved)
+  const filteredPublished = getFilteredContent(displayData.published)
+  const hasFilteredContent = filteredUrgent.length > 0 || filteredPending.length > 0 || filteredApproved.length > 0 || filteredPublished.length > 0
 
   return (
     <div className="content-view-container">
+      {/* Summary Filter Bar */}
+      <SummaryFilterBar
+        stats={stats}
+        activeFilter={contentFilter}
+        onFilterChange={setContentFilter}
+      />
+
       {/* Content Stats */}
       <div className="content-stats">
         <div className={`content-stat-card ${stats.urgentReviews > 0 ? 'urgent' : ''}`}>
@@ -457,9 +781,9 @@ export function ContentView({
           <div className="stat-desc">Awaiting your review</div>
         </div>
         <div className="content-stat-card">
-          <div className="stat-label">Approved</div>
-          <div className="stat-value">{stats.approved}</div>
-          <div className="stat-desc">Ready for publishing</div>
+          <div className="stat-label">In Production</div>
+          <div className="stat-value">{stats.inProduction ?? stats.approved}</div>
+          <div className="stat-desc">Being prepared</div>
         </div>
         <div className="content-stat-card">
           <div className="stat-label">Published</div>
@@ -621,14 +945,48 @@ export function ContentView({
       {/* Content Review Tab */}
       {activeTab === 'review' && (
         <>
+          {/* Show filter active message */}
+          {contentFilter !== 'all' && (
+            <div style={{
+              background: '#F3F4F6',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span style={{ color: '#6B7280', fontSize: '0.875rem' }}>
+                Showing: <strong style={{ color: '#1F2937' }}>
+                  {contentFilter === 'needs_review' ? 'Content Needing Review' :
+                   contentFilter === 'in_production' ? 'Content In Production' :
+                   'Posted This Month'}
+                </strong>
+              </span>
+              <button
+                onClick={() => setContentFilter('all')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6B7280',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  textDecoration: 'underline'
+                }}
+              >
+                Show all content
+              </button>
+            </div>
+          )}
+
           {/* Urgent Reviews Section */}
-          {displayData.urgentReviews.length > 0 && (
+          {filteredUrgent.length > 0 && (
             <div className="content-section">
               <div className="content-section-header">
                 <h3 className="urgent-title">Urgent Reviews</h3>
               </div>
               <div className="content-list">
-                {displayData.urgentReviews.map((item) => (
+                {filteredUrgent.map((item) => (
                   <ContentItemCard key={item.id} item={item} variant="urgent" isAdmin={isAdmin} />
                 ))}
               </div>
@@ -636,13 +994,13 @@ export function ContentView({
           )}
 
           {/* Pending Approval Section */}
-          {displayData.pendingApproval.length > 0 && (
+          {filteredPending.length > 0 && (
             <div className="content-section">
               <div className="content-section-header">
                 <h3>Pending Approval</h3>
               </div>
               <div className="content-list">
-                {displayData.pendingApproval.map((item) => (
+                {filteredPending.map((item) => (
                   <ContentItemCard key={item.id} item={item} variant="pending" isAdmin={isAdmin} />
                 ))}
               </div>
@@ -650,13 +1008,13 @@ export function ContentView({
           )}
 
           {/* Approved Section */}
-          {displayData.approved.length > 0 && (
+          {filteredApproved.length > 0 && (
             <div className="content-section">
               <div className="content-section-header">
-                <h3>Approved - Awaiting Publishing</h3>
+                <h3>In Production</h3>
               </div>
               <div className="content-list">
-                {displayData.approved.map((item) => (
+                {filteredApproved.map((item) => (
                   <ContentItemCard key={item.id} item={item} variant="approved" isAdmin={isAdmin} />
                 ))}
               </div>
@@ -664,13 +1022,13 @@ export function ContentView({
           )}
 
           {/* Published Section */}
-          {displayData.published.length > 0 && (
+          {filteredPublished.length > 0 && (
             <div className="content-section">
               <div className="content-section-header">
                 <h3>Published Content</h3>
               </div>
               <div className="content-list">
-                {displayData.published.map((item) => (
+                {filteredPublished.map((item) => (
                   <ContentItemCard key={item.id} item={item} variant="published" isAdmin={isAdmin} />
                 ))}
               </div>
@@ -678,10 +1036,7 @@ export function ContentView({
           )}
 
           {/* Empty State */}
-          {displayData.urgentReviews.length === 0 &&
-           displayData.pendingApproval.length === 0 &&
-           displayData.approved.length === 0 &&
-           displayData.published.length === 0 && (
+          {!hasFilteredContent && (
             <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px dashed #D1D5DB' }}>
               <div style={{ width: '64px', height: '64px', background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" width="32" height="32">
@@ -692,14 +1047,24 @@ export function ContentView({
                 </svg>
               </div>
               <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>
-                {isAdmin ? 'Content Coming Soon' : 'No Content Yet'}
+                {contentFilter !== 'all' ? 'No Content Matches Filter' : isAdmin ? 'Content Coming Soon' : 'No Content Yet'}
               </h3>
-              <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto', marginBottom: isAdmin ? '1.5rem' : 0 }}>
-                {isAdmin
-                  ? "Your content team is getting started on your first pieces. You'll be notified when content is ready for review."
-                  : 'Content will appear here once created. Check back soon!'}
+              <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto', marginBottom: contentFilter !== 'all' || isAdmin ? '1.5rem' : 0 }}>
+                {contentFilter !== 'all'
+                  ? 'Try a different filter or view all content.'
+                  : isAdmin
+                    ? "Your content team is getting started on your first pieces. You'll be notified when content is ready for review."
+                    : 'Content will appear here once created. Check back soon!'}
               </p>
-              {isAdmin && (
+              {contentFilter !== 'all' && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setContentFilter('all')}
+                >
+                  View All Content
+                </button>
+              )}
+              {contentFilter === 'all' && isAdmin && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#DEF7EC', color: '#03543F', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: '500' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                     <polyline points="20 6 9 17 4 12"></polyline>

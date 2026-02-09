@@ -38,6 +38,9 @@ model clients {
   referred_by               String?
   referral_source           String?
   onboarding_completed_at   DateTime? @db.Timestamptz(6)
+  // Content approval workflow settings
+  content_approval_mode     String?   @default("full_approval") // 'full_approval', 'initial_approval', 'auto'
+  approval_threshold        Int?      // Number of pieces to approve before auto-approving (for initial_approval mode)
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
@@ -61,6 +64,28 @@ model clients {
   score_history         score_history[]
   website_edit_requests website_edit_requests[]
   system_alerts         system_alerts[]
+  activity_feed         activity_feed[]
+}
+
+// Centralized activity log for all significant portal activities
+model activity_feed {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id     String?   @db.Uuid
+  user_id       String?   @db.Uuid
+  user_name     String
+  activity_type String
+  message       String
+  metadata      Json?     @default("{}")
+  icon          String?   @default("info")
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  client clients? @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([created_at(sort: Desc)])
+  @@index([activity_type])
+  @@index([user_id])
+  @@index([client_id, created_at(sort: Desc)])
 }
 
 // Manual product assignments (for clients not going through purchase flow)
@@ -257,6 +282,13 @@ model content {
   // Revision tracking
   revision_feedback   String?   // Client feedback when rejected
   revision_count      Int?      @default(0)
+
+  // Workflow fields
+  status_changed_at   DateTime? @default(now()) @db.Timestamptz(6)
+  status_history      Json?     @default("[]")
+  approval_required   Boolean?  @default(true)
+  review_round        Int?      @default(0)
+  featured_image      String?   // URL to featured image
 
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamptz(6)

@@ -39,12 +39,20 @@ export async function GET(
       (c) => c.status === 'pending_approval'
     ).length
 
+    // Count approved content (includes various production states)
+    const approvedStatuses = ['approved', 'internal_review', 'final_optimization', 'image_selection']
     const approved = allContent.filter(
-      (c) => c.status === 'approved'
+      (c) => c.status && approvedStatuses.includes(c.status)
     ).length
 
+    // Count posted/published content
+    const postedStatuses = ['posted', 'published']
     const published = allContent.filter(
-      (c) => c.status === 'published'
+      (c) => c.status && postedStatuses.includes(c.status)
+    ).length
+
+    const posted = allContent.filter(
+      (c) => c.status === 'posted'
     ).length
 
     return NextResponse.json({
@@ -52,6 +60,7 @@ export async function GET(
       pendingApproval,
       approved,
       published,
+      posted,
       total: allContent.length,
     })
   } catch (error) {

@@ -5,6 +5,16 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ClientHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { StatusProgressBar } from '@/components/content'
+import { getNextActions, getStatusLabel } from '@/lib/content-workflow-helpers'
+
+interface StatusHistoryEntry {
+  status: string
+  changed_at: string
+  changed_by_id?: string | null
+  changed_by_name?: string
+  note?: string
+}
 
 interface ContentDetail {
   id: string
@@ -28,6 +38,12 @@ interface ContentDetail {
   created_at: string
   updated_at: string
   client_name: string
+  // New workflow fields
+  approval_required?: boolean
+  review_round?: number
+  status_history?: StatusHistoryEntry[]
+  status_changed_at?: string
+  assigned_to?: string | null
 }
 
 export default function ContentReviewPage() {
@@ -41,7 +57,8 @@ export default function ContentReviewPage() {
   const [error, setError] = useState<string | null>(null)
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const [feedback, setFeedback] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionError, setTransitionError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchContent() {
@@ -63,42 +80,80 @@ export default function ContentReviewPage() {
     }
   }, [contentId])
 
-  const handleApprove = async () => {
-    setSubmitting(true)
+  // Handle status transition via the new API
+  async function handleTransition(targetStatus: string, requiresNote: boolean = false) {
+    if (requiresNote) {
+      setShowFeedbackModal(true)
+      return
+    }
+
+    setIsTransitioning(true)
+    setTransitionError(null)
+
     try {
-      const res = await fetch(`/api/admin/content/${contentId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/content/${contentId}/transition`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'approve' })
+        body: JSON.stringify({ targetStatus }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update status')
+      }
+
+      // Refresh the page data
+      router.refresh()
+      // Re-fetch content to update local state
+      const res = await fetch(`/api/admin/content/${contentId}`)
       if (res.ok) {
-        router.push('/dashboard?tab=content')
+        const data = await res.json()
+        setContent(data)
       }
     } catch (err) {
-      console.error('Error approving content:', err)
+      console.error('Transition failed:', err)
+      setTransitionError(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
-      setSubmitting(false)
+      setIsTransitioning(false)
     }
   }
 
-  const handleReject = async () => {
-    if (!feedback.trim()) {
-      return
-    }
-    setSubmitting(true)
+  // Handle revision submission
+  async function handleRevisionSubmit() {
+    if (!feedback.trim()) return
+
+    setIsTransitioning(true)
+    setTransitionError(null)
+
     try {
-      const res = await fetch(`/api/admin/content/${contentId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/content/${contentId}/transition`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject', feedback })
+        body: JSON.stringify({
+          targetStatus: 'revisions_requested',
+          note: feedback.trim(),
+        }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to submit revision request')
+      }
+
+      setShowFeedbackModal(false)
+      setFeedback('')
+      router.refresh()
+      // Re-fetch content
+      const res = await fetch(`/api/admin/content/${contentId}`)
       if (res.ok) {
-        router.push('/dashboard?tab=content')
+        const data = await res.json()
+        setContent(data)
       }
     } catch (err) {
-      console.error('Error rejecting content:', err)
+      console.error('Revision submit failed:', err)
+      setTransitionError(err instanceof Error ? err.message : 'Failed to submit revision')
     } finally {
-      setSubmitting(false)
+      setIsTransitioning(false)
     }
   }
 
@@ -112,26 +167,30 @@ export default function ContentReviewPage() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'draft': return 'Draft'
-      case 'pending_review': return 'Pending Review'
-      case 'revision': return 'Needs Revision'
-      case 'approved': return 'Approved'
-      case 'published': return 'Published'
-      default: return status
-    }
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
   }
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'draft': return 'status-draft'
-      case 'pending_review': return 'status-awaiting'
-      case 'revision': return 'status-revision'
-      case 'approved': return 'status-approved'
-      case 'published': return 'status-published'
-      default: return ''
-    }
+  const formatFullDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
+
+  // Extract revision entries from status_history
+  const getRevisionHistory = () => {
+    if (!content?.status_history) return []
+    return content.status_history
+      .filter(h => h.status === 'revisions_requested' && h.note)
+      .reverse() // Most recent first
   }
 
   if (loading) {
@@ -166,8 +225,14 @@ export default function ContentReviewPage() {
     )
   }
 
-  const canApprove = content.status === 'pending_review'
-  const isPending = content.status === 'pending_review'
+  // Get workflow-aware actions
+  const actions = getNextActions(content.status, 'client', content.approval_required ?? true)
+  const revisionHistory = getRevisionHistory()
+  const clientStatusLabel = getStatusLabel(content.status, 'client')
+
+  // Check if user needs to begin review
+  const needsToBeginReview = content.status === 'sent_for_review'
+  const isReviewing = content.status === 'client_reviewing'
 
   return (
     <>
@@ -187,6 +252,23 @@ export default function ContentReviewPage() {
           </Link>
         </div>
 
+        {/* Error notification */}
+        {transitionError && (
+          <div style={{ background: '#FEE2E2', border: '1px solid #EF4444', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: '#DC2626' }}>
+            {transitionError}
+          </div>
+        )}
+
+        {/* Progress Bar */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <StatusProgressBar
+            currentStatus={content.status}
+            approvalRequired={content.approval_required ?? true}
+            reviewRound={content.review_round ?? 0}
+            statusHistory={content.status_history ?? []}
+          />
+        </div>
+
         {/* Content Header */}
         <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -195,47 +277,70 @@ export default function ContentReviewPage() {
                 <span className={`platform-badge ${content.platform || 'website'}`} style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
                   {getPlatformLabel(content.platform)}
                 </span>
-                <span className={`status-badge ${getStatusClass(content.status)}`}>
-                  {getStatusLabel(content.status)}
+                <span className="status-badge status-review" style={{ background: '#CCFBF1', color: '#0D9488' }}>
+                  {clientStatusLabel}
                 </span>
                 {content.urgent && (
                   <span style={{ background: '#FEE2E2', color: '#DC2626', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500' }}>
                     Urgent
                   </span>
                 )}
+                {(content.review_round ?? 0) > 0 && (
+                  <span style={{ background: '#FEF3C7', color: '#D97706', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600' }}>
+                    Revision Round {content.review_round}
+                  </span>
+                )}
               </div>
               <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1F2937', margin: 0 }}>{content.title}</h1>
             </div>
 
-            {canApprove && (
+            {/* Begin Review Button - shown when content is sent for review */}
+            {needsToBeginReview && (
+              <button
+                className="btn btn-primary"
+                onClick={() => handleTransition('client_reviewing')}
+                disabled={isTransitioning}
+                style={{ background: '#14B8A6', borderColor: '#14B8A6' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                {isTransitioning ? 'Starting...' : 'Begin Review'}
+              </button>
+            )}
+
+            {/* Action Buttons - shown during active review */}
+            {isReviewing && actions.length > 0 && (
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  className="btn btn-outline"
-                  onClick={() => setShowFeedbackModal(true)}
-                  disabled={submitting}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  Request Revision
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleApprove}
-                  disabled={submitting}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  {submitting ? 'Approving...' : 'Approve Content'}
-                </button>
+                {actions.map(action => (
+                  <button
+                    key={action.action || action.label}
+                    className={`btn ${action.variant === 'primary' ? 'btn-primary' : action.variant === 'warning' ? 'btn-outline' : 'btn-secondary'}`}
+                    onClick={() => handleTransition(action.action!, action.requiresNote)}
+                    disabled={isTransitioning || !action.action}
+                    style={action.variant === 'warning' ? { borderColor: '#F59E0B', color: '#D97706' } : undefined}
+                  >
+                    {action.label === 'Approve' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
+                    {action.label === 'Request Revisions' && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                      </svg>
+                    )}
+                    {isTransitioning ? 'Processing...' : action.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
           {/* Meta info */}
-          <div style={{ display: 'flex', gap: '2rem', color: '#6B7280', fontSize: '0.875rem' }}>
+          <div style={{ display: 'flex', gap: '2rem', color: '#6B7280', fontSize: '0.875rem', flexWrap: 'wrap' }}>
             {content.content_type && (
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
@@ -262,7 +367,7 @@ export default function ContentReviewPage() {
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                Due: {new Date(content.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                Due: {formatDate(content.deadline)}
               </span>
             )}
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -272,13 +377,51 @@ export default function ContentReviewPage() {
                 <line x1="8" y1="2" x2="8" y2="6"></line>
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
-              Submitted: {new Date(content.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              Submitted: {formatDate(content.created_at)}
             </span>
+            {content.status_changed_at && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <polyline points="1 4 1 10 7 10"></polyline>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Updated: {formatDate(content.status_changed_at)}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Revision Feedback (if any) */}
-        {content.revision_feedback && (
+        {/* Revision History (from status_history) */}
+        {revisionHistory.length > 0 && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              Revision History
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {revisionHistory.map((entry, i) => (
+                <div key={i} style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '8px', padding: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <span style={{ background: '#F59E0B', color: 'white', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600' }}>
+                      Round {revisionHistory.length - i}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#92400E' }}>
+                      {formatFullDate(entry.changed_at)}
+                      {entry.changed_by_name && ` by ${entry.changed_by_name}`}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, color: '#78350F', fontSize: '0.875rem' }}>{entry.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy Revision Feedback (fallback for old data) */}
+        {content.revision_feedback && !revisionHistory.length && (
           <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: '600', color: '#92400E' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -341,28 +484,43 @@ export default function ContentReviewPage() {
           </div>
         </div>
 
-        {/* Bottom Actions (for pending) */}
-        {isPending && (
+        {/* Bottom Actions */}
+        {isReviewing && (
           <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', marginTop: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={{ margin: 0, color: '#6B7280' }}>
               Please review the content above and approve or request revisions.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button
-                className="btn btn-outline"
-                onClick={() => setShowFeedbackModal(true)}
-                disabled={submitting}
-              >
-                Request Revision
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleApprove}
-                disabled={submitting}
-              >
-                {submitting ? 'Approving...' : 'Approve Content'}
-              </button>
+              {actions.map(action => (
+                <button
+                  key={action.action || action.label}
+                  className={`btn ${action.variant === 'primary' ? 'btn-primary' : action.variant === 'warning' ? 'btn-outline' : 'btn-secondary'}`}
+                  onClick={() => handleTransition(action.action!, action.requiresNote)}
+                  disabled={isTransitioning || !action.action}
+                  style={action.variant === 'warning' ? { borderColor: '#F59E0B', color: '#D97706' } : undefined}
+                >
+                  {isTransitioning ? 'Processing...' : action.label}
+                </button>
+              ))}
             </div>
+          </div>
+        )}
+
+        {/* Begin Review CTA (if sent_for_review) */}
+        {needsToBeginReview && (
+          <div style={{ background: 'linear-gradient(135deg, #14B8A6, #0D9488)', borderRadius: '12px', padding: '1.5rem', marginTop: '1.5rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.125rem' }}>Ready for Your Review</h3>
+              <p style={{ margin: 0, opacity: 0.9 }}>Click "Begin Review" to let our team know you&apos;re looking at this content.</p>
+            </div>
+            <button
+              className="btn"
+              onClick={() => handleTransition('client_reviewing')}
+              disabled={isTransitioning}
+              style={{ background: 'white', color: '#0D9488', fontWeight: '600' }}
+            >
+              {isTransitioning ? 'Starting...' : 'Begin Review'}
+            </button>
           </div>
         )}
       </div>
@@ -371,10 +529,17 @@ export default function ContentReviewPage() {
       {showFeedbackModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', maxWidth: '500px', width: '90%' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Request Revision</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Request Revisions</h3>
             <p style={{ color: '#6B7280', marginBottom: '1rem' }}>
-              Please provide feedback about what changes you&apos;d like made to this content.
+              Please describe what changes you&apos;d like made to this content.
             </p>
+
+            {transitionError && (
+              <div style={{ background: '#FEE2E2', border: '1px solid #EF4444', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', color: '#DC2626', fontSize: '0.875rem' }}>
+                {transitionError}
+              </div>
+            )}
+
             <textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
@@ -392,17 +557,21 @@ export default function ContentReviewPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
               <button
                 className="btn btn-secondary"
-                onClick={() => setShowFeedbackModal(false)}
-                disabled={submitting}
+                onClick={() => {
+                  setShowFeedbackModal(false)
+                  setTransitionError(null)
+                }}
+                disabled={isTransitioning}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-primary"
-                onClick={handleReject}
-                disabled={submitting || !feedback.trim()}
+                className="btn"
+                onClick={handleRevisionSubmit}
+                disabled={isTransitioning || !feedback.trim()}
+                style={{ background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }}
               >
-                {submitting ? 'Submitting...' : 'Submit Feedback'}
+                {isTransitioning ? 'Submitting...' : 'Submit Revision Request'}
               </button>
             </div>
           </div>

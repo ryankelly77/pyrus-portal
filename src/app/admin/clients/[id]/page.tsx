@@ -111,6 +111,9 @@ interface DBClient {
   uptimerobot_monitor_id: string | null
   // Onboarding
   onboarding_completed_at: string | null
+  // Content approval workflow settings
+  content_approval_mode: 'full_approval' | 'initial_approval' | 'auto' | null
+  approval_threshold: number | null
 }
 
 type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
@@ -447,6 +450,9 @@ export default function ClientDetailPage() {
     resultAlerts: true,
     recommendationUpdates: true,
     weeklyDigest: false,
+    // Content approval workflow
+    contentApprovalMode: 'full_approval' as 'full_approval' | 'initial_approval' | 'auto',
+    approvalThreshold: 3,
   })
   const [isSaving, setIsSaving] = useState(false)
 
@@ -615,6 +621,11 @@ export default function ClientDetailPage() {
   // Flags from API based on product includes_content/includes_website fields
   const [hasContentProductsFromApi, setHasContentProductsFromApi] = useState<boolean | null>(null)
   const [hasWebsiteProductsFromApi, setHasWebsiteProductsFromApi] = useState<boolean | null>(null)
+
+  // Content approval workflow progress (count of approved/posted content for initial_approval mode)
+  const [approvedContentCount, setApprovedContentCount] = useState(0)
+  const [showApprovalModeConfirm, setShowApprovalModeConfirm] = useState(false)
+  const [originalApprovalMode, setOriginalApprovalMode] = useState<'full_approval' | 'initial_approval' | 'auto'>('full_approval')
 
   // Result Alert modal state
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
@@ -810,8 +821,15 @@ export default function ClientDetailPage() {
   const [invoicesLoading, setInvoicesLoading] = useState(false)
 
   // Handle saving client changes
-  const handleSaveClient = async () => {
+  const handleSaveClient = async (skipConfirmation = false) => {
     if (!dbClient) return
+
+    // Check if approval mode changed and show confirmation if needed
+    const modeChanged = editFormData.contentApprovalMode !== originalApprovalMode
+    if (modeChanged && !skipConfirmation) {
+      setShowApprovalModeConfirm(true)
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -839,6 +857,9 @@ export default function ClientDetailPage() {
           agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
           basecampProjectId: editFormData.basecampProjectId,
           stripeCustomerId: editFormData.stripeCustomerId,
+          // Content approval workflow
+          contentApprovalMode: editFormData.contentApprovalMode,
+          approvalThreshold: editFormData.contentApprovalMode === 'initial_approval' ? editFormData.approvalThreshold : null,
         }),
       })
 
@@ -851,8 +872,11 @@ export default function ClientDetailPage() {
       // Refetch client to get updated data
       const updatedClient = await res.json()
       setDbClient(updatedClient)
+      // Update original approval mode after successful save
+      setOriginalApprovalMode(editFormData.contentApprovalMode)
 
       setShowEditModal(false)
+      setShowApprovalModeConfirm(false)
     } catch (error) {
       console.error('Failed to save client:', error)
       alert('Failed to save changes')
@@ -892,7 +916,12 @@ export default function ClientDetailPage() {
             agencyDashboardShareKey: data.agency_dashboard_share_key || '',
             basecampProjectId: data.basecamp_project_id || '',
             stripeCustomerId: data.stripe_customer_id || '',
+            // Content approval workflow
+            contentApprovalMode: (data.content_approval_mode as 'full_approval' | 'initial_approval' | 'auto') || 'full_approval',
+            approvalThreshold: data.approval_threshold || 3,
           }))
+          // Track original approval mode for confirmation dialog
+          setOriginalApprovalMode((data.content_approval_mode as 'full_approval' | 'initial_approval' | 'auto') || 'full_approval')
         }
       } catch (error) {
         console.error('Failed to fetch client:', error)
@@ -993,6 +1022,23 @@ export default function ClientDetailPage() {
     }
     fetchPaymentMethods()
   }, [clientId, dbClient?.stripe_customer_id])
+
+  // Fetch approved content count for approval workflow progress
+  useEffect(() => {
+    const fetchApprovedContentCount = async () => {
+      try {
+        const res = await fetch(`/api/admin/clients/${clientId}/content-stats`)
+        if (res.ok) {
+          const data = await res.json()
+          // Count approved + posted content for the threshold progress
+          setApprovedContentCount((data.approved || 0) + (data.posted || 0))
+        }
+      } catch (error) {
+        console.error('Failed to fetch approved content count:', error)
+      }
+    }
+    fetchApprovedContentCount()
+  }, [clientId])
 
   // Fetch video chapters
   useEffect(() => {
@@ -1904,6 +1950,64 @@ export default function ClientDetailPage() {
                     return (
                       <span className={`status-badge ${displayStatus}`}>
                         {labels[displayStatus]}
+                      </span>
+                    )
+                  })()}
+                  {/* Content Approval Mode Badge */}
+                  {(() => {
+                    const mode = dbClient?.content_approval_mode || 'full_approval'
+                    const badges: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+                      full_approval: {
+                        label: 'Full Approval',
+                        color: '#1D4ED8',
+                        bg: '#DBEAFE',
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                          </svg>
+                        ),
+                      },
+                      initial_approval: {
+                        label: 'Initial Approval',
+                        color: '#B45309',
+                        bg: '#FEF3C7',
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                          </svg>
+                        ),
+                      },
+                      auto: {
+                        label: 'Auto Approve',
+                        color: '#047857',
+                        bg: '#D1FAE5',
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        ),
+                      },
+                    }
+                    const badge = badges[mode] || badges.full_approval
+                    return (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          marginLeft: '8px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          borderRadius: '9999px',
+                          background: badge.bg,
+                          color: badge.color,
+                        }}
+                        title={`Content approval mode: ${badge.label}`}
+                      >
+                        {badge.icon}
+                        {badge.label}
                       </span>
                     )
                   })()}
@@ -3306,6 +3410,247 @@ export default function ClientDetailPage() {
                       </select>
                     </div>
                   </div>
+
+                  {/* Content Approval Workflow Settings */}
+                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" width="20" height="20">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <polyline points="16 13 12 17 8 13"></polyline>
+                        <line x1="12" y1="17" x2="12" y2="9"></line>
+                      </svg>
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1F2937', margin: 0 }}>Content Approval Workflow</h4>
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '1rem' }}>
+                      How should content be reviewed for this client?
+                    </p>
+
+                    {/* Progress Bar - shown when initial_approval mode is active */}
+                    {editFormData.contentApprovalMode === 'initial_approval' && (
+                      <div style={{
+                        background: approvedContentCount >= editFormData.approvalThreshold ? '#ECFDF5' : '#FFFBEB',
+                        border: `1px solid ${approvedContentCount >= editFormData.approvalThreshold ? '#A7F3D0' : '#FDE68A'}`,
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        marginBottom: '1rem',
+                      }}>
+                        {approvedContentCount >= editFormData.approvalThreshold ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              background: '#22C55E',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, color: '#065F46', fontSize: '0.9rem' }}>
+                                Threshold Reached
+                              </div>
+                              <div style={{ color: '#047857', fontSize: '0.8rem' }}>
+                                {approvedContentCount} pieces approved — new content will auto-approve
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="18" height="18">
+                                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                                <span style={{ fontWeight: 600, color: '#92400E', fontSize: '0.9rem' }}>
+                                  Initial Approval Progress
+                                </span>
+                              </div>
+                              <span style={{ fontWeight: 600, color: '#D97706', fontSize: '0.9rem' }}>
+                                {approvedContentCount} / {editFormData.approvalThreshold}
+                              </span>
+                            </div>
+                            <div style={{ height: '8px', background: '#FDE68A', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  height: '100%',
+                                  width: `${Math.min((approvedContentCount / editFormData.approvalThreshold) * 100, 100)}%`,
+                                  background: 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                                  borderRadius: '4px',
+                                  transition: 'width 0.3s ease',
+                                }}
+                              />
+                            </div>
+                            <div style={{ color: '#92400E', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+                              {editFormData.approvalThreshold - approvedContentCount} more piece{editFormData.approvalThreshold - approvedContentCount !== 1 ? 's' : ''} until auto-approval activates
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {/* Full Approval Option */}
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: editFormData.contentApprovalMode === 'full_approval' ? '2px solid #14B8A6' : '1px solid #E5E7EB',
+                          background: editFormData.contentApprovalMode === 'full_approval' ? '#F0FDFA' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="approvalMode"
+                          checked={editFormData.contentApprovalMode === 'full_approval'}
+                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'full_approval' })}
+                          style={{ marginTop: '3px' }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Full Approval</div>
+                          <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
+                            Client reviews and approves every piece of content before it goes to production.
+                          </div>
+                        </div>
+                      </label>
+
+                      {/* Initial Approval Option */}
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: editFormData.contentApprovalMode === 'initial_approval' ? '2px solid #F59E0B' : '1px solid #E5E7EB',
+                          background: editFormData.contentApprovalMode === 'initial_approval' ? '#FFFBEB' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="approvalMode"
+                          checked={editFormData.contentApprovalMode === 'initial_approval'}
+                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'initial_approval' })}
+                          style={{ marginTop: '3px' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Initial Approval</div>
+                          <div style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '0.75rem' }}>
+                            Client reviews the first{' '}
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              value={editFormData.approvalThreshold}
+                              onChange={(e) => setEditFormData({ ...editFormData, approvalThreshold: parseInt(e.target.value) || 3 })}
+                              onClick={(e) => e.stopPropagation()}
+                              disabled={editFormData.contentApprovalMode !== 'initial_approval'}
+                              style={{
+                                width: '50px',
+                                padding: '2px 6px',
+                                border: '1px solid #D1D5DB',
+                                borderRadius: '4px',
+                                textAlign: 'center',
+                                fontSize: '0.875rem',
+                                margin: '0 4px',
+                                background: editFormData.contentApprovalMode === 'initial_approval' ? 'white' : '#F3F4F6',
+                              }}
+                            />
+                            {' '}pieces, then content moves to production automatically.
+                          </div>
+
+                          {/* Progress indicator */}
+                          {editFormData.contentApprovalMode === 'initial_approval' && (
+                            <div style={{
+                              background: '#F9FAFB',
+                              borderRadius: '6px',
+                              padding: '0.75rem',
+                              marginTop: '0.5rem',
+                            }}>
+                              {approvedContentCount >= editFormData.approvalThreshold ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '0.875rem', fontWeight: 500 }}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                  Threshold reached — new content auto-approves
+                                </div>
+                              ) : (
+                                <>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.5rem' }}>
+                                    <span>{approvedContentCount} of {editFormData.approvalThreshold} approved so far</span>
+                                    <span>{Math.round((approvedContentCount / editFormData.approvalThreshold) * 100)}%</span>
+                                  </div>
+                                  <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
+                                    <div
+                                      style={{
+                                        height: '100%',
+                                        width: `${Math.min((approvedContentCount / editFormData.approvalThreshold) * 100, 100)}%`,
+                                        background: 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                                        borderRadius: '3px',
+                                        transition: 'width 0.3s ease',
+                                      }}
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+
+                      {/* Auto Option */}
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.75rem',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: editFormData.contentApprovalMode === 'auto' ? '2px solid #22C55E' : '1px solid #E5E7EB',
+                          background: editFormData.contentApprovalMode === 'auto' ? '#F0FDF4' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="approvalMode"
+                          checked={editFormData.contentApprovalMode === 'auto'}
+                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'auto' })}
+                          style={{ marginTop: '3px' }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Auto / No Review</div>
+                          <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
+                            Content moves directly to production without client review. Best for clients who trust the process.
+                          </div>
+                          {editFormData.contentApprovalMode === 'auto' && (
+                            <div style={{
+                              marginTop: '0.75rem',
+                              padding: '0.5rem 0.75rem',
+                              background: '#ECFDF5',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              color: '#065F46',
+                            }}>
+                              <strong>Workflow:</strong> Draft → Internal Review → Final Optimization → Image Selection → Posted
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -3681,11 +4026,67 @@ export default function ClientDetailPage() {
               <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={handleSaveClient} disabled={isSaving}>
+              <button className="btn btn-primary" onClick={() => handleSaveClient()} disabled={isSaving}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Mode Change Confirmation Modal */}
+      {showApprovalModeConfirm && (
+        <div className="modal-overlay active" onClick={() => setShowApprovalModeConfirm(false)} style={{ zIndex: 1001 }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <div className="modal-header-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="modal-title">Change approval workflow?</h2>
+                  <p className="modal-subtitle">For {dbClient?.name || 'this client'}</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setShowApprovalModeConfirm(false)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: '#4B5563', lineHeight: 1.6 }}>
+                You're changing from <strong style={{ color: '#1F2937' }}>
+                  {originalApprovalMode === 'full_approval' ? 'Full Approval' :
+                   originalApprovalMode === 'initial_approval' ? 'Initial Approval' : 'Auto / No Review'}
+                </strong> to <strong style={{ color: '#1F2937' }}>
+                  {editFormData.contentApprovalMode === 'full_approval' ? 'Full Approval' :
+                   editFormData.contentApprovalMode === 'initial_approval' ? 'Initial Approval' : 'Auto / No Review'}
+                </strong>.
+              </p>
+              <p style={{ color: '#6B7280', fontSize: '0.875rem', marginTop: '0.75rem' }}>
+                This will affect how new content is handled. Content already in progress will not be changed.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowApprovalModeConfirm(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleSaveClient(true)}
+                disabled={isSaving}
+                style={{ background: '#D97706', borderColor: '#D97706' }}
+              >
+                {isSaving ? 'Saving...' : 'Confirm Change'}
               </button>
             </div>
           </div>

@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server'
 import { logAuthError } from '@/lib/alerts'
 import type { User } from '@supabase/supabase-js'
 
-type Profile = { role: string }
+type Profile = { role: string; full_name: string | null }
 
-export async function requireAdmin(): Promise<NextResponse | { user: User; profile: { role: string } }> {
+export async function requireAdmin(): Promise<NextResponse | { user: User; profile: Profile }> {
   try {
     const supabase = await createClient()
     const {
@@ -26,7 +26,7 @@ export async function requireAdmin(): Promise<NextResponse | { user: User; profi
 
     const profile = await prisma.profiles.findUnique({
       where: { id: user.id },
-      select: { role: true },
+      select: { role: true, full_name: true },
     })
 
     const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']

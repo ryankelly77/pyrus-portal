@@ -5,6 +5,14 @@ interface ContentDataOptions {
   status?: string
 }
 
+interface StatusHistoryEntry {
+  status: string
+  changed_at: string
+  changed_by_id?: string | null
+  changed_by_name?: string
+  note?: string
+}
+
 interface FormattedContentItem {
   id: string
   platform: string
@@ -20,6 +28,13 @@ interface FormattedContentItem {
   publishedUrl: string | null
   author?: { id: string; full_name: string | null; email: string } | null
   assignee?: { id: string; full_name: string | null; email: string } | null
+  // New workflow fields
+  status: string
+  approval_required: boolean
+  review_round: number
+  status_history: StatusHistoryEntry[]
+  status_changed_at: string | null
+  urgent: boolean
 }
 
 interface ContentDataResult {
@@ -29,6 +44,10 @@ interface ContentDataResult {
     approved: number
     published: number
     total: number
+    // New workflow stats
+    needsReview: number
+    inProduction: number
+    postedThisMonth: number
   }
   content: {
     urgentReviews: FormattedContentItem[]
@@ -36,6 +55,8 @@ interface ContentDataResult {
     approved: FormattedContentItem[]
     published: FormattedContentItem[]
   }
+  // Flat list of all content for filtering
+  allContent: FormattedContentItem[]
 }
 
 // Platform label mapping
@@ -53,15 +74,23 @@ function formatContentItem(
     title: string
     content_type: string | null
     platform: string | null
+    status: string
     excerpt: string | null
     body: string | null
+    urgent: boolean | null
     deadline: Date | null
     published_at: Date | null
     published_url: string | null
     scheduled_date: Date | null
     created_at: Date | null
+    updated_at: Date | null
     author?: { id: string; full_name: string | null; email: string } | null
     assignee?: { id: string; full_name: string | null; email: string } | null
+    // New workflow fields
+    approval_required?: boolean | null
+    review_round?: number | null
+    status_history?: any
+    status_changed_at?: Date | null
   },
   now: Date,
   includeAssignments: boolean
@@ -70,6 +99,7 @@ function formatContentItem(
   const publishedAt = item.published_at
   const scheduledDate = item.scheduled_date
   const createdAt = item.created_at || new Date()
+  const statusChangedAt = item.status_changed_at
 
   // Calculate time remaining for deadline
   let timeRemaining: string | null = null
@@ -104,6 +134,18 @@ function formatContentItem(
   // Get preview from excerpt or body
   const preview = item.excerpt || (item.body ? item.body.substring(0, 200) : '')
 
+  // Parse status_history if it's a string
+  let statusHistory: StatusHistoryEntry[] = []
+  if (item.status_history) {
+    try {
+      statusHistory = typeof item.status_history === 'string'
+        ? JSON.parse(item.status_history)
+        : item.status_history
+    } catch {
+      statusHistory = []
+    }
+  }
+
   const result: FormattedContentItem = {
     id: item.id,
     platform: item.platform || 'website',
@@ -117,6 +159,13 @@ function formatContentItem(
     scheduledDate: scheduledDate?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) || null,
     publishedDate: publishedAt?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) || null,
     publishedUrl: item.published_url,
+    // New workflow fields
+    status: item.status,
+    approval_required: item.approval_required ?? true,
+    review_round: item.review_round ?? 0,
+    status_history: statusHistory,
+    status_changed_at: statusChangedAt?.toISOString() || item.updated_at?.toISOString() || null,
+    urgent: item.urgent ?? false,
   }
 
   // Include author/assignee if requested (for admin view)
@@ -163,6 +212,11 @@ export async function getContentData(
       scheduled_date: true,
       created_at: true,
       updated_at: true,
+      // New workflow fields
+      approval_required: true,
+      review_round: true,
+      status_history: true,
+      status_changed_at: true,
       ...(includeAssignments && {
         author: {
           select: { id: true, full_name: true, email: true },
@@ -181,18 +235,52 @@ export async function getContentData(
 
   const now = new Date()
 
-  // Categorize content
+  // Helper to check if content needs review (new workflow statuses)
+  const needsReviewStatuses = ['sent_for_review', 'client_reviewing']
+  const inProductionStatuses = ['approved', 'internal_review', 'final_optimization', 'image_selection']
+  const completedStatuses = ['posted', 'published'] // Include legacy 'published'
+
+  // Categorize content using both old and new status values for backwards compatibility
   const urgentReviews = allContent.filter(
-    (c) => c.status === 'pending_review' && c.urgent
+    (c) => (c.status === 'pending_review' || (c.status && needsReviewStatuses.includes(c.status))) && c.urgent
   )
 
   const pendingApproval = allContent.filter(
-    (c) => c.status === 'pending_review' && !c.urgent
+    (c) => (c.status === 'pending_review' || (c.status && needsReviewStatuses.includes(c.status))) && !c.urgent
   )
 
-  const approved = allContent.filter((c) => c.status === 'approved')
+  const approved = allContent.filter(
+    (c) => c.status === 'approved' || (c.status && inProductionStatuses.includes(c.status))
+  )
 
-  const published = allContent.filter((c) => c.status === 'published')
+  const published = allContent.filter(
+    (c) => c.status && completedStatuses.includes(c.status)
+  )
+
+  // Calculate new workflow stats
+  const needsReview = allContent.filter(
+    (c) => (c.status && needsReviewStatuses.includes(c.status)) || c.status === 'pending_review'
+  ).length
+
+  const inProduction = allContent.filter(
+    (c) => c.status && inProductionStatuses.includes(c.status)
+  ).length
+
+  // Posted this month
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  const postedThisMonth = allContent.filter((c) => {
+    if (!c.status || !completedStatuses.includes(c.status)) return false
+    const changedAt = c.status_changed_at || c.updated_at
+    if (!changedAt) return false
+    const changedDate = new Date(changedAt)
+    return changedDate.getMonth() === currentMonth && changedDate.getFullYear() === currentYear
+  }).length
+
+  // Format all content for the flat list
+  const formattedAllContent = allContent.map((item) =>
+    formatContentItem(item as any, now, includeAssignments)
+  )
 
   return {
     stats: {
@@ -201,6 +289,10 @@ export async function getContentData(
       approved: approved.length,
       published: published.length,
       total: allContent.length,
+      // New workflow stats
+      needsReview,
+      inProduction,
+      postedThisMonth,
     },
     content: {
       urgentReviews: urgentReviews.map((item) =>
@@ -216,5 +308,7 @@ export async function getContentData(
         formatContentItem(item as any, now, includeAssignments)
       ),
     },
+    // Flat list for filtering
+    allContent: formattedAllContent,
   }
 }

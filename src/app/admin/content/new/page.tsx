@@ -1,19 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 
-const clients = [
-  { id: 'dlg', name: 'DLG Medical Services' },
-  { id: 'summit', name: 'Summit Dental' },
-  { id: 'coastal', name: 'Coastal Realty Group' },
-  { id: 'precision', name: 'Precision Auto Care' },
-  { id: 'green', name: 'Green Valley Landscaping' },
-]
+interface Client {
+  id: string
+  name: string
+  content_approval_mode?: 'full_approval' | 'initial_approval' | 'auto' | null
+  approval_threshold?: number | null
+}
 
 export default function CreateContentPage() {
+  const router = useRouter()
   const { user, hasNotifications } = useUserProfile()
   const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>('website')
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
@@ -25,6 +26,151 @@ export default function CreateContentPage() {
     linkedin: false,
     x: false,
   })
+
+  // Form state
+  const [title, setTitle] = useState('')
+  const [bodyContent, setBodyContent] = useState('')
+  const [contentType, setContentType] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Client state
+  const [clients, setClients] = useState<Client[]>([])
+  const [selectedClientId, setSelectedClientId] = useState('')
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [approvedContentCount, setApprovedContentCount] = useState(0)
+
+  // Fetch clients from API
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await fetch('/api/admin/clients')
+        if (res.ok) {
+          const data = await res.json()
+          // API returns array directly, not wrapped in { clients: [...] }
+          setClients(Array.isArray(data) ? data : (data.clients || []))
+        }
+      } catch (err) {
+        console.error('Failed to fetch clients:', err)
+      }
+    }
+    fetchClients()
+  }, [])
+
+  // Fetch client approval data when selection changes
+  const fetchClientApprovalData = useCallback(async (clientIdToFetch: string) => {
+    if (!clientIdToFetch) {
+      setSelectedClient(null)
+      setApprovedContentCount(0)
+      return
+    }
+    try {
+      const clientRes = await fetch(`/api/admin/clients/${clientIdToFetch}`)
+      if (clientRes.ok) {
+        const clientData = await clientRes.json()
+        setSelectedClient(clientData)
+      }
+      const statsRes = await fetch(`/api/admin/clients/${clientIdToFetch}/content-stats`)
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        setApprovedContentCount((statsData.approved || 0) + (statsData.posted || 0))
+      }
+    } catch (err) {
+      console.error('Failed to fetch client approval data:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedClientId) {
+      fetchClientApprovalData(selectedClientId)
+    } else {
+      setSelectedClient(null)
+      setApprovedContentCount(0)
+    }
+  }, [selectedClientId, fetchClientApprovalData])
+
+  const handleSaveDraft = async () => {
+    setError(null)
+
+    if (!selectedClientId) {
+      setError('Please select a client')
+      return
+    }
+    if (!title.trim()) {
+      setError('Please enter a title')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClientId,
+          title: title.trim(),
+          bodyContent: bodyContent || null,
+          contentType: contentType || null,
+          platform,
+          urgent: timeline === 'urgent',
+          status: 'draft',
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save draft')
+      }
+
+      const content = await res.json()
+      router.push(`/admin/content/${content.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save draft')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSubmitForReview = async () => {
+    setError(null)
+
+    if (!selectedClientId) {
+      setError('Please select a client')
+      return
+    }
+    if (!title.trim()) {
+      setError('Please enter a title')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClientId,
+          title: title.trim(),
+          bodyContent: bodyContent || null,
+          contentType: contentType || null,
+          platform,
+          urgent: timeline === 'urgent',
+          status: 'sent_for_review',
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit for review')
+      }
+
+      router.push('/admin/content')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit for review')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <>
@@ -46,6 +192,164 @@ export default function CreateContentPage() {
       />
 
       <div className="admin-content">
+        {/* Client Approval Progress Bar */}
+        {selectedClient?.content_approval_mode === 'initial_approval' && selectedClient.approval_threshold && (
+          <div style={{
+            background: approvedContentCount >= selectedClient.approval_threshold ? '#ECFDF5' : '#FFFBEB',
+            border: `1px solid ${approvedContentCount >= selectedClient.approval_threshold ? '#A7F3D0' : '#FDE68A'}`,
+            borderRadius: '12px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}>
+            {approvedContentCount >= selectedClient.approval_threshold ? (
+              <>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#22C55E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: '#065F46', fontSize: '0.95rem' }}>
+                    Auto-Approval Active for {selectedClient.name}
+                  </div>
+                  <div style={{ color: '#047857', fontSize: '0.85rem' }}>
+                    Threshold reached ({approvedContentCount} pieces approved) — this content will skip client review
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: '#F59E0B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="20" height="20">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: '#92400E', fontSize: '0.95rem' }}>
+                      Initial Approval Mode — {selectedClient.name}
+                    </span>
+                    <span style={{ fontWeight: 600, color: '#D97706', fontSize: '0.95rem' }}>
+                      {approvedContentCount} / {selectedClient.approval_threshold}
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: '#FDE68A', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${Math.min((approvedContentCount / selectedClient.approval_threshold) * 100, 100)}%`,
+                        background: 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                        borderRadius: '4px',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                  <div style={{ color: '#92400E', fontSize: '0.8rem' }}>
+                    {selectedClient.approval_threshold - approvedContentCount} more piece{selectedClient.approval_threshold - approvedContentCount !== 1 ? 's' : ''} need client approval before auto-approve activates
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Full Approval Notice */}
+        {selectedClient && (selectedClient.content_approval_mode === 'full_approval' || !selectedClient.content_approval_mode) && (
+          <div style={{
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            borderRadius: '12px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: '#3B82F6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="20" height="20">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1E40AF', fontSize: '0.95rem' }}>
+                Full Approval Mode — {selectedClient.name}
+              </div>
+              <div style={{ color: '#3B82F6', fontSize: '0.85rem' }}>
+                All content requires client review before publishing
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-Approve Notice */}
+        {selectedClient?.content_approval_mode === 'auto' && (
+          <div style={{
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            borderRadius: '12px',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: '#22C55E',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#065F46', fontSize: '0.95rem' }}>
+                Auto-Approval Enabled for {selectedClient.name}
+              </div>
+              <div style={{ color: '#047857', fontSize: '0.85rem' }}>
+                Content skips client review — workflow: Draft → Internal Review → Production → Posted
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="create-content-layout">
           {/* Main Content Area */}
           <div className="content-editor-section">
@@ -60,6 +364,8 @@ export default function CreateContentPage() {
                   type="text"
                   className="form-input"
                   placeholder="Enter content title..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                 />
               </div>
 
@@ -114,6 +420,8 @@ export default function CreateContentPage() {
                   className="form-textarea content-textarea"
                   rows={16}
                   placeholder="Write your content here..."
+                  value={bodyContent}
+                  onChange={(e) => setBodyContent(e.target.value)}
                 />
               </div>
             </div>
@@ -128,7 +436,11 @@ export default function CreateContentPage() {
                 <label className="form-label">
                   Client <span className="required">*</span>
                 </label>
-                <select className="form-select">
+                <select
+                  className="form-select"
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                >
                   <option value="">Select client...</option>
                   {clients.map((client) => (
                     <option key={client.id} value={client.id}>
@@ -146,7 +458,7 @@ export default function CreateContentPage() {
                   <button
                     type="button"
                     className={`platform-option ${platform === 'website' ? 'active' : ''}`}
-                    onClick={() => setPlatform('website')}
+                    onClick={() => { setPlatform('website'); setContentType(''); }}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -158,7 +470,7 @@ export default function CreateContentPage() {
                   <button
                     type="button"
                     className={`platform-option ${platform === 'gbp' ? 'active' : ''}`}
-                    onClick={() => setPlatform('gbp')}
+                    onClick={() => { setPlatform('gbp'); setContentType(''); }}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -169,7 +481,7 @@ export default function CreateContentPage() {
                   <button
                     type="button"
                     className={`platform-option ${platform === 'social' ? 'active' : ''}`}
-                    onClick={() => setPlatform('social')}
+                    onClick={() => { setPlatform('social'); setContentType(''); }}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
@@ -234,28 +546,32 @@ export default function CreateContentPage() {
                 <label className="form-label">
                   Content Type <span className="required">*</span>
                 </label>
-                <select className="form-select">
+                <select
+                  className="form-select"
+                  value={contentType}
+                  onChange={(e) => setContentType(e.target.value)}
+                >
                   <option value="">Select type...</option>
                   {platform === 'website' && (
                     <>
-                      <option value="blog">Blog Post</option>
-                      <option value="service">Service Page</option>
-                      <option value="landing">Landing Page</option>
+                      <option value="Blog Post">Blog Post</option>
+                      <option value="Service Page">Service Page</option>
+                      <option value="Landing Page">Landing Page</option>
                     </>
                   )}
                   {platform === 'gbp' && (
                     <>
-                      <option value="update">Business Update</option>
-                      <option value="offer">Offer</option>
-                      <option value="event">Event</option>
+                      <option value="Business Update">Business Update</option>
+                      <option value="Offer">Offer</option>
+                      <option value="Event">Event</option>
                     </>
                   )}
                   {platform === 'social' && (
                     <>
-                      <option value="post">Social Post</option>
-                      <option value="story">Story</option>
-                      <option value="reel">Reel / Short Video</option>
-                      <option value="carousel">Carousel</option>
+                      <option value="Social Post">Social Post</option>
+                      <option value="Story">Story</option>
+                      <option value="Reel">Reel / Short Video</option>
+                      <option value="Carousel">Carousel</option>
                     </>
                   )}
                 </select>
@@ -324,21 +640,43 @@ export default function CreateContentPage() {
               </div>
             </div>
 
+            {error && (
+              <div style={{
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                color: '#DC2626',
+                fontSize: '0.875rem',
+              }}>
+                {error}
+              </div>
+            )}
+
             <div className="sidebar-actions">
-              <button className="btn btn-outline btn-block">
+              <button
+                className="btn btn-outline btn-block"
+                onClick={handleSaveDraft}
+                disabled={isSaving}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
                 </svg>
-                Save Draft
+                {isSaving ? 'Saving...' : 'Save Draft'}
               </button>
-              <button className="btn btn-primary btn-block">
+              <button
+                className="btn btn-primary btn-block"
+                onClick={handleSubmitForReview}
+                disabled={isSaving}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
-                Submit for Review
+                {isSaving ? 'Submitting...' : 'Submit for Review'}
               </button>
             </div>
           </div>

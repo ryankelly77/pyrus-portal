@@ -126,6 +126,9 @@ export async function PATCH(
       basecampId,
       basecampProjectId,
       stripeCustomerId,
+      // Content approval workflow
+      contentApprovalMode,
+      approvalThreshold,
     } = body
 
     // Use dashboardToken if provided, otherwise use agencyDashboardShareKey
@@ -155,6 +158,9 @@ export async function PATCH(
         ...(basecampId !== undefined && { basecamp_id: basecampId || null }),
         ...(basecampProjectId !== undefined && { basecamp_project_id: basecampProjectId || null }),
         ...(stripeCustomerId !== undefined && { stripe_customer_id: stripeCustomerId || null }),
+        // Content approval workflow
+        ...(contentApprovalMode !== undefined && { content_approval_mode: contentApprovalMode || 'full_approval' }),
+        ...(approvalThreshold !== undefined && { approval_threshold: approvalThreshold }),
         updated_at: new Date(),
       },
     })
