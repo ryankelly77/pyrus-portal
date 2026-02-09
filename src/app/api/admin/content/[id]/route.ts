@@ -4,6 +4,23 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { sendEmail } from '@/lib/email/mailgun'
 import { getContentReadyForReviewEmail, getRevisionResubmittedEmail } from '@/lib/email/templates/content-status'
 
+// Convert status to human-readable label
+function getStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    sent_for_review: 'Sent for Review',
+    client_reviewing: 'Client Reviewing',
+    revisions_requested: 'Revisions Requested',
+    approved: 'Approved',
+    internal_review: 'Internal Review',
+    final_optimization: 'Final Optimization',
+    image_selection: 'Image Selection',
+    scheduled: 'Scheduled',
+    posted: 'Posted',
+  }
+  return labels[status] || status
+}
+
 export const dynamic = 'force-dynamic'
 
 // GET - Get single content item
@@ -293,7 +310,7 @@ export async function PATCH(
     await dbPool.query(
       `INSERT INTO content_revisions (content_id, body, revision_notes)
        SELECT id, body, $2 FROM content WHERE id = $1`,
-      [id, `Status changed to ${newStatus}${feedback ? ': ' + feedback : ''}`]
+      [id, `Status changed to ${getStatusLabel(newStatus)}${feedback ? ': ' + feedback : ''}`]
     )
 
     // Send email notifications for submit action

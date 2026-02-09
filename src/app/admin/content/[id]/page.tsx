@@ -1327,6 +1327,58 @@ export default function ContentViewPage() {
           gap: 12px;
           justify-content: flex-end;
         }
+
+        /* Status badge styles */
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 10px;
+          font-size: 12px;
+          font-weight: 500;
+          border-radius: 6px;
+          white-space: nowrap;
+        }
+        .status-badge.status-draft {
+          background: #F3F4F6;
+          color: #6B7280;
+        }
+        .status-badge.status-review {
+          background: #CCFBF1;
+          color: #0D9488;
+        }
+        .status-badge.status-reviewing {
+          background: #DBEAFE;
+          color: #2563EB;
+        }
+        .status-badge.status-revision {
+          background: #FEF3C7;
+          color: #D97706;
+        }
+        .status-badge.status-approved {
+          background: #D1FAE5;
+          color: #059669;
+        }
+        .status-badge.status-internal {
+          background: #CCFBF1;
+          color: #0D9488;
+        }
+        .status-badge.status-optimization {
+          background: #F3E8FF;
+          color: #9333EA;
+        }
+        .status-badge.status-images {
+          background: #E0E7FF;
+          color: #6366F1;
+        }
+        .status-badge.status-scheduled {
+          background: #E0E7FF;
+          color: #6366F1;
+        }
+        .status-badge.status-published {
+          background: #D1FAE5;
+          color: #059669;
+        }
+
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
