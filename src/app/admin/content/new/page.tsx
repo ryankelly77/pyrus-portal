@@ -34,6 +34,11 @@ export default function CreateContentPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // SEO fields (for website platform)
+  const [targetKeyword, setTargetKeyword] = useState('')
+  const [secondaryKeywords, setSecondaryKeywords] = useState('')
+  const [wordCountTarget, setWordCountTarget] = useState('')
+
   // Client state
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
@@ -114,6 +119,10 @@ export default function CreateContentPage() {
           platform,
           urgent: timeline === 'urgent',
           status: 'draft',
+          // SEO fields (for website platform)
+          targetKeyword: platform === 'website' ? targetKeyword || null : null,
+          secondaryKeywords: platform === 'website' ? secondaryKeywords || null : null,
+          wordCount: platform === 'website' && wordCountTarget ? parseInt(wordCountTarget) : null,
         }),
       })
 
@@ -156,6 +165,10 @@ export default function CreateContentPage() {
           platform,
           urgent: timeline === 'urgent',
           status: 'sent_for_review',
+          // SEO fields (for website platform)
+          targetKeyword: platform === 'website' ? targetKeyword || null : null,
+          secondaryKeywords: platform === 'website' ? secondaryKeywords || null : null,
+          wordCount: platform === 'website' && wordCountTarget ? parseInt(wordCountTarget) : null,
         }),
       })
 
@@ -576,6 +589,45 @@ export default function CreateContentPage() {
                   )}
                 </select>
               </div>
+
+              {/* SEO Information - only for website platform */}
+              {platform === 'website' && (
+                <div className="form-card" style={{ marginTop: '16px', padding: '16px', background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
+                    SEO Information
+                  </h4>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label className="form-label" style={{ fontSize: '13px' }}>Target Keyword</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Primary keyword to target..."
+                      value={targetKeyword}
+                      onChange={(e) => setTargetKeyword(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label className="form-label" style={{ fontSize: '13px' }}>Secondary Keywords</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Comma-separated secondary keywords..."
+                      value={secondaryKeywords}
+                      onChange={(e) => setSecondaryKeywords(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '0' }}>
+                    <label className="form-label" style={{ fontSize: '13px' }}>Word Count Target</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="e.g., 1500"
+                      value={wordCountTarget}
+                      onChange={(e) => setWordCountTarget(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">
