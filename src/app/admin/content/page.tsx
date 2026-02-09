@@ -694,12 +694,48 @@ export default function AdminContentPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="modal-backdrop" onClick={() => !isDeleting && setDeleteConfirm(null)}>
-          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Delete Content</h3>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => !isDeleting && setDeleteConfirm(null)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+              width: '400px',
+              maxWidth: '90vw',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #E5E7EB',
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>Delete Content</h3>
               <button
-                className="modal-close"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: '#6B7280',
+                  borderRadius: '6px',
+                }}
                 onClick={() => setDeleteConfirm(null)}
                 disabled={isDeleting}
               >
@@ -709,7 +745,7 @@ export default function AdminContentPage() {
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
+            <div style={{ padding: '20px' }}>
               <p style={{ marginBottom: '16px' }}>
                 Are you sure you want to delete this content?
               </p>
@@ -726,7 +762,13 @@ export default function AdminContentPage() {
                 This action cannot be undone. All revisions and comments will also be deleted.
               </p>
             </div>
-            <div className="modal-footer">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              padding: '16px 20px',
+              borderTop: '1px solid #E5E7EB',
+            }}>
               <button
                 className="btn btn-secondary"
                 onClick={() => setDeleteConfirm(null)}
@@ -735,7 +777,16 @@ export default function AdminContentPage() {
                 Cancel
               </button>
               <button
-                className="btn btn-danger"
+                style={{
+                  background: '#DC2626',
+                  border: '1px solid #DC2626',
+                  color: 'white',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  opacity: isDeleting ? 0.6 : 1,
+                }}
                 onClick={handleDelete}
                 disabled={isDeleting}
               >
