@@ -314,35 +314,48 @@ export async function PATCH(
     )
 
     // Send email notifications for submit action
-    if (action === 'submit' && contentInfo?.client_email) {
-      try {
-        const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
+    if (action === 'submit') {
+      console.log('Submit action triggered, checking email conditions:', {
+        hasClientEmail: !!contentInfo?.client_email,
+        clientEmail: contentInfo?.client_email,
+        clientName: contentInfo?.client_name,
+        contentTitle: contentInfo?.title,
+      })
 
-        const emailData = {
-          recipientName: contentInfo.client_name || 'there',
-          contentTitle: contentInfo.title || 'Content',
-          clientName: contentInfo.client_name || 'your company',
-          changedByName: profile.full_name || 'Pyrus Team',
-          portalUrl,
-          reviewRound: contentInfo.revision_count || 0,
+      if (contentInfo?.client_email) {
+        try {
+          const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
+
+          const emailData = {
+            recipientName: contentInfo.client_name || 'there',
+            contentTitle: contentInfo.title || 'Content',
+            clientName: contentInfo.client_name || 'your company',
+            changedByName: profile.full_name || 'Pyrus Team',
+            portalUrl,
+            reviewRound: contentInfo.revision_count || 0,
+          }
+
+          const emailTemplate = isResubmission
+            ? getRevisionResubmittedEmail(emailData)
+            : getContentReadyForReviewEmail(emailData)
+
+          console.log('Sending email to:', contentInfo.client_email, 'Subject:', emailTemplate.subject)
+
+          await sendEmail({
+            to: contentInfo.client_email,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+            text: emailTemplate.text,
+            tags: ['content-review', isResubmission ? 'resubmission' : 'new-content'],
+          })
+
+          console.log(`Review notification email sent successfully to ${contentInfo.client_email}`)
+        } catch (emailError) {
+          // Log but don't fail the request if email fails
+          console.error('Failed to send review notification email:', emailError)
         }
-
-        const emailTemplate = isResubmission
-          ? getRevisionResubmittedEmail(emailData)
-          : getContentReadyForReviewEmail(emailData)
-
-        await sendEmail({
-          to: contentInfo.client_email,
-          subject: emailTemplate.subject,
-          html: emailTemplate.html,
-          text: emailTemplate.text,
-          tags: ['content-review', isResubmission ? 'resubmission' : 'new-content'],
-        })
-
-        console.log(`Review notification email sent to ${contentInfo.client_email}`)
-      } catch (emailError) {
-        // Log but don't fail the request if email fails
-        console.error('Failed to send review notification email:', emailError)
+      } else {
+        console.log('No client email found - skipping email notification')
       }
     }
 
