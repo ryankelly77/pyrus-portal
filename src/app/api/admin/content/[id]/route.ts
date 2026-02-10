@@ -107,7 +107,8 @@ export async function PUT(
       status,
       clientId,
       featuredImage,
-      videoUrl
+      videoUrl,
+      socialPlatforms
     } = body
 
     // Build dynamic update query
@@ -178,6 +179,10 @@ export async function PUT(
     if (videoUrl !== undefined) {
       updates.push(`video_url = $${paramIndex++}`)
       values.push(videoUrl)
+    }
+    if (socialPlatforms !== undefined) {
+      updates.push(`social_platforms = $${paramIndex++}`)
+      values.push(JSON.stringify(socialPlatforms))
     }
 
     updates.push(`updated_at = NOW()`)

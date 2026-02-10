@@ -317,14 +317,17 @@ function ContentItemCard({
   item,
   variant = 'pending',
   isAdmin = false,
-  onQuickApprove
+  onQuickApprove,
+  onRushPublishing
 }: {
   item: ContentItem
   variant?: 'urgent' | 'pending' | 'approved' | 'published'
   isAdmin?: boolean
   onQuickApprove?: (contentId: string) => Promise<void>
+  onRushPublishing?: (contentId: string) => Promise<void>
 }) {
   const [isApproving, setIsApproving] = useState(false)
+  const [isRushing, setIsRushing] = useState(false)
   const cta = getContentCTA(item.status, item.id, isAdmin)
   const clientStatusLabel = getStatusLabel(item.status, 'client')
 
@@ -467,12 +470,29 @@ function ContentItemCard({
             {isApproving ? 'Approving...' : 'Quick Approve'}
           </button>
         )}
-        {variant === 'approved' && (
-          <button className="btn btn-outline btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            Rush Publishing
+        {variant === 'approved' && onRushPublishing && (
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={isRushing || item.urgent}
+            onClick={async (e) => {
+              e.preventDefault()
+              setIsRushing(true)
+              try {
+                await onRushPublishing(item.id)
+              } finally {
+                setIsRushing(false)
+              }
+            }}
+            style={item.urgent ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+          >
+            {isRushing ? (
+              <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid #ccc', borderTopColor: '#666', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            )}
+            {item.urgent ? 'Marked Urgent' : isRushing ? 'Requesting...' : 'Rush Publishing'}
           </button>
         )}
         {variant === 'published' && item.publishedUrl && (
@@ -754,6 +774,39 @@ export function ContentView({
       }
     } catch (err) {
       console.error('Quick approve failed:', err)
+      throw err
+    }
+  }, [clientId, isAdmin, router])
+
+  // Handle Rush Publishing - marks content as urgent and notifies team
+  const handleRushPublishing = useCallback(async (contentId: string) => {
+    try {
+      const response = await fetch(`/api/content/${contentId}/rush`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to request rush publishing')
+      }
+
+      // Refresh the page to get updated data
+      router.refresh()
+
+      // Re-fetch content data
+      const apiUrl = isAdmin
+        ? `/api/admin/clients/${clientId}/content`
+        : `/api/client/content?clientId=${clientId}`
+      const res = await fetch(apiUrl)
+      if (res.ok) {
+        const data = await res.json()
+        setContentStats(data.stats)
+        setContentData(data.content)
+        setAllContent(data.allContent || [])
+      }
+    } catch (err) {
+      console.error('Rush publishing request failed:', err)
       throw err
     }
   }, [clientId, isAdmin, router])
@@ -1071,7 +1124,7 @@ export function ContentView({
               </div>
               <div className="content-list">
                 {filteredApproved.map((item) => (
-                  <ContentItemCard key={item.id} item={item} variant="approved" isAdmin={isAdmin} />
+                  <ContentItemCard key={item.id} item={item} variant="approved" isAdmin={isAdmin} onRushPublishing={isDemo ? undefined : handleRushPublishing} />
                 ))}
               </div>
             </div>
