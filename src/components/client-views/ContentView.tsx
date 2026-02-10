@@ -93,24 +93,25 @@ interface ContentData {
 }
 
 interface FileItem {
-  id: number
+  id: number | string
   name: string
   type: 'docs' | 'images' | 'video'
   category: string
   date: string
+  url?: string
 }
 
 type ContentFilter = 'all' | 'needs_review' | 'in_production' | 'posted_this_month'
 
 // Demo files data (Raptor Vending)
 const demoFiles: FileItem[] = [
-  { id: 1, name: 'Raptor Vending Brand Strategy.pdf', type: 'docs', category: 'Branding Foundation', date: 'Jan 5, 2026' },
-  { id: 2, name: 'Micromarket Sales Playbook.pdf', type: 'docs', category: 'Branding Foundation', date: 'Jan 3, 2026' },
-  { id: 3, name: 'San Antonio Market Analysis.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 28, 2025' },
-  { id: 4, name: 'Raptor Brand Guidelines.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 20, 2025' },
-  { id: 5, name: 'Micromarket Promo Banner.png', type: 'images', category: 'AI Creative', date: 'Jan 8, 2026' },
-  { id: 6, name: 'Workplace Dining Solutions.jpg', type: 'images', category: 'AI Creative', date: 'Jan 6, 2026' },
-  { id: 7, name: 'Break Room Showcase Video.mp4', type: 'video', category: 'AI Creative', date: 'Dec 15, 2025' },
+  { id: 1, name: 'Raptor Vending Brand Strategy.pdf', type: 'docs', category: 'Branding Foundation', date: 'Jan 5, 2026', url: '#' },
+  { id: 2, name: 'Micromarket Sales Playbook.pdf', type: 'docs', category: 'Branding Foundation', date: 'Jan 3, 2026', url: '#' },
+  { id: 3, name: 'San Antonio Market Analysis.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 28, 2025', url: '#' },
+  { id: 4, name: 'Raptor Brand Guidelines.pdf', type: 'docs', category: 'Branding Foundation', date: 'Dec 20, 2025', url: '#' },
+  { id: 5, name: 'Micromarket Promo Banner.png', type: 'images', category: 'AI Creative', date: 'Jan 8, 2026', url: '#' },
+  { id: 6, name: 'Workplace Dining Solutions.jpg', type: 'images', category: 'AI Creative', date: 'Jan 6, 2026', url: '#' },
+  { id: 7, name: 'Break Room Showcase Video.mp4', type: 'video', category: 'AI Creative', date: 'Dec 15, 2025', url: '#' },
 ]
 
 
@@ -688,6 +689,14 @@ export function ContentView({
   // Files state
   const [clientFiles, setClientFiles] = useState<FileItem[]>([])
 
+  // File upload modal state (admin only)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadCategory, setUploadCategory] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [deletingFileId, setDeletingFileId] = useState<string | number | null>(null)
+
   // Fetch files from API
   useEffect(() => {
     async function fetchFiles() {
@@ -711,6 +720,77 @@ export function ContentView({
 
   const files = clientFiles
   const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
+
+  // Handle file upload (admin only)
+  const handleFileUpload = async () => {
+    if (!uploadFile || !uploadCategory) return
+
+    setIsUploading(true)
+    setUploadError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('clientId', clientId)
+      formData.append('category', uploadCategory)
+
+      const res = await fetch('/api/admin/files/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setUploadError(data.error || 'Failed to upload file')
+        return
+      }
+
+      // Refresh files list
+      const filesRes = await fetch(`/api/client/files?clientId=${clientId}`)
+      if (filesRes.ok) {
+        const filesData = await filesRes.json()
+        setClientFiles(filesData.files || [])
+      }
+
+      // Close modal and reset
+      setShowUploadModal(false)
+      setUploadFile(null)
+      setUploadCategory('')
+    } catch (err) {
+      console.error('Error uploading file:', err)
+      setUploadError('Failed to upload file. Please try again.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Handle file delete (admin only)
+  const handleDeleteFile = async (fileId: string | number) => {
+    if (!confirm('Are you sure you want to delete this file?')) return
+
+    setDeletingFileId(fileId)
+
+    try {
+      const res = await fetch(`/api/admin/files/${fileId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete file')
+        return
+      }
+
+      // Remove from local state
+      setClientFiles(prev => prev.filter(f => f.id !== fileId))
+    } catch (err) {
+      console.error('Error deleting file:', err)
+      alert('Failed to delete file')
+    } finally {
+      setDeletingFileId(null)
+    }
+  }
 
   // Fetch content data
   useEffect(() => {
@@ -1246,7 +1326,7 @@ export function ContentView({
       {/* Files Tab */}
       {activeTab === 'files' && (
         <div className="content-tab-content">
-          <div className="files-header">
+          <div className="files-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <select
               className="file-filter-select"
               value={fileFilter}
@@ -1257,6 +1337,19 @@ export function ContentView({
               <option value="images">Images ({files.filter(f => f.type === 'images').length})</option>
               <option value="video">Video ({files.filter(f => f.type === 'video').length})</option>
             </select>
+            {isAdmin && !isDemo && (
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowUploadModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add File
+              </button>
+            )}
           </div>
 
           <div className="files-grid">
@@ -1268,9 +1361,23 @@ export function ContentView({
                   </svg>
                 </div>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1F2937', marginBottom: '0.5rem' }}>No Files Yet</h3>
-                <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto' }}>
-                  Brand documents, graphics, and video files will appear here once created.
+                <p style={{ color: '#6B7280', maxWidth: '400px', margin: '0 auto', marginBottom: isAdmin ? '1rem' : 0 }}>
+                  {isAdmin ? 'Upload brand documents, graphics, and video files for your client.' : 'Brand documents, graphics, and video files will appear here once created.'}
                 </p>
+                {isAdmin && !isDemo && (
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setShowUploadModal(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload File
+                  </button>
+                )}
               </div>
             )}
             {filteredFiles.map((file) => (
@@ -1304,19 +1411,79 @@ export function ContentView({
                   </div>
                 </div>
                 <div className="file-actions">
-                  <button className="btn btn-sm btn-outline" title="Download">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                  </button>
-                  <button className="btn btn-sm btn-outline" title="View">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  </button>
+                  {file.url && (
+                    <>
+                      <a
+                        href={file.url}
+                        download={file.name}
+                        className="btn btn-sm btn-outline"
+                        title="Download"
+                        onClick={(e) => {
+                          if (file.url === '#') {
+                            e.preventDefault()
+                          }
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                      </a>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline"
+                        title="View"
+                        onClick={(e) => {
+                          if (file.url === '#') {
+                            e.preventDefault()
+                          }
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </a>
+                    </>
+                  )}
+                  {!file.url && (
+                    <>
+                      <button className="btn btn-sm btn-outline" title="Download" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                      </button>
+                      <button className="btn btn-sm btn-outline" title="View" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  {isAdmin && !isDemo && (
+                    <button
+                      className="btn btn-sm btn-outline"
+                      title="Delete"
+                      onClick={() => handleDeleteFile(file.id)}
+                      disabled={deletingFileId === file.id}
+                      style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
+                    >
+                      {deletingFileId === file.id ? (
+                        <span style={{ width: '14px', height: '14px', display: 'inline-block' }}>...</span>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1553,6 +1720,235 @@ export function ContentView({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* File Upload Modal (Admin Only) */}
+      {showUploadModal && isAdmin && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50
+          }}
+          onClick={() => {
+            if (!isUploading) {
+              setShowUploadModal(false)
+              setUploadFile(null)
+              setUploadCategory('')
+              setUploadError(null)
+            }
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  background: '#DBEAFE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" width="20" height="20">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1F2937' }}>Upload File</h2>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>Add a file for this client</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isUploading) {
+                    setShowUploadModal(false)
+                    setUploadFile(null)
+                    setUploadCategory('')
+                    setUploadError(null)
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  padding: '0.25rem',
+                  color: '#6B7280',
+                  opacity: isUploading ? 0.5 : 1
+                }}
+                disabled={isUploading}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '1.5rem' }}>
+              {uploadError && (
+                <div style={{
+                  background: '#FEE2E2',
+                  color: '#991B1B',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                  fontSize: '0.875rem'
+                }}>
+                  {uploadError}
+                </div>
+              )}
+
+              {/* File Input */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                  File
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  disabled={isUploading}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+                {uploadFile && (
+                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: '#6B7280' }}>
+                    Selected: {uploadFile.name} ({(uploadFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+
+              {/* Category Input */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                  Category
+                </label>
+                <select
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  disabled={isUploading}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    background: 'white'
+                  }}
+                >
+                  <option value="">Select a category...</option>
+                  <option value="Branding Foundation">Branding Foundation</option>
+                  <option value="AI Creative">AI Creative</option>
+                  <option value="Content Writing">Content Writing</option>
+                  <option value="Social Media">Social Media</option>
+                  <option value="Website">Website</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid #E5E7EB',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '0.75rem'
+            }}>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false)
+                  setUploadFile(null)
+                  setUploadCategory('')
+                  setUploadError(null)
+                }}
+                disabled={isUploading}
+                style={{
+                  padding: '0.625rem 1rem',
+                  border: '1px solid #D1D5DB',
+                  borderRadius: '8px',
+                  background: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                  opacity: isUploading ? 0.5 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFileUpload}
+                disabled={isUploading || !uploadFile || !uploadCategory}
+                style={{
+                  padding: '0.625rem 1rem',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: (!uploadFile || !uploadCategory) ? '#D1D5DB' : '#2563EB',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  cursor: (isUploading || !uploadFile || !uploadCategory) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {isUploading ? (
+                  <>
+                    <span style={{
+                      display: 'inline-block',
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTopColor: 'white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
