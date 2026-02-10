@@ -11,7 +11,7 @@ interface AddToSubscriptionRequest {
 
 // Map slugs to product search criteria
 const PRODUCT_SLUG_MAP: Record<string, { nameContains: string; billingType: 'monthly' | 'onetime' }> = {
-  'content-writing': { nameContains: 'Content Writing', billingType: 'onetime' },
+  'content-writing': { nameContains: 'Content Writing', billingType: 'monthly' },
   'ai-creative-assets': { nameContains: 'AI Creative', billingType: 'monthly' },
   'business-branding': { nameContains: 'Branding Foundation', billingType: 'monthly' },
   'seed-site': { nameContains: 'Seed Site', billingType: 'monthly' },
