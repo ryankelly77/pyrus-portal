@@ -392,9 +392,30 @@ export default function AdminUsersPage() {
   }
 
   const handleResendInvite = async (inviteId: string) => {
-    // TODO: Implement resend invite API
-    console.log('Resend invite:', inviteId)
-    alert('Resend functionality coming soon')
+    try {
+      const res = await fetch(`/api/admin/users/invite/${inviteId}/resend`, {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to resend invitation')
+        return
+      }
+
+      alert('Invitation resent successfully!')
+
+      // Refresh the users list to update expiry dates
+      const usersRes = await fetch('/api/admin/users')
+      if (usersRes.ok) {
+        const usersData = await usersRes.json()
+        setPendingInvites(usersData.pendingInvites || [])
+      }
+    } catch (error) {
+      console.error('Error resending invite:', error)
+      alert('Failed to resend invitation')
+    }
   }
 
   const totalUsers = filteredAdminUsers.length + filteredClientUsers.length
