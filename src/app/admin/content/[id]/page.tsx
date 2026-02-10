@@ -796,8 +796,9 @@ export default function ContentViewPage() {
                       scheduled: 'Scheduled',
                       posted: 'Posted',
                     }
+                    const isCompleted = content.status === 'posted' || index === 0
                     return (
-                      <div key={index} className="status-history-item">
+                      <div key={index} className={`status-history-item ${isCompleted ? 'completed' : ''}`}>
                         <div className="status-history-dot"></div>
                         <div className="status-history-content">
                           <div className="status-history-header">
@@ -1358,11 +1359,11 @@ export default function ContentViewPage() {
           width: 12px;
           height: 12px;
           border-radius: 50%;
-          background: #D97706;
+          background: #9CA3AF;
           flex-shrink: 0;
           margin-top: 4px;
         }
-        .status-history-item:first-child .status-history-dot {
+        .status-history-item.completed .status-history-dot {
           background: #22c55e;
         }
         .status-history-content {
