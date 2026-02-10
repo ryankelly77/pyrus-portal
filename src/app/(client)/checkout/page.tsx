@@ -95,7 +95,7 @@ const productCatalog: Record<string, CartItem> = {
     name: 'Content Writing',
     description: 'SEO and AI-optimized content up to 1,000 words',
     price: 99,
-    billingPeriod: 'one-time',
+    billingPeriod: 'monthly',
     category: 'content'
   },
   'ai-creative-assets': {
