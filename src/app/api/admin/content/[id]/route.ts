@@ -106,7 +106,8 @@ export async function PUT(
       aiOptimized,
       status,
       clientId,
-      featuredImage
+      featuredImage,
+      videoUrl
     } = body
 
     // Build dynamic update query
@@ -173,6 +174,10 @@ export async function PUT(
     if (featuredImage !== undefined) {
       updates.push(`featured_image = $${paramIndex++}`)
       values.push(featuredImage)
+    }
+    if (videoUrl !== undefined) {
+      updates.push(`video_url = $${paramIndex++}`)
+      values.push(videoUrl)
     }
 
     updates.push(`updated_at = NOW()`)

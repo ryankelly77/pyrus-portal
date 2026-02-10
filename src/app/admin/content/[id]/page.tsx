@@ -37,6 +37,7 @@ interface ContentItem {
   published_at: string | null
   published_url: string | null
   featured_image: string | null
+  video_url: string | null
   created_at: string
   updated_at: string
   revisions: Array<{
@@ -96,6 +97,8 @@ export default function ContentViewPage() {
   // Featured image
   const [featuredImage, setFeaturedImage] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
+  // Video URL (optional)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
 
   // Validation
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -132,6 +135,7 @@ export default function ContentViewPage() {
       setSeoOptimized(data.seo_optimized || false)
       setAiOptimized(data.ai_optimized || false)
       setFeaturedImage(data.featured_image || null)
+      setVideoUrl(data.video_url || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load content')
     } finally {
@@ -208,6 +212,7 @@ export default function ContentViewPage() {
           seoOptimized,
           aiOptimized,
           featuredImage,
+          videoUrl,
         }),
       })
       if (!res.ok) {
@@ -381,11 +386,15 @@ export default function ContentViewPage() {
       if (!wordCount || wordCount <= 0) missingFields.push('Content Word Length')
     }
 
-    // Optimization checkboxes and featured image (required for website content when publishing)
+    // Featured image required for ALL platforms when submitting or publishing
+    if (mode === 'submit' || mode === 'publish') {
+      if (!featuredImage) missingFields.push('Featured Image')
+    }
+
+    // Optimization checkboxes (required for website content when publishing)
     if (mode === 'publish' && isWebsitePlatform) {
       if (!seoOptimized) missingFields.push('Optimized for SEO')
       if (!aiOptimized) missingFields.push('Optimized for AI')
-      if (!featuredImage) missingFields.push('Featured Image')
     }
 
     if (missingFields.length > 0) {
@@ -1021,6 +1030,79 @@ export default function ContentViewPage() {
                     )}
                   </label>
                 )}
+              </div>
+
+              {/* Video URL (Optional) */}
+              <div className="form-group">
+                <label className="form-label">
+                  Video URL <span style={{ color: 'var(--text-tertiary)', fontWeight: 'normal' }}>(Optional)</span>
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                    value={videoUrl || ''}
+                    onChange={(e) => setVideoUrl(e.target.value || null)}
+                  />
+                  {videoUrl && (
+                    <div style={{
+                      position: 'relative',
+                      paddingBottom: '56.25%',
+                      height: 0,
+                      overflow: 'hidden',
+                      borderRadius: '8px',
+                      background: '#000',
+                    }}>
+                      {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
+                        <iframe
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            border: 'none',
+                          }}
+                          src={`https://www.youtube.com/embed/${videoUrl.includes('youtu.be')
+                            ? videoUrl.split('youtu.be/')[1]?.split('?')[0]
+                            : videoUrl.split('v=')[1]?.split('&')[0]}`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : videoUrl.includes('vimeo.com') ? (
+                        <iframe
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            border: 'none',
+                          }}
+                          src={`https://player.vimeo.com/video/${videoUrl.split('vimeo.com/')[1]?.split('?')[0]}`}
+                          allow="autoplay; fullscreen; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                          }}
+                          src={videoUrl}
+                          controls
+                        />
+                      )}
+                    </div>
+                  )}
+                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    Supports YouTube, Vimeo, or direct video file URLs
+                  </span>
+                </div>
               </div>
 
               <div className="form-group">
