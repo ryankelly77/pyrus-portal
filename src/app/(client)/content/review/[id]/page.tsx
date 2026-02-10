@@ -32,11 +32,15 @@ interface ContentDetail {
   secondary_keywords: string | null
   word_count: number | null
   seo_optimized: boolean
+  ai_optimized: boolean
   revision_feedback: string | null
   revision_count: number
   created_at: string
   updated_at: string
   client_name: string
+  // Media fields
+  featured_image: string | null
+  video_url: string | null
   // New workflow fields
   approval_required?: boolean
   review_round?: number
@@ -415,6 +419,104 @@ export default function ContentReviewPage() {
           </div>
         </div>
 
+        {/* Content Preview - Featured Image, Video, and Body */}
+        <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#374151', marginBottom: '1rem' }}>Content Preview</h2>
+
+          {/* Featured Image */}
+          {content.featured_image && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '500', display: 'block', marginBottom: '0.5rem' }}>Featured Image</span>
+              <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                <img
+                  src={content.featured_image}
+                  alt="Featured image"
+                  style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Video */}
+          {content.video_url && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '500', display: 'block', marginBottom: '0.5rem' }}>Video</span>
+              <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', background: '#F9FAFB', padding: '1rem' }}>
+                <a
+                  href={content.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3B82F6', textDecoration: 'none' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span style={{ fontWeight: '500' }}>View Video</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {content.excerpt && (
+            <div style={{ background: '#F3F4F6', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '500' }}>Excerpt/Summary</span>
+              <p style={{ margin: '0.25rem 0 0', fontStyle: 'italic', color: '#4B5563' }}>{content.excerpt}</p>
+            </div>
+          )}
+
+          <div style={{ fontSize: '1rem', lineHeight: '1.75', color: '#1F2937' }}>
+            {content.body ? (
+              <div dangerouslySetInnerHTML={{ __html: content.body.replace(/\n/g, '<br/>') }} />
+            ) : (
+              <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No content body available.</p>
+            )}
+          </div>
+        </div>
+
+        {/* SEO Info (if applicable) */}
+        {(content.target_keyword || content.seo_optimized || content.ai_optimized) && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.75rem' }}>SEO Information</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+              {content.target_keyword && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Target Keyword</span>
+                  <p style={{ margin: 0, fontWeight: '500' }}>{content.target_keyword}</p>
+                </div>
+              )}
+              {content.secondary_keywords && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Secondary Keywords</span>
+                  <p style={{ margin: 0, fontWeight: '500' }}>{content.secondary_keywords}</p>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                {content.seo_optimized && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16A34A' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    SEO Optimized
+                  </div>
+                )}
+                {content.ai_optimized && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#8B5CF6' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    AI Optimized
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Status History */}
         {content.status_history && content.status_history.length > 0 && (
           <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -475,55 +577,6 @@ export default function ContentReviewPage() {
             <p style={{ margin: 0, color: '#78350F' }}>{content.revision_feedback}</p>
           </div>
         )}
-
-        {/* SEO Info (if applicable) */}
-        {(content.target_keyword || content.seo_optimized) && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.75rem' }}>SEO Information</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-              {content.target_keyword && (
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Target Keyword</span>
-                  <p style={{ margin: 0, fontWeight: '500' }}>{content.target_keyword}</p>
-                </div>
-              )}
-              {content.secondary_keywords && (
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Secondary Keywords</span>
-                  <p style={{ margin: 0, fontWeight: '500' }}>{content.secondary_keywords}</p>
-                </div>
-              )}
-              {content.seo_optimized && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16A34A' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  SEO Optimized
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Content Body */}
-        <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#374151', marginBottom: '1rem' }}>Content Preview</h2>
-
-          {content.excerpt && (
-            <div style={{ background: '#F3F4F6', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '500' }}>Excerpt/Summary</span>
-              <p style={{ margin: '0.25rem 0 0', fontStyle: 'italic', color: '#4B5563' }}>{content.excerpt}</p>
-            </div>
-          )}
-
-          <div style={{ fontSize: '1rem', lineHeight: '1.75', color: '#1F2937' }}>
-            {content.body ? (
-              <div dangerouslySetInnerHTML={{ __html: content.body.replace(/\n/g, '<br/>') }} />
-            ) : (
-              <p style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No content body available.</p>
-            )}
-          </div>
-        </div>
 
         {/* Bottom Actions */}
         {isReviewing && (
