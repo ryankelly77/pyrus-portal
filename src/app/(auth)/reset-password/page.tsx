@@ -1,19 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const searchParams = useSearchParams()
+
+  const token = searchParams.get('token')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,30 +25,29 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+
+    if (!token) {
+      setError('Invalid reset link. Please request a new one.')
       return
     }
 
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
+      const res = await fetch('/api/auth/password-reset/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password })
       })
 
-      if (error) {
-        setError(error.message)
-        fetch('/api/alerts/log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            severity: 'info',
-            category: 'auth_error',
-            message: `Password update failed: ${error.message}`,
-            metadata: { error: error.message, step: 'update_password' },
-          }),
-        }).catch(() => {})
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to reset password')
         setLoading(false)
         return
       }
@@ -62,18 +62,121 @@ export default function ResetPasswordPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
       setError(errorMsg)
-      fetch('/api/alerts/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          severity: 'info',
-          category: 'auth_error',
-          message: `Password update exception: ${errorMsg}`,
-          metadata: { error: errorMsg, step: 'update_password' },
-        }),
-      }).catch(() => {})
       setLoading(false)
     }
+  }
+
+  // Show error if no token
+  if (!token) {
+    return (
+      <div className="login-page">
+        <div className="login-container">
+          <div className="login-card">
+            <div className="login-header">
+              <Image
+                src="/pyrus-logo-icon.png"
+                alt="Pyrus"
+                width={48}
+                height={48}
+                className="login-logo"
+              />
+              <h1>Invalid Link</h1>
+            </div>
+
+            <div className="error-message">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <h3>Reset link is invalid or expired</h3>
+              <p>Please request a new password reset link.</p>
+              <Link href="/forgot-password" className="btn btn-primary" style={{ marginTop: '20px', display: 'inline-block' }}>
+                Request New Link
+              </Link>
+            </div>
+
+            <div className="login-footer">
+              <Link href="/login">Back to login</Link>
+            </div>
+          </div>
+        </div>
+
+        <style jsx>{`
+          .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-page);
+            padding: 20px;
+          }
+
+          .login-container {
+            width: 100%;
+            max-width: 400px;
+          }
+
+          .login-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 40px;
+            border: 1px solid var(--border-light);
+          }
+
+          .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+          }
+
+          .login-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--pyrus-brown);
+            margin-top: 16px;
+            margin-bottom: 8px;
+          }
+
+          .error-message {
+            text-align: center;
+            padding: 20px 0;
+          }
+
+          .error-message svg {
+            color: var(--error-color);
+            margin-bottom: 16px;
+          }
+
+          .error-message h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+          }
+
+          .error-message p {
+            font-size: 14px;
+            color: var(--text-secondary);
+          }
+
+          .login-footer {
+            text-align: center;
+            margin-top: 24px;
+          }
+
+          .login-footer a {
+            font-size: 13px;
+            color: var(--pyrus-brown);
+            text-decoration: none;
+          }
+
+          .login-footer a:hover {
+            text-decoration: underline;
+          }
+        `}</style>
+      </div>
+    )
   }
 
   return (
@@ -116,9 +219,9 @@ export default function ResetPasswordPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="At least 8 characters"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -129,9 +232,9 @@ export default function ResetPasswordPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Confirm your password"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 
@@ -286,5 +389,17 @@ export default function ResetPasswordPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Loading...
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

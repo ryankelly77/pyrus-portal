@@ -3,14 +3,12 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,22 +16,16 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      const res = await fetch('/api/auth/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
       })
 
-      if (error) {
-        setError(error.message)
-        fetch('/api/alerts/log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            severity: 'info',
-            category: 'auth_error',
-            message: `Password reset request failed: ${error.message}`,
-            metadata: { email, error: error.message, step: 'reset_password_email' },
-          }),
-        }).catch(() => {})
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to send reset link')
         setLoading(false)
         return
       }
@@ -43,16 +35,6 @@ export default function ForgotPasswordPage() {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred'
       setError(errorMsg)
-      fetch('/api/alerts/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          severity: 'info',
-          category: 'auth_error',
-          message: `Password reset request exception: ${errorMsg}`,
-          metadata: { email, error: errorMsg, step: 'reset_password_email' },
-        }),
-      }).catch(() => {})
       setLoading(false)
     }
   }
@@ -86,7 +68,10 @@ export default function ForgotPasswordPage() {
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
               <h3>Check your email</h3>
-              <p>We sent a password reset link to <strong>{email}</strong></p>
+              <p>If an account exists for <strong>{email}</strong>, you will receive a password reset link.</p>
+              <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                The link will expire in 1 hour.
+              </p>
               <Link href="/login" className="btn btn-secondary" style={{ marginTop: '20px', display: 'inline-block' }}>
                 Back to login
               </Link>
