@@ -167,6 +167,16 @@ export async function PUT(
     if (status !== undefined) {
       updates.push(`status = $${paramIndex++}`)
       values.push(status)
+      // Also update status_history when status changes (use display label)
+      updates.push(`status_history = COALESCE(status_history, '[]'::jsonb) || $${paramIndex++}::jsonb`)
+      values.push(JSON.stringify({
+        status: getStatusLabel(status),
+        changed_at: new Date().toISOString(),
+        changed_by_id: user?.id || null,
+        changed_by_name: profile?.full_name || 'System',
+        note: null
+      }))
+      updates.push(`status_changed_at = NOW()`)
     }
     if (clientId !== undefined) {
       updates.push(`client_id = $${paramIndex++}`)
@@ -308,10 +318,10 @@ export async function PATCH(
     updates.push(`status = $${paramIndex++}`)
     values.push(newStatus)
 
-    // Update status_history JSONB array
+    // Update status_history JSONB array (use display label)
     updates.push(`status_history = COALESCE(status_history, '[]'::jsonb) || $${paramIndex++}::jsonb`)
     values.push(JSON.stringify({
-      status: newStatus,
+      status: getStatusLabel(newStatus),
       changed_at: new Date().toISOString(),
       changed_by_id: user?.id || null,
       changed_by_name: profile?.full_name || 'System',

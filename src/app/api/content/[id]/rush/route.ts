@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email/mailgun'
+import { getStatusLabel } from '@/lib/content-workflow-helpers'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,7 +66,7 @@ export async function POST(
       [
         contentId,
         JSON.stringify({
-          status: content.status,
+          status: getStatusLabel(content.status, 'admin'),
           changed_at: new Date().toISOString(),
           changed_by_id: user.id,
           changed_by_name: profile.full_name || 'Client',

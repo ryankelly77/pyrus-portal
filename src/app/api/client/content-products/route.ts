@@ -71,9 +71,16 @@ export async function GET(request: NextRequest) {
       product => !purchasedProductIds.has(product.id)
     )
 
+    // Map product names to slugs for checkout
+    const nameToSlug: Record<string, string> = {
+      'Content Writing': 'content-writing',
+      'AI Creative Assets': 'ai-creative-assets',
+      'Business Branding Foundation': 'business-branding',
+    }
+
     return NextResponse.json({
       available: availableProducts.map(p => ({
-        id: p.id,
+        id: nameToSlug[p.name] || p.id, // Use slug as id for checkout compatibility
         name: p.name,
         short_description: p.short_description,
         monthly_price: p.monthly_price,

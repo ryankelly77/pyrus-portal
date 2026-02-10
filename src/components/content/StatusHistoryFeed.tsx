@@ -27,6 +27,8 @@ const STATUS_LABELS: Record<string, string> = {
   image_selection: 'Image Selection',
   scheduled: 'Scheduled',
   posted: 'Published',
+  published: 'Published',
+  Published: 'Published',
 }
 
 function formatDate(dateStr: string): string {
