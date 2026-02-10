@@ -380,14 +380,17 @@ export default function ContentViewPage() {
       if (!wordCount || wordCount <= 0) missingFields.push('Content Word Length')
     }
 
-    // Optimization checkboxes (required for website content when publishing)
+    // Optimization checkboxes and featured image (required for website content when publishing)
     if (mode === 'publish' && isWebsitePlatform) {
       if (!seoOptimized) missingFields.push('Optimized for SEO')
       if (!aiOptimized) missingFields.push('Optimized for AI')
+      if (!featuredImage) missingFields.push('Featured Image')
     }
 
     if (missingFields.length > 0) {
-      setValidationError(`Please fill out: ${missingFields.join(', ')}`)
+      setValidationError(`Please complete before publishing: ${missingFields.join(', ')}`)
+      // Scroll to make error visible
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return false
     }
 
