@@ -106,7 +106,7 @@ export default function ContentReviewPage() {
       // Refresh the page data
       router.refresh()
       // Re-fetch content to update local state
-      const res = await fetch(`/api/admin/content/${contentId}`)
+      const res = await fetch(`/api/content/${contentId}`)
       if (res.ok) {
         const data = await res.json()
         setContent(data)
