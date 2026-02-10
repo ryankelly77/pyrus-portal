@@ -125,8 +125,8 @@ export default function AdminContentPage() {
 
           // Check for rush items that the user hasn't dismissed
           const urgentItems = content.filter((item: ContentItem) => item.urgent)
-          if (urgentItems.length > 0 && user?.id) {
-            const dismissedKey = `rush_dismissed_${user.id}`
+          if (urgentItems.length > 0 && profile?.id) {
+            const dismissedKey = `rush_dismissed_${profile.id}`
             const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
             const newRushItems = urgentItems.filter((item: ContentItem) => !dismissed.includes(item.id))
 
@@ -163,10 +163,10 @@ export default function AdminContentPage() {
 
   // Dismiss rush interstitial and mark items as seen
   const dismissRushInterstitial = () => {
-    if (user?.id && rushItems.length > 0) {
-      const dismissedKey = `rush_dismissed_${user.id}`
+    if (profile?.id && rushItems.length > 0) {
+      const dismissedKey = `rush_dismissed_${profile.id}`
       const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
-      const newDismissed = [...new Set([...dismissed, ...rushItems.map(item => item.id)])]
+      const newDismissed = Array.from(new Set([...dismissed, ...rushItems.map(item => item.id)]))
       localStorage.setItem(dismissedKey, JSON.stringify(newDismissed))
     }
     setShowRushInterstitial(false)
