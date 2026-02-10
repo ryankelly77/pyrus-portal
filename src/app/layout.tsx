@@ -1,6 +1,7 @@
 // Root layout
 import type { Metadata } from 'next'
 import { DM_Sans } from 'next/font/google'
+import './globals.css'
 import './styles.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'] })

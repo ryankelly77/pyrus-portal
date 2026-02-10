@@ -144,7 +144,7 @@ export default function ContentReviewPage() {
       setFeedback('')
       router.refresh()
       // Re-fetch content
-      const res = await fetch(`/api/admin/content/${contentId}`)
+      const res = await fetch(`/api/content/${contentId}`)
       if (res.ok) {
         const data = await res.json()
         setContent(data)
