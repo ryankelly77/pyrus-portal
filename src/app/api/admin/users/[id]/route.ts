@@ -73,8 +73,48 @@ export async function DELETE(
       console.error('Error deleting auth user:', authDeleteError)
     }
 
-    // Delete profile (this will cascade delete related records based on DB constraints)
-    await dbPool.query('DELETE FROM profiles WHERE id = $1', [userId])
+    // Delete related records first (to handle foreign key constraints)
+    try {
+      // Delete activity logs by this user
+      await dbPool.query('DELETE FROM activity_log WHERE user_id = $1', [userId])
+
+      // Delete notifications for this user
+      await dbPool.query('DELETE FROM notifications WHERE user_id = $1', [userId])
+
+      // Delete user invites sent by this user (set invited_by to null)
+      await dbPool.query('UPDATE user_invites SET invited_by = NULL WHERE invited_by = $1', [userId])
+
+      // Delete password resets for this user
+      await dbPool.query('DELETE FROM password_resets WHERE user_id = $1', [userId])
+
+      // Unassign content assigned to this user
+      await dbPool.query('UPDATE content SET assigned_to = NULL WHERE assigned_to = $1', [userId])
+      await dbPool.query('UPDATE content SET author_id = NULL WHERE author_id = $1', [userId])
+
+      // Delete content comments by this user
+      await dbPool.query('DELETE FROM content_comments WHERE user_id = $1', [userId])
+
+      // Delete content revisions by this user
+      await dbPool.query('DELETE FROM content_revisions WHERE user_id = $1', [userId])
+
+      // Update recommendations created by this user
+      await dbPool.query('UPDATE recommendations SET created_by = NULL WHERE created_by = $1', [userId])
+    } catch (cleanupError) {
+      console.error('Error cleaning up related records:', cleanupError)
+      // Continue with delete attempt
+    }
+
+    // Delete profile
+    try {
+      await dbPool.query('DELETE FROM profiles WHERE id = $1', [userId])
+    } catch (deleteError) {
+      const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError)
+      console.error('Failed to delete profile:', errorMessage)
+      return NextResponse.json(
+        { error: `Failed to delete user: ${errorMessage}` },
+        { status: 500 }
+      )
+    }
 
     // Log activity
     try {
