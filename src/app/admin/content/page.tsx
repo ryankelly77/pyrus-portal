@@ -909,8 +909,27 @@ export default function AdminContentPage() {
 
       {/* Rush Publishing Interstitial */}
       {showRushInterstitial && rushItems.length > 0 && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '560px', width: '100%' }}>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+            maxWidth: '560px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}>
             <div style={{
               padding: '24px',
               borderBottom: '1px solid #E5E7EB',
@@ -1067,8 +1086,27 @@ export default function AdminContentPage() {
 
       {/* Add Files Modal */}
       {showFilesModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '520px', width: '100%' }}>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+            maxWidth: '520px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}>
             <div style={{
               padding: '20px 24px',
               borderBottom: '1px solid #E5E7EB',
@@ -1093,9 +1131,16 @@ export default function AdminContentPage() {
                 <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Add Files</h2>
               </div>
               <button
-                className="modal-close"
                 onClick={() => setShowFilesModal(false)}
                 disabled={isAddingFile}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: '#6B7280',
+                  borderRadius: '6px',
+                }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1104,7 +1149,7 @@ export default function AdminContentPage() {
               </button>
             </div>
 
-            <div className="modal-body">
+            <div style={{ padding: '20px' }}>
               {fileSuccess ? (
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
                   <div style={{
@@ -1260,7 +1305,13 @@ export default function AdminContentPage() {
             </div>
 
             {!fileSuccess && (
-              <div className="modal-footer">
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                padding: '16px 20px',
+                borderTop: '1px solid #E5E7EB',
+              }}>
                 <button
                   className="btn btn-secondary"
                   onClick={() => setShowFilesModal(false)}
