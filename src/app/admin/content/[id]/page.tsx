@@ -416,9 +416,12 @@ export default function ContentViewPage() {
   }
 
   const handleOpenPublishModal = () => {
+    console.log('handleOpenPublishModal called')
     if (!validateRequiredFields('publish')) {
+      console.log('Validation failed')
       return
     }
+    console.log('Validation passed, opening modal')
     setShowPublishModal(true)
   }
 
@@ -1178,8 +1181,12 @@ export default function ContentViewPage() {
               {/* Approved: Publish */}
               {content.status === 'approved' && (
                 <button
+                  type="button"
                   className="btn btn-primary btn-block"
-                  onClick={handleOpenPublishModal}
+                  onClick={() => {
+                    console.log('Publish button clicked, calling handleOpenPublishModal')
+                    handleOpenPublishModal()
+                  }}
                   disabled={actionLoading === 'publish'}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
