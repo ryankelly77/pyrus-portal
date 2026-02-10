@@ -627,7 +627,7 @@ function SummaryFilterBar({
         }}>
           {postedThisMonth}
         </span>
-        Posted This Month
+        Published This Month
       </button>
 
       {activeFilter !== 'all' && (
@@ -1069,7 +1069,7 @@ export function ContentView({
                 Showing: <strong style={{ color: '#1F2937' }}>
                   {contentFilter === 'needs_review' ? 'Content Needing Review' :
                    contentFilter === 'in_production' ? 'Content In Production' :
-                   'Posted This Month'}
+                   'Published This Month'}
                 </strong>
               </span>
               <button

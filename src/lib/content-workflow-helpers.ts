@@ -84,7 +84,7 @@ const STEPS_WITH_APPROVAL: ContentStep[] = [
   { key: 'approved', label: 'Approved', icon: 'check' },
   { key: 'final_optimization', label: 'Final Optimization', icon: 'settings' },
   { key: 'image_selection', label: 'Image Selection', icon: 'image' },
-  { key: 'posted', label: 'Posted', icon: 'globe' },
+  { key: 'posted', label: 'Published', icon: 'globe' },
 ]
 
 const STEPS_WITHOUT_APPROVAL: ContentStep[] = [
@@ -92,7 +92,7 @@ const STEPS_WITHOUT_APPROVAL: ContentStep[] = [
   { key: 'internal_review', label: 'Internal Review', icon: 'eye' },
   { key: 'final_optimization', label: 'Final Optimization', icon: 'settings' },
   { key: 'image_selection', label: 'Image Selection', icon: 'image' },
-  { key: 'posted', label: 'Posted', icon: 'globe' },
+  { key: 'posted', label: 'Published', icon: 'globe' },
 ]
 
 // ============================================================
@@ -239,7 +239,7 @@ export function getNextActions(
         ]
 
       case 'scheduled':
-        return [{ action: 'posted', label: 'Mark as Posted', variant: 'primary' }]
+        return [{ action: 'posted', label: 'Mark as Published', variant: 'primary' }]
 
       case 'posted':
         return [] // Terminal state
@@ -285,7 +285,7 @@ export function getStatusLabel(status: string, perspective: 'admin' | 'client'):
     final_optimization: 'Final Optimization',
     image_selection: 'Image Selection',
     scheduled: 'Scheduled',
-    posted: 'Posted',
+    posted: 'Published',
   }
 
   const clientLabels: Record<string, string> = {
@@ -371,7 +371,7 @@ export function getProgressPercentage(
     return 0
   }
 
-  // Posted is 100%, others are proportional
+  // Published is 100%, others are proportional
   if (currentStatus === 'posted') {
     return 100
   }

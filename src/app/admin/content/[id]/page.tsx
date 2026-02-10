@@ -360,7 +360,7 @@ export default function ContentViewPage() {
       case 'final_optimization': return 'Final Optimization'
       case 'image_selection': return 'Image Selection'
       case 'scheduled': return 'Scheduled'
-      case 'posted': return 'Posted'
+      case 'posted': return 'Published'
       // Legacy mappings
       case 'pending_review': return 'Pending Review'
       case 'revision': return 'Needs Revision'
@@ -429,8 +429,6 @@ export default function ContentViewPage() {
 
     if (missingFields.length > 0) {
       setValidationError(`Please complete before publishing: ${missingFields.join(', ')}`)
-      // Scroll to make error visible
-      window.scrollTo({ top: 0, behavior: 'smooth' })
       return false
     }
 
@@ -646,7 +644,7 @@ export default function ContentViewPage() {
                 Auto-Approval Enabled for {selectedClient.name}
               </div>
               <div style={{ color: '#047857', fontSize: '0.85rem' }}>
-                Content skips client review — workflow: Draft → Internal Review → Production → Posted
+                Content skips client review — workflow: Draft → Internal Review → Production → Published
               </div>
             </div>
           </div>

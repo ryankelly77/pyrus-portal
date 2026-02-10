@@ -16,7 +16,7 @@ function getStatusLabel(status: string): string {
     final_optimization: 'Final Optimization',
     image_selection: 'Image Selection',
     scheduled: 'Scheduled',
-    posted: 'Posted',
+    posted: 'Published',
   }
   return labels[status] || status
 }

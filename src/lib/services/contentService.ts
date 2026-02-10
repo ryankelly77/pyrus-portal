@@ -266,7 +266,7 @@ export async function getContentData(
     (c) => c.status && inProductionStatuses.includes(c.status)
   ).length
 
-  // Posted this month
+  // Published this month
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
   const postedThisMonth = allContent.filter((c) => {

@@ -159,7 +159,7 @@ export function AlertBanner() {
           <div className="alert-banner-footer">
             <span className="alert-banner-signature">- The Pyrus Digital Team</span>
             {alert.published_at && (
-              <span className="alert-banner-date">Posted: {formatDate(alert.published_at)}</span>
+              <span className="alert-banner-date">Published: {formatDate(alert.published_at)}</span>
             )}
           </div>
         </div>

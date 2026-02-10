@@ -357,7 +357,7 @@ export default function CreateContentPage() {
                 Auto-Approval Enabled for {selectedClient.name}
               </div>
               <div style={{ color: '#047857', fontSize: '0.85rem' }}>
-                Content skips client review — workflow: Draft → Internal Review → Production → Posted
+                Content skips client review — workflow: Draft → Internal Review → Production → Published
               </div>
             </div>
           </div>

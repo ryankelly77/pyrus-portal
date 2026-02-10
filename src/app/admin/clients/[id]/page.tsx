@@ -3644,7 +3644,7 @@ export default function ClientDetailPage() {
                               fontSize: '0.8rem',
                               color: '#065F46',
                             }}>
-                              <strong>Workflow:</strong> Draft → Internal Review → Final Optimization → Image Selection → Posted
+                              <strong>Workflow:</strong> Draft → Internal Review → Final Optimization → Image Selection → Published
                             </div>
                           )}
                         </div>

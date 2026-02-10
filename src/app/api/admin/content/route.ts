@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
         -- In Production (approved + internal_review + final_optimization + image_selection)
         COUNT(*) FILTER (WHERE status IN ('approved', 'internal_review', 'final_optimization', 'image_selection')) as in_production,
 
-        -- Posted This Month
+        -- Published This Month
         COUNT(*) FILTER (
           WHERE status = 'posted'
           AND status_changed_at >= date_trunc('month', CURRENT_DATE)

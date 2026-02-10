@@ -201,7 +201,7 @@ export default function AdminContentPage() {
       final_optimization: 'Final Optimization',
       image_selection: 'Image Selection',
       scheduled: 'Scheduled',
-      posted: 'Posted',
+      posted: 'Published',
       // Legacy mappings
       pending_review: 'Awaiting Review',
       revision: 'Needs Revision',
@@ -320,7 +320,7 @@ export default function AdminContentPage() {
       case 'image_selection':
         return { label: 'Post', variant: 'primary' as const }
       case 'scheduled':
-        return { label: 'Mark Posted', variant: 'primary' as const }
+        return { label: 'Mark Published', variant: 'primary' as const }
       case 'posted':
       case 'published':
         return { label: 'View', variant: 'secondary' as const }
@@ -427,7 +427,7 @@ export default function AdminContentPage() {
             </div>
           </div>
 
-          {/* Posted This Month */}
+          {/* Published This Month */}
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
@@ -436,7 +436,7 @@ export default function AdminContentPage() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{stats.posted_this_month}</span>
-              <span className="stat-label">Posted This Month</span>
+              <span className="stat-label">Published This Month</span>
             </div>
           </div>
         </div>
@@ -470,7 +470,7 @@ export default function AdminContentPage() {
               </optgroup>
               <optgroup label="Complete">
                 <option value="scheduled">Scheduled</option>
-                <option value="posted">Posted</option>
+                <option value="posted">Published</option>
               </optgroup>
             </select>
           </div>
