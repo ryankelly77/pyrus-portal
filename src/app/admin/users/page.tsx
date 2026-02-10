@@ -621,7 +621,7 @@ export default function AdminUsersPage() {
 
         {/* Pending Invites Section */}
         {pendingInvites.length > 0 && (
-          <div className="pending-invites-section" style={{ marginBottom: '32px' }}>
+          <div className="admin-users-section" style={{ marginBottom: '32px' }}>
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -630,15 +630,15 @@ export default function AdminUsersPage() {
               Pending Invites ({pendingInvites.length})
             </h3>
             <div className="users-table-container">
-              <table className="users-table">
+              <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Email</th>
-                    <th>Invited By</th>
-                    <th>Expires</th>
-                    <th>Actions</th>
+                    <th style={{ width: '18%' }}>Name</th>
+                    <th style={{ width: '14%' }}>Role</th>
+                    <th style={{ width: '24%' }}>Email</th>
+                    <th style={{ width: '16%' }}>Invited By</th>
+                    <th style={{ width: '12%' }}>Expires</th>
+                    <th style={{ width: '16%' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
