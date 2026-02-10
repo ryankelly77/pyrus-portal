@@ -135,19 +135,6 @@ export default function AdminContentPage() {
           const content = data.content || []
           setContentItems(content)
           setStats(data.stats || stats)
-
-          // Check for rush items that the user hasn't dismissed
-          const urgentItems = content.filter((item: ContentItem) => item.urgent)
-          if (urgentItems.length > 0 && profile?.id) {
-            const dismissedKey = `rush_dismissed_${profile.id}`
-            const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
-            const newRushItems = urgentItems.filter((item: ContentItem) => !dismissed.includes(item.id))
-
-            if (newRushItems.length > 0) {
-              setRushItems(newRushItems)
-              setShowRushInterstitial(true)
-            }
-          }
         }
 
         // Fetch clients for filter dropdown
@@ -168,7 +155,24 @@ export default function AdminContentPage() {
       }
     }
     fetchData()
-  }, [statusFilter, clientFilter, platformFilter, profile?.id])
+  }, [statusFilter, clientFilter, platformFilter])
+
+  // Separate effect to check for rush items once profile is loaded
+  useEffect(() => {
+    if (!profile?.id || contentItems.length === 0) return
+
+    const urgentItems = contentItems.filter((item: ContentItem) => item.urgent)
+    if (urgentItems.length > 0) {
+      const dismissedKey = `rush_dismissed_${profile.id}`
+      const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
+      const newRushItems = urgentItems.filter((item: ContentItem) => !dismissed.includes(item.id))
+
+      if (newRushItems.length > 0) {
+        setRushItems(newRushItems)
+        setShowRushInterstitial(true)
+      }
+    }
+  }, [profile?.id, contentItems])
 
   const clearFilters = () => {
     setStatusFilter('')
@@ -238,8 +242,9 @@ export default function AdminContentPage() {
       }
 
       if (!res.ok) {
-        const data = await res.json()
-        setFileError(data.error || 'Failed to add file')
+        const data = await res.json().catch(() => ({}))
+        console.error('File add error:', data)
+        setFileError(data.error || `Failed to add file (${res.status})`)
         return
       }
 
