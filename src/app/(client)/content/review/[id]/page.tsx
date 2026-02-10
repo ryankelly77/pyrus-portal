@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ClientHeader } from '@/components/layout'
-import { useUserProfile } from '@/hooks/useUserProfile'
+import { useClientData } from '@/hooks/useClientData'
 import { StatusProgressBar } from '@/components/content'
 import { getNextActions, getStatusLabel } from '@/lib/content-workflow-helpers'
 
@@ -47,7 +46,9 @@ interface ContentDetail {
 }
 
 export default function ContentReviewPage() {
-  const { user } = useUserProfile()
+  const searchParams = useSearchParams()
+  const viewingAs = searchParams.get('viewingAs')
+  const { client, loading: clientLoading } = useClientData(viewingAs)
   const params = useParams()
   const router = useRouter()
   const contentId = params.id as string
@@ -193,13 +194,14 @@ export default function ContentReviewPage() {
       .reverse() // Most recent first
   }
 
-  if (loading) {
+  if (loading || clientLoading) {
     return (
       <>
-        <ClientHeader
-          title="Content Review"
-          user={user}
-        />
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Content Review</h1>
+          </div>
+        </div>
         <div className="client-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
           <div className="spinner" style={{ width: 40, height: 40 }}></div>
         </div>
@@ -210,10 +212,19 @@ export default function ContentReviewPage() {
   if (error || !content) {
     return (
       <>
-        <ClientHeader
-          title="Content Review"
-          user={user}
-        />
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Content Review</h1>
+          </div>
+          <div className="client-top-header-right">
+            <Link href="/settings" className="user-menu-link">
+              <div className="user-avatar-small">
+                <span>{client.initials}</span>
+              </div>
+              <span className="user-name">{client.contactName}</span>
+            </Link>
+          </div>
+        </div>
         <div className="client-content" style={{ textAlign: 'center', padding: '3rem' }}>
           <h2>Content Not Found</h2>
           <p>{error || 'The content you are looking for does not exist.'}</p>
@@ -236,10 +247,19 @@ export default function ContentReviewPage() {
 
   return (
     <>
-      <ClientHeader
-        title="Content Review"
-        user={user}
-      />
+      <div className="client-top-header">
+        <div className="client-top-header-left">
+          <h1>Content Review</h1>
+        </div>
+        <div className="client-top-header-right">
+          <Link href="/settings" className="user-menu-link">
+            <div className="user-avatar-small">
+              <span>{client.initials}</span>
+            </div>
+            <span className="user-name">{client.contactName}</span>
+          </Link>
+        </div>
+      </div>
 
       <div className="client-content">
         {/* Breadcrumb */}

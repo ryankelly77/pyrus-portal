@@ -186,6 +186,13 @@ export async function GET(request: NextRequest) {
     const hasWebsiteProducts = allActiveProducts.some((p: any) => p.includes_website === true)
     const hasContentProducts = allActiveProducts.some((p: any) => p.includes_content === true)
 
+    // Check if client has actual content in the database
+    const contentCountResult = await dbPool.query(
+      `SELECT COUNT(*) FROM content WHERE client_id = $1`,
+      [clientId]
+    )
+    const hasActualContent = parseInt(contentCountResult.rows[0].count) > 0
+
     // Aggregate content and website services across all active products
     const contentServices = aggregateServices(allActiveProducts, 'content_services')
     const websiteServices = aggregateServices(allActiveProducts, 'website_services')
@@ -228,9 +235,8 @@ export async function GET(request: NextRequest) {
         hasActivity: hasActivityAccess,
         hasWebsite: hasWebsiteAccess,
         hasWebsiteProducts,
-        // For content: hasContent means content is actively being delivered (like hasActivity uses basecamp_id)
-        // For now, we don't have a separate field to indicate content is active, so use hasActivityAccess as proxy
-        hasContent: hasActivityAccess && hasContentProducts,
+        // For content: hasContent is true if client has actual content OR has content products with activity access
+        hasContent: hasActualContent || (hasActivityAccess && hasContentProducts),
         hasContentProducts,
         // Aggregated services for "Your Plan Includes" display
         contentServices,
