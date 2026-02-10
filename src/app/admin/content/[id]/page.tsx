@@ -225,14 +225,12 @@ export default function ContentViewPage() {
   const handleWorkflowAction = async (action: 'submit' | 'approve' | 'reject' | 'publish', extra?: Record<string, string>) => {
     try {
       setActionLoading(action)
-      console.log('handleWorkflowAction called:', { action, extra, contentId })
       const res = await fetch(`/api/admin/content/${contentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...extra }),
       })
       const data = await res.json()
-      console.log('API response:', { ok: res.ok, status: res.status, data })
       if (!res.ok) {
         throw new Error(data.error || 'Failed to process action')
       }
@@ -416,17 +414,10 @@ export default function ContentViewPage() {
   }
 
   const handleOpenPublishModal = () => {
-    console.log('handleOpenPublishModal called')
     if (!validateRequiredFields('publish')) {
-      console.log('Validation failed')
       return
     }
-    console.log('Validation passed, opening modal, current state:', showPublishModal)
     setShowPublishModal(true)
-    // Force log after state update attempt
-    setTimeout(() => {
-      console.log('After setState, showPublishModal should be true')
-    }, 100)
   }
 
   return (
@@ -1065,24 +1056,74 @@ export default function ContentViewPage() {
 
               {/* Show published info if published */}
               {(content.status === 'posted' || content.status === 'published') && (
-                <div className="form-group">
-                  <label className="form-label">Published</label>
-                  <div className="published-info">
-                    <p>
-                      {content.published_at
-                        ? new Date(content.published_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
-                        : 'Unknown date'}
-                    </p>
-                    {content.published_url && (
-                      <a href={content.published_url} target="_blank" rel="noopener noreferrer" className="published-link">
-                        View Live
-                      </a>
-                    )}
+                <div style={{
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginTop: '16px',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="20" height="20">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ color: 'white', fontWeight: 600, fontSize: '16px' }}>Published</div>
+                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                        {content.published_at
+                          ? new Date(content.published_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              timeZone: 'America/Chicago',
+                            }) + ' CST'
+                          : 'Unknown date'}
+                      </div>
+                    </div>
                   </div>
+                  {content.published_url && (
+                    <a
+                      href={content.published_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        background: 'white',
+                        color: '#059669',
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                      View Live
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -1187,10 +1228,7 @@ export default function ContentViewPage() {
                 <button
                   type="button"
                   className="btn btn-primary btn-block"
-                  onClick={() => {
-                    console.log('Publish button clicked, calling handleOpenPublishModal')
-                    handleOpenPublishModal()
-                  }}
+                  onClick={handleOpenPublishModal}
                   disabled={actionLoading === 'publish'}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -1287,10 +1325,7 @@ export default function ContentViewPage() {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => {
-                  console.log('Publish button clicked!')
-                  handleWorkflowAction('publish', { publishedUrl })
-                }}
+                onClick={() => handleWorkflowAction('publish', { publishedUrl })}
                 disabled={actionLoading === 'publish'}
               >
                 {actionLoading === 'publish' ? 'Publishing...' : 'Mark as Published'}

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { StatusProgressBar } from '@/components/content'
 import { getStatusLabel } from '@/lib/content-workflow-helpers'
 
@@ -315,12 +316,15 @@ function getContentCTA(status: string, id: string, isAdmin: boolean): { label: s
 function ContentItemCard({
   item,
   variant = 'pending',
-  isAdmin = false
+  isAdmin = false,
+  onQuickApprove
 }: {
   item: ContentItem
   variant?: 'urgent' | 'pending' | 'approved' | 'published'
   isAdmin?: boolean
+  onQuickApprove?: (contentId: string) => Promise<void>
 }) {
+  const [isApproving, setIsApproving] = useState(false)
   const cta = getContentCTA(item.status, item.id, isAdmin)
   const clientStatusLabel = getStatusLabel(item.status, 'client')
 
@@ -439,13 +443,29 @@ function ContentItemCard({
         </Link>
 
         {/* Secondary actions based on variant */}
-        {(variant === 'urgent' || variant === 'pending') && item.status === 'sent_for_review' && (
-          <Link href={isAdmin ? `/admin/content/${item.id}` : `/content/review/${item.id}`} className="btn btn-outline btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            Quick Approve
-          </Link>
+        {(variant === 'urgent' || variant === 'pending') && item.status === 'sent_for_review' && onQuickApprove && (
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={isApproving}
+            onClick={async (e) => {
+              e.preventDefault()
+              setIsApproving(true)
+              try {
+                await onQuickApprove(item.id)
+              } finally {
+                setIsApproving(false)
+              }
+            }}
+          >
+            {isApproving ? (
+              <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid #ccc', borderTopColor: '#666', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            )}
+            {isApproving ? 'Approving...' : 'Quick Approve'}
+          </button>
         )}
         {variant === 'approved' && (
           <button className="btn btn-outline btn-sm">
@@ -629,6 +649,7 @@ export function ContentView({
   onViewContentRequirements,
   contentServices
 }: ContentViewProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'review' | 'files'>('review')
   const [fileFilter, setFileFilter] = useState<'all' | 'docs' | 'images' | 'video'>('all')
   const [loading, setLoading] = useState(true)
@@ -701,6 +722,41 @@ export function ContentView({
     }
     fetchContent()
   }, [clientId, isDemo, isAdmin])
+
+  // Handle Quick Approve - directly approves content without going through review page
+  const handleQuickApprove = useCallback(async (contentId: string) => {
+    try {
+      // Call the transition API to set status to approved directly
+      const response = await fetch(`/api/content/${contentId}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetStatus: 'approved' }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to approve content')
+      }
+
+      // Refresh the page to get updated data
+      router.refresh()
+
+      // Re-fetch content data
+      const apiUrl = isAdmin
+        ? `/api/admin/clients/${clientId}/content`
+        : `/api/client/content?clientId=${clientId}`
+      const res = await fetch(apiUrl)
+      if (res.ok) {
+        const data = await res.json()
+        setContentStats(data.stats)
+        setContentData(data.content)
+        setAllContent(data.allContent || [])
+      }
+    } catch (err) {
+      console.error('Quick approve failed:', err)
+      throw err
+    }
+  }, [clientId, isAdmin, router])
 
   // Apply content filter
   const getFilteredContent = (items: ContentItem[]): ContentItem[] => {
@@ -987,7 +1043,7 @@ export function ContentView({
               </div>
               <div className="content-list">
                 {filteredUrgent.map((item) => (
-                  <ContentItemCard key={item.id} item={item} variant="urgent" isAdmin={isAdmin} />
+                  <ContentItemCard key={item.id} item={item} variant="urgent" isAdmin={isAdmin} onQuickApprove={isDemo ? undefined : handleQuickApprove} />
                 ))}
               </div>
             </div>
@@ -1001,7 +1057,7 @@ export function ContentView({
               </div>
               <div className="content-list">
                 {filteredPending.map((item) => (
-                  <ContentItemCard key={item.id} item={item} variant="pending" isAdmin={isAdmin} />
+                  <ContentItemCard key={item.id} item={item} variant="pending" isAdmin={isAdmin} onQuickApprove={isDemo ? undefined : handleQuickApprove} />
                 ))}
               </div>
             </div>

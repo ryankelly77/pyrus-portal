@@ -297,6 +297,19 @@ export async function PATCH(
 
     updates.push(`status = $${paramIndex++}`)
     values.push(newStatus)
+
+    // Update status_history JSONB array
+    updates.push(`status_history = COALESCE(status_history, '[]'::jsonb) || $${paramIndex++}::jsonb`)
+    values.push(JSON.stringify({
+      status: newStatus,
+      changed_at: new Date().toISOString(),
+      changed_by_id: user?.id || null,
+      changed_by_name: profile?.full_name || 'System',
+      note: feedback || null
+    }))
+
+    updates.push(`status_changed_at = NOW()`)
+
     values.push(id)
 
     const result = await dbPool.query(
