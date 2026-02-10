@@ -103,6 +103,18 @@ export async function POST(
       )
     }
 
+    // Check for basic password complexity (Supabase may require this)
+    const hasUppercase = /[A-Z]/.test(password)
+    const hasLowercase = /[a-z]/.test(password)
+    const hasNumber = /[0-9]/.test(password)
+
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' },
+        { status: 400 }
+      )
+    }
+
     // Find and validate the invite
     const inviteResult = await dbPool.query(
       `SELECT id, email, full_name, phone, role, client_ids, expires_at, status
@@ -165,8 +177,17 @@ export async function POST(
       )
     }
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // Log the data being sent to Supabase for debugging
+    console.log('Creating Supabase user with:', {
       email: invite.email,
+      emailLength: invite.email?.length,
+      emailTrimmed: invite.email?.trim(),
+      fullName: invite.full_name,
+      passwordLength: password?.length
+    })
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: invite.email.trim().toLowerCase(),
       password: password,
       email_confirm: true, // Auto-confirm since they came from invite
       user_metadata: {
@@ -176,6 +197,7 @@ export async function POST(
 
     if (authError || !authData.user) {
       console.error('Failed to create auth user:', authError)
+      console.error('Auth error details:', JSON.stringify(authError, null, 2))
       return NextResponse.json(
         { error: authError?.message || 'Failed to create account' },
         { status: 500 }
