@@ -678,6 +678,13 @@ export function ContentView({
   const [allContent, setAllContent] = useState<ContentItem[]>([])
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all')
 
+  // Rush publishing modal state
+  const [showRushModal, setShowRushModal] = useState(false)
+  const [rushingItem, setRushingItem] = useState<ContentItem | null>(null)
+  const [rushReason, setRushReason] = useState('')
+  const [isRequestingRush, setIsRequestingRush] = useState(false)
+  const [rushSuccess, setRushSuccess] = useState(false)
+
   // Only show demo files in demo mode, otherwise empty (real files would come from API)
   const files = isDemo ? demoFiles : []
   const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
@@ -778,12 +785,28 @@ export function ContentView({
     }
   }, [clientId, isAdmin, router])
 
-  // Handle Rush Publishing - marks content as urgent and notifies team
+  // Handle Rush Publishing - opens modal to confirm
   const handleRushPublishing = useCallback(async (contentId: string) => {
+    // Find the content item to show in modal
+    const item = allContent.find(c => c.id === contentId)
+    if (item) {
+      setRushingItem(item)
+      setRushReason('')
+      setRushSuccess(false)
+      setShowRushModal(true)
+    }
+  }, [allContent])
+
+  // Submit rush publishing request
+  const submitRushRequest = useCallback(async () => {
+    if (!rushingItem) return
+
+    setIsRequestingRush(true)
     try {
-      const response = await fetch(`/api/content/${contentId}/rush`, {
+      const response = await fetch(`/api/content/${rushingItem.id}/rush`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rushReason.trim() || undefined }),
       })
 
       if (!response.ok) {
@@ -791,25 +814,36 @@ export function ContentView({
         throw new Error(errorData.error || 'Failed to request rush publishing')
       }
 
-      // Refresh the page to get updated data
-      router.refresh()
+      setRushSuccess(true)
 
-      // Re-fetch content data
-      const apiUrl = isAdmin
-        ? `/api/admin/clients/${clientId}/content`
-        : `/api/client/content?clientId=${clientId}`
-      const res = await fetch(apiUrl)
-      if (res.ok) {
-        const data = await res.json()
-        setContentStats(data.stats)
-        setContentData(data.content)
-        setAllContent(data.allContent || [])
-      }
+      // Auto-close after 2 seconds and refresh data
+      setTimeout(async () => {
+        setShowRushModal(false)
+        setRushingItem(null)
+        setRushReason('')
+        setRushSuccess(false)
+
+        // Refresh the page to get updated data
+        router.refresh()
+
+        // Re-fetch content data
+        const apiUrl = isAdmin
+          ? `/api/admin/clients/${clientId}/content`
+          : `/api/client/content?clientId=${clientId}`
+        const res = await fetch(apiUrl)
+        if (res.ok) {
+          const data = await res.json()
+          setContentStats(data.stats)
+          setContentData(data.content)
+          setAllContent(data.allContent || [])
+        }
+      }, 2000)
     } catch (err) {
       console.error('Rush publishing request failed:', err)
-      throw err
+    } finally {
+      setIsRequestingRush(false)
     }
-  }, [clientId, isAdmin, router])
+  }, [rushingItem, rushReason, clientId, isAdmin, router])
 
   // Apply content filter
   const getFilteredContent = (items: ContentItem[]): ContentItem[] => {
@@ -1263,6 +1297,239 @@ export function ContentView({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rush Publishing Modal */}
+      {showRushModal && rushingItem && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50
+          }}
+          onClick={() => {
+            if (!isRequestingRush && !rushSuccess) {
+              setShowRushModal(false)
+              setRushingItem(null)
+              setRushReason('')
+            }
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  background: '#FEF3C7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="20" height="20">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1F2937' }}>Rush Publishing</h2>
+                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>Request expedited publishing for this content</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isRequestingRush && !rushSuccess) {
+                    setShowRushModal(false)
+                    setRushingItem(null)
+                    setRushReason('')
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: isRequestingRush || rushSuccess ? 'not-allowed' : 'pointer',
+                  padding: '0.25rem',
+                  color: '#6B7280',
+                  opacity: isRequestingRush || rushSuccess ? 0.5 : 1
+                }}
+                disabled={isRequestingRush || rushSuccess}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '1.5rem' }}>
+              {rushSuccess ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '1.5rem 0'
+                }}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: '#DEF7EC',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1rem'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="32" height="32">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.125rem', fontWeight: 600, color: '#059669' }}>Rush Publishing Requested!</h3>
+                  <p style={{ margin: 0, color: '#6B7280', fontSize: '0.875rem' }}>
+                    Our team has been notified and will prioritize this content.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Content Info */}
+                  <div style={{
+                    background: '#F9FAFB',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.95rem', fontWeight: 600, color: '#1F2937' }}>{rushingItem.title}</h4>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                      {rushingItem.scheduledDate ? (
+                        <>Currently scheduled: <strong>{rushingItem.scheduledDate}</strong></>
+                      ) : (
+                        <>Status: <strong>{getStatusLabel(rushingItem.status, 'client')}</strong></>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Rush Notice */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.75rem',
+                    background: '#FEF3C7',
+                    borderRadius: '8px',
+                    padding: '0.875rem 1rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="18" height="18" style={{ flexShrink: 0, marginTop: '2px' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#92400E' }}>
+                      Rush publishing will move this content to the front of the queue and publish within <strong>24 hours</strong>.
+                    </p>
+                  </div>
+
+                  {/* Reason Input */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                      Reason for rush (optional)
+                    </label>
+                    <textarea
+                      value={rushReason}
+                      onChange={(e) => setRushReason(e.target.value)}
+                      placeholder="e.g., Time-sensitive promotion, event deadline..."
+                      style={{
+                        width: '100%',
+                        minHeight: '80px',
+                        padding: '0.75rem',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        resize: 'vertical',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {!rushSuccess && (
+              <div style={{
+                padding: '1rem 1.5rem',
+                borderTop: '1px solid #E5E7EB',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem'
+              }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowRushModal(false)
+                    setRushingItem(null)
+                    setRushReason('')
+                  }}
+                  disabled={isRequestingRush}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  onClick={submitRushRequest}
+                  disabled={isRequestingRush}
+                  style={{
+                    background: '#F59E0B',
+                    borderColor: '#F59E0B',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  {isRequestingRush ? (
+                    <>
+                      <span style={{
+                        display: 'inline-block',
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTopColor: 'white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Requesting...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      </svg>
+                      Request Rush
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
