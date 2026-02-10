@@ -115,6 +115,19 @@ export default function ContentViewPage() {
 
   // Validation
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [showWordCountWarning, setShowWordCountWarning] = useState(false)
+
+  // Count words in content (strips HTML tags and counts words)
+  const countWords = (text: string): number => {
+    if (!text) return 0
+    // Strip HTML tags
+    const strippedText = text.replace(/<[^>]*>/g, ' ')
+    // Split by whitespace and filter empty strings
+    const words = strippedText.trim().split(/\s+/).filter(word => word.length > 0)
+    return words.length
+  }
+
+  const actualWordCount = countWords(bodyContent)
 
   // Clear validation error when fields change
   useEffect(() => {
@@ -443,6 +456,16 @@ export default function ContentViewPage() {
     if (!validateRequiredFields('publish')) {
       return
     }
+    // Check word count for website content
+    if (platform === 'website' && wordCount && wordCount > 0 && actualWordCount < wordCount) {
+      setShowWordCountWarning(true)
+      return
+    }
+    setShowPublishModal(true)
+  }
+
+  const handleConfirmPublishDespiteWordCount = () => {
+    setShowWordCountWarning(false)
     setShowPublishModal(true)
   }
 
@@ -711,6 +734,35 @@ export default function ContentViewPage() {
                   value={bodyContent}
                   onChange={(e) => setBodyContent(e.target.value)}
                 />
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '8px',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-muted)',
+                }}>
+                  <span>
+                    <strong style={{
+                      color: wordCount && actualWordCount < wordCount ? '#DC2626' :
+                             wordCount && actualWordCount >= wordCount ? '#059669' : 'inherit'
+                    }}>
+                      {actualWordCount.toLocaleString()}
+                    </strong> words
+                    {wordCount && wordCount > 0 && (
+                      <span style={{ marginLeft: '8px' }}>
+                        / {wordCount.toLocaleString()} target
+                        {actualWordCount >= wordCount ? (
+                          <span style={{ color: '#059669', marginLeft: '6px' }}>✓</span>
+                        ) : (
+                          <span style={{ color: '#DC2626', marginLeft: '6px' }}>
+                            ({(wordCount - actualWordCount).toLocaleString()} more needed)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </span>
+                </div>
               </div>
 
               {/* Revision feedback display */}
@@ -1431,6 +1483,85 @@ export default function ContentViewPage() {
                 disabled={actionLoading === 'reject'}
               >
                 {actionLoading === 'reject' ? 'Sending...' : 'Send for Revision'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Word Count Warning Modal */}
+      {showWordCountWarning && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowWordCountWarning(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-primary, white)',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '480px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: '#FEF3C7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="24" height="24">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#92400E' }}>Word Count Below Target</h3>
+                <p style={{ margin: '0', color: 'var(--text-secondary, #666)', lineHeight: 1.5 }}>
+                  This content has <strong>{actualWordCount.toLocaleString()}</strong> words,
+                  but the target is <strong>{wordCount?.toLocaleString()}</strong> words.
+                  <br />
+                  <span style={{ color: '#DC2626' }}>
+                    {wordCount && (wordCount - actualWordCount).toLocaleString()} words short of target.
+                  </span>
+                </p>
+              </div>
+            </div>
+            <p style={{ margin: '0 0 20px 0', color: 'var(--text-secondary, #666)', fontSize: '0.9rem' }}>
+              Are you sure you want to publish this content below the target word count?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowWordCountWarning(false)}
+              >
+                Go Back & Edit
+              </button>
+              <button
+                type="button"
+                className="btn btn-warning"
+                onClick={handleConfirmPublishDespiteWordCount}
+              >
+                Publish Anyway
               </button>
             </div>
           </div>
