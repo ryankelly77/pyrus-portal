@@ -452,7 +452,9 @@ export function StatusProgressBar({
         return text
       }
       case 'revision': {
-        let text = `Revision requested — Round ${reviewRound}`
+        let text = reviewRound > 0
+          ? `Revision requested — Round ${reviewRound}`
+          : 'Revision requested'
         if (note) {
           const truncated = note.length > 80 ? note.slice(0, 80) + '...' : note
           text += `: ${truncated}`
