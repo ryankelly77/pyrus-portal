@@ -87,39 +87,7 @@ export function getUserInviteEmail(data: UserInviteData): { subject: string; htm
                       What You'll Get Access To
                     </h3>
                     <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                      ${isAdminRole ? `
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> Client management dashboard
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> Recommendation builder
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> Analytics and reporting
-                        </td>
-                      </tr>
-                      ` : `
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> View your marketing progress
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> Access reports and analytics
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; font-size: 14px; color: #5A6358;">
-                          <span style="color: #324438; margin-right: 8px;">&#10003;</span> Communicate with your team
-                        </td>
-                      </tr>
-                      `}
+                      ${getAccessListHtml(role)}
                     </table>
                   </td>
                 </tr>
@@ -181,4 +149,42 @@ function getRoleDisplay(role: string): string {
     default:
       return 'User'
   }
+}
+
+function getAccessListHtml(role: string): string {
+  const checkmark = '<span style="color: #324438; margin-right: 8px;">&#10003;</span>'
+  const rowStyle = 'padding: 8px 0; font-size: 14px; color: #5A6358;'
+
+  const items: string[] = []
+
+  switch (role) {
+    case 'super_admin':
+    case 'admin':
+      items.push('Full admin dashboard access')
+      items.push('Client and user management')
+      items.push('Analytics and reporting')
+      break
+    case 'production_team':
+      items.push('Content production dashboard')
+      items.push('Project and task management')
+      items.push('Client content workflows')
+      break
+    case 'sales':
+      items.push('Sales pipeline dashboard')
+      items.push('Client recommendations')
+      items.push('Revenue reporting')
+      break
+    default: // client
+      items.push('View your marketing progress')
+      items.push('Access reports and analytics')
+      items.push('Communicate with your team')
+  }
+
+  return items.map(item => `
+    <tr>
+      <td style="${rowStyle}">
+        ${checkmark} ${item}
+      </td>
+    </tr>
+  `).join('')
 }
