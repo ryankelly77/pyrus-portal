@@ -166,6 +166,7 @@ model products {
   website_services        Json?     @db.JsonB
   smart_rec_why_text      String?   // Default "why you need this" text for smart recommendations
   billing_term_months     Int?      // Number of months for term billing (null = ongoing, 12 = 12-month term)
+  portal_slug             String?   // Unique slug used by the portal checkout system
   created_at              DateTime? @default(now()) @db.Timestamptz(6)
   updated_at              DateTime? @default(now()) @db.Timestamptz(6)
 

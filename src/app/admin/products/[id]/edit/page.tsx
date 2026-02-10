@@ -27,6 +27,7 @@ interface Product {
   stripe_monthly_price_id: string | null
   stripe_onetime_price_id: string | null
   sort_order: number | null
+  portal_slug: string | null
   includes_content: boolean | null
   content_services: Service[] | null
   includes_website: boolean | null
@@ -66,6 +67,7 @@ export default function EditProductPage() {
     stripeOnetimePriceId: '',
     dependencies: [] as string[],
     sortOrder: 0,
+    portalSlug: '',
     includesContent: false,
     contentServices: [] as Service[],
     includesWebsite: false,
@@ -113,6 +115,7 @@ export default function EditProductPage() {
           stripeOnetimePriceId: product.stripe_onetime_price_id || '',
           dependencies: product.product_dependencies.map(d => d.requires_product_id),
           sortOrder: product.sort_order || 0,
+          portalSlug: product.portal_slug || '',
           includesContent: product.includes_content || false,
           contentServices: product.content_services || [],
           includesWebsite: product.includes_website || false,
@@ -580,6 +583,18 @@ export default function EditProductPage() {
                     value={productForm.sortOrder}
                     onChange={(e) => setProductForm({ ...productForm, sortOrder: parseInt(e.target.value) || 0 })}
                   />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="portalSlug">Portal Slug</label>
+                  <input
+                    type="text"
+                    id="portalSlug"
+                    className="form-control"
+                    value={productForm.portalSlug}
+                    onChange={(e) => setProductForm({ ...productForm, portalSlug: e.target.value })}
+                    placeholder="e.g., content-writing, ai-creative-assets"
+                  />
+                  <span className="form-hint">Used by checkout system for Add to Plan buttons</span>
                 </div>
               </div>
 

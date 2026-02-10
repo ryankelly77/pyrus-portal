@@ -32,15 +32,11 @@ export async function GET(request: NextRequest) {
       clientId = profile.client_id
     }
 
-    // Fetch the 3 content products: Content Writing, AI Creative Assets, Business Branding Foundation
+    // Fetch content products that have a portal_slug (these are the ones available for Add to Plan)
     const contentProducts = await prisma.products.findMany({
       where: {
         status: 'active',
-        OR: [
-          { name: 'Content Writing' },
-          { name: 'AI Creative Assets' },
-          { name: 'Business Branding Foundation' },
-        ],
+        portal_slug: { not: null },
       },
       orderBy: { sort_order: 'asc' },
     })
@@ -71,16 +67,9 @@ export async function GET(request: NextRequest) {
       product => !purchasedProductIds.has(product.id)
     )
 
-    // Map product names to slugs for checkout
-    const nameToSlug: Record<string, string> = {
-      'Content Writing': 'content-writing',
-      'AI Creative Assets': 'ai-creative-assets',
-      'Business Branding Foundation': 'business-branding',
-    }
-
     return NextResponse.json({
       available: availableProducts.map(p => ({
-        id: nameToSlug[p.name] || p.id, // Use slug as id for checkout compatibility
+        id: p.portal_slug || p.id, // Use portal_slug for checkout compatibility
         name: p.name,
         short_description: p.short_description,
         monthly_price: p.monthly_price,

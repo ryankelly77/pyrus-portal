@@ -73,6 +73,7 @@ export async function PUT(
       contentServices,
       includesWebsite,
       websiteServices,
+      portalSlug,
     } = body
 
     // Update the product
@@ -96,6 +97,7 @@ export async function PUT(
         content_services: contentServices || null,
         includes_website: includesWebsite ?? false,
         website_services: websiteServices || null,
+        portal_slug: portalSlug || null,
         updated_at: new Date(),
       },
     })
