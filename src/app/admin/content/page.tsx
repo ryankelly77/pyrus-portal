@@ -96,6 +96,25 @@ export default function AdminContentPage() {
   const [showRushInterstitial, setShowRushInterstitial] = useState(false)
   const [rushItems, setRushItems] = useState<ContentItem[]>([])
 
+  // Tabs state
+  const [activeTab, setActiveTab] = useState<'content' | 'files'>('content')
+
+  // Files list state
+  interface FileItem {
+    id: string
+    name: string
+    type: 'docs' | 'images' | 'video'
+    category: string
+    url: string
+    client_id: string
+    client_name: string
+    created_at: string
+  }
+  const [files, setFiles] = useState<FileItem[]>([])
+  const [filesLoading, setFilesLoading] = useState(false)
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null)
+  const [filesClientFilter, setFilesClientFilter] = useState('')
+
   // Add Files modal state
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [fileClientId, setFileClientId] = useState('')
@@ -156,6 +175,51 @@ export default function AdminContentPage() {
     }
     fetchData()
   }, [statusFilter, clientFilter, platformFilter])
+
+  // Fetch files when files tab is active
+  useEffect(() => {
+    if (activeTab !== 'files') return
+
+    async function fetchFiles() {
+      setFilesLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (filesClientFilter) params.set('clientId', filesClientFilter)
+
+        const res = await fetch(`/api/admin/files?${params.toString()}`)
+        if (res.ok) {
+          const data = await res.json()
+          setFiles(data.files || [])
+        }
+      } catch (error) {
+        console.error('Error fetching files:', error)
+      } finally {
+        setFilesLoading(false)
+      }
+    }
+    fetchFiles()
+  }, [activeTab, filesClientFilter])
+
+  // Handle file delete
+  const handleDeleteFile = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file?')) return
+
+    setDeletingFileId(fileId)
+    try {
+      const res = await fetch(`/api/admin/files/${fileId}`, { method: 'DELETE' })
+      if (res.ok) {
+        setFiles(prev => prev.filter(f => f.id !== fileId))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete file')
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error)
+      alert('Failed to delete file')
+    } finally {
+      setDeletingFileId(null)
+    }
+  }
 
   // Separate effect to check for rush items once profile is loaded
   useEffect(() => {
@@ -499,6 +563,58 @@ export default function AdminContentPage() {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="tabs-container" style={{ marginBottom: '24px' }}>
+          <div className="tab-buttons" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '0' }}>
+            <button
+              className={`tab-button ${activeTab === 'content' ? 'active' : ''}`}
+              onClick={() => setActiveTab('content')}
+              style={{
+                padding: '12px 20px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                color: activeTab === 'content' ? 'var(--pyrus-brown)' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'content' ? '600' : '400',
+                borderBottom: activeTab === 'content' ? '2px solid var(--pyrus-brown)' : '2px solid transparent',
+                marginBottom: '-1px',
+                fontSize: '14px',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '8px', verticalAlign: 'text-bottom' }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              Content
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
+              onClick={() => setActiveTab('files')}
+              style={{
+                padding: '12px 20px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                color: activeTab === 'files' ? 'var(--pyrus-brown)' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'files' ? '600' : '400',
+                borderBottom: activeTab === 'files' ? '2px solid var(--pyrus-brown)' : '2px solid transparent',
+                marginBottom: '-1px',
+                fontSize: '14px',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '8px', verticalAlign: 'text-bottom' }}>
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              Files
+            </button>
+          </div>
+        </div>
+
+        {/* Content Tab */}
+        {activeTab === 'content' && (
+          <>
         {/* Stat Cards - 6 cards in a row */}
         <div className="stats-grid stats-grid-6" style={{ marginBottom: '24px' }}>
           {/* Active Clients */}
@@ -837,6 +953,121 @@ export default function AdminContentPage() {
             <span className="legend-text">Revision round indicator</span>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Files Tab */}
+        {activeTab === 'files' && (
+          <div className="files-tab-content">
+            {/* Files Filter */}
+            <div className="clients-toolbar" style={{ marginBottom: '20px' }}>
+              <select
+                className="sort-select"
+                value={filesClientFilter}
+                onChange={(e) => setFilesClientFilter(e.target.value)}
+                style={{ minWidth: '200px' }}
+              >
+                <option value="">All Clients</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Files Table */}
+            {filesLoading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                Loading files...
+              </div>
+            ) : files.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                No files found. Click "Add Files" to upload files for clients.
+              </div>
+            ) : (
+              <div className="content-table-wrapper">
+                <table className="content-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '25%' }}>Name</th>
+                      <th style={{ width: '15%' }}>Client</th>
+                      <th style={{ width: '12%' }}>Type</th>
+                      <th style={{ width: '18%' }}>Category</th>
+                      <th style={{ width: '12%' }}>Date</th>
+                      <th style={{ width: '18%' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {files.map((file) => (
+                      <tr key={file.id}>
+                        <td style={{ fontWeight: 500 }}>{file.name}</td>
+                        <td>{file.client_name}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            background: file.type === 'docs' ? '#EFF6FF' : file.type === 'images' ? '#F0FDF4' : '#FEF3C7',
+                            color: file.type === 'docs' ? '#1D4ED8' : file.type === 'images' ? '#15803D' : '#B45309',
+                          }}>
+                            {file.type === 'docs' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                              </svg>
+                            )}
+                            {file.type === 'images' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                              </svg>
+                            )}
+                            {file.type === 'video' && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                              </svg>
+                            )}
+                            {file.type}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{file.category}</td>
+                        <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          {new Date(file.created_at).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-outline"
+                            >
+                              View
+                            </a>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleDeleteFile(file.id)}
+                              disabled={deletingFileId === file.id}
+                              style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
+                            >
+                              {deletingFileId === file.id ? '...' : 'Delete'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
