@@ -1238,24 +1238,46 @@ export default function ContentViewPage() {
         </div>
       )}
 
-      {/* Debug: show modal state */}
-      {showPublishModal && <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', zIndex: 9999}}>MODAL STATE IS TRUE</div>}
-
       {/* Publish Modal */}
       {showPublishModal && (
-        <div className="modal-overlay" onClick={() => setShowPublishModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Publish Content</h3>
-            <p>Enter the URL where this content has been published (optional):</p>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowPublishModal(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-primary, white)',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '480px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 8px 0' }}>Publish Content</h3>
+            <p style={{ margin: '0 0 16px 0', color: 'var(--text-secondary, #666)' }}>Enter the URL where this content has been published (optional):</p>
             <input
               type="url"
               className="form-input"
+              style={{ width: '100%', marginBottom: '16px' }}
               value={publishedUrl}
               onChange={(e) => setPublishedUrl(e.target.value)}
               placeholder="https://example.com/blog/post-slug"
               autoFocus
             />
-            <div className="modal-actions">
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
                 className="btn btn-outline"
                 onClick={() => setShowPublishModal(false)}
