@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Pipeline] Manual score refresh triggered by:', profile.full_name || profile.id);
+    console.log('[Pipeline] Manual score refresh triggered by:', profile.full_name);
 
     // Get diagnostic info before recalculation
     const diagnostics: Record<string, unknown> = {};
