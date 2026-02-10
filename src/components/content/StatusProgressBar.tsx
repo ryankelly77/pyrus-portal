@@ -264,8 +264,8 @@ function CompactProgressBar({
       boxShadow: '0 0 4px rgba(34, 197, 94, 0.2)',
     },
     dotActive: {
-      background: '#14b8a6',
-      boxShadow: '0 0 8px 2px rgba(20, 184, 166, 0.4)',
+      background: '#D97706',
+      boxShadow: '0 0 8px 2px rgba(217, 119, 6, 0.4)',
     },
     dotRevision: {
       background: '#f59e0b',
@@ -281,10 +281,10 @@ function CompactProgressBar({
       flexShrink: 0,
     } as React.CSSProperties,
     lineCompleted: {
-      background: 'linear-gradient(90deg, #22c55e, #14b8a6)',
+      background: 'linear-gradient(90deg, #22c55e, #D97706)',
     },
     lineActive: {
-      background: 'linear-gradient(90deg, #14b8a6, #D1D5DB)',
+      background: 'linear-gradient(90deg, #D97706, #D1D5DB)',
     },
     lineUpcoming: {
       background: '#E5E7EB',
@@ -510,8 +510,8 @@ export function StatusProgressBar({
       boxShadow: '0 0 8px rgba(34, 197, 94, 0.25)',
     } as React.CSSProperties,
     dotActive: {
-      background: '#14b8a6',
-      boxShadow: '0 0 12px 3px rgba(20, 184, 166, 0.4)',
+      background: '#D97706',
+      boxShadow: '0 0 12px 3px rgba(217, 119, 6, 0.4)',
     } as React.CSSProperties,
     dotRevision: {
       background: '#f59e0b',
@@ -552,10 +552,10 @@ export function StatusProgressBar({
       minWidth: '20px',
     } as React.CSSProperties,
     lineCompleted: {
-      background: 'linear-gradient(90deg, #22c55e, #14b8a6)',
+      background: 'linear-gradient(90deg, #22c55e, #D97706)',
     } as React.CSSProperties,
     lineActive: {
-      background: 'linear-gradient(90deg, #14b8a6, #D1D5DB)',
+      background: 'linear-gradient(90deg, #D97706, #D1D5DB)',
     } as React.CSSProperties,
     lineUpcoming: {
       background: '#E5E7EB',
