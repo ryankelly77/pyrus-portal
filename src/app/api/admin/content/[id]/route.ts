@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { sendEmail } from '@/lib/email/mailgun'
-import { getContentReadyForReviewEmail, getRevisionResubmittedEmail } from '@/lib/email/templates/content-status'
+import { getContentReadyForReviewEmail, getRevisionResubmittedEmail, getContentPublishedEmail } from '@/lib/email/templates/content-status'
 
 // Convert status to human-readable label
 function getStatusLabel(status: string): string {
@@ -377,6 +377,44 @@ export async function PATCH(
         }
       } else {
         console.log('No client email found - skipping email notification')
+      }
+    }
+
+    // Send email notification for publish action
+    if (action === 'publish') {
+      if (contentInfo?.client_email) {
+        try {
+          const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
+
+          const emailData = {
+            recipientName: contentInfo.client_name || 'there',
+            contentTitle: contentInfo.title || 'Content',
+            clientName: contentInfo.client_name || 'your company',
+            changedByName: profile.full_name || 'Pyrus Team',
+            portalUrl,
+            publishedUrl: publishedUrl || undefined,
+          }
+
+          const emailTemplate = getContentPublishedEmail(emailData)
+
+          console.log('Sending published notification to:', contentInfo.client_email)
+
+          const emailResult = await sendEmail({
+            to: contentInfo.client_email,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+            text: emailTemplate.text,
+            tags: ['content-status', 'published'],
+          })
+
+          if (emailResult.success) {
+            console.log(`Published notification email sent to ${contentInfo.client_email}`)
+          } else {
+            console.error(`Published email send failed: ${emailResult.error}`)
+          }
+        } catch (emailError) {
+          console.error('Failed to send published notification email:', emailError)
+        }
       }
     }
 
