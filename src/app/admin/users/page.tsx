@@ -364,6 +364,7 @@ export default function AdminUsersPage() {
         const usersData = await usersRes.json()
         setAdminUsers(usersData.adminUsers || [])
         setClientUsers(usersData.clientUsers || [])
+        setPendingInvites(usersData.pendingInvites || [])
       }
 
       // Close modal after short delay
