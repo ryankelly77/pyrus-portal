@@ -1249,8 +1249,12 @@ export default function ContentViewPage() {
                 Cancel
               </button>
               <button
+                type="button"
                 className="btn btn-primary"
-                onClick={() => handleWorkflowAction('publish', { publishedUrl })}
+                onClick={() => {
+                  console.log('Publish button clicked!')
+                  handleWorkflowAction('publish', { publishedUrl })
+                }}
                 disabled={actionLoading === 'publish'}
               >
                 {actionLoading === 'publish' ? 'Publishing...' : 'Mark as Published'}
