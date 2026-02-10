@@ -152,10 +152,12 @@ export default function AdminContentPage() {
         const clientsRes = await fetch('/api/admin/clients')
         if (clientsRes.ok) {
           const data = await clientsRes.json()
-          setClients(data.clients?.map((c: { id: string; name: string }) => ({
+          // API returns array directly, not { clients: [...] }
+          const clientsArray = Array.isArray(data) ? data : (data.clients || [])
+          setClients(clientsArray.map((c: { id: string; name: string }) => ({
             id: c.id,
             name: c.name
-          })) || [])
+          })))
         }
       } catch (error) {
         console.error('Error fetching data:', error)
