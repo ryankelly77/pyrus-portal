@@ -56,18 +56,6 @@ export async function POST(request: NextRequest) {
     // Token expires in 1 hour
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
 
-    // Ensure password_resets table exists (create if not)
-    await dbPool.query(`
-      CREATE TABLE IF NOT EXISTS password_resets (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-        token_hash VARCHAR(64) NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        used_at TIMESTAMPTZ,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `)
-
     // Delete any existing unused tokens for this user
     await dbPool.query(
       'DELETE FROM password_resets WHERE user_id = $1 AND used_at IS NULL',
