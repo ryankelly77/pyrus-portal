@@ -752,18 +752,18 @@ export default function PipelineDashboardPage() {
                                 <span className="milestone-date">{formatShortDate(deal.first_email_opened_at)}</span>
                               </div>
                               <div className="milestone-item">
-                                <span className={`milestone-status ${deal.first_proposal_viewed_at ? 'complete' : 'pending'}`}>
-                                  {deal.first_proposal_viewed_at ? '✓' : '○'}
-                                </span>
-                                <span className="milestone-label">Proposal Viewed</span>
-                                <span className="milestone-date">{formatShortDate(deal.first_proposal_viewed_at)}</span>
-                              </div>
-                              <div className="milestone-item">
                                 <span className={`milestone-status ${deal.first_account_created_at ? 'complete' : 'pending'}`}>
                                   {deal.first_account_created_at ? '✓' : '○'}
                                 </span>
                                 <span className="milestone-label">Account Created</span>
                                 <span className="milestone-date">{formatShortDate(deal.first_account_created_at)}</span>
+                              </div>
+                              <div className="milestone-item">
+                                <span className={`milestone-status ${deal.first_proposal_viewed_at ? 'complete' : 'pending'}`}>
+                                  {deal.first_proposal_viewed_at ? '✓' : '○'}
+                                </span>
+                                <span className="milestone-label">Proposal Viewed</span>
+                                <span className="milestone-date">{formatShortDate(deal.first_proposal_viewed_at)}</span>
                               </div>
                             </div>
                           </div>
