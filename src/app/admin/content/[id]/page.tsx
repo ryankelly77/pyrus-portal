@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
-import { StatusProgressBar } from '@/components/content'
+import { StatusProgressBar, StatusHistoryFeed } from '@/components/content'
 
 interface ContentItem {
   id: string
@@ -782,49 +782,10 @@ export default function ContentViewPage() {
             {content.status_history && content.status_history.length > 0 && (
               <div className="form-card">
                 <h3 className="form-card-title">Status History</h3>
-                <div className="status-history-feed">
-                  {[...content.status_history].reverse().map((entry, index) => {
-                    const statusLabels: Record<string, string> = {
-                      draft: 'Draft',
-                      sent_for_review: 'Sent for Review',
-                      client_reviewing: 'Client Reviewing',
-                      revisions_requested: 'Revisions Requested',
-                      approved: 'Approved',
-                      internal_review: 'Internal Review',
-                      final_optimization: 'Final Optimization',
-                      image_selection: 'Image Selection',
-                      scheduled: 'Scheduled',
-                      posted: 'Posted',
-                    }
-                    const isCurrentAndOpen = index === 0 && content.status !== 'posted'
-                    return (
-                      <div key={index} className={`status-history-item ${isCurrentAndOpen ? 'current-open' : ''}`}>
-                        <div className="status-history-dot"></div>
-                        <div className="status-history-content">
-                          <div className="status-history-header">
-                            <span className="status-history-label">{statusLabels[entry.status] || entry.status}</span>
-                            <span className="status-history-date">
-                              {new Date(entry.changed_at).toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                timeZone: 'America/Chicago',
-                              })} CST
-                            </span>
-                          </div>
-                          {entry.changed_by_name && (
-                            <span className="status-history-author">by {entry.changed_by_name}</span>
-                          )}
-                          {entry.note && (
-                            <p className="status-history-note">{entry.note}</p>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                <StatusHistoryFeed
+                  history={content.status_history}
+                  currentStatus={content.status}
+                />
               </div>
             )}
           </div>
@@ -1333,67 +1294,6 @@ export default function ContentViewPage() {
         .revision-notes {
           margin: 0;
           font-size: 14px;
-        }
-        .status-history-feed {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-          position: relative;
-        }
-        .status-history-item {
-          display: flex;
-          gap: 12px;
-          padding: 12px 0;
-          position: relative;
-        }
-        .status-history-item:not(:last-child)::before {
-          content: '';
-          position: absolute;
-          left: 5px;
-          top: 24px;
-          bottom: 0;
-          width: 2px;
-          background: #E5E7EB;
-        }
-        .status-history-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #22c55e;
-          flex-shrink: 0;
-          margin-top: 4px;
-        }
-        .status-history-item.current-open .status-history-dot {
-          background: #D97706;
-        }
-        .status-history-content {
-          flex: 1;
-        }
-        .status-history-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 4px;
-        }
-        .status-history-label {
-          font-weight: 500;
-          color: #1F2937;
-        }
-        .status-history-date {
-          font-size: 12px;
-          color: #6B7280;
-        }
-        .status-history-author {
-          font-size: 12px;
-          color: #9CA3AF;
-        }
-        .status-history-note {
-          margin: 8px 0 0;
-          padding: 8px 12px;
-          background: #FEF3C7;
-          border-radius: 6px;
-          font-size: 13px;
-          color: #92400E;
         }
         .published-info {
           background: var(--bg-secondary);
