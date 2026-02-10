@@ -63,10 +63,12 @@ export default function ForgotPasswordPage() {
 
           {success ? (
             <div className="success-message">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <div className="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
               <h3>Check your email</h3>
               <p>If an account exists for <strong>{email}</strong>, you will receive a password reset link.</p>
               <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -162,9 +164,14 @@ export default function ForgotPasswordPage() {
           padding: 20px 0;
         }
 
-        .success-message svg {
-          color: var(--pyrus-green);
+        .success-icon {
+          display: flex;
+          justify-content: center;
           margin-bottom: 16px;
+        }
+
+        .success-icon svg {
+          color: var(--pyrus-green);
         }
 
         .success-message h3 {
