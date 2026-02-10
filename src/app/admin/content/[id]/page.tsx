@@ -26,6 +26,7 @@ interface ContentItem {
   deadline: string | null
   revision_feedback: string | null
   revision_count: number | null
+  review_round: number | null
   published_at: string | null
   published_url: string | null
   featured_image: string | null
@@ -584,7 +585,7 @@ export default function ContentViewPage() {
             <StatusProgressBar
               currentStatus={content.status}
               approvalRequired={selectedClient?.content_approval_mode !== 'auto'}
-              reviewRound={content.revision_count || 0}
+              reviewRound={content.review_round ?? 0}
             />
           </div>
         )}
