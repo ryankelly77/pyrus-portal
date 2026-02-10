@@ -213,23 +213,32 @@ export async function POST(
       : null
 
     try {
+      console.log('Creating profile with:', {
+        userId,
+        email: invite.email.trim().toLowerCase(),
+        fullName: invite.full_name,
+        role: invite.role,
+        clientId
+      })
       await dbPool.query(
         `INSERT INTO profiles (id, email, full_name, role, client_id, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
         [
           userId,
-          invite.email.toLowerCase(),
+          invite.email.trim().toLowerCase(),
           invite.full_name,
           invite.role,
           clientId
         ]
       )
     } catch (profileError) {
-      console.error('Failed to create profile:', profileError)
+      const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
+      console.error('Failed to create profile:', errorMessage)
+      console.error('Full profile error:', profileError)
       // User was created in auth but profile failed - try to clean up
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {})
       return NextResponse.json(
-        { error: 'Failed to create user profile' },
+        { error: `Failed to create user profile: ${errorMessage}` },
         { status: 500 }
       )
     }
