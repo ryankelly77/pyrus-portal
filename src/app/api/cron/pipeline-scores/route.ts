@@ -22,7 +22,8 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { runDailyBatchRecalculation, batchRecalculateStaleScores } from '@/lib/pipeline/batch-recalculate';
+import { runDailyBatchRecalculation } from '@/lib/pipeline/batch-recalculate';
+import { dbPool } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max for batch processing
@@ -51,21 +52,51 @@ function verifyCronAuth(request: NextRequest): boolean {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
+  const cronId = `cron-${Date.now()}`;
 
   // Verify authorization
   if (!verifyCronAuth(request)) {
-    console.error('[Cron] Pipeline score recalculation: Unauthorized request');
+    console.error(`[Cron ${cronId}] Unauthorized request`);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    console.log('[Cron] Starting pipeline score recalculation...');
-    console.log('[Cron] Request time:', new Date().toISOString());
+    console.log(`[Cron ${cronId}] ========================================`);
+    console.log(`[Cron ${cronId}] Pipeline score recalculation STARTING`);
+    console.log(`[Cron ${cronId}] Time: ${new Date().toISOString()}`);
+
+    // Pre-flight check: verify database connectivity and table existence
+    try {
+      const preflight = await dbPool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM recommendations WHERE status IN ('sent', 'declined') AND archived_at IS NULL) as active_deals,
+          (SELECT COUNT(*) FROM pipeline_score_history) as history_count,
+          (SELECT MAX(scored_at) FROM pipeline_score_history) as latest_score
+      `);
+      const pf = preflight.rows[0];
+      console.log(`[Cron ${cronId}] Pre-flight: ${pf.active_deals} active deals, ${pf.history_count} history records, latest: ${pf.latest_score}`);
+    } catch (preflightError) {
+      console.error(`[Cron ${cronId}] Pre-flight check failed:`, preflightError);
+      // Continue anyway - the main function might still work
+    }
 
     const results = await runDailyBatchRecalculation();
 
+    // Post-flight check: verify new records were created
+    try {
+      const postflight = await dbPool.query(`
+        SELECT COUNT(*) as new_records
+        FROM pipeline_score_history
+        WHERE scored_at > NOW() - INTERVAL '5 minutes'
+      `);
+      console.log(`[Cron ${cronId}] Post-flight: ${postflight.rows[0].new_records} records created in last 5 min`);
+    } catch {
+      // Ignore post-flight errors
+    }
+
     const response = {
       success: true,
+      cron_id: cronId,
       timestamp: new Date().toISOString(),
       duration_ms: results.total_duration_ms,
       queue: {
@@ -82,16 +113,22 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log('[Cron] Pipeline score recalculation completed:', response);
+    console.log(`[Cron ${cronId}] COMPLETED:`, JSON.stringify(response));
+    console.log(`[Cron ${cronId}] ========================================`);
 
     return NextResponse.json(response);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Cron] Pipeline score recalculation failed:', error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    console.error(`[Cron ${cronId}] FAILED:`, errorMessage);
+    console.error(`[Cron ${cronId}] Stack:`, errorStack);
+    console.log(`[Cron ${cronId}] ========================================`);
 
     return NextResponse.json(
       {
         success: false,
+        cron_id: cronId,
         error: errorMessage,
         timestamp: new Date().toISOString(),
         duration_ms: Date.now() - startTime,

@@ -247,16 +247,37 @@ export default function PipelineDashboardPage() {
   const handleRefreshScores = async () => {
     setRefreshing(true)
     try {
-      const res = await fetch('/api/cron/pipeline-scores', {
+      const res = await fetch('/api/admin/pipeline/refresh-scores', {
         method: 'POST',
-        headers: { 'x-vercel-cron': 'true' },
+        headers: { 'Content-Type': 'application/json' },
       })
-      if (res.ok) {
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        console.log('[Pipeline] Refresh results:', data.details, data.diagnostics)
+        // Show results in an alert
+        const diag = data.diagnostics || {}
+        const diagInfo = diag.new_history_records !== undefined
+          ? `\nNew history records: ${diag.new_history_records}`
+          : ''
+        alert(
+          `Scores refreshed!\n\n` +
+          `Processed: ${data.details.processed}\n` +
+          `Succeeded: ${data.details.succeeded}\n` +
+          `Skipped: ${data.details.skipped}\n` +
+          `Failed: ${data.details.failed}\n` +
+          `Duration: ${data.details.duration_ms}ms` +
+          diagInfo
+        )
         // Refetch data after recalculation
         await fetchPipelineData()
+      } else {
+        console.error('[Pipeline] Refresh failed:', data.error, data.diagnostics)
+        alert(`Failed to refresh scores: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to refresh scores:', error)
+      alert('Failed to refresh scores. See console for details.')
     } finally {
       setRefreshing(false)
     }
