@@ -418,6 +418,31 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleDeleteInvite = async (inviteId: string) => {
+    if (!confirm('Are you sure you want to delete this invitation?')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/invite/${inviteId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete invitation')
+        return
+      }
+
+      // Remove from local state
+      setPendingInvites(prev => prev.filter(inv => inv.id !== inviteId))
+    } catch (error) {
+      console.error('Error deleting invite:', error)
+      alert('Failed to delete invitation')
+    }
+  }
+
   const totalUsers = filteredAdminUsers.length + filteredClientUsers.length
 
   if (isLoading) {
@@ -692,12 +717,21 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td>
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleResendInvite(invite.id)}
-                          >
-                            Resend
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleResendInvite(invite.id)}
+                            >
+                              Resend
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
+                              onClick={() => handleDeleteInvite(invite.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
