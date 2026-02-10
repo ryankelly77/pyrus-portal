@@ -1053,7 +1053,7 @@ export function ContentView({
                       <path d="M2 12l10 5 10-5"></path>
                     </svg>
                   )}
-                  {isAdmin ? `Add ${product.name.replace('Business ', '').replace(' Assets', '')}` : 'Add to my plan'}
+                  {isWriting ? 'Add More Content' : isCreative ? 'Add AI Creative' : isBranding ? 'Add Branding' : 'Add to Plan'}
                 </button>
               )
             })}
