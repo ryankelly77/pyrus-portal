@@ -27,6 +27,13 @@ interface ContentItem {
   revision_feedback: string | null
   revision_count: number | null
   review_round: number | null
+  status_history: Array<{
+    status: string
+    changed_at: string
+    changed_by_id?: string
+    changed_by_name?: string
+    note?: string
+  }> | null
   published_at: string | null
   published_url: string | null
   featured_image: string | null
@@ -753,19 +760,69 @@ export default function ContentViewPage() {
                     <div key={rev.id} className="revision-item">
                       <div className="revision-meta">
                         <span className="revision-date">
-                          {new Date(rev.created_at).toLocaleDateString('en-US', {
+                          {new Date(rev.created_at).toLocaleString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',
                             hour: 'numeric',
                             minute: '2-digit',
-                          })}
+                            timeZone: 'America/Chicago',
+                          })} CST
                         </span>
                         {rev.creator_name && <span className="revision-author">by {rev.creator_name}</span>}
                       </div>
                       {rev.revision_notes && <p className="revision-notes">{rev.revision_notes}</p>}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Status History */}
+            {content.status_history && content.status_history.length > 0 && (
+              <div className="form-card">
+                <h3 className="form-card-title">Status History</h3>
+                <div className="status-history-feed">
+                  {[...content.status_history].reverse().map((entry, index) => {
+                    const statusLabels: Record<string, string> = {
+                      draft: 'Draft',
+                      sent_for_review: 'Sent for Review',
+                      client_reviewing: 'Client Reviewing',
+                      revisions_requested: 'Revisions Requested',
+                      approved: 'Approved',
+                      internal_review: 'Internal Review',
+                      final_optimization: 'Final Optimization',
+                      image_selection: 'Image Selection',
+                      scheduled: 'Scheduled',
+                      posted: 'Posted',
+                    }
+                    return (
+                      <div key={index} className="status-history-item">
+                        <div className="status-history-dot"></div>
+                        <div className="status-history-content">
+                          <div className="status-history-header">
+                            <span className="status-history-label">{statusLabels[entry.status] || entry.status}</span>
+                            <span className="status-history-date">
+                              {new Date(entry.changed_at).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                timeZone: 'America/Chicago',
+                              })} CST
+                            </span>
+                          </div>
+                          {entry.changed_by_name && (
+                            <span className="status-history-author">by {entry.changed_by_name}</span>
+                          )}
+                          {entry.note && (
+                            <p className="status-history-note">{entry.note}</p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -1275,6 +1332,67 @@ export default function ContentViewPage() {
         .revision-notes {
           margin: 0;
           font-size: 14px;
+        }
+        .status-history-feed {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          position: relative;
+        }
+        .status-history-item {
+          display: flex;
+          gap: 12px;
+          padding: 12px 0;
+          position: relative;
+        }
+        .status-history-item:not(:last-child)::before {
+          content: '';
+          position: absolute;
+          left: 5px;
+          top: 24px;
+          bottom: 0;
+          width: 2px;
+          background: #E5E7EB;
+        }
+        .status-history-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #D97706;
+          flex-shrink: 0;
+          margin-top: 4px;
+        }
+        .status-history-item:first-child .status-history-dot {
+          background: #22c55e;
+        }
+        .status-history-content {
+          flex: 1;
+        }
+        .status-history-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 4px;
+        }
+        .status-history-label {
+          font-weight: 500;
+          color: #1F2937;
+        }
+        .status-history-date {
+          font-size: 12px;
+          color: #6B7280;
+        }
+        .status-history-author {
+          font-size: 12px;
+          color: #9CA3AF;
+        }
+        .status-history-note {
+          margin: 8px 0 0;
+          padding: 8px 12px;
+          background: #FEF3C7;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #92400E;
         }
         .published-info {
           background: var(--bg-secondary);
