@@ -963,6 +963,129 @@ export default function ContentPage() {
           </div>
         </div>
       )}
+
+      {/* Add to Subscription Modal */}
+      {showAddModal && addingProduct && (
+        <div className="edit-modal-overlay" onClick={closeAddModal}>
+          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <div className="modal-icon" style={{ background: '#D1FAE5' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="20" height="20">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2>{addModalSuccess ? 'Added to Your Plan!' : 'Add to Your Plan'}</h2>
+                  <p className="modal-subtitle">
+                    {addModalSuccess
+                      ? 'Your subscription has been updated'
+                      : 'This will be added to your current subscription'}
+                  </p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={closeAddModal}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '1.5rem' }}>
+              {addModalSuccess ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: '#D1FAE5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1rem'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="32" height="32">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem' }}>{addModalSuccess.productName}</h3>
+                  <p style={{ margin: 0, color: '#6B7280' }}>
+                    Active starting {new Date(addModalSuccess.effectiveDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'America/Chicago'
+                    })}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                      {PRODUCT_INFO[addingProduct]?.name}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '0.5rem' }}>
+                      {PRODUCT_INFO[addingProduct]?.description}
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#059669' }}>
+                      ${PRODUCT_INFO[addingProduct]?.price}/month
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#FEF3C7', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="20" height="20" style={{ flexShrink: 0, marginTop: 2 }}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <div style={{ fontSize: '0.875rem', color: '#92400E' }}>
+                        <strong>Billing starts on your next cycle</strong>
+                        <br />
+                        {nextBillingDate ? (
+                          <>Your next billing date is {new Date(nextBillingDate).toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric',
+                            timeZone: 'America/Chicago'
+                          })}. This service will be included starting then.</>
+                        ) : (
+                          <>This service will be added to your next billing cycle.</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {addModalError && (
+                    <div style={{ background: '#FEE2E2', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: '#DC2626', fontSize: '0.875rem' }}>
+                      {addModalError}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              {addModalSuccess ? (
+                <button className="btn btn-primary" onClick={closeAddModal}>
+                  Done
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn-outline" onClick={closeAddModal} disabled={addModalLoading}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={handleConfirmAdd} disabled={addModalLoading}>
+                    {addModalLoading ? 'Adding...' : 'Add to My Plan'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
