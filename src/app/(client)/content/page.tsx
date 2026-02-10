@@ -801,11 +801,11 @@ export default function ContentPage() {
       {/* Content Requirements Modal */}
       {showContentRequirementsModal && (
         <div className="edit-modal-overlay" onClick={() => setShowContentRequirementsModal(false)}>
-          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
             <div className="modal-header">
               <div className="modal-header-left">
-                <div className="modal-icon" style={{ background: '#EDE9FE' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" width="20" height="20">
+                <div className="modal-icon" style={{ background: '#DBEAFE' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" width="20" height="20">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -814,7 +814,7 @@ export default function ContentPage() {
                 </div>
                 <div>
                   <h2>Content Requirements</h2>
-                  <p className="modal-subtitle">What we need from you to create great content</p>
+                  <p className="modal-subtitle">Guidelines for reviewing and approving content</p>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setShowContentRequirementsModal(false)}>
@@ -824,37 +824,140 @@ export default function ContentPage() {
                 </svg>
               </button>
             </div>
-            <div className="modal-body" style={{ padding: '1.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Brand Voice & Tone</h4>
-                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
-                    Share your brand guidelines, preferred tone, and any specific messaging requirements.
-                  </p>
+            <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+              <p style={{ color: '#6B7280', marginBottom: '1.5rem' }}>
+                To ensure your content meets quality standards and can be published quickly, please review the following requirements and guidelines.
+              </p>
+
+              {/* Review Timeline */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  Review Timeline
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#F9FAFB', borderRadius: '6px' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" width="16" height="16">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span style={{ fontSize: '0.875rem' }}>Content must be reviewed within <strong>48 hours</strong> of submission</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#FEF2F2', borderRadius: '6px' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" width="16" height="16">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span style={{ fontSize: '0.875rem', color: '#991B1B' }}>Urgent content (marked red) requires review within <strong>24 hours</strong></span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#F9FAFB', borderRadius: '6px' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span style={{ fontSize: '0.875rem' }}>After approval, content will be published within <strong>1-2 business days</strong></span>
+                  </div>
                 </div>
-                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Target Keywords</h4>
-                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
-                    List the primary keywords and topics you want your content to focus on.
-                  </p>
+              </div>
+
+              {/* Content Types */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                  Content Types
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '0.75rem' }}>
+                    <span className="platform-badge website" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>Website Content</span>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Blog posts, service pages, landing pages, and website copy updates</p>
+                  </div>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '0.75rem' }}>
+                    <span className="platform-badge gbp" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>Google Business Profile</span>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Business updates, posts, offers, and event announcements</p>
+                  </div>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '0.75rem' }}>
+                    <span className="platform-badge social" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>Social Posts</span>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Facebook, Instagram, and LinkedIn posts with captions and hashtags</p>
+                  </div>
+                  <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '0.75rem' }}>
+                    <span className="platform-badge ai-creative" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>AI Creative</span>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>AI-generated graphics, banners, social images, and promotional visuals</p>
+                  </div>
                 </div>
-                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Competitor References</h4>
-                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
-                    Share examples of content from competitors or other brands you admire.
-                  </p>
+              </div>
+
+              {/* Approval Guidelines */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  Approval Guidelines
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {[
+                    'Verify all facts, dates, and contact information are accurate',
+                    'Check that pricing and promotional details are correct',
+                    'Ensure brand voice and tone are consistent',
+                    'Review for spelling and grammatical errors',
+                    'Confirm all links and calls-to-action are appropriate',
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>{item}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ background: '#F9FAFB', borderRadius: '8px', padding: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600 }}>Visual Assets</h4>
-                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
-                    Provide high-quality images, logos, and any existing brand assets for use in content.
-                  </p>
+              </div>
+
+              {/* Rejection Process */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  Rejection Process
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {[
+                    { num: '1', text: 'If content needs changes, click "Request Revisions" and provide specific feedback' },
+                    { num: '2', text: 'Our team will revise and resubmit within 24-48 hours' },
+                    { num: '3', text: "You'll receive a notification when revised content is ready for review" },
+                  ].map((item) => (
+                    <div key={item.num} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
+                      <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.75rem', flexShrink: 0 }}>{item.num}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              {/* Need Help */}
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '1rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem', color: '#166534' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  Need Help?
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#166534' }}>
+                  If you have questions about any content or need to discuss changes before approval, use the <strong>chat widget</strong> in the bottom right corner of your screen to message our team directly.
+                </p>
               </div>
             </div>
             <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB' }}>
               <button className="btn btn-primary" onClick={() => setShowContentRequirementsModal(false)}>
-                Got it
+                Got It
               </button>
             </div>
           </div>
