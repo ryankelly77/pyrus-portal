@@ -12,6 +12,7 @@ interface Service {
 }
 
 // Aggregates services across products, summing quantities by service name
+// Each product should have a `subscriptionQuantity` field indicating how many units were purchased
 function aggregateServices(products: any[], serviceField: 'content_services' | 'website_services'): Service[] {
   const serviceMap = new Map<string, Service>()
 
@@ -19,14 +20,18 @@ function aggregateServices(products: any[], serviceField: 'content_services' | '
     const services = product[serviceField]
     if (!services || !Array.isArray(services)) continue
 
+    // Multiply service quantities by subscription item quantity (default 1)
+    const subscriptionQty = product.subscription_quantity || 1
+
     for (const service of services) {
+      const serviceQty = (service.quantity || 1) * subscriptionQty
       const existing = serviceMap.get(service.name)
       if (existing) {
         // Same service name — sum quantities, keep first details
-        existing.quantity += service.quantity
+        existing.quantity += serviceQty
       } else {
         // New service — add to map
-        serviceMap.set(service.name, { ...service })
+        serviceMap.set(service.name, { ...service, quantity: serviceQty })
       }
     }
   }
@@ -129,15 +134,18 @@ export async function GET(request: NextRequest) {
     const client = clientResult.rows[0]
 
     // Fetch active subscription products to determine access
+    // Include subscription_items.quantity to properly aggregate service quantities
     const subscriptionResult = await dbPool.query(
-      `SELECT DISTINCT
+      `SELECT
          p.id, p.name, p.category,
          p.includes_content, p.content_services,
-         p.includes_website, p.website_services
+         p.includes_website, p.website_services,
+         COALESCE(SUM(si.quantity), 1) as subscription_quantity
        FROM subscriptions s
        JOIN subscription_items si ON si.subscription_id = s.id
        JOIN products p ON p.id = si.product_id
-       WHERE s.client_id = $1 AND s.status = 'active'`,
+       WHERE s.client_id = $1 AND s.status = 'active'
+       GROUP BY p.id, p.name, p.category, p.includes_content, p.content_services, p.includes_website, p.website_services`,
       [clientId]
     )
 
