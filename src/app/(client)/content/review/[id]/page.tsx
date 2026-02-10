@@ -228,8 +228,8 @@ export default function ContentReviewPage() {
         <div className="client-content" style={{ textAlign: 'center', padding: '3rem' }}>
           <h2>Content Not Found</h2>
           <p>{error || 'The content you are looking for does not exist.'}</p>
-          <Link href="/dashboard" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            Back to Dashboard
+          <Link href="/content" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            Back to Content
           </Link>
         </div>
       </>
@@ -264,7 +264,7 @@ export default function ContentReviewPage() {
       <div className="client-content">
         {/* Breadcrumb */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <Link href="/dashboard?tab=content" style={{ color: '#6B7280', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link href="/content" style={{ color: '#6B7280', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
