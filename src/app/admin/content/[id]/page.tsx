@@ -421,8 +421,12 @@ export default function ContentViewPage() {
       console.log('Validation failed')
       return
     }
-    console.log('Validation passed, opening modal')
+    console.log('Validation passed, opening modal, current state:', showPublishModal)
     setShowPublishModal(true)
+    // Force log after state update attempt
+    setTimeout(() => {
+      console.log('After setState, showPublishModal should be true')
+    }, 100)
   }
 
   return (
@@ -1233,6 +1237,9 @@ export default function ContentViewPage() {
           </div>
         </div>
       )}
+
+      {/* Debug: show modal state */}
+      {showPublishModal && <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '20px', zIndex: 9999}}>MODAL STATE IS TRUE</div>}
 
       {/* Publish Modal */}
       {showPublishModal && (
