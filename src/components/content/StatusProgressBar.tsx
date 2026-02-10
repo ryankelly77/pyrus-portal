@@ -37,7 +37,13 @@ function formatShortDate(dateStr: string | null): string {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/Chicago',
+    })
   } catch {
     return ''
   }
@@ -47,13 +53,14 @@ function formatFullDate(dateStr: string | null): string {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-    })
+      timeZone: 'America/Chicago',
+    }) + ' CST'
   } catch {
     return ''
   }
