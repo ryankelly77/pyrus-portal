@@ -160,6 +160,11 @@ export function getStepState(
     return 'upcoming'
   }
 
+  // When content is posted, ALL steps are completed (terminal state)
+  if (currentStatus === 'posted') {
+    return 'completed'
+  }
+
   // Find the current status index
   const currentIndex = steps.findIndex((s) => s.key === statusForOrdering)
 
