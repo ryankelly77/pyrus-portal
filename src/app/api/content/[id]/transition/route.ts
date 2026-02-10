@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 // Transitions clients are allowed to make
 const CLIENT_ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  sent_for_review: ['client_reviewing'],
+  sent_for_review: ['client_reviewing', 'approved'], // approved added for Quick Approve
   client_reviewing: ['approved', 'revisions_requested'],
 }
 

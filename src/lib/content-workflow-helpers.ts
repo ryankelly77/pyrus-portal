@@ -63,7 +63,7 @@ export type ContentStatus =
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['sent_for_review', 'internal_review'],
-  sent_for_review: ['client_reviewing'],
+  sent_for_review: ['client_reviewing', 'approved'], // approved added for Quick Approve
   client_reviewing: ['approved', 'revisions_requested'],
   revisions_requested: ['sent_for_review'],
   approved: ['final_optimization'],
