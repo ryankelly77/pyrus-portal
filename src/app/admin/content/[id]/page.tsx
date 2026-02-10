@@ -363,7 +363,7 @@ export default function ContentViewPage() {
   const isWebsitePlatform = platform === 'website' || content.platform === 'website'
 
   // Check if all required fields are complete
-  const validateRequiredFields = (includeSeO: boolean = false) => {
+  const validateRequiredFields = (mode: 'save' | 'submit' | 'publish' = 'save') => {
     const missingFields: string[] = []
 
     // Core required fields
@@ -373,11 +373,17 @@ export default function ContentViewPage() {
     if (!platform) missingFields.push('Platform')
     if (!contentType) missingFields.push('Content Type')
 
-    // SEO fields (required for website content when submitting)
-    if (includeSeO && isWebsitePlatform) {
+    // SEO fields (required for website content when submitting or publishing)
+    if ((mode === 'submit' || mode === 'publish') && isWebsitePlatform) {
       if (!targetKeyword?.trim()) missingFields.push('Target Keyword')
       if (!secondaryKeywords?.trim()) missingFields.push('Secondary Keywords')
       if (!wordCount || wordCount <= 0) missingFields.push('Content Word Length')
+    }
+
+    // Optimization checkboxes (required for website content when publishing)
+    if (mode === 'publish' && isWebsitePlatform) {
+      if (!seoOptimized) missingFields.push('Optimized for SEO')
+      if (!aiOptimized) missingFields.push('Optimized for AI')
     }
 
     if (missingFields.length > 0) {
@@ -390,17 +396,24 @@ export default function ContentViewPage() {
   }
 
   const handleSaveWithValidation = () => {
-    if (!validateRequiredFields(false)) {
+    if (!validateRequiredFields('save')) {
       return
     }
     handleSave()
   }
 
   const handleSubmitForReview = () => {
-    if (!validateRequiredFields(true)) {
+    if (!validateRequiredFields('submit')) {
       return
     }
     handleWorkflowAction('submit')
+  }
+
+  const handleOpenPublishModal = () => {
+    if (!validateRequiredFields('publish')) {
+      return
+    }
+    setShowPublishModal(true)
   }
 
   return (
@@ -1160,7 +1173,7 @@ export default function ContentViewPage() {
               {content.status === 'approved' && (
                 <button
                   className="btn btn-primary btn-block"
-                  onClick={() => setShowPublishModal(true)}
+                  onClick={handleOpenPublishModal}
                   disabled={actionLoading === 'publish'}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
