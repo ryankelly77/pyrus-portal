@@ -172,23 +172,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log activity
-    await dbPool.query(
-      `INSERT INTO activity_log (profile_id, action, entity_type, entity_id, metadata)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        auth.user.id,
-        'invited_user',
-        'user_invite',
-        inviteId,
-        JSON.stringify({
-          invited_email: email,
-          invited_name: fullName,
-          role,
-          client_ids: clientIds || []
-        })
-      ]
-    )
+    // Log activity (non-blocking - don't fail invite if logging fails)
+    try {
+      await dbPool.query(
+        `INSERT INTO activity_log (user_id, activity_type, description, metadata)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          auth.user.id,
+          'invited_user',
+          `Invited ${fullName} (${email}) as ${role}`,
+          JSON.stringify({
+            invited_email: email,
+            invited_name: fullName,
+            role,
+            client_ids: clientIds || [],
+            invite_id: inviteId
+          })
+        ]
+      )
+    } catch (logError) {
+      console.error('Failed to log activity (non-critical):', logError)
+    }
 
     return NextResponse.json({
       success: true,

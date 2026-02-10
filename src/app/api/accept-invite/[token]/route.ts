@@ -221,21 +221,25 @@ export async function POST(
       [invite.id]
     )
 
-    // Log activity
-    await dbPool.query(
-      `INSERT INTO activity_log (profile_id, action, entity_type, entity_id, metadata)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        userId,
-        'accepted_invite',
-        'user_invite',
-        invite.id,
-        JSON.stringify({
-          email: invite.email,
-          role: invite.role,
-        })
-      ]
-    )
+    // Log activity (non-blocking)
+    try {
+      await dbPool.query(
+        `INSERT INTO activity_log (user_id, activity_type, description, metadata)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          userId,
+          'accepted_invite',
+          `${invite.full_name} accepted invitation as ${invite.role}`,
+          JSON.stringify({
+            email: invite.email,
+            role: invite.role,
+            invite_id: invite.id
+          })
+        ]
+      )
+    } catch (logError) {
+      console.error('Failed to log activity (non-critical):', logError)
+    }
 
     return NextResponse.json({
       success: true,
