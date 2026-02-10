@@ -164,7 +164,7 @@ export default function AdminContentPage() {
       }
     }
     fetchData()
-  }, [statusFilter, clientFilter, platformFilter])
+  }, [statusFilter, clientFilter, platformFilter, profile?.id])
 
   const clearFilters = () => {
     setStatusFilter('')
