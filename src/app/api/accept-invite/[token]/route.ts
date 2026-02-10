@@ -213,16 +213,16 @@ export async function POST(
       : null
 
     try {
-      console.log('Creating profile with:', {
-        userId,
-        email: invite.email.trim().toLowerCase(),
-        fullName: invite.full_name,
-        role: invite.role,
-        clientId
-      })
+      // Use upsert to handle case where Supabase trigger already created profile
       await dbPool.query(
         `INSERT INTO profiles (id, email, full_name, role, client_id, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           email = EXCLUDED.email,
+           full_name = EXCLUDED.full_name,
+           role = EXCLUDED.role,
+           client_id = EXCLUDED.client_id,
+           updated_at = NOW()`,
         [
           userId,
           invite.email.trim().toLowerCase(),
@@ -234,7 +234,6 @@ export async function POST(
     } catch (profileError) {
       const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
       console.error('Failed to create profile:', errorMessage)
-      console.error('Full profile error:', profileError)
       // User was created in auth but profile failed - try to clean up
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {})
       return NextResponse.json(
