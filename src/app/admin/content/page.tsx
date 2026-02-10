@@ -96,6 +96,17 @@ export default function AdminContentPage() {
   const [showRushInterstitial, setShowRushInterstitial] = useState(false)
   const [rushItems, setRushItems] = useState<ContentItem[]>([])
 
+  // Add Files modal state
+  const [showFilesModal, setShowFilesModal] = useState(false)
+  const [fileClientId, setFileClientId] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [fileType, setFileType] = useState<'docs' | 'images' | 'video'>('docs')
+  const [fileCategory, setFileCategory] = useState('')
+  const [fileUrl, setFileUrl] = useState('')
+  const [isAddingFile, setIsAddingFile] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [fileSuccess, setFileSuccess] = useState(false)
+
   const isSuperAdmin = profile?.role === 'super_admin'
 
   // Close dropdown when clicking outside
@@ -171,6 +182,58 @@ export default function AdminContentPage() {
     }
     setShowRushInterstitial(false)
     setRushItems([])
+  }
+
+  // Handle adding a file
+  const handleAddFile = async () => {
+    if (!fileClientId || !fileName || !fileCategory) {
+      setFileError('Please fill in all required fields')
+      return
+    }
+
+    setIsAddingFile(true)
+    setFileError(null)
+
+    try {
+      const res = await fetch('/api/admin/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: fileClientId,
+          name: fileName,
+          type: fileType,
+          category: fileCategory,
+          url: fileUrl || null,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setFileError(data.error || 'Failed to add file')
+        return
+      }
+
+      setFileSuccess(true)
+      setTimeout(() => {
+        setShowFilesModal(false)
+        resetFileModal()
+      }, 1500)
+    } catch (error) {
+      console.error('Error adding file:', error)
+      setFileError('Failed to add file')
+    } finally {
+      setIsAddingFile(false)
+    }
+  }
+
+  const resetFileModal = () => {
+    setFileClientId('')
+    setFileName('')
+    setFileType('docs')
+    setFileCategory('')
+    setFileUrl('')
+    setFileError(null)
+    setFileSuccess(false)
   }
 
   const handleDelete = async () => {
@@ -373,13 +436,30 @@ export default function AdminContentPage() {
           <div className="page-header-content">
             <p>Review and manage content across all client accounts</p>
           </div>
-          <Link href="/admin/content/new" className="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create Content
-          </Link>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              className="btn"
+              style={{ background: '#3B82F6', borderColor: '#3B82F6', color: 'white' }}
+              onClick={() => {
+                resetFileModal()
+                setShowFilesModal(true)
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                <line x1="12" y1="11" x2="12" y2="17"></line>
+                <line x1="9" y1="14" x2="15" y2="14"></line>
+              </svg>
+              Add Files
+            </button>
+            <Link href="/admin/content/new" className="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Create Content
+            </Link>
+          </div>
         </div>
 
         {/* Stat Cards - 6 cards in a row */}
@@ -981,6 +1061,229 @@ export default function AdminContentPage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Files Modal */}
+      {showFilesModal && (
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: '520px', width: '100%' }}>
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  background: '#DBEAFE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" width="20" height="20">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Add Files</h2>
+              </div>
+              <button
+                className="modal-close"
+                onClick={() => setShowFilesModal(false)}
+                disabled={isAddingFile}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {fileSuccess ? (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: '#D1FAE5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px'
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="32" height="32">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '1.125rem', fontWeight: 600, color: '#059669' }}>File Added!</h3>
+                  <p style={{ margin: 0, color: '#6B7280' }}>The file has been added to the client.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Client Selector */}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                      Client <span style={{ color: '#DC2626' }}>*</span>
+                    </label>
+                    <select
+                      value={fileClientId}
+                      onChange={(e) => setFileClientId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      <option value="">Select a client...</option>
+                      {clients.map(client => (
+                        <option key={client.id} value={client.id}>{client.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* File Name */}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                      File Name <span style={{ color: '#DC2626' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={fileName}
+                      onChange={(e) => setFileName(e.target.value)}
+                      placeholder="e.g., Brand Strategy Document.pdf"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  {/* File Type & Category */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                        Type <span style={{ color: '#DC2626' }}>*</span>
+                      </label>
+                      <select
+                        value={fileType}
+                        onChange={(e) => setFileType(e.target.value as 'docs' | 'images' | 'video')}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #D1D5DB',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        <option value="docs">Document</option>
+                        <option value="images">Image</option>
+                        <option value="video">Video</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                        Category <span style={{ color: '#DC2626' }}>*</span>
+                      </label>
+                      <select
+                        value={fileCategory}
+                        onChange={(e) => setFileCategory(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #D1D5DB',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        <option value="">Select category...</option>
+                        <option value="Branding Foundation">Branding Foundation</option>
+                        <option value="AI Creative">AI Creative</option>
+                        <option value="Content Writing">Content Writing</option>
+                        <option value="SEO">SEO</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* File URL */}
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                      Drive/File URL <span style={{ color: '#6B7280', fontWeight: 400 }}>(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={fileUrl}
+                      onChange={(e) => setFileUrl(e.target.value)}
+                      placeholder="https://drive.google.com/..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#6B7280' }}>
+                      Paste a Google Drive, Dropbox, or other file sharing link
+                    </p>
+                  </div>
+
+                  {/* Error Message */}
+                  {fileError && (
+                    <div style={{
+                      background: '#FEE2E2',
+                      border: '1px solid #EF4444',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      color: '#DC2626',
+                      fontSize: '0.875rem'
+                    }}>
+                      {fileError}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {!fileSuccess && (
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowFilesModal(false)}
+                  disabled={isAddingFile}
+                  style={{ padding: '10px 20px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleAddFile}
+                  disabled={isAddingFile}
+                  style={{
+                    background: '#3B82F6',
+                    borderColor: '#3B82F6',
+                    color: 'white',
+                    padding: '10px 20px'
+                  }}
+                >
+                  {isAddingFile ? 'Adding...' : 'Add File'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -685,8 +685,31 @@ export function ContentView({
   const [isRequestingRush, setIsRequestingRush] = useState(false)
   const [rushSuccess, setRushSuccess] = useState(false)
 
-  // Only show demo files in demo mode, otherwise empty (real files would come from API)
-  const files = isDemo ? demoFiles : []
+  // Files state
+  const [clientFiles, setClientFiles] = useState<FileItem[]>([])
+
+  // Fetch files from API
+  useEffect(() => {
+    async function fetchFiles() {
+      if (isDemo) {
+        setClientFiles(demoFiles)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/client/files?clientId=${clientId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setClientFiles(data.files || [])
+        }
+      } catch (err) {
+        console.error('Error fetching files:', err)
+      }
+    }
+    fetchFiles()
+  }, [clientId, isDemo])
+
+  const files = clientFiles
   const filteredFiles = fileFilter === 'all' ? files : files.filter(f => f.type === fileFilter)
 
   // Fetch content data
