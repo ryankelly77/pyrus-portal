@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch content products that have a portal_slug AND include content services
+    // Note: We don't filter out products the client already has because
+    // content products are quantity-based (e.g., can add more content pieces)
     const contentProducts = await prisma.products.findMany({
       where: {
         status: 'active',
@@ -42,34 +44,8 @@ export async function GET(request: NextRequest) {
       orderBy: { sort_order: 'asc' },
     })
 
-    // Filter out products the client already has
-    const clientSubscriptions = await prisma.subscriptions.findMany({
-      where: {
-        client_id: clientId,
-        status: 'active',
-      },
-      include: {
-        subscription_items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    })
-
-    const purchasedProductIds = new Set(
-      clientSubscriptions
-        .flatMap(sub => sub.subscription_items)
-        .map(item => item.product_id)
-        .filter(Boolean)
-    )
-
-    const availableProducts = contentProducts.filter(
-      product => !purchasedProductIds.has(product.id)
-    )
-
     return NextResponse.json({
-      available: availableProducts.map(p => ({
+      available: contentProducts.map(p => ({
         id: p.portal_slug || p.id, // Use portal_slug for checkout compatibility
         name: p.name,
         short_description: p.short_description,
