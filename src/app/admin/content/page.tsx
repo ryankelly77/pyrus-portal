@@ -1711,6 +1711,34 @@ export default function AdminContentPage() {
       )}
 
       <style jsx>{`
+        .tabs-container {
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 0;
+        }
+        .tabs {
+          display: flex;
+          gap: 0;
+          margin-bottom: -1px;
+        }
+        .tab {
+          padding: 0.75rem 1.5rem;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .tab:hover {
+          color: var(--text-primary);
+          background: var(--bg-tertiary);
+        }
+        .tab.active {
+          color: var(--primary);
+          border-bottom-color: var(--primary);
+        }
         .stats-grid-6 {
           display: grid;
           grid-template-columns: repeat(6, 1fr);

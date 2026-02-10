@@ -542,49 +542,40 @@ export default function AdminUsersPage() {
 
         {/* Tabs - Only show Roles Management tab for super_admin */}
         {currentUserRole === 'super_admin' && (
-          <div className="tabs-container" style={{ marginBottom: '24px' }}>
-            <div className="tab-buttons" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '0' }}>
+          <div className="tabs-container" style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)' }}>
+            <div className="tabs" style={{ display: 'flex', gap: 0, marginBottom: '-1px' }}>
               <button
-                className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+                className={`tab ${activeTab === 'users' ? 'active' : ''}`}
                 onClick={() => setActiveTab('users')}
                 style={{
-                  padding: '12px 20px',
+                  padding: '0.75rem 1.5rem',
                   border: 'none',
                   background: 'none',
                   cursor: 'pointer',
-                  color: activeTab === 'users' ? 'var(--pyrus-brown)' : 'var(--text-secondary)',
-                  fontWeight: activeTab === 'users' ? '600' : '400',
-                  borderBottom: activeTab === 'users' ? '2px solid var(--pyrus-brown)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                  fontSize: '14px',
+                  color: activeTab === 'users' ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: 500,
+                  borderBottom: activeTab === 'users' ? '2px solid var(--primary)' : '2px solid transparent',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s',
                 }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '8px', verticalAlign: 'text-bottom' }}>
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
                 Users
               </button>
               <button
-                className={`tab-button ${activeTab === 'roles' ? 'active' : ''}`}
+                className={`tab ${activeTab === 'roles' ? 'active' : ''}`}
                 onClick={() => setActiveTab('roles')}
                 style={{
-                  padding: '12px 20px',
+                  padding: '0.75rem 1.5rem',
                   border: 'none',
                   background: 'none',
                   cursor: 'pointer',
-                  color: activeTab === 'roles' ? 'var(--pyrus-brown)' : 'var(--text-secondary)',
-                  fontWeight: activeTab === 'roles' ? '600' : '400',
-                  borderBottom: activeTab === 'roles' ? '2px solid var(--pyrus-brown)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                  fontSize: '14px',
+                  color: activeTab === 'roles' ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: 500,
+                  borderBottom: activeTab === 'roles' ? '2px solid var(--primary)' : '2px solid transparent',
+                  fontSize: '0.875rem',
+                  transition: 'all 0.2s',
                 }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '8px', verticalAlign: 'text-bottom' }}>
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
                 Roles Management
               </button>
             </div>
