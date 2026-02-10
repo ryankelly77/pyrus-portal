@@ -359,19 +359,26 @@ export default function AdminUsersPage() {
       setInviteSuccess(`Invitation sent to ${inviteForm.email}`)
 
       // Refresh users list
-      const usersRes = await fetch('/api/admin/users')
-      if (usersRes.ok) {
-        const usersData = await usersRes.json()
-        setAdminUsers(usersData.adminUsers || [])
-        setClientUsers(usersData.clientUsers || [])
-        setPendingInvites(usersData.pendingInvites || [])
+      try {
+        const usersRes = await fetch('/api/admin/users')
+        if (usersRes.ok) {
+          const usersData = await usersRes.json()
+          console.log('Refreshed users data:', usersData)
+          setAdminUsers(usersData.adminUsers || [])
+          setClientUsers(usersData.clientUsers || [])
+          setPendingInvites(usersData.pendingInvites || [])
+        } else {
+          console.error('Failed to refresh users list:', usersRes.status)
+        }
+      } catch (refreshError) {
+        console.error('Error refreshing users list:', refreshError)
       }
 
       // Close modal after short delay
       setTimeout(() => {
         setShowInviteModal(false)
         resetInviteForm()
-      }, 2000)
+      }, 1500)
 
     } catch (error) {
       setInviteError('Failed to send invitation. Please try again.')
