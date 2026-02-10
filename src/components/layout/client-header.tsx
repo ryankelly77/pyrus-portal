@@ -1,8 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, Eye, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface ClientHeaderProps {
   title: string
@@ -31,32 +29,68 @@ export function ClientHeader({
     <>
       {/* Admin Preview Banner */}
       {isAdminPreview && (
-        <div className="flex items-center justify-between px-6 py-2 bg-amber-100 border-b border-amber-200">
-          <div className="flex items-center gap-2 text-sm text-amber-800">
-            <Eye className="w-4 h-4" />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 24px',
+          background: '#FEF3C7',
+          borderBottom: '1px solid #FDE68A',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#92400E' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
             <span>Viewing as client: {clientName}</span>
           </div>
           <button
             onClick={onExitPreview}
-            className="flex items-center gap-1.5 px-3 py-1 text-sm font-medium text-amber-800 bg-amber-200 rounded hover:bg-amber-300 transition-colors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#92400E',
+              background: '#FDE68A',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
           >
-            <X className="w-4 h-4" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
             Exit Preview
           </button>
         </div>
       )}
 
       {/* Main Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        display: 'flex',
+        height: '64px',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid #E5E7EB',
+        background: 'white',
+        padding: '0 24px',
+      }}>
         {/* Left side - Title or Breadcrumb */}
-        <div className="flex items-center">
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           {breadcrumb && breadcrumb.length > 0 ? (
-            <nav className="flex items-center gap-2 text-sm">
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
               {breadcrumb.map((item, index) => (
-                <span key={item.href} className="flex items-center gap-2">
+                <span key={item.href} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {index > 0 && (
                     <svg
-                      className="w-4 h-4 text-gray-400"
+                      style={{ width: '16px', height: '16px', color: '#9CA3AF' }}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -66,11 +100,11 @@ export function ClientHeader({
                     </svg>
                   )}
                   {index === breadcrumb.length - 1 ? (
-                    <span className="text-gray-900 font-medium">{item.label}</span>
+                    <span style={{ color: '#111827', fontWeight: 500 }}>{item.label}</span>
                   ) : (
                     <Link
                       href={item.href}
-                      className="text-gray-500 hover:text-gray-700"
+                      style={{ color: '#6B7280', textDecoration: 'none' }}
                     >
                       {item.label}
                     </Link>
@@ -79,37 +113,63 @@ export function ClientHeader({
               ))}
             </nav>
           ) : (
-            <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+            <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#111827', margin: 0 }}>{title}</h1>
           )}
         </div>
 
         {/* Right side - Notifications & User */}
-        <div className="flex items-center gap-4">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Notification Bell */}
           <button
-            className={cn(
-              'relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors',
-            )}
+            style={{
+              position: 'relative',
+              padding: '8px',
+              borderRadius: '8px',
+              color: '#6B7280',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
             {hasNotifications && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+              <span style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                width: '8px',
+                height: '8px',
+                background: '#EF4444',
+                borderRadius: '50%',
+              }} />
             )}
-            <Bell className="w-5 h-5" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
           </button>
 
           {/* User Menu */}
           <Link
             href="/settings"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}
           >
-            <div className="w-8 h-8 rounded-full bg-client-primary flex items-center justify-center overflow-hidden" style={{ background: user.name ? undefined : '#e5e7eb' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: '#324438',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                <img src={user.avatarUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : user.initials ? (
-                <span className="text-white text-sm font-medium">{user.initials}</span>
+                <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>{user.initials}</span>
               ) : null}
             </div>
-            {user.name && <span className="text-sm font-medium text-gray-700">{user.name}</span>}
+            {user.name && <span style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>{user.name}</span>}
           </Link>
         </div>
       </header>
