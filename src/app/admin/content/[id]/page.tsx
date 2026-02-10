@@ -796,9 +796,9 @@ export default function ContentViewPage() {
                       scheduled: 'Scheduled',
                       posted: 'Posted',
                     }
-                    const isCompleted = content.status === 'posted' || index === 0
+                    const isCurrentAndOpen = index === 0 && content.status !== 'posted'
                     return (
-                      <div key={index} className={`status-history-item ${isCompleted ? 'completed' : ''}`}>
+                      <div key={index} className={`status-history-item ${isCurrentAndOpen ? 'current-open' : ''}`}>
                         <div className="status-history-dot"></div>
                         <div className="status-history-content">
                           <div className="status-history-header">
@@ -1359,12 +1359,12 @@ export default function ContentViewPage() {
           width: 12px;
           height: 12px;
           border-radius: 50%;
-          background: #9CA3AF;
+          background: #22c55e;
           flex-shrink: 0;
           margin-top: 4px;
         }
-        .status-history-item.completed .status-history-dot {
-          background: #22c55e;
+        .status-history-item.current-open .status-history-dot {
+          background: #D97706;
         }
         .status-history-content {
           flex: 1;
