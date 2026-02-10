@@ -103,6 +103,8 @@ export default function AdminContentPage() {
   const [fileType, setFileType] = useState<'docs' | 'images' | 'video'>('docs')
   const [fileCategory, setFileCategory] = useState('')
   const [fileUrl, setFileUrl] = useState('')
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadMode, setUploadMode] = useState<'upload' | 'link'>('upload')
   const [isAddingFile, setIsAddingFile] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
   const [fileSuccess, setFileSuccess] = useState(false)
@@ -188,8 +190,18 @@ export default function AdminContentPage() {
 
   // Handle adding a file
   const handleAddFile = async () => {
-    if (!fileClientId || !fileName || !fileCategory) {
-      setFileError('Please fill in all required fields')
+    if (!fileClientId || !fileCategory) {
+      setFileError('Please select a client and category')
+      return
+    }
+
+    // Validate based on mode
+    if (uploadMode === 'upload' && !uploadedFile) {
+      setFileError('Please select a file to upload')
+      return
+    }
+    if (uploadMode === 'link' && !fileName) {
+      setFileError('Please enter a file name')
       return
     }
 
@@ -197,17 +209,33 @@ export default function AdminContentPage() {
     setFileError(null)
 
     try {
-      const res = await fetch('/api/admin/files', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId: fileClientId,
-          name: fileName,
-          type: fileType,
-          category: fileCategory,
-          url: fileUrl || null,
-        }),
-      })
+      let res: Response
+
+      if (uploadMode === 'upload' && uploadedFile) {
+        // Upload file
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        formData.append('clientId', fileClientId)
+        formData.append('category', fileCategory)
+
+        res = await fetch('/api/admin/files/upload', {
+          method: 'POST',
+          body: formData,
+        })
+      } else {
+        // Add link
+        res = await fetch('/api/admin/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: fileClientId,
+            name: fileName,
+            type: fileType,
+            category: fileCategory,
+            url: fileUrl || null,
+          }),
+        })
+      }
 
       if (!res.ok) {
         const data = await res.json()
@@ -234,6 +262,8 @@ export default function AdminContentPage() {
     setFileType('docs')
     setFileCategory('')
     setFileUrl('')
+    setUploadedFile(null)
+    setUploadMode('upload')
     setFileError(null)
     setFileSuccess(false)
   }
@@ -1196,98 +1226,232 @@ export default function AdminContentPage() {
                     </select>
                   </div>
 
-                  {/* File Name */}
+                  {/* Category */}
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
-                      File Name <span style={{ color: '#DC2626' }}>*</span>
+                      Category <span style={{ color: '#DC2626' }}>*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={fileName}
-                      onChange={(e) => setFileName(e.target.value)}
-                      placeholder="e.g., Brand Strategy Document.pdf"
+                    <select
+                      value={fileCategory}
+                      onChange={(e) => setFileCategory(e.target.value)}
                       style={{
                         width: '100%',
                         padding: '10px 12px',
                         border: '1px solid #D1D5DB',
                         borderRadius: '8px',
-                        fontSize: '0.875rem',
-                        boxSizing: 'border-box'
+                        fontSize: '0.875rem'
                       }}
-                    />
+                    >
+                      <option value="">Select category...</option>
+                      <option value="Branding Foundation">Branding Foundation</option>
+                      <option value="AI Creative">AI Creative</option>
+                      <option value="Content Writing">Content Writing</option>
+                      <option value="SEO">SEO</option>
+                      <option value="Social Media">Social Media</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
 
-                  {/* File Type & Category */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
-                        Type <span style={{ color: '#DC2626' }}>*</span>
-                      </label>
-                      <select
-                        value={fileType}
-                        onChange={(e) => setFileType(e.target.value as 'docs' | 'images' | 'video')}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #D1D5DB',
-                          borderRadius: '8px',
-                          fontSize: '0.875rem'
-                        }}
-                      >
-                        <option value="docs">Document</option>
-                        <option value="images">Image</option>
-                        <option value="video">Video</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
-                        Category <span style={{ color: '#DC2626' }}>*</span>
-                      </label>
-                      <select
-                        value={fileCategory}
-                        onChange={(e) => setFileCategory(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          border: '1px solid #D1D5DB',
-                          borderRadius: '8px',
-                          fontSize: '0.875rem'
-                        }}
-                      >
-                        <option value="">Select category...</option>
-                        <option value="Branding Foundation">Branding Foundation</option>
-                        <option value="AI Creative">AI Creative</option>
-                        <option value="Content Writing">Content Writing</option>
-                        <option value="SEO">SEO</option>
-                        <option value="Social Media">Social Media</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* File URL */}
+                  {/* Upload/Link Toggle */}
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
-                      Drive/File URL <span style={{ color: '#6B7280', fontWeight: 400 }}>(optional)</span>
+                      Add File
                     </label>
-                    <input
-                      type="url"
-                      value={fileUrl}
-                      onChange={(e) => setFileUrl(e.target.value)}
-                      placeholder="https://drive.google.com/..."
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        border: '1px solid #D1D5DB',
-                        borderRadius: '8px',
-                        fontSize: '0.875rem',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#6B7280' }}>
-                      Paste a Google Drive, Dropbox, or other file sharing link
-                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setUploadMode('upload')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          border: uploadMode === 'upload' ? '2px solid #3B82F6' : '1px solid #D1D5DB',
+                          borderRadius: '8px',
+                          background: uploadMode === 'upload' ? '#EFF6FF' : 'white',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          color: uploadMode === 'upload' ? '#1D4ED8' : '#6B7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadMode('link')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 16px',
+                          border: uploadMode === 'link' ? '2px solid #3B82F6' : '1px solid #D1D5DB',
+                          borderRadius: '8px',
+                          background: uploadMode === 'link' ? '#EFF6FF' : 'white',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          color: uploadMode === 'link' ? '#1D4ED8' : '#6B7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        Add Link
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Upload Mode */}
+                  {uploadMode === 'upload' && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                        Select File <span style={{ color: '#DC2626' }}>*</span>
+                      </label>
+                      <div
+                        style={{
+                          border: '2px dashed #D1D5DB',
+                          borderRadius: '8px',
+                          padding: '24px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          background: uploadedFile ? '#F0FDF4' : '#F9FAFB',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => document.getElementById('fileUploadInput')?.click()}
+                      >
+                        <input
+                          id="fileUploadInput"
+                          type="file"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setUploadedFile(file)
+                            }
+                          }}
+                        />
+                        {uploadedFile ? (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" width="20" height="20">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span style={{ color: '#059669', fontWeight: 500 }}>{uploadedFile.name}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setUploadedFile(null)
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                color: '#DC2626'
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" width="32" height="32" style={{ margin: '0 auto 8px' }}>
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                              <polyline points="17 8 12 3 7 8"></polyline>
+                              <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p style={{ margin: 0, color: '#6B7280', fontSize: '0.875rem' }}>
+                              Click to select a file or drag and drop
+                            </p>
+                            <p style={{ margin: '4px 0 0', color: '#9CA3AF', fontSize: '0.75rem' }}>
+                              PDF, DOC, Images, Videos up to 50MB
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Link Mode */}
+                  {uploadMode === 'link' && (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                          File Name <span style={{ color: '#DC2626' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={fileName}
+                          onChange={(e) => setFileName(e.target.value)}
+                          placeholder="e.g., Brand Strategy Document.pdf"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid #D1D5DB',
+                            borderRadius: '8px',
+                            fontSize: '0.875rem',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                            Type <span style={{ color: '#DC2626' }}>*</span>
+                          </label>
+                          <select
+                            value={fileType}
+                            onChange={(e) => setFileType(e.target.value as 'docs' | 'images' | 'video')}
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              border: '1px solid #D1D5DB',
+                              borderRadius: '8px',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            <option value="docs">Document</option>
+                            <option value="images">Image</option>
+                            <option value="video">Video</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '0.875rem' }}>
+                            Drive/File URL
+                          </label>
+                          <input
+                            type="url"
+                            value={fileUrl}
+                            onChange={(e) => setFileUrl(e.target.value)}
+                            placeholder="https://..."
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              border: '1px solid #D1D5DB',
+                              borderRadius: '8px',
+                              fontSize: '0.875rem',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Error Message */}
                   {fileError && (
@@ -1333,7 +1497,7 @@ export default function AdminContentPage() {
                     padding: '10px 20px'
                   }}
                 >
-                  {isAddingFile ? 'Adding...' : 'Add File'}
+                  {isAddingFile ? (uploadMode === 'upload' ? 'Uploading...' : 'Adding...') : (uploadMode === 'upload' ? 'Upload File' : 'Add File')}
                 </button>
               </div>
             )}
