@@ -840,12 +840,13 @@ export default function ContentViewPage() {
 
               <div className="form-group">
                 <label className="form-label">
-                  Client <span className="required">*</span>
+                  Client
                 </label>
                 <select
                   className="form-select"
                   value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
+                  disabled
+                  style={{ cursor: 'not-allowed', opacity: 0.7 }}
                 >
                   <option value="">Select client...</option>
                   {clients.map((client) => (
@@ -854,17 +855,20 @@ export default function ContentViewPage() {
                     </option>
                   ))}
                 </select>
+                <span className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Cannot be changed after creation
+                </span>
               </div>
 
               <div className="form-group">
                 <label className="form-label">
-                  Platform <span className="required">*</span>
+                  Platform
                 </label>
-                <div className="platform-options platform-options-3">
+                <div className="platform-options platform-options-3" style={{ opacity: 0.7, pointerEvents: 'none' }}>
                   <button
                     type="button"
                     className={`platform-option ${platform === 'website' ? 'active' : ''}`}
-                    onClick={() => setPlatform('website')}
+                    disabled
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -876,7 +880,7 @@ export default function ContentViewPage() {
                   <button
                     type="button"
                     className={`platform-option ${platform === 'gbp' ? 'active' : ''}`}
-                    onClick={() => setPlatform('gbp')}
+                    disabled
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -887,7 +891,7 @@ export default function ContentViewPage() {
                   <button
                     type="button"
                     className={`platform-option ${platform === 'social' ? 'active' : ''}`}
-                    onClick={() => setPlatform('social')}
+                    disabled
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
                       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
@@ -895,6 +899,9 @@ export default function ContentViewPage() {
                     <span>Social</span>
                   </button>
                 </div>
+                <span className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Cannot be changed after creation
+                </span>
               </div>
 
               {/* Social Platform Selection */}
@@ -950,12 +957,13 @@ export default function ContentViewPage() {
 
               <div className="form-group">
                 <label className="form-label">
-                  Content Type <span className="required">*</span>
+                  Content Type
                 </label>
                 <select
                   className="form-select"
                   value={contentType}
-                  onChange={(e) => setContentType(e.target.value)}
+                  disabled
+                  style={{ cursor: 'not-allowed', opacity: 0.7 }}
                 >
                   <option value="">Select type...</option>
                   {platform === 'website' && (
@@ -981,6 +989,9 @@ export default function ContentViewPage() {
                     </>
                   )}
                 </select>
+                <span className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Cannot be changed after creation
+                </span>
               </div>
 
               {/* Featured Image Upload */}
