@@ -225,15 +225,17 @@ export default function ContentViewPage() {
   const handleWorkflowAction = async (action: 'submit' | 'approve' | 'reject' | 'publish', extra?: Record<string, string>) => {
     try {
       setActionLoading(action)
+      console.log('handleWorkflowAction called:', { action, extra, contentId })
       const res = await fetch(`/api/admin/content/${contentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...extra }),
       })
-      if (!res.ok) {
-        throw new Error('Failed to process action')
-      }
       const data = await res.json()
+      console.log('API response:', { ok: res.ok, status: res.status, data })
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to process action')
+      }
       setContent(prev => prev ? { ...prev, ...data.content } : null)
 
       // Close modals
@@ -242,6 +244,7 @@ export default function ContentViewPage() {
       setRejectFeedback('')
       setPublishedUrl('')
     } catch (err) {
+      console.error('Workflow action error:', err)
       alert(err instanceof Error ? err.message : 'Failed to process action')
     } finally {
       setActionLoading(null)
