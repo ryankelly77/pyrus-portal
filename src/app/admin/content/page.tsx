@@ -92,6 +92,10 @@ export default function AdminContentPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
+  // Rush interstitial state
+  const [showRushInterstitial, setShowRushInterstitial] = useState(false)
+  const [rushItems, setRushItems] = useState<ContentItem[]>([])
+
   const isSuperAdmin = profile?.role === 'super_admin'
 
   // Close dropdown when clicking outside
@@ -115,8 +119,22 @@ export default function AdminContentPage() {
         const contentRes = await fetch(`/api/admin/content?${params.toString()}`)
         if (contentRes.ok) {
           const data = await contentRes.json()
-          setContentItems(data.content || [])
+          const content = data.content || []
+          setContentItems(content)
           setStats(data.stats || stats)
+
+          // Check for rush items that the user hasn't dismissed
+          const urgentItems = content.filter((item: ContentItem) => item.urgent)
+          if (urgentItems.length > 0 && user?.id) {
+            const dismissedKey = `rush_dismissed_${user.id}`
+            const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
+            const newRushItems = urgentItems.filter((item: ContentItem) => !dismissed.includes(item.id))
+
+            if (newRushItems.length > 0) {
+              setRushItems(newRushItems)
+              setShowRushInterstitial(true)
+            }
+          }
         }
 
         // Fetch clients for filter dropdown
@@ -141,6 +159,18 @@ export default function AdminContentPage() {
     setStatusFilter('')
     setClientFilter('')
     setPlatformFilter('')
+  }
+
+  // Dismiss rush interstitial and mark items as seen
+  const dismissRushInterstitial = () => {
+    if (user?.id && rushItems.length > 0) {
+      const dismissedKey = `rush_dismissed_${user.id}`
+      const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]') as string[]
+      const newDismissed = [...new Set([...dismissed, ...rushItems.map(item => item.id)])]
+      localStorage.setItem(dismissedKey, JSON.stringify(newDismissed))
+    }
+    setShowRushInterstitial(false)
+    setRushItems([])
   }
 
   const handleDelete = async () => {
@@ -792,6 +822,164 @@ export default function AdminContentPage() {
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rush Publishing Interstitial */}
+      {showRushInterstitial && rushItems.length > 0 && (
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: '560px', width: '100%' }}>
+            <div style={{
+              padding: '24px',
+              borderBottom: '1px solid #E5E7EB',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '16px'
+            }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: '#FEF3C7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="24" height="24">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 600, color: '#1F2937' }}>
+                  Rush Publishing Request{rushItems.length > 1 ? 's' : ''}
+                </h2>
+                <p style={{ margin: 0, color: '#6B7280', fontSize: '0.875rem' }}>
+                  {rushItems.length === 1
+                    ? 'A client has requested rush publishing for the following content:'
+                    : `${rushItems.length} clients have requested rush publishing:`}
+                </p>
+              </div>
+              <button
+                onClick={dismissRushInterstitial}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: '#6B7280'
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 24px', maxHeight: '300px', overflowY: 'auto' }}>
+              {rushItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: '12px 16px',
+                    background: index % 2 === 0 ? '#FEF3C7' : '#FFFBEB',
+                    borderRadius: '8px',
+                    marginBottom: index < rushItems.length - 1 ? '8px' : 0,
+                    border: '1px solid #FCD34D'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#92400E' }}>
+                      {item.title}
+                    </h4>
+                    <span style={{
+                      background: '#F59E0B',
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '9999px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600
+                    }}>
+                      RUSH
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#78350F' }}>
+                    <span>{item.client_name}</span>
+                    <span>•</span>
+                    <span>{getContentTypeLabel(item.content_type, item.platform)}</span>
+                    <span>•</span>
+                    <span>{getStatusLabel(item.status)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              padding: '16px 24px',
+              borderTop: '1px solid #E5E7EB',
+              background: '#F9FAFB',
+              borderRadius: '0 0 12px 12px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '16px',
+                padding: '12px',
+                background: 'white',
+                borderRadius: '8px',
+                border: '1px solid #E5E7EB'
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" width="18" height="18">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#4B5563' }}>
+                  Rush content should be prioritized and published within <strong>24 hours</strong>.
+                </p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  onClick={dismissRushInterstitial}
+                  style={{
+                    background: 'white',
+                    border: '1px solid #D1D5DB',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    color: '#374151'
+                  }}
+                >
+                  Got It
+                </button>
+                <Link
+                  href={rushItems.length === 1 ? `/admin/content/${rushItems[0].id}` : '/admin/content?status=urgent'}
+                  onClick={dismissRushInterstitial}
+                  style={{
+                    background: '#F59E0B',
+                    border: '1px solid #F59E0B',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    color: 'white',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  {rushItems.length === 1 ? 'View Content' : 'View Rush Items'}
+                </Link>
+              </div>
             </div>
           </div>
         </div>
