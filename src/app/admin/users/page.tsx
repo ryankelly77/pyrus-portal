@@ -99,6 +99,12 @@ export default function AdminUsersPage() {
     clientIds: [] as string[],
   })
 
+  // Edit user modal state
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<AdminUser | ClientUser | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
   // Fetch users on mount
   useEffect(() => {
     async function fetchUsers() {
@@ -312,7 +318,46 @@ export default function AdminUsersPage() {
   }
 
   const handleEditAdmin = (userId: string) => {
-    console.log('Edit admin user:', userId)
+    const user = adminUsers.find(u => u.id === userId) || clientUsers.find(u => u.id === userId)
+    if (user) {
+      setEditingUser(user)
+      setEditError(null)
+      setShowEditModal(true)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!editingUser) return
+
+    if (!confirm(`Are you sure you want to delete ${editingUser.name}? This action cannot be undone.`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    setEditError(null)
+
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: 'DELETE',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setEditError(data.error || 'Failed to delete user')
+        return
+      }
+
+      // Remove user from local state
+      setAdminUsers(prev => prev.filter(u => u.id !== editingUser.id))
+      setClientUsers(prev => prev.filter(u => u.id !== editingUser.id))
+      setShowEditModal(false)
+      setEditingUser(null)
+    } catch (error) {
+      setEditError('Failed to delete user')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const handleResendAdmin = (userId: string) => {
@@ -1180,6 +1225,98 @@ export default function AdminUsersPage() {
                     Send Invitation
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="modal-overlay active" onClick={() => { setShowEditModal(false); setEditingUser(null); setEditError(null); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="modal-header">
+              <h2>Manage User</h2>
+              <button className="modal-close" onClick={() => { setShowEditModal(false); setEditingUser(null); setEditError(null); }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              {editError && (
+                <div style={{ padding: '12px 16px', marginBottom: '16px', backgroundColor: '#FDE8E8', color: '#9B1C1C', borderRadius: '8px', fontSize: '14px' }}>
+                  {editError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                <div
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: editingUser.avatarColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '600',
+                    fontSize: '18px'
+                  }}
+                >
+                  {editingUser.initials}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-primary)' }}>{editingUser.name}</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>{editingUser.email}</p>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      marginTop: '8px',
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      borderRadius: '4px',
+                      background: 'var(--bg-hover)',
+                      color: 'var(--text-secondary)'
+                    }}
+                  >
+                    {'role' in editingUser ? editingUser.role.replace('_', ' ').toUpperCase() : 'CLIENT'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                <h4 style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  Danger Zone
+                </h4>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Deleting a user will permanently remove their account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  className="btn"
+                  onClick={handleDeleteUser}
+                  disabled={isDeleting}
+                  style={{
+                    backgroundColor: '#DC2626',
+                    color: 'white',
+                    border: 'none',
+                    width: '100%'
+                  }}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete User'}
+                </button>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => { setShowEditModal(false); setEditingUser(null); setEditError(null); }}
+                disabled={isDeleting}
+              >
+                Close
               </button>
             </div>
           </div>
