@@ -32,11 +32,12 @@ export async function GET(request: NextRequest) {
       clientId = profile.client_id
     }
 
-    // Fetch content products that have a portal_slug (these are the ones available for Add to Plan)
+    // Fetch content products that have a portal_slug AND include content services
     const contentProducts = await prisma.products.findMany({
       where: {
         status: 'active',
         portal_slug: { not: null },
+        includes_content: true,
       },
       orderBy: { sort_order: 'asc' },
     })
