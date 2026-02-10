@@ -904,13 +904,6 @@ export function ContentView({
 
   return (
     <div className="content-view-container">
-      {/* Summary Filter Bar */}
-      <SummaryFilterBar
-        stats={stats}
-        activeFilter={contentFilter}
-        onFilterChange={setContentFilter}
-      />
-
       {/* Content Stats */}
       <div className="content-stats">
         <div className={`content-stat-card ${stats.urgentReviews > 0 ? 'urgent' : ''}`}>
@@ -1088,6 +1081,13 @@ export function ContentView({
       {/* Content Review Tab */}
       {activeTab === 'review' && (
         <>
+          {/* Summary Filter Bar */}
+          <SummaryFilterBar
+            stats={stats}
+            activeFilter={contentFilter}
+            onFilterChange={setContentFilter}
+          />
+
           {/* Show filter active message */}
           {contentFilter !== 'all' && (
             <div style={{
