@@ -5,7 +5,7 @@ import React from 'react'
 interface StatusHistoryEntry {
   status: string
   changed_at: string
-  changed_by_id?: string
+  changed_by_id?: string | null
   changed_by_name?: string
   note?: string
 }

@@ -866,24 +866,24 @@ export default function ContentViewPage() {
                   <option value="">Select type...</option>
                   {platform === 'website' && (
                     <>
-                      <option value="blog">Blog Post</option>
-                      <option value="service">Service Page</option>
-                      <option value="landing">Landing Page</option>
+                      <option value="Blog Post">Blog Post</option>
+                      <option value="Service Page">Service Page</option>
+                      <option value="Landing Page">Landing Page</option>
                     </>
                   )}
                   {platform === 'gbp' && (
                     <>
-                      <option value="update">Business Update</option>
-                      <option value="offer">Offer</option>
-                      <option value="event">Event</option>
+                      <option value="Business Update">Business Update</option>
+                      <option value="Offer">Offer</option>
+                      <option value="Event">Event</option>
                     </>
                   )}
                   {platform === 'social' && (
                     <>
-                      <option value="post">Social Post</option>
-                      <option value="story">Story</option>
-                      <option value="reel">Reel / Short Video</option>
-                      <option value="carousel">Carousel</option>
+                      <option value="Social Post">Social Post</option>
+                      <option value="Story">Story</option>
+                      <option value="Reel">Reel / Short Video</option>
+                      <option value="Carousel">Carousel</option>
                     </>
                   )}
                 </select>
