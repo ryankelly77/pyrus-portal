@@ -72,6 +72,24 @@ export async function POST(request: NextRequest) {
       select: { id: true, name: true, onboarding_completed_at: true },
     })
 
+    // Log activity for notifications
+    try {
+      await prisma.activity_log.create({
+        data: {
+          user_id: user.id,
+          client_id: clientId,
+          activity_type: 'onboarding_completed',
+          description: 'Completed onboarding',
+          metadata: {
+            clientName: updatedClient.name,
+            completedAt: updatedClient.onboarding_completed_at?.toISOString(),
+          },
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log onboarding completion (non-critical):', logError)
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Onboarding marked as complete',
