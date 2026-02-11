@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 
-interface Activity {
+interface Notification {
   id: string
   type: string
   title: string
   description: string
-  time: string
+  clientName: string
+  clientId: string
+  timestamp: string
 }
 
 interface Transaction {
@@ -217,7 +219,7 @@ export default function SuperAdminDashboard() {
     pendingRecommendations: 0,
     avgGrowthPercent: 0,
   })
-  const [recentActivity, setRecentActivity] = useState<Activity[]>([])
+  const [recentNotifications, setRecentNotifications] = useState<Notification[]>([])
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
   const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
   const [loading, setLoading] = useState(true)
@@ -225,16 +227,16 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        // Fetch dashboard data and MRR data in parallel
-        const [dashboardRes, mrrRes] = await Promise.all([
+        // Fetch dashboard data, MRR data, and notifications in parallel
+        const [dashboardRes, mrrRes, notificationsRes] = await Promise.all([
           fetch('/api/admin/dashboard'),
-          fetch('/api/admin/dashboard/mrr')
+          fetch('/api/admin/dashboard/mrr'),
+          fetch('/api/admin/notifications?limit=10')
         ])
 
         if (dashboardRes.ok) {
           const data = await dashboardRes.json()
           setStats(data.stats)
-          setRecentActivity(data.recentActivity)
           setRecentTransactions(data.recentTransactions)
         }
 
@@ -248,6 +250,11 @@ export default function SuperAdminDashboard() {
             mrrChange: mrrData.mrrChange || prev.mrrChange,
             avgGrowthPercent: mrrData.avgGrowthPercent || 0
           }))
+        }
+
+        if (notificationsRes.ok) {
+          const notifData = await notificationsRes.json()
+          setRecentNotifications(notifData.notifications || [])
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
@@ -338,6 +345,23 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  function formatRelativeTime(timestamp: string): string {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} min ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
   return (
     <>
       <AdminHeader
@@ -416,33 +440,33 @@ export default function SuperAdminDashboard() {
 
         {/* Three Column Layout */}
         <div className="sa-dash-grid">
-          {/* Recent Activity */}
+          {/* Recent Notifications */}
           <div className="sa-dash-card">
             <div className="sa-dash-card-header">
-              <h3>Recent Activity</h3>
+              <h3>Recent Notifications</h3>
               <Link href="/admin/notifications" className="btn btn-sm btn-secondary">View All</Link>
             </div>
             <div className="sa-dash-activity-stream">
               {loading ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
                   <div className="spinner" style={{ width: 24, height: 24, margin: '0 auto 12px' }}></div>
-                  Loading activity...
+                  Loading notifications...
                 </div>
-              ) : recentActivity.length === 0 ? (
+              ) : recentNotifications.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#6B7280' }}>
-                  No recent activity
+                  No recent notifications
                 </div>
               ) : (
-                recentActivity.map((activity) => (
-                  <div key={activity.id} className={`activity-item ${activity.type === 'purchase' ? 'purchase-highlight' : ''} ${activity.type === 'onboarding' ? 'onboarding-highlight' : ''}`}>
-                    <div className={`activity-icon ${getIconClass(activity.type)}`}>
-                      {getTypeIcon(activity.type)}
+                recentNotifications.map((notification) => (
+                  <div key={notification.id} className={`activity-item ${notification.type === 'purchase' ? 'purchase-highlight' : ''} ${notification.type === 'onboarding' ? 'onboarding-highlight' : ''}`}>
+                    <div className={`activity-icon ${getIconClass(notification.type)}`}>
+                      {getTypeIcon(notification.type)}
                     </div>
                     <div className="activity-content">
-                      <span className="activity-title">{activity.title}</span>
-                      <p className="activity-description">{activity.description}</p>
+                      <span className="activity-title">{notification.clientName}</span>
+                      <p className="activity-description">{notification.description}</p>
                     </div>
-                    <div className="activity-time">{activity.time}</div>
+                    <div className="activity-time">{formatRelativeTime(notification.timestamp)}</div>
                   </div>
                 ))
               )}
