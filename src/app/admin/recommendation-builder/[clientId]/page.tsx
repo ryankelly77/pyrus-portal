@@ -429,7 +429,7 @@ export default function RecommendationBuilderPage() {
       const res = await fetch('/api/admin/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newClientForm),
+        body: JSON.stringify({ ...newClientForm, status: 'prospect' }),
       })
 
       if (!res.ok) throw new Error('Failed to create client')
