@@ -301,19 +301,9 @@ export default function AdminNotificationsPage() {
       )
     }
     if (type === 'purchase') {
-      return (
-        <span style={{
-          padding: '2px 8px',
-          borderRadius: '12px',
-          fontSize: '11px',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          background: '#22C55E',
-          color: '#FFFFFF',
-        }}>
-          purchase
-        </span>
-      )
+      // Don't show redundant "purchase" badge - the title already says "Purchase"
+      // The description contains the specific action (started, activated, canceled)
+      return null
     }
     if (type === 'onboarding') {
       return (
@@ -352,6 +342,19 @@ export default function AdminNotificationsPage() {
       hour: 'numeric',
       minute: '2-digit',
     })
+  }
+
+  function cleanDescription(description: string, clientName: string) {
+    if (!description || !clientName) return description
+    // Remove "ClientName: " prefix
+    if (description.startsWith(`${clientName}: `)) {
+      return description.slice(clientName.length + 2)
+    }
+    // Remove " for ClientName" suffix
+    if (description.endsWith(` for ${clientName}`)) {
+      return description.slice(0, -(` for ${clientName}`.length))
+    }
+    return description
   }
 
   function getIconClass(type: string) {
@@ -570,7 +573,7 @@ export default function AdminNotificationsPage() {
                         <span className="activity-title">{notification.title}</span>
                         {getStatusBadge(notification.type, notification.status)}
                       </div>
-                      <p className="activity-description">{notification.description}</p>
+                      <p className="activity-description">{cleanDescription(notification.description, notification.clientName)}</p>
                       <div className="activity-meta">
                         {notification.clientId ? (
                           <Link href={`/admin/clients/${notification.clientId}`} className="activity-client">
