@@ -8,6 +8,56 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET /api/admin/activity/[id] - Get an activity item
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    const { id } = await params
+
+    const activity = await prisma.activity_log.findUnique({
+      where: { id },
+      include: { client: { select: { name: true } } }
+    })
+
+    if (!activity) {
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(activity)
+  } catch (error) {
+    console.error('Error fetching activity:', error)
+    return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 })
+  }
+}
+
+// PATCH /api/admin/activity/[id] - Update an activity item
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    const { id } = await params
+    const body = await request.json()
+    const { description } = body as { description?: string }
+
+    if (!description) {
+      return NextResponse.json({ error: 'description is required' }, { status: 400 })
+    }
+
+    const activity = await prisma.activity_log.update({
+      where: { id },
+      data: { description },
+    })
+
+    return NextResponse.json({ success: true, activity })
+  } catch (error) {
+    console.error('Error updating activity:', error)
+    return NextResponse.json({ error: 'Failed to update activity' }, { status: 500 })
+  }
+}
+
 // DELETE /api/admin/activity/[id] - Delete an activity item (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
