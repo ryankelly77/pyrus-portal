@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dbPool } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { CustomError } from '@/lib/utils/api-helpers';
 
 export const dynamic = 'force-dynamic'
 
@@ -13,58 +12,102 @@ interface NotificationItem {
   clientName: string
   clientId: string
   status?: string
-  metadata?: Record<string, unknown>
   timestamp: string
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireAdmin()
+  if (auth instanceof NextResponse) return auth
 
-  const { user, profile } = auth;
+  const { searchParams } = new URL(request.url)
+  const limit = parseInt(searchParams.get('limit') || '100')
+  const type = searchParams.get('type') // 'all', 'email', 'login', 'proposal', 'page_view', 'purchase', 'onboarding'
 
-  const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get('limit') || '50');
-  const offset = parseInt(searchParams.get('offset') || '0');
-  const type = searchParams.get('type'); // 'all', 'email', 'login', 'proposal'
+  const notifications: NotificationItem[] = []
 
-  const notifications: NotificationItem[] = [];
+  // Fetch from activity_log for logins, page views, registrations, onboarding
+  if (!type || type === 'all' || type === 'login' || type === 'page_view' || type === 'onboarding') {
+    const activityTypes: string[] = []
+    if (!type || type === 'all') {
+      activityTypes.push('login', 'client_login', 'admin_login', 'page_view', 'registration',
+        'client_created', 'client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
+        'accepted_invite')
+    } else if (type === 'login') {
+      activityTypes.push('login', 'client_login', 'admin_login', 'prospect_login')
+    } else if (type === 'page_view') {
+      activityTypes.push('page_view')
+    } else if (type === 'onboarding') {
+      activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
+        'registration', 'client_created', 'accepted_invite')
+    }
+
+    if (activityTypes.length > 0) {
+      const activityLogs = await prisma.activity_log.findMany({
+        where: {
+          activity_type: { in: activityTypes }
+        },
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          client: { select: { id: true, name: true } },
+          user: { select: { id: true, full_name: true, email: true } }
+        }
+      })
+
+      for (const log of activityLogs) {
+        const activityType = mapActivityType(log.activity_type)
+        const metadata = log.metadata as Record<string, any> | null
+
+        // Get entity name from client, user, or metadata
+        let entityName = log.client?.name
+        if (!entityName && log.user?.full_name) entityName = log.user.full_name
+        if (!entityName && log.user?.email) entityName = log.user.email.split('@')[0]
+        if (!entityName && metadata?.clientName) entityName = metadata.clientName
+        if (!entityName && metadata?.userName) entityName = metadata.userName
+        if (!entityName && metadata?.email) entityName = metadata.email.split('@')[0]
+        entityName = entityName || 'Unknown'
+
+        let description = log.description || activityType.title
+        if (entityName && !description.includes(entityName)) {
+          description = `${entityName}: ${description}`
+        }
+
+        notifications.push({
+          id: log.id,
+          type: activityType.type,
+          title: activityType.title,
+          description,
+          clientName: log.client?.name || entityName,
+          clientId: log.client?.id || '',
+          timestamp: log.created_at?.toISOString() || new Date().toISOString()
+        })
+      }
+    }
+  }
 
   // Fetch email communications
   if (!type || type === 'all' || type === 'email') {
-    const emailsResult = await dbPool.query(
-      `SELECT
-        cc.id,
-        cc.comm_type,
-        cc.title,
-        cc.subject,
-        cc.status,
-        cc.recipient_email,
-        cc.opened_at,
-        cc.clicked_at,
-        cc.sent_at,
-        cc.created_at,
-        c.id as client_id,
-        c.name as client_name,
-        c.contact_name
-      FROM client_communications cc
-      JOIN clients c ON c.id = cc.client_id
-      WHERE cc.comm_type LIKE 'email%'
-      ORDER BY cc.created_at DESC
-      LIMIT $1 OFFSET $2`,
-      [limit, offset]
-    );
+    const communications = await prisma.client_communications.findMany({
+      where: {
+        comm_type: { startsWith: 'email' }
+      },
+      take: limit,
+      orderBy: { created_at: 'desc' },
+      include: {
+        client: { select: { id: true, name: true, contact_name: true } }
+      }
+    })
 
-    for (const email of emailsResult.rows) {
-      let description = `Sent to ${email.recipient_email || email.contact_name || 'client'}`;
+    for (const email of communications) {
+      let description = `Sent to ${email.recipient_email || email.client?.contact_name || 'client'}`
       if (email.status === 'opened' && email.opened_at) {
-        description = `Opened by ${email.recipient_email || 'client'}`;
+        description = `Opened by ${email.recipient_email || 'client'}`
       } else if (email.status === 'clicked' && email.clicked_at) {
-        description = `Link clicked by ${email.recipient_email || 'client'}`;
+        description = `Link clicked by ${email.recipient_email || 'client'}`
       } else if (email.status === 'delivered') {
-        description = `Delivered to ${email.recipient_email || 'client'}`;
+        description = `Delivered to ${email.recipient_email || 'client'}`
       } else if (email.status === 'failed' || email.status === 'bounced') {
-        description = `Failed to deliver to ${email.recipient_email || 'client'}`;
+        description = `Failed to deliver to ${email.recipient_email || 'client'}`
       }
 
       notifications.push({
@@ -72,14 +115,133 @@ export async function GET(request: NextRequest) {
         type: 'email',
         title: email.title || email.subject || 'Email',
         description,
-        clientName: email.client_name,
-        clientId: email.client_id,
-        status: email.status,
-        timestamp: email.sent_at || email.created_at,
-      });
+        clientName: email.client?.name || 'Unknown',
+        clientId: email.client?.id || '',
+        status: email.status || 'sent',
+        timestamp: email.sent_at?.toISOString() || email.created_at?.toISOString() || new Date().toISOString()
+      })
     }
   }
 
-  // Return notifications
-  return NextResponse.json(notifications, { status: 200 });
+  // Fetch proposal/recommendation activity
+  if (!type || type === 'all' || type === 'proposal') {
+    const recommendationHistory = await prisma.recommendation_history.findMany({
+      where: {
+        action: { in: ['sent', 'created', 'purchased', 'viewed'] }
+      },
+      take: limit,
+      orderBy: { created_at: 'desc' },
+      include: {
+        recommendation: {
+          include: {
+            client: { select: { id: true, name: true } }
+          }
+        }
+      }
+    })
+
+    for (const history of recommendationHistory) {
+      const recType = mapRecommendationAction(history.action)
+      const notifType = history.action === 'viewed' ? 'proposal_view' :
+                        history.action === 'purchased' ? 'purchase' : 'proposal_sent'
+
+      notifications.push({
+        id: history.id,
+        type: notifType,
+        title: recType.title,
+        description: `${history.recommendation?.client?.name || 'Unknown'}: ${history.details || recType.description}`,
+        clientName: history.recommendation?.client?.name || 'Unknown',
+        clientId: history.recommendation?.client?.id || '',
+        timestamp: history.created_at?.toISOString() || new Date().toISOString()
+      })
+    }
+  }
+
+  // Fetch purchase/subscription activity
+  if (!type || type === 'all' || type === 'purchase') {
+    const subscriptionHistory = await prisma.subscription_history.findMany({
+      take: limit,
+      orderBy: { created_at: 'desc' },
+      include: {
+        subscription: {
+          include: {
+            client: { select: { id: true, name: true } }
+          }
+        }
+      }
+    })
+
+    for (const history of subscriptionHistory) {
+      const subType = mapSubscriptionAction(history.action)
+
+      notifications.push({
+        id: history.id,
+        type: 'purchase',
+        title: subType.title,
+        description: `${history.subscription?.client?.name || 'Unknown'}: ${history.details || subType.description}`,
+        clientName: history.subscription?.client?.name || 'Unknown',
+        clientId: history.subscription?.client?.id || '',
+        timestamp: history.created_at?.toISOString() || new Date().toISOString()
+      })
+    }
+  }
+
+  // Sort all notifications by timestamp (most recent first)
+  notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+
+  // Calculate summary stats
+  const summary = {
+    totalEmails: notifications.filter(n => n.type === 'email').length,
+    sentEmails: notifications.filter(n => n.type === 'email' && n.status === 'sent').length,
+    deliveredEmails: notifications.filter(n => n.type === 'email' && n.status === 'delivered').length,
+    openedEmails: notifications.filter(n => n.type === 'email' && n.status === 'opened').length,
+    proposalsViewed: notifications.filter(n => n.type === 'proposal_view').length,
+    proposalsSent: notifications.filter(n => n.type === 'proposal_sent').length,
+    totalLogins: notifications.filter(n => n.type === 'login').length,
+  }
+
+  return NextResponse.json({
+    notifications: notifications.slice(0, limit),
+    summary
+  })
+}
+
+// Helper functions
+function mapActivityType(activityType: string): { type: string, title: string } {
+  const typeMap: Record<string, { type: string, title: string }> = {
+    'login': { type: 'login', title: 'Client Login' },
+    'client_login': { type: 'login', title: 'Client Login' },
+    'admin_login': { type: 'login', title: 'Admin Login' },
+    'prospect_login': { type: 'login', title: 'Prospect Login' },
+    'page_view': { type: 'page_view', title: 'Page View' },
+    'registration': { type: 'registration', title: 'New Registration' },
+    'client_created': { type: 'registration', title: 'New Client Added' },
+    'accepted_invite': { type: 'registration', title: 'Invite Accepted' },
+    'client_onboarding': { type: 'onboarding', title: 'Onboarding Started' },
+    'onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
+    'client_onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
+  }
+  return typeMap[activityType] || { type: 'login', title: activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }
+}
+
+function mapSubscriptionAction(action: string): { title: string, description: string } {
+  const actionMap: Record<string, { title: string, description: string }> = {
+    'created': { title: 'New Subscription', description: 'Started new subscription' },
+    'service_added': { title: 'Service Added', description: 'Added service to subscription' },
+    'service_removed': { title: 'Service Removed', description: 'Removed service from subscription' },
+    'billing_updated': { title: 'Billing Updated', description: 'Updated billing information' },
+    'status_changed': { title: 'Status Changed', description: 'Subscription status changed' },
+  }
+  return actionMap[action] || { title: 'Subscription Update', description: action }
+}
+
+function mapRecommendationAction(action: string): { title: string, description: string } {
+  const actionMap: Record<string, { title: string, description: string }> = {
+    'created': { title: 'Recommendation Created', description: 'New recommendation created' },
+    'updated': { title: 'Recommendation Updated', description: 'Recommendation updated' },
+    'sent': { title: 'Recommendation Sent', description: 'Recommendation sent to client' },
+    'viewed': { title: 'Proposal Viewed', description: 'Client viewed the proposal' },
+    'purchased': { title: 'Recommendation Accepted', description: 'Client accepted recommendation' },
+  }
+  return actionMap[action] || { title: 'Recommendation Update', description: action }
 }
