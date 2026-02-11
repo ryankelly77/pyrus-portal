@@ -25,13 +25,13 @@ export async function GET(request: NextRequest) {
 
   const notifications: NotificationItem[] = []
 
-  // Fetch from activity_log for logins, page views, onboarding
-  if (!type || type === 'all' || type === 'login' || type === 'page_view' || type === 'onboarding') {
+  // Fetch from activity_log for logins, page views, onboarding, purchases
+  if (!type || type === 'all' || type === 'login' || type === 'page_view' || type === 'onboarding' || type === 'purchase') {
     const activityTypes: string[] = []
     if (!type || type === 'all') {
       activityTypes.push('login', 'client_login', 'admin_login', 'page_view', 'registration',
         'client_created', 'client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
-        'accepted_invite')
+        'accepted_invite', 'purchase', 'payment')
     } else if (type === 'login') {
       // Logins + signups/registrations (all account access events)
       activityTypes.push('login', 'client_login', 'admin_login', 'prospect_login',
@@ -41,6 +41,9 @@ export async function GET(request: NextRequest) {
     } else if (type === 'onboarding') {
       // Only actual onboarding milestones
       activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed')
+    } else if (type === 'purchase') {
+      // Purchases and payment events from activity_log
+      activityTypes.push('purchase', 'payment')
     }
 
     if (activityTypes.length > 0) {
@@ -235,6 +238,8 @@ function mapActivityType(activityType: string): { type: string, title: string } 
     'client_onboarding': { type: 'onboarding', title: 'Onboarding Started' },
     'onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
     'client_onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
+    'purchase': { type: 'purchase', title: 'Purchase' },
+    'payment': { type: 'purchase', title: 'Payment' },
   }
   return typeMap[activityType] || { type: 'login', title: activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }
 }
