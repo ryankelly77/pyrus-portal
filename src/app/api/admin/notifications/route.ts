@@ -72,10 +72,8 @@ export async function GET(request: NextRequest) {
         if (!entityName && metadata?.email) entityName = metadata.email.split('@')[0]
         entityName = entityName || 'Unknown'
 
-        let description = log.description || activityType.title
-        if (entityName && !description.includes(entityName)) {
-          description = `${entityName}: ${description}`
-        }
+        // Use description as-is, don't prefix with client name (shown separately in UI)
+        const description = log.description || activityType.title
 
         notifications.push({
           id: log.id,
