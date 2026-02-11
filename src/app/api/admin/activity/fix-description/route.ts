@@ -59,11 +59,13 @@ export async function POST(request: NextRequest) {
         const firstInvoice = invoices.data[0]
         const amountCharged = firstInvoice ? firstInvoice.amount_paid / 100 : 0
 
+        const formatMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
         let newDesc: string
         if (amountCharged === 0 && monthlyPrice > 0) {
-          newDesc = `New subscription - $${monthlyPrice.toFixed(2)}/mo (billed at next cycle)`
+          newDesc = `New subscription - $${formatMoney(monthlyPrice)}/mo (billed at next cycle)`
         } else if (amountCharged > 0) {
-          newDesc = `Paid $${amountCharged.toFixed(2)}`
+          newDesc = `Paid $${formatMoney(amountCharged)}`
         } else {
           continue // No change needed
         }

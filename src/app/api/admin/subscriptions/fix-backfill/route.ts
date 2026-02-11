@@ -5,6 +5,9 @@ import { stripe } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
+// Format money with commas (e.g., $2,097.00)
+const formatMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 // POST /api/admin/subscriptions/fix-backfill
 // Pulls actual invoices from Stripe and creates accurate activity entries
 export async function POST(request: NextRequest) {
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
                   }
                 }
                 if (monthlyPrice > 0) {
-                  description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (billed at next cycle)`
+                  description = `New subscription - $${formatMoney(monthlyPrice)}/mo (billed at next cycle)`
                 } else {
                   description = 'New subscription started'
                 }
@@ -127,13 +130,13 @@ export async function POST(request: NextRequest) {
             description = 'Invoice processed ($0)'
           }
         } else if (invoice.billing_reason === 'subscription_create') {
-          description = `Paid $${amountPaid.toFixed(2)}`
+          description = `Paid $${formatMoney(amountPaid)}`
         } else if (invoice.billing_reason === 'subscription_cycle') {
-          description = `Recurring payment - $${amountPaid.toFixed(2)}`
+          description = `Recurring payment - $${formatMoney(amountPaid)}`
         } else if (invoice.billing_reason === 'subscription_update') {
-          description = `Subscription updated - $${amountPaid.toFixed(2)}`
+          description = `Subscription updated - $${formatMoney(amountPaid)}`
         } else {
-          description = `Payment received - $${amountPaid.toFixed(2)}`
+          description = `Payment received - $${formatMoney(amountPaid)}`
         }
 
         // Check if we already have an activity for this invoice or around this time

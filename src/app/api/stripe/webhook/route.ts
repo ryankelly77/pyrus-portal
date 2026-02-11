@@ -10,6 +10,9 @@ import Stripe from 'stripe'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Format money with commas (e.g., $2,097.00)
+const formatMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
             data: {
               client_id: clientId,
               activity_type: 'payment',
-              description: `Payment confirmed: $${(paymentIntent.amount / 100).toFixed(2)}`,
+              description: `Payment confirmed: $${formatMoney(paymentIntent.amount / 100)}`,
             },
           })
         }
@@ -315,15 +318,15 @@ export async function POST(request: NextRequest) {
             if (amount === 0 && monthlyPrice > 0) {
               // $0 charged now, but has a monthly price - deferred billing
               if (discountAmount === 100 && couponCode) {
-                description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (100% off with ${couponCode})`
+                description = `New subscription - $${formatMoney(monthlyPrice)}/mo (100% off with ${couponCode})`
               } else {
-                description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (billed at next cycle)`
+                description = `New subscription - $${formatMoney(monthlyPrice)}/mo (billed at next cycle)`
               }
             } else if (discountAmount > 0 && couponCode) {
               const originalAmount = Math.round(monthlyPrice * 100) / 100
-              description = `Paid $${amount.toFixed(2)} - $${originalAmount.toFixed(2)}/mo → $${(monthlyPrice * (1 - discountAmount / 100)).toFixed(2)}/mo (${discountAmount}% off with ${couponCode})`
+              description = `Paid $${formatMoney(amount)} - $${formatMoney(originalAmount)}/mo → $${formatMoney(monthlyPrice * (1 - discountAmount / 100))}/mo (${discountAmount}% off with ${couponCode})`
             } else if (amount > 0) {
-              description = `Paid $${amount.toFixed(2)}`
+              description = `Paid $${formatMoney(amount)}`
             } else {
               description = 'New subscription started'
             }
@@ -441,7 +444,7 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const invoice = event.data.object as any
 
-        console.log(`Invoice paid:`, invoice.id, `Amount: $${(invoice.amount_paid / 100).toFixed(2)}`)
+        console.log(`Invoice paid:`, invoice.id, `Amount: $${formatMoney(invoice.amount_paid / 100)}`)
 
         // Record revenue if this is a subscription invoice
         if (invoice.subscription) {
@@ -476,7 +479,7 @@ export async function POST(request: NextRequest) {
                 data: {
                   client_id: rec.client_id,
                   activity_type: 'payment',
-                  description: `Recurring payment received: $${amount.toFixed(2)}`,
+                  description: `Recurring payment received: $${formatMoney(amount)}`,
                   metadata: {
                     invoiceId: invoice.id,
                     amount,
@@ -517,7 +520,7 @@ export async function POST(request: NextRequest) {
               data: {
                 client_id: (failedSubRecord as any).client_id,
                 activity_type: 'payment',
-                description: `Payment failed: $${failedAmount.toFixed(2)}`,
+                description: `Payment failed: $${formatMoney(failedAmount)}`,
                 metadata: {
                   invoiceId: invoice.id,
                   amount: failedAmount,
