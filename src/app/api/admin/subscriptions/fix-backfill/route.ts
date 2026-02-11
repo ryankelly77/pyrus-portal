@@ -6,7 +6,7 @@ import { stripe } from '@/lib/stripe'
 export const dynamic = 'force-dynamic'
 
 // POST /api/admin/subscriptions/fix-backfill
-// Removes bad backfilled entries and recreates them with proper amounts
+// Pulls actual invoices from Stripe and creates accurate activity entries
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdmin()
@@ -18,11 +18,13 @@ export async function POST(request: NextRequest) {
 
     const results = {
       deletedBackfillEntries: 0,
-      recreatedEntries: 0,
+      invoicesProcessed: 0,
+      activitiesCreated: 0,
+      clientsNotFound: [] as string[],
       errors: [] as string[],
     }
 
-    // Delete all backfilled activity entries
+    // Delete all existing backfilled activity entries
     const deleteResult = await prisma.activity_log.deleteMany({
       where: {
         activity_type: { in: ['purchase', 'payment'] },
@@ -34,89 +36,125 @@ export async function POST(request: NextRequest) {
     })
     results.deletedBackfillEntries = deleteResult.count
 
-    // Get all subscriptions with Stripe IDs
-    const subscriptions = await prisma.subscriptions.findMany({
-      where: {
-        stripe_subscription_id: { not: null }
-      },
-      include: {
-        client: { select: { id: true, name: true } }
-      }
+    // Get all paid invoices from Stripe for last 60 days
+    const sixtyDaysAgo = Math.floor((Date.now() - 60 * 24 * 60 * 60 * 1000) / 1000)
+
+    const invoices = await stripe.invoices.list({
+      created: { gte: sixtyDaysAgo },
+      status: 'paid',
+      limit: 100,
     })
 
-    for (const sub of subscriptions) {
-      if (!sub.client_id || !sub.stripe_subscription_id) continue
+    // Build a map of stripe customer IDs to client IDs
+    const clients = await prisma.clients.findMany({
+      where: { stripe_customer_id: { not: null } },
+      select: { id: true, name: true, stripe_customer_id: true }
+    })
+
+    const customerToClient = new Map<string, { id: string; name: string }>()
+    for (const client of clients) {
+      if (client.stripe_customer_id) {
+        customerToClient.set(client.stripe_customer_id, { id: client.id, name: client.name })
+      }
+    }
+
+    // Process each invoice
+    for (const invoice of invoices.data) {
+      results.invoicesProcessed++
+
+      const customerId = typeof invoice.customer === 'string'
+        ? invoice.customer
+        : invoice.customer?.id
+
+      if (!customerId) continue
+
+      const client = customerToClient.get(customerId)
+      if (!client) {
+        // Try to get customer email and find client that way
+        const stripeCustomer = await stripe.customers.retrieve(customerId)
+        if ('email' in stripeCustomer && stripeCustomer.email) {
+          const clientByEmail = await prisma.clients.findFirst({
+            where: { contact_email: stripeCustomer.email },
+            select: { id: true, name: true }
+          })
+          if (clientByEmail) {
+            customerToClient.set(customerId, clientByEmail)
+          } else {
+            results.clientsNotFound.push(`${stripeCustomer.email} (${customerId})`)
+            continue
+          }
+        } else {
+          continue
+        }
+      }
+
+      const matchedClient = customerToClient.get(customerId)
+      if (!matchedClient) continue
 
       try {
-        // Get subscription details from Stripe
-        const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id)
+        const amountPaid = invoice.amount_paid / 100
+        const invoiceDate = invoice.created ? new Date(invoice.created * 1000) : new Date()
 
-        // Calculate monthly amount
-        let monthlyAmount = 0
-        if (stripeSub.items?.data) {
-          for (const item of stripeSub.items.data) {
-            const unitAmount = item.price?.unit_amount || 0
-            const quantity = item.quantity || 1
-            monthlyAmount += (unitAmount * quantity) / 100
+        // Determine the description based on what was charged
+        let description: string
+
+        if (amountPaid === 0) {
+          // $0 invoice - trial, coupon, or deferred billing
+          if (invoice.billing_reason === 'subscription_create') {
+            description = 'New subscription started'
+          } else {
+            description = 'Invoice processed ($0)'
           }
+        } else if (invoice.billing_reason === 'subscription_create') {
+          description = `New subscription - $${amountPaid.toFixed(2)} charged`
+        } else if (invoice.billing_reason === 'subscription_cycle') {
+          description = `Recurring payment - $${amountPaid.toFixed(2)}`
+        } else if (invoice.billing_reason === 'subscription_update') {
+          description = `Subscription updated - $${amountPaid.toFixed(2)} charged`
+        } else {
+          description = `Payment received - $${amountPaid.toFixed(2)}`
         }
 
-        // Create proper activity entry
-        const isActive = stripeSub.status === 'active' || stripeSub.status === 'trialing'
-        const isCanceled = stripeSub.status === 'canceled'
+        // Check if we already have an activity for this invoice
+        const existingActivity = await prisma.activity_log.findFirst({
+          where: {
+            client_id: matchedClient.id,
+            activity_type: { in: ['purchase', 'payment'] },
+            metadata: {
+              path: ['invoiceId'],
+              equals: invoice.id
+            }
+          }
+        })
 
-        if (isActive || isCanceled) {
-          // Get the start date from Stripe
-          const startDate = stripeSub.start_date
-            ? new Date(stripeSub.start_date * 1000)
-            : sub.created_at || new Date()
-
+        if (!existingActivity) {
           await prisma.activity_log.create({
             data: {
-              client_id: sub.client_id,
-              activity_type: 'purchase',
-              description: monthlyAmount > 0
-                ? `Paid $${monthlyAmount.toFixed(2)}/mo`
-                : 'Subscription started',
+              client_id: matchedClient.id,
+              activity_type: amountPaid > 0 ? 'purchase' : 'payment',
+              description,
               metadata: {
-                subscriptionId: sub.stripe_subscription_id,
-                amount: monthlyAmount,
-                status: stripeSub.status,
+                invoiceId: invoice.id,
+                amount: amountPaid,
+                billingReason: invoice.billing_reason,
+                subscriptionId: (invoice as any).subscription,
                 backfilled: true,
               },
-              created_at: startDate,
+              created_at: invoiceDate,
             }
           })
-          results.recreatedEntries++
+          results.activitiesCreated++
         }
 
-        // If canceled, add cancellation entry with proper date
-        if (isCanceled && stripeSub.canceled_at) {
-          await prisma.activity_log.create({
-            data: {
-              client_id: sub.client_id,
-              activity_type: 'purchase',
-              description: 'Subscription canceled',
-              metadata: {
-                subscriptionId: sub.stripe_subscription_id,
-                action: 'canceled',
-                backfilled: true,
-              },
-              created_at: new Date(stripeSub.canceled_at * 1000),
-            }
-          })
-          results.recreatedEntries++
-        }
-
-      } catch (stripeError) {
-        const msg = stripeError instanceof Error ? stripeError.message : String(stripeError)
-        results.errors.push(`${sub.client?.name || sub.id}: ${msg}`)
+      } catch (invoiceError) {
+        const msg = invoiceError instanceof Error ? invoiceError.message : String(invoiceError)
+        results.errors.push(`Invoice ${invoice.id}: ${msg}`)
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Backfill fixed',
+      message: 'Backfill from invoices completed',
       results
     })
 
