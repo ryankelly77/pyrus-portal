@@ -190,6 +190,19 @@ export async function POST(request: NextRequest) {
                 details: 'Subscription initiated',
               }
             })
+
+            // Also log to activity_log for notifications
+            await prisma.activity_log.create({
+              data: {
+                client_id: clientId,
+                activity_type: 'purchase',
+                description: 'New subscription initiated',
+                metadata: {
+                  subscriptionId: subscription.id,
+                  status: subscription.status,
+                },
+              }
+            })
           }
         }
         break
@@ -357,13 +370,14 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.deleted': {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const subscription = event.data.object as any
+        const deletedClientId = subscription.metadata?.pyrus_client_id
 
         console.log(`Subscription canceled:`, subscription.id)
 
         // Get the subscription record to add history
         const { data: canceledSub } = await supabase
           .from('subscriptions')
-          .select('id')
+          .select('id, client_id')
           .eq('stripe_subscription_id', subscription.id)
           .single()
 
@@ -376,6 +390,22 @@ export async function POST(request: NextRequest) {
               details: 'Subscription canceled',
             }
           })
+
+          // Also log to activity_log for notifications
+          const cancelClientId = deletedClientId || (canceledSub as any).client_id
+          if (cancelClientId) {
+            await prisma.activity_log.create({
+              data: {
+                client_id: cancelClientId,
+                activity_type: 'purchase',
+                description: 'Subscription canceled',
+                metadata: {
+                  subscriptionId: subscription.id,
+                  action: 'canceled',
+                },
+              }
+            })
+          }
         }
 
         const { error } = await supabase
@@ -430,6 +460,23 @@ export async function POST(request: NextRequest) {
               } as Record<string, unknown>, {
                 onConflict: 'client_id,month',
               })
+
+            // Log to activity_log for recurring payments (skip initial subscription_create as it's logged elsewhere)
+            if (invoice.billing_reason !== 'subscription_create' && rec.client_id) {
+              await prisma.activity_log.create({
+                data: {
+                  client_id: rec.client_id,
+                  activity_type: 'payment',
+                  description: `Recurring payment received: $${amount.toFixed(2)}`,
+                  metadata: {
+                    invoiceId: invoice.id,
+                    amount,
+                    billingReason: invoice.billing_reason,
+                    subscriptionId: invoice.subscription,
+                  },
+                }
+              })
+            }
           }
         }
         break
@@ -443,10 +490,34 @@ export async function POST(request: NextRequest) {
 
         // Update subscription status if applicable
         if (invoice.subscription) {
+          const { data: failedSubRecord } = await supabase
+            .from('subscriptions')
+            .select('client_id')
+            .eq('stripe_subscription_id', invoice.subscription as string)
+            .single()
+
           await supabase
             .from('subscriptions')
             .update({ status: 'past_due' } as Record<string, unknown>)
             .eq('stripe_subscription_id', invoice.subscription as string)
+
+          // Log failed payment to activity_log
+          if (failedSubRecord && (failedSubRecord as any).client_id) {
+            const failedAmount = (invoice.amount_due || 0) / 100
+            await prisma.activity_log.create({
+              data: {
+                client_id: (failedSubRecord as any).client_id,
+                activity_type: 'payment',
+                description: `Payment failed: $${failedAmount.toFixed(2)}`,
+                metadata: {
+                  invoiceId: invoice.id,
+                  amount: failedAmount,
+                  subscriptionId: invoice.subscription,
+                  status: 'failed',
+                },
+              }
+            })
+          }
         }
         break
       }
