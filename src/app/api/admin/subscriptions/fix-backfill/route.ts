@@ -101,15 +101,19 @@ export async function POST(request: NextRequest) {
         if (amountPaid === 0) {
           // $0 invoice - trial, coupon, or deferred billing
           if (invoice.billing_reason === 'subscription_create') {
-            // Try to get next billing date from subscription
+            // Try to get monthly price from subscription
             const subId = (invoice as any).subscription
             if (subId) {
               try {
                 const sub = await stripe.subscriptions.retrieve(subId as string) as any
-                if (sub.current_period_end) {
-                  const nextBillDate = new Date(sub.current_period_end * 1000)
-                  const formattedDate = nextBillDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  description = `New subscription - first charge on ${formattedDate}`
+                let monthlyPrice = 0
+                if (sub.items?.data) {
+                  for (const item of sub.items.data) {
+                    monthlyPrice += ((item.price?.unit_amount || 0) * (item.quantity || 1)) / 100
+                  }
+                }
+                if (monthlyPrice > 0) {
+                  description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (billed at next cycle)`
                 } else {
                   description = 'New subscription started'
                 }
@@ -123,11 +127,11 @@ export async function POST(request: NextRequest) {
             description = 'Invoice processed ($0)'
           }
         } else if (invoice.billing_reason === 'subscription_create') {
-          description = `New subscription - $${amountPaid.toFixed(2)} charged`
+          description = `Paid $${amountPaid.toFixed(2)}`
         } else if (invoice.billing_reason === 'subscription_cycle') {
           description = `Recurring payment - $${amountPaid.toFixed(2)}`
         } else if (invoice.billing_reason === 'subscription_update') {
-          description = `Subscription updated - $${amountPaid.toFixed(2)} charged`
+          description = `Subscription updated - $${amountPaid.toFixed(2)}`
         } else {
           description = `Payment received - $${amountPaid.toFixed(2)}`
         }

@@ -303,20 +303,29 @@ export async function POST(request: NextRequest) {
 
           // Create purchase activity log entry for notifications
           if (clientId) {
-            const tierDisplay = selectedTier
-              ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)
-              : 'Custom'
-
-            // Calculate original amount if there's a discount
-            const originalAmount = discountAmount > 0
-              ? Math.round(amount / (1 - discountAmount / 100) * 100) / 100
-              : amount
+            // Get monthly subscription price from items (not invoice amount which may be $0)
+            let monthlyPrice = 0
+            if (subscription.items?.data) {
+              for (const item of subscription.items.data) {
+                monthlyPrice += ((item.price?.unit_amount || 0) * (item.quantity || 1)) / 100
+              }
+            }
 
             let description: string
-            if (discountAmount > 0 && couponCode) {
-              description = `Purchased ${tierDisplay} plan - $${originalAmount.toFixed(2)}/mo → $${amount.toFixed(2)}/mo (${discountAmount}% off with ${couponCode})`
+            if (amount === 0 && monthlyPrice > 0) {
+              // $0 charged now, but has a monthly price - deferred billing
+              if (discountAmount === 100 && couponCode) {
+                description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (100% off with ${couponCode})`
+              } else {
+                description = `New subscription - $${monthlyPrice.toFixed(2)}/mo (billed at next cycle)`
+              }
+            } else if (discountAmount > 0 && couponCode) {
+              const originalAmount = Math.round(monthlyPrice * 100) / 100
+              description = `Paid $${amount.toFixed(2)} - $${originalAmount.toFixed(2)}/mo → $${(monthlyPrice * (1 - discountAmount / 100)).toFixed(2)}/mo (${discountAmount}% off with ${couponCode})`
+            } else if (amount > 0) {
+              description = `Paid $${amount.toFixed(2)}`
             } else {
-              description = `Purchased ${tierDisplay} plan - $${amount.toFixed(2)}/mo`
+              description = 'New subscription started'
             }
 
             await prisma.activity_log.create({
@@ -326,8 +335,8 @@ export async function POST(request: NextRequest) {
                 description,
                 metadata: {
                   tier: selectedTier,
-                  amount,
-                  originalAmount,
+                  amountCharged: amount,
+                  monthlyPrice,
                   couponCode,
                   discountPercent: discountAmount,
                   subscriptionId: subscription.id,
