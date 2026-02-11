@@ -101,7 +101,24 @@ export async function POST(request: NextRequest) {
         if (amountPaid === 0) {
           // $0 invoice - trial, coupon, or deferred billing
           if (invoice.billing_reason === 'subscription_create') {
-            description = 'New subscription started'
+            // Try to get next billing date from subscription
+            const subId = (invoice as any).subscription
+            if (subId) {
+              try {
+                const sub = await stripe.subscriptions.retrieve(subId as string) as any
+                if (sub.current_period_end) {
+                  const nextBillDate = new Date(sub.current_period_end * 1000)
+                  const formattedDate = nextBillDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  description = `New subscription - first charge on ${formattedDate}`
+                } else {
+                  description = 'New subscription started'
+                }
+              } catch {
+                description = 'New subscription started'
+              }
+            } else {
+              description = 'New subscription started'
+            }
           } else {
             description = 'Invoice processed ($0)'
           }
@@ -115,15 +132,25 @@ export async function POST(request: NextRequest) {
           description = `Payment received - $${amountPaid.toFixed(2)}`
         }
 
-        // Check if we already have an activity for this invoice
+        // Check if we already have an activity for this invoice or around this time
+        const invoiceDateStart = new Date(invoiceDate.getTime() - 5 * 60 * 1000) // 5 min before
+        const invoiceDateEnd = new Date(invoiceDate.getTime() + 5 * 60 * 1000) // 5 min after
+
         const existingActivity = await prisma.activity_log.findFirst({
           where: {
             client_id: matchedClient.id,
             activity_type: { in: ['purchase', 'payment'] },
-            metadata: {
-              path: ['invoiceId'],
-              equals: invoice.id
-            }
+            OR: [
+              // Check by invoice ID
+              { metadata: { path: ['invoiceId'], equals: invoice.id } },
+              // Check by subscription ID and similar timestamp (live webhook entries)
+              {
+                AND: [
+                  { created_at: { gte: invoiceDateStart, lte: invoiceDateEnd } },
+                  { description: { contains: 'purchased' } }
+                ]
+              }
+            ]
           }
         })
 
