@@ -112,10 +112,17 @@ export async function GET(request: NextRequest) {
         description = `Failed to deliver to ${email.recipient_email || 'client'}`
       }
 
+      // Check if this is a proposal-related email
+      const title = email.title || email.subject || ''
+      const isProposalEmail = title.toLowerCase().includes('proposal') ||
+                              title.toLowerCase().includes('recommendation') ||
+                              email.comm_type?.includes('proposal') ||
+                              email.comm_type?.includes('recommendation')
+
       notifications.push({
         id: email.id,
-        type: 'email',
-        title: email.title || email.subject || 'Email',
+        type: isProposalEmail ? 'proposal_sent' : 'email',
+        title: title || 'Email',
         description,
         clientName: email.client?.name || 'Unknown',
         clientId: email.client?.id || '',
