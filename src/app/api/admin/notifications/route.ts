@@ -87,8 +87,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fetch email communications
-  if (!type || type === 'all' || type === 'email') {
+  // Fetch email communications (also fetch for 'proposal' filter to include proposal emails)
+  if (!type || type === 'all' || type === 'email' || type === 'proposal') {
     const communications = await prisma.client_communications.findMany({
       where: {
         comm_type: { startsWith: 'email' }
@@ -118,6 +118,12 @@ export async function GET(request: NextRequest) {
                               title.toLowerCase().includes('recommendation') ||
                               email.comm_type?.includes('proposal') ||
                               email.comm_type?.includes('recommendation')
+
+      // If filtering by 'proposal', only include proposal emails
+      // If filtering by 'email', include all emails (proposal emails show in both)
+      if (type === 'proposal' && !isProposalEmail) {
+        continue
+      }
 
       notifications.push({
         id: email.id,
