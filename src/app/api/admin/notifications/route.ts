@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   const notifications: NotificationItem[] = []
 
-  // Fetch from activity_log for logins, page views, registrations, onboarding
+  // Fetch from activity_log for logins, page views, onboarding
   if (!type || type === 'all' || type === 'login' || type === 'page_view' || type === 'onboarding') {
     const activityTypes: string[] = []
     if (!type || type === 'all') {
@@ -33,12 +33,14 @@ export async function GET(request: NextRequest) {
         'client_created', 'client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
         'accepted_invite')
     } else if (type === 'login') {
-      activityTypes.push('login', 'client_login', 'admin_login', 'prospect_login')
+      // Logins + signups/registrations (all account access events)
+      activityTypes.push('login', 'client_login', 'admin_login', 'prospect_login',
+        'registration', 'client_created', 'accepted_invite')
     } else if (type === 'page_view') {
       activityTypes.push('page_view')
     } else if (type === 'onboarding') {
-      activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
-        'registration', 'client_created', 'accepted_invite')
+      // Only actual onboarding milestones
+      activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed')
     }
 
     if (activityTypes.length > 0) {
