@@ -1,9 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { sendEmail } from '@/lib/email/mailgun'
-import { getUserInviteEmail } from '@/lib/email/templates/user-invite'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
 import crypto from 'crypto'
+
+/**
+ * Convert raw role to human-readable display name
+ */
+function getRoleDisplayName(role: string): string {
+  const roleDisplayNames: Record<string, string> = {
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    production_team: 'Production Team',
+    sales: 'Sales',
+    client: 'Client User',
+  }
+  return roleDisplayNames[role] || role
+}
+
+/**
+ * Get role-specific access items for invite email
+ */
+function getRoleAccessItems(role: string): string[] {
+  const roleAccessItems: Record<string, string[]> = {
+    super_admin: [
+      'Full admin dashboard access',
+      'User and team management',
+      'System settings and configuration',
+    ],
+    admin: [
+      'Full admin dashboard access',
+      'Client and user management',
+      'Analytics and reporting',
+    ],
+    production_team: [
+      'Content workflow management',
+      'Client content review tools',
+      'Production dashboard access',
+    ],
+    sales: [
+      'Sales pipeline and proposals',
+      'Client onboarding tools',
+      'Revenue reporting access',
+    ],
+  }
+  return roleAccessItems[role] || roleAccessItems.admin
+}
+
+/**
+ * Generate HTML for the access list in invite emails
+ */
+function generateAccessListHtml(role: string): string {
+  const items = getRoleAccessItems(role)
+  return items
+    .map(
+      (item) =>
+        `<tr><td style="padding: 8px 0; font-size: 14px; color: #5A6358;"><span style="color: #324438; margin-right: 8px;">&#10003;</span> ${item}</td></tr>`
+    )
+    .join('\n                      ')
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -79,23 +134,30 @@ export async function POST(
     )
     const inviterName = inviterResult.rows[0]?.full_name
 
-    // Generate email content
+    // Determine which template to use and prepare variables
     const firstName = invite.full_name?.split(' ')[0] || 'there'
-    const emailContent = getUserInviteEmail({
+    const isClientInvite = invite.role === 'client'
+    const templateSlug = isClientInvite ? 'user-invite-client' : 'user-invite-admin'
+
+    const variables: Record<string, string> = {
       firstName,
       inviteUrl,
-      role: invite.role,
-      clientName,
-      inviterName
-    })
+      inviterName: inviterName || 'Pyrus Digital Media',
+    }
 
-    // Send email via Mailgun
-    const emailResult = await sendEmail({
+    if (isClientInvite) {
+      variables.clientName = clientName || 'your organization'
+    } else {
+      variables.roleDisplay = getRoleDisplayName(invite.role)
+      variables.accessListHtml = generateAccessListHtml(invite.role)
+    }
+
+    // Send templated email
+    const emailResult = await sendTemplatedEmail({
+      templateSlug,
       to: invite.email,
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
-      tags: ['user-invite', 'resend', invite.role]
+      variables,
+      tags: ['user-invite', 'resend', invite.role],
     })
 
     if (!emailResult.success) {
