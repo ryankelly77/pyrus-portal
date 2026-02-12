@@ -47,10 +47,13 @@ interface ProductOption {
 }
 
 export default function EditProductPage() {
-  const { user, hasNotifications } = useUserProfile()
+  const { user, profile, hasNotifications } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const productId = params.id as string
+
+  // Only super admins can edit pricing and Stripe fields
+  const isSuperAdmin = profile?.role === 'super_admin'
 
   const [productForm, setProductForm] = useState({
     name: '',
@@ -275,8 +278,11 @@ export default function EditProductPage() {
                 </div>
               </div>
 
-              <div className="form-card">
-                <h3 className="form-card-title">Pricing</h3>
+              <div className="form-card" style={!isSuperAdmin ? { opacity: 0.7 } : undefined}>
+                <h3 className="form-card-title">
+                  Pricing
+                  {!isSuperAdmin && <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-secondary)', marginLeft: '8px' }}>(Super Admin only)</span>}
+                </h3>
                 <div className="form-row-2">
                   <div className="form-group">
                     <label htmlFor="monthlyPrice">Monthly Price</label>
@@ -289,6 +295,8 @@ export default function EditProductPage() {
                         placeholder="0.00"
                         value={productForm.monthlyPrice}
                         onChange={(e) => setProductForm({ ...productForm, monthlyPrice: e.target.value })}
+                        disabled={!isSuperAdmin}
+                        style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                       />
                       <span className="input-addon-right">/mo</span>
                     </div>
@@ -304,16 +312,19 @@ export default function EditProductPage() {
                         placeholder="0.00"
                         value={productForm.onetimePrice}
                         onChange={(e) => setProductForm({ ...productForm, onetimePrice: e.target.value })}
+                        disabled={!isSuperAdmin}
+                        style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                       />
                     </div>
                   </div>
                 </div>
                 <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: isSuperAdmin ? 'pointer' : 'not-allowed' }}>
                     <input
                       type="checkbox"
                       checked={productForm.supportsQuantity}
                       onChange={(e) => setProductForm({ ...productForm, supportsQuantity: e.target.checked })}
+                      disabled={!isSuperAdmin}
                       style={{ width: '16px', height: '16px', margin: 0, accentColor: '#2D5A27' }}
                     />
                     <span style={{ fontSize: '14px', color: '#1f2937' }}>Supports quantity selector</span>
@@ -322,8 +333,11 @@ export default function EditProductPage() {
                 </div>
               </div>
 
-              <div className="form-card">
-                <h3 className="form-card-title">Stripe Configuration</h3>
+              <div className="form-card" style={!isSuperAdmin ? { opacity: 0.7 } : undefined}>
+                <h3 className="form-card-title">
+                  Stripe Configuration
+                  {!isSuperAdmin && <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-secondary)', marginLeft: '8px' }}>(Super Admin only)</span>}
+                </h3>
                 <div className="form-row-3">
                   <div className="form-group">
                     <label htmlFor="stripeProductId">Product ID</label>
@@ -334,6 +348,8 @@ export default function EditProductPage() {
                       placeholder="prod_xxxxxxxxxxxxx"
                       value={productForm.stripeProductId}
                       onChange={(e) => setProductForm({ ...productForm, stripeProductId: e.target.value })}
+                      disabled={!isSuperAdmin}
+                      style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                     />
                   </div>
                   <div className="form-group">
@@ -345,6 +361,8 @@ export default function EditProductPage() {
                       placeholder="price_xxxxxxxxxxxxx"
                       value={productForm.stripeMonthlyPriceId}
                       onChange={(e) => setProductForm({ ...productForm, stripeMonthlyPriceId: e.target.value })}
+                      disabled={!isSuperAdmin}
+                      style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                     />
                   </div>
                   <div className="form-group">
@@ -356,6 +374,8 @@ export default function EditProductPage() {
                       placeholder="price_xxxxxxxxxxxxx"
                       value={productForm.stripeOnetimePriceId}
                       onChange={(e) => setProductForm({ ...productForm, stripeOnetimePriceId: e.target.value })}
+                      disabled={!isSuperAdmin}
+                      style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                     />
                   </div>
                 </div>

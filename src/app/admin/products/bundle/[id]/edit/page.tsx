@@ -21,10 +21,13 @@ interface DraggableProduct {
 }
 
 export default function EditBundlePage() {
-  const { user, hasNotifications } = useUserProfile()
+  const { user, profile, hasNotifications } = useUserProfile()
   const router = useRouter()
   const params = useParams()
   const bundleId = params.id as string
+
+  // Only super admins can edit pricing and Stripe fields
+  const isSuperAdmin = profile?.role === 'super_admin'
 
   const [bundleForm, setBundleForm] = useState({
     name: '',
@@ -298,8 +301,11 @@ export default function EditBundlePage() {
                 </div>
               </div>
 
-              <div className="form-card">
-                <h3 className="form-card-title">Pricing</h3>
+              <div className="form-card" style={!isSuperAdmin ? { opacity: 0.7 } : undefined}>
+                <h3 className="form-card-title">
+                  Pricing
+                  {!isSuperAdmin && <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-secondary)', marginLeft: '8px' }}>(Super Admin only)</span>}
+                </h3>
                 <div className="form-row-2">
                   <div className="form-group">
                     <label htmlFor="bundleMonthlyPrice">Monthly Price</label>
@@ -312,6 +318,8 @@ export default function EditBundlePage() {
                         placeholder="0.00"
                         value={bundleForm.monthlyPrice}
                         onChange={(e) => setBundleForm({ ...bundleForm, monthlyPrice: e.target.value })}
+                        disabled={!isSuperAdmin}
+                        style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                       />
                       <span className="input-addon-right">/mo</span>
                     </div>
@@ -327,6 +335,8 @@ export default function EditBundlePage() {
                         placeholder="0.00"
                         value={bundleForm.onetimePrice}
                         onChange={(e) => setBundleForm({ ...bundleForm, onetimePrice: e.target.value })}
+                        disabled={!isSuperAdmin}
+                        style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                       />
                     </div>
                   </div>
@@ -426,8 +436,11 @@ export default function EditBundlePage() {
                 </div>
               </div>
 
-              <div className="form-card">
-                <h3 className="form-card-title">Stripe Configuration</h3>
+              <div className="form-card" style={!isSuperAdmin ? { opacity: 0.7 } : undefined}>
+                <h3 className="form-card-title">
+                  Stripe Configuration
+                  {!isSuperAdmin && <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-secondary)', marginLeft: '8px' }}>(Super Admin only)</span>}
+                </h3>
                 <div className="form-group">
                   <label htmlFor="bundleStripeProductId">Stripe Product ID</label>
                   <input
@@ -437,6 +450,8 @@ export default function EditBundlePage() {
                     placeholder="prod_xxxxxxxxxxxxx"
                     value={bundleForm.stripeProductId}
                     onChange={(e) => setBundleForm({ ...bundleForm, stripeProductId: e.target.value })}
+                    disabled={!isSuperAdmin}
+                    style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                   />
                 </div>
                 <div className="form-group">
@@ -448,6 +463,8 @@ export default function EditBundlePage() {
                     placeholder="price_xxxxxxxxxxxxx"
                     value={bundleForm.stripePriceId}
                     onChange={(e) => setBundleForm({ ...bundleForm, stripePriceId: e.target.value })}
+                    disabled={!isSuperAdmin}
+                    style={!isSuperAdmin ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed' } : undefined}
                   />
                 </div>
               </div>
