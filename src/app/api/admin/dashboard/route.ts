@@ -210,28 +210,10 @@ export async function GET() {
       })
       .slice(0, 8)
 
-    // Calculate stats - Active Clients from Stripe (subscriptions > $0)
-    const stripeSubscriptions = await stripe.subscriptions.list({
-      status: 'active',
-      limit: 100,
+    // Calculate stats - Active Clients from database
+    const activeClients = await prisma.clients.count({
+      where: { status: 'active' }
     })
-
-    // Count unique customers with paid subscriptions (invoice amount > $0)
-    const paidCustomers = new Set<string>()
-    for (const sub of stripeSubscriptions.data) {
-      // Get the latest invoice to check actual amount paid
-      const invoices = await stripe.invoices.list({
-        subscription: sub.id,
-        status: 'paid',
-        limit: 1,
-      })
-
-      if (invoices.data.length > 0 && invoices.data[0].amount_paid > 0) {
-        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
-        paidCustomers.add(customerId)
-      }
-    }
-    const activeClients = paidCustomers.size
 
     const pendingContent = await prisma.content.count({
       where: { status: 'pending_review' }
