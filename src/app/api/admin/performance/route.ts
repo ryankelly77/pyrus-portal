@@ -111,13 +111,15 @@ export async function GET(request: NextRequest) {
         const result = await calculateClientPerformance(client.id)
         if (result) {
           performanceResults.push(result)
-          // Update cache
+          // Update cache - but don't overwrite 'prospect' growth_stage
+          // Prospects should stay as prospects until they purchase
+          const shouldUpdateGrowthStage = client.growth_stage !== 'prospect'
           await prisma.clients.update({
             where: { id: client.id },
             data: {
               performance_score: result.score,
               score_updated_at: new Date(),
-              growth_stage: result.growthStage,
+              ...(shouldUpdateGrowthStage && { growth_stage: result.growthStage }),
             },
           })
         }

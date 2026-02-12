@@ -67,14 +67,24 @@ export async function GET(
     const expectedMidpoint = (stageConfig.expectedScoreRange[0] + stageConfig.expectedScoreRange[1]) / 2
     const scoreGap = result.score - expectedMidpoint
 
-    // Update cached score
+    // Get current client status to check if prospect
+    const currentClient = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { status: true, growth_stage: true },
+    })
+
+    // Update cached score - but don't overwrite 'prospect' growth_stage
+    // Prospects should stay as prospects until they purchase
+    const shouldUpdateGrowthStage = currentClient?.growth_stage !== 'prospect' && currentClient?.status !== 'prospect'
     await prisma.clients.update({
       where: { id: clientId },
       data: {
         performance_score: result.score,
         score_updated_at: new Date(),
-        growth_stage: result.growthStage,
-        stage_updated_at: new Date(),
+        ...(shouldUpdateGrowthStage && {
+          growth_stage: result.growthStage,
+          stage_updated_at: new Date(),
+        }),
       },
     })
 
