@@ -215,8 +215,9 @@ export async function GET() {
       where: { status: 'active' }
     })
 
+    // "In Production" includes these statuses on the Content page
     const pendingContent = await prisma.content.count({
-      where: { status: 'pending_review' }
+      where: { status: { in: ['approved', 'internal_review', 'final_optimization', 'image_selection'] } }
     })
 
     const openRecommendations = await prisma.recommendations.count({

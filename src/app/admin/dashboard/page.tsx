@@ -408,7 +408,7 @@ export default function SuperAdminDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{loading ? '...' : stats.pendingContent}</span>
-              <span className="stat-label">Pending Content</span>
+              <span className="stat-label">In Production</span>
             </div>
           </Link>
           <Link href="/admin/recommendations?status=open" className="stat-card clickable">
