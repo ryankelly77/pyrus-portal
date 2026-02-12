@@ -15,9 +15,15 @@ export async function GET(request: Request) {
     // Parse filters from query params
     const filters: PipelineFilters = {};
 
-    const repId = searchParams.get('rep_id');
-    if (repId) {
-      filters.rep_id = repId;
+    // Sales users can only see their own deals
+    if (auth.profile.role === 'sales') {
+      filters.rep_id = auth.user.id;
+    } else {
+      // Other roles can filter by any rep
+      const repId = searchParams.get('rep_id');
+      if (repId) {
+        filters.rep_id = repId;
+      }
     }
 
     const tier = searchParams.get('predicted_tier');

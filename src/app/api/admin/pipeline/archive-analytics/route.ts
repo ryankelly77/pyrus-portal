@@ -42,9 +42,14 @@ export async function GET(request: Request) {
       filters.archived_before = archivedBefore;
     }
 
-    const repId = searchParams.get('rep_id');
-    if (repId) {
-      filters.rep_id = repId;
+    // Sales users can only see their own deals
+    if (profile.role === 'sales') {
+      filters.rep_id = auth.user.id;
+    } else {
+      const repId = searchParams.get('rep_id');
+      if (repId) {
+        filters.rep_id = repId;
+      }
     }
 
     const analytics = await getArchiveAnalytics(filters);
