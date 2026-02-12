@@ -223,7 +223,8 @@ export async function GET() {
     const openRecommendations = await prisma.recommendations.count({
       where: {
         status: { in: ['draft', 'sent'] },
-        purchased_tier: null
+        purchased_tier: null,
+        archived_at: null  // Exclude archived deals
       }
     })
 
