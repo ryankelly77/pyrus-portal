@@ -172,10 +172,10 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   const handleBack = () => {
     if (isDirty) {
       if (confirm('You have unsaved changes. Are you sure you want to leave?')) {
-        router.push('/admin/settings/emails')
+        router.push('/admin/emails')
       }
     } else {
-      router.push('/admin/settings/emails')
+      router.push('/admin/emails')
     }
   }
 

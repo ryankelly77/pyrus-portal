@@ -101,7 +101,7 @@ export default function EmailTemplateEditPage() {
             </p>
             <button
               className="btn btn-secondary"
-              onClick={() => router.push('/admin/settings/emails')}
+              onClick={() => router.push('/admin/emails')}
             >
               Back to Email Templates
             </button>
@@ -122,11 +122,7 @@ export default function EmailTemplateEditPage() {
       <div className="admin-content">
         {/* Breadcrumbs */}
         <nav style={{ marginBottom: '16px', fontSize: '14px' }}>
-          <a href="/admin/settings" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            Settings
-          </a>
-          <span style={{ color: 'var(--text-secondary)', margin: '0 8px' }}>/</span>
-          <a href="/admin/settings/emails" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
+          <a href="/admin/emails" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
             Email Templates
           </a>
           <span style={{ color: 'var(--text-secondary)', margin: '0 8px' }}>/</span>

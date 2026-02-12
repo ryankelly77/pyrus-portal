@@ -209,15 +209,6 @@ export default function AdminEmailTemplatesPage() {
       />
 
       <div className="admin-content">
-        {/* Breadcrumbs */}
-        <nav style={{ marginBottom: '16px', fontSize: '14px' }}>
-          <a href="/admin/settings" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-            Settings
-          </a>
-          <span style={{ color: 'var(--text-secondary)', margin: '0 8px' }}>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>Email Templates</span>
-        </nav>
-
         {/* Page Header */}
         <div className="page-header">
           <div className="page-header-content">
@@ -386,13 +377,13 @@ export default function AdminEmailTemplatesPage() {
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button
                                   className="btn btn-sm btn-outline"
-                                  onClick={() => window.location.href = `/admin/settings/emails/${template.slug}`}
+                                  onClick={() => window.location.href = `/admin/emails/${template.slug}`}
                                 >
                                   Edit
                                 </button>
                                 <button
                                   className="btn btn-sm btn-outline"
-                                  onClick={() => window.location.href = `/admin/settings/emails/${template.slug}/preview`}
+                                  onClick={() => window.location.href = `/admin/emails/${template.slug}/preview`}
                                   style={{ color: 'var(--text-secondary)' }}
                                 >
                                   Preview
@@ -510,13 +501,13 @@ export default function AdminEmailTemplatesPage() {
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button
                                   className="btn btn-sm btn-outline"
-                                  onClick={() => window.location.href = `/admin/settings/emails/${template.slug}`}
+                                  onClick={() => window.location.href = `/admin/emails/${template.slug}`}
                                 >
                                   Edit
                                 </button>
                                 <button
                                   className="btn btn-sm btn-outline"
-                                  onClick={() => window.location.href = `/admin/settings/emails/${template.slug}/preview`}
+                                  onClick={() => window.location.href = `/admin/emails/${template.slug}/preview`}
                                   style={{ color: 'var(--text-secondary)' }}
                                 >
                                   Preview

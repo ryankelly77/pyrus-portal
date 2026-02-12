@@ -16,6 +16,7 @@ const permissions = [
   'Revenue / MRR',
   'Sales Pipeline',
   'Client Performance',
+  'Email Templates',
   'Settings',
   'System Alerts',
 ]
@@ -858,7 +859,7 @@ export default function AdminSettingsPage() {
               className={`tab ${activeTab === 'video' ? 'active' : ''}`}
               onClick={() => setActiveTab('video')}
             >
-              Onboarding Video
+              Onboarding Videos
             </button>
           </div>
         </div>

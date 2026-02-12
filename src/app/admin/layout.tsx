@@ -26,6 +26,7 @@ const pathToMenuKey: { [path: string]: string } = {
   '/admin/revenue': 'revenue',
   '/admin/pipeline': 'pipeline',
   '/admin/performance': 'performance',
+  '/admin/emails': 'emails',
   '/admin/settings': 'settings',
   '/admin/alerts': 'alerts',
 }
@@ -44,6 +45,7 @@ const menuOrder = [
   { key: 'revenue', path: '/admin/revenue' },
   { key: 'pipeline', path: '/admin/pipeline' },
   { key: 'performance', path: '/admin/performance' },
+  { key: 'emails', path: '/admin/emails' },
   { key: 'settings', path: '/admin/settings' },
   { key: 'alerts', path: '/admin/alerts' },
 ]
