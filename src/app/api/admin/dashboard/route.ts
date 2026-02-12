@@ -211,8 +211,12 @@ export async function GET() {
       .slice(0, 8)
 
     // Calculate stats - Active Clients from database
+    // Exclude prospects: clients with growth_stage of 'prospect' or null are considered prospects
     const activeClients = await prisma.clients.count({
-      where: { status: 'active' }
+      where: {
+        status: 'active',
+        growth_stage: { in: ['seedling', 'sprouting', 'blooming', 'harvesting'] }
+      }
     })
 
     // "In Production" includes these statuses on the Content page
