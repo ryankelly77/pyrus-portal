@@ -169,13 +169,22 @@ export async function GET() {
       expand: ['data.customer'],
     })
 
-    // Generate consistent colors for customers based on their name
-    const getCustomerColor = (name: string) => {
+    // Get all clients with Stripe customer IDs to look up avatar colors
+    const clientsWithStripe = await prisma.clients.findMany({
+      where: { stripe_customer_id: { not: null } },
+      select: { stripe_customer_id: true, avatar_color: true, name: true },
+    })
+    const stripeCustomerToClient = new Map(
+      clientsWithStripe.map(c => [c.stripe_customer_id, { color: c.avatar_color, name: c.name }])
+    )
+
+    // Fallback color generator for customers not in our database
+    const getFallbackColor = (name: string) => {
       const colors = ['#059669', '#2563EB', '#7C3AED', '#D97706', '#DC2626', '#0891B2', '#4F46E5', '#EA580C']
       let hash = 0
       for (let i = 0; i < name.length; i++) {
         hash = ((hash << 5) - hash) + name.charCodeAt(i)
-        hash = hash & hash // Convert to 32-bit integer
+        hash = hash & hash
       }
       return colors[Math.abs(hash) % colors.length]
     }
@@ -184,13 +193,16 @@ export async function GET() {
       .filter(inv => inv.amount_paid > 0) // Only show paid invoices with amount > 0
       .map(inv => {
         const customer = inv.customer as any
-        const customerName = customer?.name || customer?.email || 'Unknown'
+        const customerId = typeof inv.customer === 'string' ? inv.customer : customer?.id
+        const clientData = customerId ? stripeCustomerToClient.get(customerId) : null
+        const customerName = clientData?.name || customer?.name || customer?.email || 'Unknown'
+        const color = clientData?.color || getFallbackColor(customerName)
 
         return {
           id: inv.id,
           client: customerName,
           initials: getInitials(customerName),
-          color: getCustomerColor(customerName),
+          color,
           amount: inv.amount_paid / 100,
           type: 'payment' as const,
           date: formatTransactionDate(new Date(inv.created * 1000))
