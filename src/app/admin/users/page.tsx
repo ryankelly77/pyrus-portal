@@ -597,12 +597,18 @@ export default function AdminUsersPage() {
               </div>
             ) : (
               <div className="permissions-matrix" style={{ overflowX: 'auto' }}>
-                <table className="users-table" style={{ minWidth: '700px' }}>
+                <table className="users-table" style={{ minWidth: '700px', tableLayout: 'fixed', width: '100%' }}>
+                  <colgroup>
+                    <col style={{ width: '200px' }} />
+                    {roles.map(role => (
+                      <col key={role} style={{ width: '140px' }} />
+                    ))}
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left', minWidth: '180px' }}>Menu Item</th>
+                      <th style={{ textAlign: 'left' }}>Menu Item</th>
                       {roles.map(role => (
-                        <th key={role} style={{ textAlign: 'center', minWidth: '120px' }}>
+                        <th key={role} style={{ textAlign: 'center' }}>
                           {getRoleDisplayName(role)}
                           {role === 'super_admin' && (
                             <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>
