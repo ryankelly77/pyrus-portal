@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { randomBytes } from 'crypto'
-import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
-import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
+import { isEmailConfigured } from '@/lib/email/mailgun'
 import { logEmailError } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic';
@@ -126,17 +126,16 @@ export async function POST(
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const inviteUrl = `${appUrl}/view-proposal/${inviteToken}`
 
-      const emailContent = getRecommendationInviteEmail({
-        firstName,
-        clientName: client.name,
-        inviteUrl,
-      })
-
-      const emailResult = await sendEmail({
+      const emailResult = await sendTemplatedEmail({
+        templateSlug: 'recommendation-invite',
         to: recipientEmail,
-        subject: emailContent.subject,
-        html: emailContent.html,
-        text: emailContent.text,
+        variables: {
+          firstName,
+          clientName: client.name,
+          inviteUrl,
+        },
+        clientId,
+        tags: ['recommendation-invite', 'resend'],
       })
 
       emailSent = emailResult.success

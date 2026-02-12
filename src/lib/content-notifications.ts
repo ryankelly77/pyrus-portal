@@ -6,16 +6,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { sendEmail } from '@/lib/email/mailgun'
-import {
-  getContentReadyForReviewEmail,
-  getRevisionResubmittedEmail,
-  getContentPublishedEmail,
-  getContentScheduledEmail,
-  getClientStartedReviewingEmail,
-  getClientApprovedEmail,
-  getRevisionsRequestedEmail,
-} from '@/lib/email/templates/content-status'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
 
 // ============================================================
 // Types
@@ -101,29 +92,6 @@ async function getTeamEmail(assignedTo: string | null): Promise<string> {
 }
 
 /**
- * Get the name of a user for display
- */
-async function getUserName(userId: string): Promise<string> {
-  try {
-    const supabase = createServerSupabaseClient()
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', userId)
-      .single()
-
-    if (error || !data?.full_name) {
-      return 'Team Member'
-    }
-
-    return data.full_name
-  } catch (err) {
-    return 'Team Member'
-  }
-}
-
-/**
  * Format scheduled date for display
  */
 function formatScheduledDate(dateStr: string | null | undefined): string | undefined {
@@ -169,18 +137,6 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
   const portalContentUrl = `${BASE_URL}/admin/content/${contentPieceId}`
   const clientPortalUrl = `${BASE_URL}/content/${contentPieceId}`
 
-  const emailData = {
-    recipientName: '', // Will be set per email
-    contentTitle,
-    clientName,
-    changedByName,
-    portalUrl: '', // Will be set per email
-    reviewRound,
-    note,
-    publishedUrl: publishedUrl || undefined,
-    scheduledDate: formatScheduledDate(scheduledDate),
-  }
-
   // ============================================================
   // Client Emails
   // ============================================================
@@ -191,19 +147,19 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
     const clientEmail = await getClientEmail(clientId)
     if (clientEmail) {
       try {
-        const template = getContentReadyForReviewEmail({
-          ...emailData,
-          portalUrl: clientPortalUrl,
-        })
-        const result = await sendEmail({
+        const result = await sendTemplatedEmail({
+          templateSlug: 'content-ready-for-review',
           to: clientEmail,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
+          variables: {
+            contentTitle,
+            clientName,
+            portalUrl: clientPortalUrl,
+          },
+          clientId,
           tags: ['content-status', 'ready-for-review'],
         })
         if (result.success) {
-          console.log('[EMAIL SENT]', { to: clientEmail, subject: template.subject })
+          console.log('[EMAIL SENT]', { to: clientEmail, template: 'content-ready-for-review' })
         }
       } catch (err) {
         console.error('[EMAIL FAILED]', { to: clientEmail, error: err })
@@ -216,19 +172,19 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
     const clientEmail = await getClientEmail(clientId)
     if (clientEmail) {
       try {
-        const template = getRevisionResubmittedEmail({
-          ...emailData,
-          portalUrl: clientPortalUrl,
-        })
-        const result = await sendEmail({
+        const result = await sendTemplatedEmail({
+          templateSlug: 'content-revision-resubmitted',
           to: clientEmail,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
+          variables: {
+            contentTitle,
+            portalUrl: clientPortalUrl,
+            reviewRound: reviewRound || 1,
+          },
+          clientId,
           tags: ['content-status', 'revision-resubmitted'],
         })
         if (result.success) {
-          console.log('[EMAIL SENT]', { to: clientEmail, subject: template.subject })
+          console.log('[EMAIL SENT]', { to: clientEmail, template: 'content-revision-resubmitted' })
         }
       } catch (err) {
         console.error('[EMAIL FAILED]', { to: clientEmail, error: err })
@@ -241,19 +197,19 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
     const clientEmail = await getClientEmail(clientId)
     if (clientEmail) {
       try {
-        const template = getContentPublishedEmail({
-          ...emailData,
-          portalUrl: clientPortalUrl,
-        })
-        const result = await sendEmail({
+        const result = await sendTemplatedEmail({
+          templateSlug: 'content-published',
           to: clientEmail,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
+          variables: {
+            contentTitle,
+            portalUrl: clientPortalUrl,
+            publishedUrl: publishedUrl || clientPortalUrl,
+          },
+          clientId,
           tags: ['content-status', 'published'],
         })
         if (result.success) {
-          console.log('[EMAIL SENT]', { to: clientEmail, subject: template.subject })
+          console.log('[EMAIL SENT]', { to: clientEmail, template: 'content-published' })
         }
       } catch (err) {
         console.error('[EMAIL FAILED]', { to: clientEmail, error: err })
@@ -266,19 +222,19 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
     const clientEmail = await getClientEmail(clientId)
     if (clientEmail) {
       try {
-        const template = getContentScheduledEmail({
-          ...emailData,
-          portalUrl: clientPortalUrl,
-        })
-        const result = await sendEmail({
+        const result = await sendTemplatedEmail({
+          templateSlug: 'content-scheduled',
           to: clientEmail,
-          subject: template.subject,
-          html: template.html,
-          text: template.text,
+          variables: {
+            contentTitle,
+            portalUrl: clientPortalUrl,
+            scheduledDate: formatScheduledDate(scheduledDate) || 'Soon',
+          },
+          clientId,
           tags: ['content-status', 'scheduled'],
         })
         if (result.success) {
-          console.log('[EMAIL SENT]', { to: clientEmail, subject: template.subject })
+          console.log('[EMAIL SENT]', { to: clientEmail, template: 'content-scheduled' })
         }
       } catch (err) {
         console.error('[EMAIL FAILED]', { to: clientEmail, error: err })
@@ -295,19 +251,20 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
   // Client Started Reviewing (→ client_reviewing)
   if (toStatus === 'client_reviewing') {
     try {
-      const template = getClientStartedReviewingEmail({
-        ...emailData,
-        portalUrl: portalContentUrl,
-      })
-      const result = await sendEmail({
+      const result = await sendTemplatedEmail({
+        templateSlug: 'content-client-started-reviewing',
         to: teamEmail,
-        subject: template.subject,
-        html: template.html,
-        text: template.text,
+        variables: {
+          contentTitle,
+          clientName,
+          changedByName,
+          portalUrl: portalContentUrl,
+        },
+        clientId,
         tags: ['content-status', 'client-reviewing'],
       })
       if (result.success) {
-        console.log('[EMAIL SENT]', { to: teamEmail, subject: template.subject })
+        console.log('[EMAIL SENT]', { to: teamEmail, template: 'content-client-started-reviewing' })
       }
     } catch (err) {
       console.error('[EMAIL FAILED]', { to: teamEmail, error: err })
@@ -317,19 +274,20 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
   // Client Approved (→ approved)
   if (toStatus === 'approved') {
     try {
-      const template = getClientApprovedEmail({
-        ...emailData,
-        portalUrl: portalContentUrl,
-      })
-      const result = await sendEmail({
+      const result = await sendTemplatedEmail({
+        templateSlug: 'content-client-approved',
         to: teamEmail,
-        subject: template.subject,
-        html: template.html,
-        text: template.text,
+        variables: {
+          contentTitle,
+          clientName,
+          changedByName,
+          portalUrl: portalContentUrl,
+        },
+        clientId,
         tags: ['content-status', 'client-approved'],
       })
       if (result.success) {
-        console.log('[EMAIL SENT]', { to: teamEmail, subject: template.subject })
+        console.log('[EMAIL SENT]', { to: teamEmail, template: 'content-client-approved' })
       }
     } catch (err) {
       console.error('[EMAIL FAILED]', { to: teamEmail, error: err })
@@ -339,19 +297,22 @@ export async function sendStatusNotification(params: StatusNotificationParams): 
   // Revisions Requested (→ revisions_requested)
   if (toStatus === 'revisions_requested') {
     try {
-      const template = getRevisionsRequestedEmail({
-        ...emailData,
-        portalUrl: portalContentUrl,
-      })
-      const result = await sendEmail({
+      const result = await sendTemplatedEmail({
+        templateSlug: 'content-revisions-requested',
         to: teamEmail,
-        subject: template.subject,
-        html: template.html,
-        text: template.text,
+        variables: {
+          contentTitle,
+          clientName,
+          changedByName,
+          portalUrl: portalContentUrl,
+          reviewRound: reviewRound || 1,
+          note: note || '',
+        },
+        clientId,
         tags: ['content-status', 'revisions-requested'],
       })
       if (result.success) {
-        console.log('[EMAIL SENT]', { to: teamEmail, subject: template.subject })
+        console.log('[EMAIL SENT]', { to: teamEmail, template: 'content-revisions-requested' })
       }
     } catch (err) {
       console.error('[EMAIL FAILED]', { to: teamEmail, error: err })

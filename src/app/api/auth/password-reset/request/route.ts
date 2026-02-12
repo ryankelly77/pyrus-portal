@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
-import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
-import { getPasswordResetEmail } from '@/lib/email/templates/password-reset'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
+import { isEmailConfigured } from '@/lib/email/mailgun'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -72,22 +72,20 @@ export async function POST(request: NextRequest) {
     // Build reset URL
     const resetUrl = `${BASE_URL}/reset-password?token=${resetToken}`
 
-    // Generate and send email
-    const emailContent = getPasswordResetEmail({
-      firstName,
-      resetUrl
-    })
-
-    const emailResult = await sendEmail({
+    // Send templated email
+    const result = await sendTemplatedEmail({
+      templateSlug: 'password-reset',
       to: normalizedEmail,
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
-      tags: ['password-reset']
+      variables: {
+        firstName,
+        resetUrl,
+      },
+      userId: user.id,
+      tags: ['password-reset'],
     })
 
-    if (!emailResult.success) {
-      console.error('Failed to send password reset email:', emailResult.error)
+    if (!result.success) {
+      console.error('Failed to send password reset email:', result.error)
       return NextResponse.json(
         { error: 'Failed to send reset email. Please try again.' },
         { status: 500 }

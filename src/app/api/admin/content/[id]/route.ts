@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
-import { sendEmail } from '@/lib/email/mailgun'
-import { getContentReadyForReviewEmail, getRevisionResubmittedEmail, getContentPublishedEmail } from '@/lib/email/templates/content-status'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
 
 // Convert status to human-readable label
 function getStatusLabel(status: string): string {
@@ -271,13 +270,15 @@ export async function PATCH(
 
     // Get content and client info for email notifications
     const contentInfoResult = await dbPool.query(
-      `SELECT c.*, cl.name as client_name, cl.contact_email as client_email
+      `SELECT c.*, cl.id as client_db_id, cl.name as client_name, cl.contact_email as client_email
        FROM content c
        LEFT JOIN clients cl ON cl.id = c.client_id
        WHERE c.id = $1`,
       [id]
     )
     const contentInfo = contentInfoResult.rows[0]
+
+    // Determine if this is a resubmission (content was in revisions_requested state)
     const isResubmission = contentInfo?.status === 'revisions_requested' || contentInfo?.status === 'revision'
 
     switch (action) {
@@ -355,32 +356,40 @@ export async function PATCH(
         clientEmail: contentInfo?.client_email,
         clientName: contentInfo?.client_name,
         contentTitle: contentInfo?.title,
+        isResubmission,
       })
 
       if (contentInfo?.client_email) {
         try {
           const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
 
-          const emailData = {
-            recipientName: contentInfo.client_name || 'there',
+          // Choose template based on whether this is a resubmission
+          const templateSlug = isResubmission
+            ? 'content-revision-resubmitted'
+            : 'content-ready-for-review'
+
+          // Build variables based on template
+          const variables: Record<string, unknown> = {
             contentTitle: contentInfo.title || 'Content',
-            clientName: contentInfo.client_name || 'your company',
-            changedByName: profile.full_name || 'Pyrus Team',
             portalUrl,
-            reviewRound: contentInfo.revision_count || 0,
           }
 
-          const emailTemplate = isResubmission
-            ? getRevisionResubmittedEmail(emailData)
-            : getContentReadyForReviewEmail(emailData)
+          if (isResubmission) {
+            // Revision resubmission needs reviewRound
+            variables.reviewRound = (contentInfo.revision_count || 0) + 1
+          } else {
+            // First submission needs clientName
+            variables.clientName = contentInfo.client_name || 'your company'
+          }
 
-          console.log('Sending email to:', contentInfo.client_email, 'Subject:', emailTemplate.subject)
+          console.log(`Sending ${templateSlug} email to:`, contentInfo.client_email)
 
-          const emailResult = await sendEmail({
+          const emailResult = await sendTemplatedEmail({
+            templateSlug,
             to: contentInfo.client_email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html,
-            text: emailTemplate.text,
+            variables,
+            userId: user.id,
+            clientId: contentInfo.client_db_id,
             tags: ['content-review', isResubmission ? 'resubmission' : 'new-content'],
           })
 
@@ -406,24 +415,18 @@ export async function PATCH(
         try {
           const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${id}`
 
-          const emailData = {
-            recipientName: contentInfo.client_name || 'there',
-            contentTitle: contentInfo.title || 'Content',
-            clientName: contentInfo.client_name || 'your company',
-            changedByName: profile.full_name || 'Pyrus Team',
-            portalUrl,
-            publishedUrl: publishedUrl || undefined,
-          }
+          console.log('Sending content-published notification to:', contentInfo.client_email)
 
-          const emailTemplate = getContentPublishedEmail(emailData)
-
-          console.log('Sending published notification to:', contentInfo.client_email)
-
-          const emailResult = await sendEmail({
+          const emailResult = await sendTemplatedEmail({
+            templateSlug: 'content-published',
             to: contentInfo.client_email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html,
-            text: emailTemplate.text,
+            variables: {
+              contentTitle: contentInfo.title || 'Content',
+              portalUrl,
+              publishedUrl: publishedUrl || portalUrl,
+            },
+            userId: user.id,
+            clientId: contentInfo.client_db_id,
             tags: ['content-status', 'published'],
           })
 

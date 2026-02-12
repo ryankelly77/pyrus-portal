@@ -50,5 +50,18 @@ export {
   type ServiceDetailContent,
 } from './recommendation'
 
+// Email types
+export {
+  type EmailRecipientType,
+  type EmailLogStatus,
+  type TemplateVariable,
+  type EmailTemplate,
+  type RenderResult,
+  type SendTemplatedEmailOptions,
+  type SendTemplatedEmailResult,
+  type CreateEmailLogData,
+  type CachedTemplate,
+} from './email'
+
 // Database types (legacy, use specific types above when possible)
 export type { Database, Tables, InsertTables, UpdateTables } from './database'

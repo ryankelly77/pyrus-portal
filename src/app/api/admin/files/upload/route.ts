@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { dbPool } from '@/lib/prisma'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
-import { getFileNotificationEmail } from '@/lib/email/templates/file-notification'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
+import { isEmailConfigured } from '@/lib/email/mailgun'
 
 export const dynamic = 'force-dynamic'
 
@@ -135,20 +135,19 @@ export async function POST(request: NextRequest) {
         const client = clientResult.rows[0]
 
         if (client?.contact_email) {
-          const emailData = getFileNotificationEmail({
-            clientName: client.name || 'Your Company',
-            contactName: client.contact_name || '',
-            fileName: file.name,
-            fileCategory: category,
-            portalUrl: `${PORTAL_URL}/portal/files`
-          })
-
-          const emailResult = await sendEmail({
+          const emailResult = await sendTemplatedEmail({
+            templateSlug: 'file-notification',
             to: client.contact_email,
-            subject: emailData.subject,
-            html: emailData.html,
-            text: emailData.text,
-            tags: ['file-notification']
+            variables: {
+              clientName: client.name || 'Your Company',
+              contactName: client.contact_name || 'there',
+              fileName: file.name,
+              fileCategory: category,
+              portalUrl: `${PORTAL_URL}/portal/files`,
+            },
+            userId: user.id,
+            clientId,
+            tags: ['file-notification'],
           })
 
           if (emailResult.success) {

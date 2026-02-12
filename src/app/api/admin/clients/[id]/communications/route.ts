@@ -3,8 +3,8 @@ import { prisma, dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { communicationCreateSchema } from '@/lib/validation/schemas'
-import { sendEmail, isMailgunConfigured } from '@/lib/email/mailgun'
-import { getResultAlertEmail } from '@/lib/email/templates/result-alert'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
+import { isEmailConfigured } from '@/lib/email/mailgun'
 import {
   isHighLevelConfigured,
   getAllMessagesForContact,
@@ -255,27 +255,26 @@ export async function POST(
     let emailMessageId: string | undefined
 
     // Send email for result alerts if recipient email is provided
-    if (type === 'result_alert' && recipientEmail && isMailgunConfigured()) {
+    if (type === 'result_alert' && recipientEmail && isEmailConfigured()) {
       try {
         const firstName = client?.contact_name?.split(' ')[0] || 'there'
         const clientName = client?.name || 'your business'
+        const portalUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'
 
-        const emailContent = getResultAlertEmail({
-          firstName,
-          clientName,
-          alertType: metadata?.alertType || 'custom',
-          alertTypeLabel: metadata?.alertTypeLabel || 'Result Alert',
-          subject: subject || title,
-          message: commBody || '',
-          metadata: metadata,
-        })
-
-        const result = await sendEmail({
+        const result = await sendTemplatedEmail({
+          templateSlug: 'result-alert',
           to: recipientEmail,
-          subject: emailContent.subject,
-          html: emailContent.html,
-          text: emailContent.text,
-          tags: ['result-alert', metadata?.alertType || 'custom'],
+          variables: {
+            firstName,
+            clientName,
+            alertType: metadata?.alertType || 'other',
+            alertTypeLabel: metadata?.alertTypeLabel || 'Result Alert',
+            subject: subject || title,
+            message: commBody || '',
+            portalUrl,
+          },
+          clientId,
+          tags: ['result-alert', metadata?.alertType || 'other'],
         })
 
         if (result.success) {

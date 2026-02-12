@@ -3,8 +3,7 @@ import { dbPool } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { contentCreateSchema } from '@/lib/validation/schemas'
-import { sendEmail } from '@/lib/email/mailgun'
-import { getContentReadyForReviewEmail } from '@/lib/email/templates/content-status'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -252,7 +251,7 @@ export async function POST(request: NextRequest) {
       try {
         // Get client info for email
         const clientResult = await dbPool.query(
-          'SELECT name, contact_email FROM clients WHERE id = $1',
+          'SELECT id, name, contact_email FROM clients WHERE id = $1',
           [clientId]
         )
         const client = clientResult.rows[0]
@@ -267,28 +266,24 @@ export async function POST(request: NextRequest) {
         if (client?.contact_email) {
           const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'}/content/review/${newContent.id}`
 
-          const emailData = {
-            recipientName: client.name || 'there',
-            contentTitle: title,
-            clientName: client.name || 'your company',
-            changedByName: profile.full_name || 'Pyrus Team',
-            portalUrl,
-            reviewRound: 0,
-          }
-
-          const emailTemplate = getContentReadyForReviewEmail(emailData)
-
-          console.log('POST: Sending email to:', client.contact_email)
-
-          const emailResult = await sendEmail({
+          const emailResult = await sendTemplatedEmail({
+            templateSlug: 'content-ready-for-review',
             to: client.contact_email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html,
-            text: emailTemplate.text,
+            variables: {
+              contentTitle: title,
+              clientName: client.name || 'your company',
+              portalUrl,
+            },
+            userId: user.id,
+            clientId: client.id,
             tags: ['content-review', 'new-content'],
           })
 
           console.log('POST: Email send result:', JSON.stringify(emailResult))
+
+          if (!emailResult.success) {
+            console.error('POST: Failed to send review notification:', emailResult.error)
+          }
         } else {
           console.log('POST: No client email found - skipping notification')
         }

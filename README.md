@@ -98,7 +98,9 @@ src/
 | File | Purpose |
 |------|---------|
 | `src/lib/email/mailgun.ts` | Mailgun client wrapper |
-| `src/lib/email/templates/` | HTML email templates |
+| `src/lib/email/template-service.ts` | Database-backed email template system |
+| `/admin/settings/emails` | Admin UI for editing email templates |
+| `docs/features/email-templates.md` | Full documentation |
 
 ---
 

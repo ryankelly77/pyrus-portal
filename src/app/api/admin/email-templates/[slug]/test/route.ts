@@ -226,6 +226,7 @@ export async function POST(
       message: `Test email sent to ${recipientEmail}`,
       messageId: result.messageId,
       variablesUsed: exampleVars,
+      debug: { slug, testRole, hasOverrides: !!overrides },
     })
   } catch (error) {
     console.error('Failed to send test email:', error)

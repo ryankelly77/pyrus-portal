@@ -4,8 +4,8 @@ import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { validateRequest } from '@/lib/validation/validateRequest'
 import { recommendationInviteSchema } from '@/lib/validation/schemas'
 import { randomBytes } from 'crypto'
-import { sendEmail, isEmailConfigured } from '@/lib/email/mailgun'
-import { getRecommendationInviteEmail } from '@/lib/email/templates/recommendation-invite'
+import { sendTemplatedEmail } from '@/lib/email/template-service'
+import { isEmailConfigured } from '@/lib/email/mailgun'
 import { logEmailError } from '@/lib/alerts'
 import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
 
@@ -133,17 +133,16 @@ export async function POST(
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const inviteUrl = `${appUrl}/view-proposal/${inviteToken}`
 
-      const emailContent = getRecommendationInviteEmail({
-        firstName,
-        clientName: recommendation.client.name,
-        inviteUrl,
-      })
-
-      const emailResult = await sendEmail({
+      const emailResult = await sendTemplatedEmail({
+        templateSlug: 'recommendation-invite',
         to: email,
-        subject: emailContent.subject,
-        html: emailContent.html,
-        text: emailContent.text,
+        variables: {
+          firstName,
+          clientName: recommendation.client.name,
+          inviteUrl,
+        },
+        clientId: recommendation.client.id,
+        tags: ['recommendation-invite'],
       })
 
       emailSent = emailResult.success

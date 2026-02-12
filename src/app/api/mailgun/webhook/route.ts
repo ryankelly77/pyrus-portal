@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { logEmailError } from '@/lib/alerts'
+import { updateEmailLogStatus } from '@/lib/email/template-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +75,44 @@ export async function POST(request: NextRequest) {
 
     // Clean up message ID (remove angle brackets if present)
     const cleanMessageId = messageId.replace(/^<|>$/g, '')
+
+    // ============================================================
+    // Update email_logs table (for templated emails)
+    // This runs alongside existing client_communications updates
+    // ============================================================
+    const emailLogStatusMap: Record<string, 'delivered' | 'opened' | 'clicked' | 'failed' | 'bounced' | 'complained' | 'unsubscribed'> = {
+      'delivered': 'delivered',
+      'opened': 'opened',
+      'clicked': 'clicked',
+      'failed': 'failed',
+      'rejected': 'failed',
+      'temporary_fail': 'failed',
+      'permanent_fail': 'bounced',
+      'bounced': 'bounced',
+      'complained': 'complained',
+      'unsubscribed': 'unsubscribed',
+    }
+
+    const emailLogStatus = emailLogStatusMap[event]
+    if (emailLogStatus) {
+      try {
+        // Update email_logs using the clean message ID
+        // This handles both formats: with and without angle brackets
+        await updateEmailLogStatus(cleanMessageId, emailLogStatus)
+        // Also try with the original messageId in case it was stored differently
+        if (messageId !== cleanMessageId) {
+          await updateEmailLogStatus(messageId, emailLogStatus)
+        }
+        console.log(`[Mailgun Webhook] Updated email_logs status to "${emailLogStatus}" for message: ${cleanMessageId}`)
+      } catch (error) {
+        // Log but don't fail the webhook - Mailgun will retry if we return an error
+        console.error('[Mailgun Webhook] Failed to update email_logs status:', error)
+      }
+    }
+
+    // ============================================================
+    // Update client_communications table (existing functionality)
+    // ============================================================
     console.log(`[Mailgun Webhook] Clean message ID: ${cleanMessageId}`)
 
     // Find the communication record by Mailgun message ID
