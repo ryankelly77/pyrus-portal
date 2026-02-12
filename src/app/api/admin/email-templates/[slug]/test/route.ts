@@ -33,21 +33,83 @@ function checkRateLimit(userId: string): boolean {
 }
 
 /**
+ * Get role-specific access items for admin invite email testing
+ */
+function getRoleAccessItems(role: string): string[] {
+  const roleAccessItems: Record<string, string[]> = {
+    super_admin: [
+      'Full admin dashboard access',
+      'User and team management',
+      'System settings and configuration',
+    ],
+    admin: [
+      'Full admin dashboard access',
+      'Client and user management',
+      'Analytics and reporting',
+    ],
+    production_team: [
+      'Content workflow management',
+      'Client content review tools',
+      'Production dashboard access',
+    ],
+    sales: [
+      'Sales pipeline and proposals',
+      'Client onboarding tools',
+      'Revenue reporting access',
+    ],
+  }
+  return roleAccessItems[role] || roleAccessItems.admin
+}
+
+/**
+ * Generate HTML for the access list in invite emails
+ */
+function generateAccessListHtml(role: string): string {
+  const items = getRoleAccessItems(role)
+  return items
+    .map(
+      (item) =>
+        `<tr><td style="padding: 8px 0; font-size: 14px; color: #5A6358;"><span style="color: #324438; margin-right: 8px;">&#10003;</span> ${item}</td></tr>`
+    )
+    .join('\n                      ')
+}
+
+/**
+ * Get human-readable role display name
+ */
+function getRoleDisplayName(role: string): string {
+  const roleDisplayNames: Record<string, string> = {
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    production_team: 'Production Team',
+    sales: 'Sales',
+  }
+  return roleDisplayNames[role] || role
+}
+
+/**
  * Build example variables from template's available_variables
+ * For admin invite template, can override with dynamic role-based content
  */
 function buildExampleVariables(
-  availableVariables: Array<{ key: string; example?: string }> | unknown
+  availableVariables: Array<{ key: string; example?: string }> | unknown,
+  overrides?: Record<string, string>
 ): Record<string, string> {
   const variables: Record<string, string> = {}
 
   if (!Array.isArray(availableVariables)) {
-    return variables
+    return { ...variables, ...overrides }
   }
 
   for (const v of availableVariables) {
     if (v.key) {
       variables[v.key] = v.example || `[${v.key}]`
     }
+  }
+
+  // Apply any overrides (e.g., dynamic role-based content)
+  if (overrides) {
+    Object.assign(variables, overrides)
   }
 
   return variables
@@ -93,7 +155,7 @@ export async function POST(
     const { slug } = await context.params
     const body = await request.json()
 
-    let { recipientEmail } = body
+    let { recipientEmail, testRole } = body
 
     // Default to current user's email if not provided
     if (!recipientEmail) {
@@ -121,8 +183,20 @@ export async function POST(
       )
     }
 
-    // Build example variables
-    const exampleVars = buildExampleVariables(template.available_variables)
+    // Build dynamic overrides for admin invite template
+    let overrides: Record<string, string> | undefined
+    if (slug === 'user-invite-admin' && testRole) {
+      const validRoles = ['super_admin', 'admin', 'production_team', 'sales']
+      if (validRoles.includes(testRole)) {
+        overrides = {
+          roleDisplay: getRoleDisplayName(testRole),
+          accessListHtml: generateAccessListHtml(testRole),
+        }
+      }
+    }
+
+    // Build example variables with any dynamic overrides
+    const exampleVars = buildExampleVariables(template.available_variables, overrides)
 
     // Render template with example values
     const subject = `[TEST] ${replaceVariables(template.subject_template, exampleVars)}`

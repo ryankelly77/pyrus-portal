@@ -16,6 +16,14 @@ interface TestEmailModalProps {
   onClose: () => void
 }
 
+// Role options for admin invite template testing
+const ADMIN_ROLES = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'production_team', label: 'Production Team' },
+  { value: 'sales', label: 'Sales' },
+]
+
 export function TestEmailModal({
   slug,
   variables,
@@ -24,18 +32,27 @@ export function TestEmailModal({
   onClose,
 }: TestEmailModalProps) {
   const [recipientEmail, setRecipientEmail] = useState(defaultEmail)
+  const [testRole, setTestRole] = useState('admin')
   const [isSending, setIsSending] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Show role selector only for admin invite template
+  const showRoleSelector = slug === 'user-invite-admin'
 
   const handleSend = async () => {
     setIsSending(true)
     setResult(null)
 
     try {
+      const body: Record<string, string> = { recipientEmail }
+      if (showRoleSelector) {
+        body.testRole = testRole
+      }
+
       const res = await fetch(`/api/admin/email-templates/${slug}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipientEmail }),
+        body: JSON.stringify(body),
       })
 
       const data = await res.json()
@@ -115,6 +132,27 @@ export function TestEmailModal({
               disabled={isSending}
             />
           </div>
+
+          {showRoleSelector && (
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label className="form-label">Test Role</label>
+              <select
+                className="form-control"
+                value={testRole}
+                onChange={(e) => setTestRole(e.target.value)}
+                disabled={isSending}
+              >
+                {ADMIN_ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+              <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Select a role to preview the dynamic "What You'll Get Access To" section
+              </p>
+            </div>
+          )}
 
           <div style={{ marginTop: '20px' }}>
             <h4 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-primary)' }}>
