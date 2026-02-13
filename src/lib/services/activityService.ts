@@ -177,6 +177,23 @@ export async function getClientActivity(
     // Table may not exist, don't log as critical
   }
 
+  // Fetch website edit request status change activity logs
+  let websiteEditActivityLogs: any[] = []
+  try {
+    websiteEditActivityLogs = await prisma.activity_log.findMany({
+      where: {
+        client_id: clientId,
+        activity_type: {
+          in: ['website_edit_request_started', 'website_edit_request_completed', 'website_edit_request_cancelled'],
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching website edit activity logs:', error)
+  }
+
   // Map Basecamp activities to unified format
   const mappedBasecampActivities = basecampActivities.map((row) => {
     const isCompleted = row.kind === 'todo_completed'
@@ -342,8 +359,50 @@ export async function getClientActivity(
     }
   })
 
+  // Map website edit request status change activity logs to unified format
+  const mappedWebsiteEditActivityLogs = websiteEditActivityLogs.map((row) => {
+    const type: 'task' | 'update' | 'alert' | 'content' = 'update'
+    const metadata = row.metadata as Record<string, any> | null
+
+    // Determine style based on activity type
+    let iconStyle: { background: string; color: string }
+    switch (row.activity_type) {
+      case 'website_edit_request_started':
+        iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+        break
+      case 'website_edit_request_completed':
+        iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
+        break
+      case 'website_edit_request_cancelled':
+        iconStyle = { background: 'var(--muted-bg)', color: 'var(--text-muted)' }
+        break
+      default:
+        iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+    }
+
+    const date = new Date(row.created_at || new Date())
+
+    return {
+      id: row.id,
+      type,
+      title: row.description || 'Website edit request updated',
+      description: metadata?.updatedBy ? `Updated by ${metadata.updatedBy}` : '',
+      time: formatTime(date),
+      timestamp: date.getTime(),
+      iconStyle,
+      metadata: {
+        source: 'website_edit_activity',
+        activityType: row.activity_type,
+        requestId: metadata?.requestId,
+        requestTitle: metadata?.requestTitle,
+        previousStatus: metadata?.previousStatus,
+        newStatus: metadata?.newStatus,
+      },
+    }
+  })
+
   // Merge and sort by timestamp (most recent first)
-  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests]
+  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests, ...mappedWebsiteEditActivityLogs]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit)
     .map(({ timestamp, ...rest }) => rest as ActivityItem)

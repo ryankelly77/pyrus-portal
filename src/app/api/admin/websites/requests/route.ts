@@ -106,6 +106,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Request ID required' }, { status: 400 })
     }
 
+    // Fetch the existing request to get client_id and title for activity log
+    const existingRequest = await prisma.website_edit_requests.findUnique({
+      where: { id: requestId },
+      select: { client_id: true, title: true, status: true },
+    })
+
+    if (!existingRequest) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
+
     const updateData: any = { updated_at: new Date() }
 
     if (status) {
@@ -135,6 +145,41 @@ export async function PATCH(request: NextRequest) {
       where: { id: requestId },
       data: updateData,
     })
+
+    // Create activity log entry for status changes (shows in client activity feed)
+    if (status && status !== existingRequest.status) {
+      let description = ''
+      let activityType = 'website_edit_request_update'
+
+      if (status === 'in-progress') {
+        description = `Website edit request started: ${existingRequest.title}`
+        activityType = 'website_edit_request_started'
+      } else if (status === 'completed') {
+        description = `Website edit request completed: ${existingRequest.title}`
+        activityType = 'website_edit_request_completed'
+      } else if (status === 'cancelled') {
+        description = `Website edit request cancelled: ${existingRequest.title}`
+        activityType = 'website_edit_request_cancelled'
+      }
+
+      if (description) {
+        await prisma.activity_log.create({
+          data: {
+            client_id: existingRequest.client_id,
+            user_id: auth.user.id,
+            activity_type: activityType,
+            description,
+            metadata: {
+              requestId,
+              requestTitle: existingRequest.title,
+              previousStatus: existingRequest.status,
+              newStatus: status,
+              updatedBy: auth.profile.full_name || auth.user.email,
+            },
+          },
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, request: updated })
   } catch (error) {

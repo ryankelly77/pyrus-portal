@@ -31,9 +31,11 @@ export async function GET(request: NextRequest) {
     if (!type || type === 'all') {
       activityTypes.push('login', 'client_login', 'admin_login', 'page_view', 'registration',
         'client_created', 'client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
-        'accepted_invite', 'purchase', 'payment', 'website_edit_request')
+        'accepted_invite', 'purchase', 'payment', 'website_edit_request',
+        'website_edit_request_started', 'website_edit_request_completed', 'website_edit_request_cancelled')
     } else if (type === 'website_edit_request') {
-      activityTypes.push('website_edit_request')
+      activityTypes.push('website_edit_request', 'website_edit_request_started',
+        'website_edit_request_completed', 'website_edit_request_cancelled')
     } else if (type === 'login') {
       // Logins + signups/registrations (all account access events)
       activityTypes.push('login', 'client_login', 'admin_login', 'prospect_login',
@@ -241,6 +243,9 @@ function mapActivityType(activityType: string): { type: string, title: string } 
     'purchase': { type: 'purchase', title: 'Purchase' },
     'payment': { type: 'purchase', title: 'Payment' },
     'website_edit_request': { type: 'website_edit_request', title: 'Website Edit Request' },
+    'website_edit_request_started': { type: 'website_edit_request', title: 'Edit Request Started' },
+    'website_edit_request_completed': { type: 'website_edit_request', title: 'Edit Request Completed' },
+    'website_edit_request_cancelled': { type: 'website_edit_request', title: 'Edit Request Cancelled' },
   }
   return typeMap[activityType] || { type: 'login', title: activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }
 }
