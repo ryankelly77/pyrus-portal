@@ -24,6 +24,11 @@ export interface WebsiteData {
         incidents: number
         downtimeMinutes: number
       }
+      ssl?: {
+        brand: string
+        expiresAt: string
+        daysRemaining: number
+      }
     }
     blocksIframe: boolean
   } | null
@@ -156,12 +161,20 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
     let uptimeDisplay = 'Not Monitored'
     let uptimeStatus: 'up' | 'down' | 'paused' | 'unknown' | null = null
     let last24Hours: { uptime: string; incidents: number; downtimeMinutes: number } | undefined
+    let sslInfo: { brand: string; expiresAt: string; daysRemaining: number } | undefined
     if (client.uptimerobot_monitor_id) {
       const uptimeData = await getMonitorUptime(client.uptimerobot_monitor_id)
       if (uptimeData) {
         uptimeDisplay = uptimeData.uptime
         uptimeStatus = uptimeData.status
         last24Hours = uptimeData.last24Hours
+        if (uptimeData.ssl) {
+          sslInfo = {
+            brand: uptimeData.ssl.brand,
+            expiresAt: uptimeData.ssl.expiresAt,
+            daysRemaining: uptimeData.ssl.daysRemaining,
+          }
+        }
       }
     }
 
@@ -245,6 +258,7 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
         uptimeStatus,
         lastUpdated: lastUpdatedDisplay,
         last24Hours,
+        ssl: sslInfo,
       },
       blocksIframe: blocksIframe || false,
     }

@@ -23558,6 +23558,67 @@ input[type="date"].form-control {
     letter-spacing: 0.3px;
 }
 
+/* SSL Certificate Info */
+.website-ssl-info {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.ssl-info-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.ssl-info-content {
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    padding: 12px;
+}
+
+.ssl-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.ssl-info-row + .ssl-info-row {
+    border-top: 1px solid var(--border-light);
+    margin-top: 4px;
+    padding-top: 8px;
+}
+
+.ssl-info-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.ssl-info-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ssl-info-value.success {
+    color: var(--success-text);
+}
+
+.ssl-info-value.warning {
+    color: var(--warning);
+}
+
+.ssl-info-value.danger {
+    color: var(--danger);
+}
+
 /* Edit Requests Section */
 .edit-requests-card {
     background: var(--bg-white);

@@ -11,6 +11,12 @@ interface UptimeRobotLog {
   duration: number // in seconds
 }
 
+interface UptimeRobotSSL {
+  brand: string // e.g., "Let's Encrypt"
+  product: string | null
+  expires: number // Unix timestamp
+}
+
 interface UptimeRobotMonitor {
   id: number
   friendly_name: string
@@ -19,6 +25,7 @@ interface UptimeRobotMonitor {
   all_time_uptime_ratio: string // e.g., "99.98"
   custom_uptime_ratio: string // For requested time range (e.g., "99.9-100" for 30d-1d)
   logs?: UptimeRobotLog[]
+  ssl?: UptimeRobotSSL
 }
 
 interface UptimeRobotResponse {
@@ -35,11 +42,19 @@ export interface Last24HoursStats {
   downtimeMinutes: number
 }
 
+export interface SSLInfo {
+  brand: string // e.g., "Let's Encrypt"
+  expiresAt: string // Formatted date e.g., "Mar 26, 2026"
+  expiresTimestamp: number // Unix timestamp
+  daysRemaining: number
+}
+
 export interface UptimeData {
   uptime: string // e.g., "99.9%" (30 days)
   status: 'up' | 'down' | 'paused' | 'unknown'
   monitorName: string
   last24Hours?: Last24HoursStats
+  ssl?: SSLInfo
 }
 
 export function isUptimeRobotConfigured(): boolean {
@@ -67,6 +82,7 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
         custom_uptime_ratios: '30-1', // Last 30 days and 1 day
         logs: '1', // Include logs
         logs_limit: '50', // Last 50 log entries
+        ssl: '1', // Include SSL certificate info
       }),
     })
 
@@ -126,6 +142,23 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
     const formattedUptime24h = `${uptime1d.toFixed(0)}%`
     const downtimeMinutes = Math.round(downtime24hSeconds / 60)
 
+    // Process SSL certificate info if available
+    let sslInfo: SSLInfo | undefined
+    if (monitor.ssl && monitor.ssl.expires) {
+      const expiresDate = new Date(monitor.ssl.expires * 1000)
+      const daysRemaining = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      sslInfo = {
+        brand: monitor.ssl.brand || 'Unknown',
+        expiresAt: expiresDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+        expiresTimestamp: monitor.ssl.expires,
+        daysRemaining,
+      }
+    }
+
     return {
       uptime: formattedUptime,
       status,
@@ -135,6 +168,7 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
         incidents: incidents24h,
         downtimeMinutes,
       },
+      ssl: sslInfo,
     }
   } catch (error: any) {
     console.error('Error fetching UptimeRobot data:', error)

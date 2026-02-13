@@ -32,6 +32,11 @@ interface WebsiteData {
       incidents: number
       downtimeMinutes: number
     }
+    ssl?: {
+      brand: string
+      expiresAt: string
+      daysRemaining: number
+    }
   }
   blocksIframe?: boolean
 }
@@ -372,6 +377,31 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                       {websiteData.hosting.last24Hours.downtimeMinutes}m
                     </span>
                     <span className="stat-24h-label">Downtime</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SSL Certificate Info */}
+            {websiteData.hosting.ssl && (
+              <div className="website-ssl-info">
+                <div className="ssl-info-header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  SSL Certificate
+                </div>
+                <div className="ssl-info-content">
+                  <div className="ssl-info-row">
+                    <span className="ssl-info-label">Valid until</span>
+                    <span className={`ssl-info-value ${websiteData.hosting.ssl.daysRemaining > 30 ? 'success' : websiteData.hosting.ssl.daysRemaining > 7 ? 'warning' : 'danger'}`}>
+                      {websiteData.hosting.ssl.expiresAt}
+                    </span>
+                  </div>
+                  <div className="ssl-info-row">
+                    <span className="ssl-info-label">Provider</span>
+                    <span className="ssl-info-value">{websiteData.hosting.ssl.brand}</span>
                   </div>
                 </div>
               </div>
