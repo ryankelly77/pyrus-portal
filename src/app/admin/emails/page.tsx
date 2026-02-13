@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 
+type EmailTab = 'templates' | 'automation'
 type RecipientType = 'user' | 'client' | 'admin' | 'prospect' | 'any'
 
 interface EmailTemplate {
@@ -35,6 +36,7 @@ interface EmailTemplatesData {
 
 export default function AdminEmailTemplatesPage() {
   const { user, hasNotifications } = useUserProfile()
+  const [activeTab, setActiveTab] = useState<EmailTab>('templates')
   const [data, setData] = useState<EmailTemplatesData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -203,7 +205,7 @@ export default function AdminEmailTemplatesPage() {
   return (
     <>
       <AdminHeader
-        title="Email Templates"
+        title="Emails"
         user={user}
         hasNotifications={hasNotifications}
       />
@@ -212,10 +214,54 @@ export default function AdminEmailTemplatesPage() {
         {/* Page Header */}
         <div className="page-header">
           <div className="page-header-content">
-            <p>Manage email templates sent from the portal</p>
+            <p>Manage email templates and automation workflows</p>
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="tabs-container" style={{ marginBottom: '1.5rem' }}>
+          <div className="tabs">
+            <button
+              className={`tab ${activeTab === 'templates' ? 'active' : ''}`}
+              onClick={() => setActiveTab('templates')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Email Templates
+            </button>
+            <button
+              className={`tab ${activeTab === 'automation' ? 'active' : ''}`}
+              onClick={() => setActiveTab('automation')}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+              Automation & Workflows
+              <span style={{
+                fontSize: '10px',
+                fontWeight: 600,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                backgroundColor: 'var(--pyrus-sage)',
+                color: 'white',
+                marginLeft: '4px'
+              }}>
+                Coming Soon
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Email Templates Tab */}
+        {activeTab === 'templates' && (
+          <>
         {/* Filters */}
         <div className="clients-toolbar">
           <div className="search-box">
@@ -531,6 +577,58 @@ export default function AdminEmailTemplatesPage() {
             Showing {filteredTotal} of {totalTemplates} template{totalTemplates !== 1 ? 's' : ''}
           </span>
         </div>
+          </>
+        )}
+
+        {/* Automation & Workflows Tab */}
+        {activeTab === 'automation' && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '80px 40px',
+            textAlign: 'center',
+            backgroundColor: 'var(--card-bg)',
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--pyrus-sage-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '24px'
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--pyrus-sage)" strokeWidth="2" width="40" height="40">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '12px', color: 'var(--text-primary)' }}>
+              Automation & Workflows
+            </h2>
+            <p style={{ fontSize: '16px', color: 'var(--text-secondary)', maxWidth: '500px', marginBottom: '24px' }}>
+              Create automated email sequences, drip campaigns, and workflow triggers based on client actions and milestones.
+            </p>
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              backgroundColor: 'var(--pyrus-sage)',
+              color: 'white'
+            }}>
+              Coming Soon
+            </span>
+          </div>
+        )}
       </div>
     </>
   )
