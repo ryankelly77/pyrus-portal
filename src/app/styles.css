@@ -33038,3 +33038,9 @@ input[type="date"].form-control {
             padding: 8px 0;
           }
         }
+
+/* Spin animation for refresh buttons */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

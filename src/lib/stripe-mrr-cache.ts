@@ -2,14 +2,15 @@
 // Stripe MRR Data Cache
 // ============================================================
 //
-// Caches Stripe subscription and invoice data to avoid
-// excessive API calls on every page load.
-// Cache TTL: 5 minutes
+// Caches Stripe subscription and invoice data in the database
+// to avoid excessive API calls on every page load.
+// Cache TTL: 30 minutes (persists across serverless cold starts)
 // ============================================================
 
 import { stripe } from './stripe';
+import { dbPool } from './prisma';
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 interface SubscriptionData {
   id: string;
@@ -38,19 +39,89 @@ interface CachedMRRData {
 let cachedData: CachedMRRData | null = null;
 let pendingFetch: Promise<CachedMRRData> | null = null;
 
+// Database cache key
+const DB_CACHE_KEY = 'stripe_mrr_data';
+
+/**
+ * Load cached data from database
+ */
+async function loadCacheFromDB(): Promise<CachedMRRData | null> {
+  try {
+    const result = await dbPool.query(
+      `SELECT data, fetched_at FROM system_cache WHERE cache_key = $1`,
+      [DB_CACHE_KEY]
+    );
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
+      const fetchedAt = new Date(row.fetched_at).getTime();
+      return {
+        ...row.data,
+        fetchedAt,
+      };
+    }
+  } catch (error) {
+    // Table might not exist, ignore
+    console.log('[Stripe Cache] DB cache not available');
+  }
+  return null;
+}
+
+/**
+ * Save cached data to database
+ */
+async function saveCacheToDB(data: CachedMRRData): Promise<void> {
+  try {
+    // Create table if not exists
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS system_cache (
+        cache_key VARCHAR(100) PRIMARY KEY,
+        data JSONB NOT NULL,
+        fetched_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    await dbPool.query(`
+      INSERT INTO system_cache (cache_key, data, fetched_at, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (cache_key) DO UPDATE SET
+        data = $2,
+        fetched_at = $3,
+        updated_at = NOW()
+    `, [DB_CACHE_KEY, JSON.stringify({
+      subscriptions: data.subscriptions,
+      currentMRR: data.currentMRR,
+      activeClientCount: data.activeClientCount,
+    }), new Date(data.fetchedAt).toISOString()]);
+  } catch (error) {
+    console.error('[Stripe Cache] Failed to save to DB:', error);
+  }
+}
+
 /**
  * Fetches Stripe subscription data with caching.
  * Returns cached data if still valid, otherwise fetches fresh data.
- * Uses a pending promise to prevent duplicate concurrent fetches.
+ * Uses database-backed caching to persist across serverless cold starts.
  */
-export async function getStripeMRRData(): Promise<CachedMRRData> {
+export async function getStripeMRRData(forceRefresh = false): Promise<CachedMRRData> {
   const now = Date.now();
 
-  // Return cached data if still valid
-  if (cachedData && (now - cachedData.fetchedAt) < CACHE_TTL_MS) {
+  // Check in-memory cache first (fastest)
+  if (!forceRefresh && cachedData && (now - cachedData.fetchedAt) < CACHE_TTL_MS) {
     const ageSeconds = Math.round((now - cachedData.fetchedAt) / 1000);
-    console.log(`[Stripe Cache] HIT - returning cached data (${ageSeconds}s old)`);
+    console.log(`[Stripe Cache] MEMORY HIT - returning cached data (${ageSeconds}s old)`);
     return cachedData;
+  }
+
+  // Check database cache (persists across cold starts)
+  if (!forceRefresh) {
+    const dbCache = await loadCacheFromDB();
+    if (dbCache && (now - dbCache.fetchedAt) < CACHE_TTL_MS) {
+      const ageSeconds = Math.round((now - dbCache.fetchedAt) / 1000);
+      console.log(`[Stripe Cache] DB HIT - returning cached data (${ageSeconds}s old)`);
+      cachedData = dbCache; // Populate memory cache
+      return dbCache;
+    }
   }
 
   // If another request is already fetching, wait for it
@@ -144,6 +215,9 @@ async function fetchStripeData(now: number): Promise<CachedMRRData> {
     fetchedAt: now,
   };
 
+  // Save to database for persistence across cold starts
+  await saveCacheToDB(cachedData);
+
   console.log(`[Stripe Cache] Populated cache with ${subscriptions.length} subscriptions, MRR: $${cachedData.currentMRR}`);
   return cachedData;
 }
@@ -155,13 +229,61 @@ async function fetchStripeData(now: number): Promise<CachedMRRData> {
 let cachedInvoices: { data: { created: number; amount_paid: number }[]; fetchedAt: number } | null = null;
 let pendingInvoiceFetch: Promise<{ created: number; amount_paid: number }[]> | null = null;
 
-export async function getStripeInvoices(): Promise<{ created: number; amount_paid: number }[]> {
+const DB_INVOICE_CACHE_KEY = 'stripe_invoice_data';
+
+async function loadInvoiceCacheFromDB(): Promise<{ data: { created: number; amount_paid: number }[]; fetchedAt: number } | null> {
+  try {
+    const result = await dbPool.query(
+      `SELECT data, fetched_at FROM system_cache WHERE cache_key = $1`,
+      [DB_INVOICE_CACHE_KEY]
+    );
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
+      return {
+        data: row.data,
+        fetchedAt: new Date(row.fetched_at).getTime(),
+      };
+    }
+  } catch {
+    // Table might not exist, ignore
+  }
+  return null;
+}
+
+async function saveInvoiceCacheToDB(data: { data: { created: number; amount_paid: number }[]; fetchedAt: number }): Promise<void> {
+  try {
+    await dbPool.query(`
+      INSERT INTO system_cache (cache_key, data, fetched_at, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (cache_key) DO UPDATE SET
+        data = $2,
+        fetched_at = $3,
+        updated_at = NOW()
+    `, [DB_INVOICE_CACHE_KEY, JSON.stringify(data.data), new Date(data.fetchedAt).toISOString()]);
+  } catch (error) {
+    console.error('[Invoice Cache] Failed to save to DB:', error);
+  }
+}
+
+export async function getStripeInvoices(forceRefresh = false): Promise<{ created: number; amount_paid: number }[]> {
   const now = Date.now();
 
-  if (cachedInvoices && (now - cachedInvoices.fetchedAt) < CACHE_TTL_MS) {
+  // Check memory cache first
+  if (!forceRefresh && cachedInvoices && (now - cachedInvoices.fetchedAt) < CACHE_TTL_MS) {
     const ageSeconds = Math.round((now - cachedInvoices.fetchedAt) / 1000);
-    console.log(`[Invoice Cache] HIT - returning cached data (${ageSeconds}s old)`);
+    console.log(`[Invoice Cache] MEMORY HIT - returning cached data (${ageSeconds}s old)`);
     return cachedInvoices.data;
+  }
+
+  // Check database cache
+  if (!forceRefresh) {
+    const dbCache = await loadInvoiceCacheFromDB();
+    if (dbCache && (now - dbCache.fetchedAt) < CACHE_TTL_MS) {
+      const ageSeconds = Math.round((now - dbCache.fetchedAt) / 1000);
+      console.log(`[Invoice Cache] DB HIT - returning cached data (${ageSeconds}s old)`);
+      cachedInvoices = dbCache;
+      return dbCache.data;
+    }
   }
 
   // If another request is already fetching, wait for it
@@ -193,6 +315,9 @@ async function fetchInvoiceData(now: number): Promise<{ created: number; amount_
     })),
     fetchedAt: now,
   };
+
+  // Save to database
+  await saveInvoiceCacheToDB(cachedInvoices);
 
   console.log(`[Invoice Cache] Populated cache with ${cachedInvoices.data.length} invoices`);
   return cachedInvoices.data;

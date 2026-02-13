@@ -17,13 +17,17 @@ interface VolumeDataPoint {
   cumulative: number
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAdmin()
     if (auth instanceof NextResponse) return auth
 
-    // Get cached Stripe data
-    const stripeData = await getStripeMRRData()
+    // Check for force refresh parameter
+    const { searchParams } = new URL(request.url)
+    const forceRefresh = searchParams.get('refresh') === 'true'
+
+    // Get cached Stripe data (will refresh from Stripe if needed or forced)
+    const stripeData = await getStripeMRRData(forceRefresh)
     const allSubscriptions = stripeData.subscriptions
 
     // Build maps for date tracking
@@ -187,7 +191,9 @@ export async function GET() {
       // Churn data
       churnRate: Math.round(churnRate * 10) / 10,
       churnedSubscriptions: churnedCount,
-      churnedMRR: Math.round(churnedMRR)
+      churnedMRR: Math.round(churnedMRR),
+      // Cache info
+      lastUpdated: new Date(stripeData.fetchedAt).toISOString(),
     })
   } catch (error) {
     console.error('MRR API error:', error)

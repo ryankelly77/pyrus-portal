@@ -269,31 +269,38 @@ export default function AdminRevenuePage() {
   const [pipelineSummary, setPipelineSummary] = useState<PipelineSummary | null>(null)
   const [pipelineLoading, setPipelineLoading] = useState(true)
   const [refreshingScores, setRefreshingScores] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [refreshingData, setRefreshingData] = useState(false)
+
+  const fetchMRRData = async (forceRefresh = false) => {
+    if (forceRefresh) setRefreshingData(true)
+    try {
+      const url = forceRefresh ? '/api/admin/dashboard/mrr?refresh=true' : '/api/admin/dashboard/mrr'
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setMrrChartData(data.chartData || [])
+        setVolumeData(data.volumeData || [])
+        setStats({
+          currentMRR: data.currentMRR || 0,
+          mrrChange: data.mrrChange || 0,
+          avgGrowthPercent: data.avgGrowthPercent || 0,
+          totalNetVolume: data.totalNetVolume || 0,
+          churnRate: data.churnRate || 0,
+          churnedSubscriptions: data.churnedSubscriptions || 0,
+          churnedMRR: data.churnedMRR || 0,
+        })
+        setLastUpdated(data.lastUpdated || null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch MRR data:', error)
+    } finally {
+      setLoading(false)
+      setRefreshingData(false)
+    }
+  }
 
   useEffect(() => {
-    async function fetchMRRData() {
-      try {
-        const res = await fetch('/api/admin/dashboard/mrr')
-        if (res.ok) {
-          const data = await res.json()
-          setMrrChartData(data.chartData || [])
-          setVolumeData(data.volumeData || [])
-          setStats({
-            currentMRR: data.currentMRR || 0,
-            mrrChange: data.mrrChange || 0,
-            avgGrowthPercent: data.avgGrowthPercent || 0,
-            totalNetVolume: data.totalNetVolume || 0,
-            churnRate: data.churnRate || 0,
-            churnedSubscriptions: data.churnedSubscriptions || 0,
-            churnedMRR: data.churnedMRR || 0,
-          })
-        }
-      } catch (error) {
-        console.error('Failed to fetch MRR data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchMRRData()
   }, [])
 
@@ -374,8 +381,45 @@ export default function AdminRevenuePage() {
       <div className="admin-content">
         {/* Page Header */}
         <div className="page-header">
-          <div className="page-header-content">
-            <p>Track your monthly recurring revenue and growth metrics</p>
+          <div className="page-header-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <p style={{ margin: 0 }}>Track your monthly recurring revenue and growth metrics</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
+                Updated {formatLastUpdated(lastUpdated)}
+              </span>
+              <button
+                onClick={() => fetchMRRData(true)}
+                disabled={refreshingData}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.813rem',
+                  fontWeight: 500,
+                  cursor: refreshingData ? 'wait' : 'pointer',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
+                  opacity: refreshingData ? 0.7 : 1,
+                }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  width="14"
+                  height="14"
+                  style={{ animation: refreshingData ? 'spin 1s linear infinite' : 'none' }}
+                >
+                  <path d="M21 12a9 9 0 1 1-9-9"></path>
+                  <polyline points="21 3 21 9 15 9"></polyline>
+                </svg>
+                {refreshingData ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
           </div>
         </div>
 
