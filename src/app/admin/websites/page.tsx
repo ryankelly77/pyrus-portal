@@ -263,13 +263,19 @@ export default function WebsitesPage() {
       />
 
       <div className="admin-content">
+        {/* Page Description */}
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
+          Monitor client websites, uptime status, and manage edit requests.
+        </p>
+
         {/* Tabs */}
-        <div className="tabs-container" style={{ marginBottom: '24px' }}>
+        <div className="tab-nav">
           <button
-            className={`tab-button ${activeTab === 'websites' ? 'active' : ''}`}
+            className={`tab-btn ${activeTab === 'websites' ? 'active' : ''}`}
             onClick={() => setActiveTab('websites')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ marginRight: 8 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
@@ -277,10 +283,11 @@ export default function WebsitesPage() {
             Websites
           </button>
           <button
-            className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`}
+            className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
             onClick={() => setActiveTab('requests')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ marginRight: 8 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
