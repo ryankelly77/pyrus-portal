@@ -76,10 +76,13 @@ export async function GET(request: NextRequest) {
 
     const query = queryResult.data
 
-    // Fetch all active clients
+    // Fetch all active clients (excluding prospects and those without a stage)
     const clients = await prisma.clients.findMany({
       where: {
         status: 'active',
+        growth_stage: {
+          in: ['seedling', 'sprouting', 'blooming', 'harvesting'],
+        },
       },
       select: {
         id: true,

@@ -425,7 +425,13 @@ export async function calculateClientPerformance(
   // Fetch client data
   const client = await prisma.clients.findUnique({
     where: { id: clientId },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      growth_stage: true,
+      created_at: true,
+      start_date: true,
+      monthly_spend: true,
       subscriptions: {
         where: { status: 'active' },
         include: { subscription_items: { include: { product: true } } },
@@ -542,11 +548,12 @@ export async function calculateClientPerformance(
   // Calculate base score
   const baseScore = calculateBaseScore(metrics, adjustedWeights)
 
-  // Calculate velocity
+  // Calculate velocity - use start_date for tenure (when they became a client)
   const improvements = await countImprovements(clientId)
+  const clientStartDate = client.start_date || client.created_at || new Date()
   const velocity = calculateVelocityResult(
     improvements,
-    client.created_at || new Date(),
+    clientStartDate,
     planType
   )
 
@@ -573,10 +580,12 @@ export async function calculateClientPerformance(
   const redFlags = generateRedFlags(metrics, lastAlertAt, velocity)
   const recommendations = generateRecommendations(finalScore, growthStage, metrics, lastAlertAt)
 
-  // Calculate MRR from subscriptions
-  const mrr = client.subscriptions.reduce((sum, sub) => {
-    return sum + (sub.monthly_amount ? parseFloat(sub.monthly_amount.toString()) : 0)
-  }, 0)
+  // Calculate MRR - prefer monthly_spend from client record, fall back to subscriptions
+  const mrr = client.monthly_spend
+    ? parseFloat(client.monthly_spend.toString())
+    : client.subscriptions.reduce((sum, sub) => {
+        return sum + (sub.monthly_amount ? parseFloat(sub.monthly_amount.toString()) : 0)
+      }, 0)
 
   return {
     clientId: client.id,
