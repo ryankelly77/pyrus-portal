@@ -553,9 +553,11 @@ export async function calculateClientPerformance(
   // Calculate final score
   const finalScore = calculateFinalScore(baseScore, velocity.modifier)
 
-  // Get growth stage
-  const growthStage = client.growth_stage as GrowthStage ||
-    getGrowthStage(client.created_at || new Date())
+  // Get growth stage (only valid performance stages, fallback to calculated)
+  const validStages: GrowthStage[] = ['seedling', 'sprouting', 'blooming', 'harvesting']
+  const growthStage = (validStages.includes(client.growth_stage as GrowthStage)
+    ? client.growth_stage as GrowthStage
+    : getGrowthStage(client.created_at || new Date()))
   const stageConfig = getStageConfig(growthStage)
 
   // Get status

@@ -1,10 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { MRRChart, MRRDataPoint } from '@/components/charts/MRRChart'
+
+// Dynamically import Pipeline component to avoid large bundle
+const PipelineDashboardEmbed = dynamic(
+  () => import('@/components/pipeline/PipelineDashboardEmbed').then(mod => ({ default: mod.PipelineDashboardEmbed })),
+  { loading: () => <div style={{ padding: '60px', textAlign: 'center', color: '#6B7280' }}>Loading pipeline...</div> }
+)
+
+type MainTab = 'revenue' | 'pipeline'
 
 interface VolumeDataPoint {
   month: string
@@ -235,6 +244,10 @@ interface ScheduledCancellation {
 
 export default function AdminRevenuePage() {
   const { user, hasNotifications } = useUserProfile()
+
+  // Main tab state
+  const [mainTab, setMainTab] = useState<MainTab>('revenue')
+
   const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
   const [volumeData, setVolumeData] = useState<{ month: string; label: string; volume: number; cumulative: number }[]>([])
   const [stats, setStats] = useState({
@@ -353,7 +366,7 @@ export default function AdminRevenuePage() {
   return (
     <>
       <AdminHeader
-        title="Revenue / MRR"
+        title="Revenue & Pipeline"
         user={user}
         hasNotifications={hasNotifications}
       />
@@ -366,6 +379,64 @@ export default function AdminRevenuePage() {
           </div>
         </div>
 
+        {/* Main Tabs */}
+        <div className="tabs-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '0' }}>
+            <button
+              className={`tab ${mainTab === 'revenue' ? 'active' : ''}`}
+              onClick={() => setMainTab('revenue')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                color: mainTab === 'revenue' ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: 500,
+                fontSize: '14px',
+                borderBottom: mainTab === 'revenue' ? '2px solid var(--primary)' : '2px solid transparent',
+                marginBottom: '-1px',
+                transition: 'all 0.2s',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              Revenue & MRR
+            </button>
+            <button
+              className={`tab ${mainTab === 'pipeline' ? 'active' : ''}`}
+              onClick={() => setMainTab('pipeline')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                color: mainTab === 'pipeline' ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: 500,
+                fontSize: '14px',
+                borderBottom: mainTab === 'pipeline' ? '2px solid var(--primary)' : '2px solid transparent',
+                marginBottom: '-1px',
+                transition: 'all 0.2s',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              Sales Pipeline
+            </button>
+          </div>
+        </div>
+
+        {/* Revenue Tab */}
+        {mainTab === 'revenue' && (
+          <>
         {/* Main Layout: Pipeline Cards on LEFT, Charts on RIGHT */}
         <div className="revenue-layout">
           {/* Left Column: Pipeline Projection Cards */}
@@ -829,6 +900,13 @@ export default function AdminRevenuePage() {
             )}
           </div>
         </div>
+          </>
+        )}
+
+        {/* Pipeline Tab */}
+        {mainTab === 'pipeline' && (
+          <PipelineDashboardEmbed />
+        )}
 
       </div>
 

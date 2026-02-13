@@ -207,57 +207,17 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
             {!isCollapsed && <span>Products</span>}
           </Link>
         )}
-        {hasAccess('rewards') && (
-          <Link
-            href="/admin/rewards"
-            className={`admin-nav-item ${pathname === '/admin/rewards' || pathname.startsWith('/admin/rewards/') ? 'active' : ''}`}
-            title={isCollapsed ? 'Rewards' : undefined}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20 12 20 22 4 22 4 12"></polyline>
-              <rect x="2" y="7" width="20" height="5"></rect>
-              <line x1="12" y1="22" x2="12" y2="7"></line>
-              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
-            </svg>
-            {!isCollapsed && <span>Rewards</span>}
-          </Link>
-        )}
         {hasAccess('revenue') && (
           <Link
             href="/admin/revenue"
             className={`admin-nav-item ${pathname === '/admin/revenue' || pathname.startsWith('/admin/revenue/') ? 'active' : ''}`}
-            title={isCollapsed ? 'Revenue / MRR' : undefined}
+            title={isCollapsed ? 'Revenue & Pipeline' : undefined}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="1" x2="12" y2="23"></line>
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
-            {!isCollapsed && <span>Revenue / MRR</span>}
-          </Link>
-        )}
-        {hasAccess('pipeline') && (
-          <Link
-            href="/admin/pipeline"
-            className={`admin-nav-item ${pathname === '/admin/pipeline' || pathname.startsWith('/admin/pipeline/') ? 'active' : ''}`}
-            title={isCollapsed ? 'Sales Pipeline' : undefined}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-            {!isCollapsed && <span>Sales Pipeline</span>}
-          </Link>
-        )}
-        {hasAccess('performance') && (
-          <Link
-            href="/admin/performance"
-            className={`admin-nav-item ${pathname === '/admin/performance' || pathname.startsWith('/admin/performance/') ? 'active' : ''}`}
-            title={isCollapsed ? 'Client Performance' : undefined}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-            </svg>
-            {!isCollapsed && <span>Client Performance</span>}
+            {!isCollapsed && <span>Revenue & Pipeline</span>}
           </Link>
         )}
         {hasAccess('emails') && (
