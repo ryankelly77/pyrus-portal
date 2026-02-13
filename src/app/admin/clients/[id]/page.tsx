@@ -106,7 +106,7 @@ interface DBClient {
   website_url: string | null
   hosting_type: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
   hosting_provider: string | null
-  website_provider: 'pear' | 'other' | null
+  website_provider: 'pear' | 'pyrus' | 'other' | null
   website_launch_date: string | null
   uptimerobot_monitor_id: string | null
   // Onboarding
@@ -434,7 +434,7 @@ export default function ClientDetailPage() {
     websiteUrl: '',
     hostingType: '' as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted',
     hostingProvider: '',
-    websiteProvider: '' as '' | 'pear' | 'other',
+    websiteProvider: '' as '' | 'pear' | 'pyrus' | 'other',
     websiteLaunchDate: '',
     uptimerobotMonitorId: '',
     // Integrations
@@ -909,7 +909,7 @@ export default function ClientDetailPage() {
             websiteUrl: data.website_url || '',
             hostingType: (data.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
             hostingProvider: data.hosting_provider || '',
-            websiteProvider: (data.website_provider as '' | 'pear' | 'other') || '',
+            websiteProvider: (data.website_provider as '' | 'pear' | 'pyrus' | 'other') || '',
             websiteLaunchDate: data.website_launch_date ? new Date(data.website_launch_date).toISOString().split('T')[0] : '',
             uptimerobotMonitorId: data.uptimerobot_monitor_id || '',
             // Integration fields
@@ -3727,10 +3727,11 @@ export default function ClientDetailPage() {
                         id="websiteProvider"
                         className="form-control"
                         value={editFormData.websiteProvider}
-                        onChange={(e) => setEditFormData({ ...editFormData, websiteProvider: e.target.value as '' | 'pear' | 'other' })}
+                        onChange={(e) => setEditFormData({ ...editFormData, websiteProvider: e.target.value as '' | 'pear' | 'pyrus' | 'other' })}
                       >
                         <option value="">Select...</option>
                         <option value="pear">Pear Analytics</option>
+                        <option value="pyrus">Pyrus Digital</option>
                         <option value="other">Other / Client-managed</option>
                       </select>
                       <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
