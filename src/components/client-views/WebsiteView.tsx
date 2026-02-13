@@ -115,8 +115,10 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
   const [hasWebsiteAccess, setHasWebsiteAccess] = useState(false)
 
   // Form state for new request
+  const [requestTitle, setRequestTitle] = useState('')
   const [requestType, setRequestType] = useState('')
   const [requestDescription, setRequestDescription] = useState('')
+  const [requestPriority, setRequestPriority] = useState('normal')
 
   useEffect(() => {
     async function fetchWebsiteData() {
@@ -163,9 +165,10 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId,
-          title: requestDescription.substring(0, 100), // Use first 100 chars as title
+          title: requestTitle,
           description: requestDescription,
           requestType: requestType.replace('-', '_'), // Convert 'content-update' to 'content_update'
+          priority: requestPriority,
         }),
       })
 
@@ -183,8 +186,10 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       }, ...prev])
 
+      setRequestTitle('')
       setRequestType('')
       setRequestDescription('')
+      setRequestPriority('normal')
     } catch (err) {
       console.error('Error submitting request:', err)
       setSubmitError('Failed to submit request. Please try again.')
@@ -388,6 +393,17 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
               </div>
               <form className="new-request-form" onSubmit={handleSubmitRequest}>
                 <div className="form-group">
+                  <label htmlFor="requestTitle">Title</label>
+                  <input
+                    type="text"
+                    id="requestTitle"
+                    value={requestTitle}
+                    onChange={(e) => setRequestTitle(e.target.value)}
+                    placeholder="Brief description of the request"
+                    required
+                  />
+                </div>
+                <div className="form-group">
                   <label htmlFor="requestType">Request Type</label>
                   <select
                     id="requestType"
@@ -409,9 +425,21 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                     value={requestDescription}
                     onChange={(e) => setRequestDescription(e.target.value)}
                     placeholder="Describe the changes you'd like to make..."
-                    rows={4}
-                    required
+                    rows={3}
                   ></textarea>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="requestPriority">Priority</label>
+                  <select
+                    id="requestPriority"
+                    value={requestPriority}
+                    onChange={(e) => setRequestPriority(e.target.value)}
+                  >
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
                 </div>
                 {submitError && (
                   <div className="form-error" style={{ color: 'var(--color-danger)', marginBottom: '1rem', fontSize: '0.875rem' }}>

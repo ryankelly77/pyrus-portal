@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { clientId, title, description, requestType } = body
+    const { clientId, title, description, requestType, priority } = body
 
     // Validate required fields
     if (!clientId || !title || !requestType) {
@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
     if (!validTypes.includes(requestType)) {
       return NextResponse.json({ error: 'Invalid request type' }, { status: 400 })
     }
+
+    // Validate priority if provided
+    const validPriorities = ['low', 'normal', 'high', 'urgent']
+    const priorityValue = priority && validPriorities.includes(priority) ? priority : 'normal'
 
     // Verify user has access to this client
     const profileResult = await dbPool.query(
@@ -69,10 +73,10 @@ export async function POST(request: NextRequest) {
 
     // Create the edit request
     const result = await dbPool.query(`
-      INSERT INTO website_edit_requests (client_id, title, description, request_type, status, created_by)
-      VALUES ($1, $2, $3, $4, 'pending', $5)
-      RETURNING id, title, description, request_type, status, created_at
-    `, [clientId, title.substring(0, 255), description, requestType, user.id])
+      INSERT INTO website_edit_requests (client_id, title, description, request_type, priority, status, created_by)
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6)
+      RETURNING id, title, description, request_type, priority, status, created_at
+    `, [clientId, title.substring(0, 255), description, requestType, priorityValue, user.id])
 
     const newRequest = result.rows[0]
 
