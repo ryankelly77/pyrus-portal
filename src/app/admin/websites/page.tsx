@@ -5,17 +5,23 @@ import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 
+type Tab = 'websites' | 'requests'
 type WebsiteType = 'seed-site' | 'sprout' | 'bloom' | 'harvest' | 'other'
 type UptimeStatus = 'up' | 'down' | 'paused' | 'unknown' | null
+type RequestStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled'
 
 interface EditRequest {
   id: string
+  clientId: string
+  clientName: string
+  domain: string
   title: string
   description: string | null
   requestType: string
   status: string
   priority: string
   createdAt: string
+  completedAt: string | null
 }
 
 interface Website {
@@ -40,6 +46,13 @@ interface WebsiteStats {
   active: number
   down: number
   pendingRequests: number
+}
+
+interface RequestStats {
+  total: number
+  pending: number
+  inProgress: number
+  completed: number
 }
 
 const getTypeLabel = (type: WebsiteType) => {
@@ -72,35 +85,111 @@ const getPriorityColor = (priority: string) => {
   }
 }
 
+const getStatusStyle = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return { background: '#FEF3C7', color: '#D97706' }
+    case 'in-progress':
+      return { background: '#DBEAFE', color: '#1D4ED8' }
+    case 'completed':
+      return { background: '#DCFCE7', color: '#16A34A' }
+    case 'cancelled':
+      return { background: '#F3F4F6', color: '#6B7280' }
+    default:
+      return { background: '#F3F4F6', color: '#6B7280' }
+  }
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'pending': return 'Pending'
+    case 'in-progress': return 'In Progress'
+    case 'completed': return 'Completed'
+    case 'cancelled': return 'Cancelled'
+    default: return status
+  }
+}
+
 export default function WebsitesPage() {
   const { user, hasNotifications } = useUserProfile()
-  const [websites, setWebsites] = useState<Website[]>([])
-  const [stats, setStats] = useState<WebsiteStats>({ total: 0, active: 0, down: 0, pendingRequests: 0 })
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<Tab>('websites')
 
+  // Websites tab state
+  const [websites, setWebsites] = useState<Website[]>([])
+  const [websiteStats, setWebsiteStats] = useState<WebsiteStats>({ total: 0, active: 0, down: 0, pendingRequests: 0 })
+  const [websitesLoading, setWebsitesLoading] = useState(true)
+  const [websitesError, setWebsitesError] = useState<string | null>(null)
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [statusFilter, setStatusFilter] = useState<'all' | 'up' | 'down' | 'with-requests'>('all')
   const [typeFilter, setTypeFilter] = useState<WebsiteType | 'all'>('all')
   const [carePlanFilter, setCarePlanFilter] = useState<'all' | 'with-care' | 'no-care'>('all')
+
+  // Requests tab state
+  const [requests, setRequests] = useState<EditRequest[]>([])
+  const [requestStats, setRequestStats] = useState<RequestStats>({ total: 0, pending: 0, inProgress: 0, completed: 0 })
+  const [requestsLoading, setRequestsLoading] = useState(false)
+  const [requestsError, setRequestsError] = useState<string | null>(null)
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all')
+  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWebsites()
   }, [])
 
+  useEffect(() => {
+    if (activeTab === 'requests' && requests.length === 0 && !requestsLoading) {
+      fetchRequests()
+    }
+  }, [activeTab])
+
   const fetchWebsites = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setWebsitesLoading(true)
+      setWebsitesError(null)
       const response = await fetch('/api/admin/websites')
       if (!response.ok) throw new Error('Failed to fetch websites')
       const data = await response.json()
       setWebsites(data.websites)
-      setStats(data.stats)
+      setWebsiteStats(data.stats)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setWebsitesError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      setIsLoading(false)
+      setWebsitesLoading(false)
+    }
+  }
+
+  const fetchRequests = async () => {
+    try {
+      setRequestsLoading(true)
+      setRequestsError(null)
+      const response = await fetch('/api/admin/websites/requests')
+      if (!response.ok) throw new Error('Failed to fetch requests')
+      const data = await response.json()
+      setRequests(data.requests)
+      setRequestStats(data.stats)
+    } catch (err) {
+      setRequestsError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setRequestsLoading(false)
+    }
+  }
+
+  const updateRequestStatus = async (requestId: string, status: RequestStatus) => {
+    try {
+      setUpdatingRequestId(requestId)
+      const response = await fetch('/api/admin/websites/requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, status }),
+      })
+      if (!response.ok) throw new Error('Failed to update request')
+
+      // Refresh both lists
+      await Promise.all([fetchRequests(), fetchWebsites()])
+    } catch (err) {
+      console.error('Failed to update request:', err)
+    } finally {
+      setUpdatingRequestId(null)
     }
   }
 
@@ -123,6 +212,11 @@ export default function WebsitesPage() {
     if (typeFilter !== 'all' && website.websiteType !== typeFilter) return false
     if (carePlanFilter === 'with-care' && website.carePlan === 'None') return false
     if (carePlanFilter === 'no-care' && website.carePlan !== 'None') return false
+    return true
+  })
+
+  const filteredRequests = requests.filter(request => {
+    if (requestStatusFilter !== 'all' && request.status !== requestStatusFilter) return false
     return true
   })
 
@@ -169,305 +263,579 @@ export default function WebsitesPage() {
       />
 
       <div className="admin-content">
-        {/* Stats Overview */}
-        <div className="stats-grid" style={{ marginBottom: '24px' }}>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#E0E7FF', color: '#4F46E5' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{isLoading ? '...' : stats.total}</span>
-              <span className="stat-label">Total Websites</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{isLoading ? '...' : stats.active}</span>
-              <span className="stat-label">Online</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#FEE2E2', color: '#DC2626' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{isLoading ? '...' : stats.down}</span>
-              <span className="stat-label">Down</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{isLoading ? '...' : stats.pendingRequests}</span>
-              <span className="stat-label">Pending Requests</span>
-            </div>
-          </div>
+        {/* Tabs */}
+        <div className="tabs-container" style={{ marginBottom: '24px' }}>
+          <button
+            className={`tab-button ${activeTab === 'websites' ? 'active' : ''}`}
+            onClick={() => setActiveTab('websites')}
+          >
+            Websites
+            <span className="tab-count">{websiteStats.total}</span>
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            Edit Requests
+            {requestStats.pending > 0 && (
+              <span className="tab-count pending">{requestStats.pending}</span>
+            )}
+          </button>
         </div>
 
-        {/* Filters */}
-        <div className="content-filters">
-          <div className="filter-group">
-            <label htmlFor="statusFilter">Status</label>
-            <select
-              id="statusFilter"
-              className="form-control"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="up">Online</option>
-              <option value="down">Down</option>
-              <option value="with-requests">With Pending Requests</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="typeFilter">Website Type</label>
-            <select
-              id="typeFilter"
-              className="form-control"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as WebsiteType | 'all')}
-            >
-              <option value="all">All Types</option>
-              <option value="seed-site">Seed Site</option>
-              <option value="sprout">Sprout</option>
-              <option value="bloom">Bloom</option>
-              <option value="harvest">Harvest</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="carePlanFilter">Care Plan</label>
-            <select
-              id="carePlanFilter"
-              className="form-control"
-              value={carePlanFilter}
-              onChange={(e) => setCarePlanFilter(e.target.value as typeof carePlanFilter)}
-            >
-              <option value="all">All</option>
-              <option value="with-care">With Care Plan</option>
-              <option value="no-care">No Care Plan</option>
-            </select>
-          </div>
-        </div>
+        {activeTab === 'websites' && (
+          <>
+            {/* Stats Overview */}
+            <div className="stats-grid" style={{ marginBottom: '24px' }}>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#E0E7FF', color: '#4F46E5' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{websitesLoading ? '...' : websiteStats.total}</span>
+                  <span className="stat-label">Total Websites</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{websitesLoading ? '...' : websiteStats.active}</span>
+                  <span className="stat-label">Online</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{websitesLoading ? '...' : websiteStats.down}</span>
+                  <span className="stat-label">Down</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{websitesLoading ? '...' : websiteStats.pendingRequests}</span>
+                  <span className="stat-label">Pending Requests</span>
+                </div>
+              </div>
+            </div>
 
-        {/* Error State */}
-        {error && (
-          <div style={{ padding: '20px', background: '#FEE2E2', color: '#DC2626', borderRadius: '8px', marginBottom: '16px' }}>
-            {error}
-            <button onClick={fetchWebsites} style={{ marginLeft: '16px', textDecoration: 'underline' }}>
-              Retry
-            </button>
-          </div>
+            {/* Filters */}
+            <div className="content-filters">
+              <div className="filter-group">
+                <label htmlFor="statusFilter">Status</label>
+                <select
+                  id="statusFilter"
+                  className="form-control"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="up">Online</option>
+                  <option value="down">Down</option>
+                  <option value="with-requests">With Pending Requests</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <label htmlFor="typeFilter">Website Type</label>
+                <select
+                  id="typeFilter"
+                  className="form-control"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as WebsiteType | 'all')}
+                >
+                  <option value="all">All Types</option>
+                  <option value="seed-site">Seed Site</option>
+                  <option value="sprout">Sprout</option>
+                  <option value="bloom">Bloom</option>
+                  <option value="harvest">Harvest</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <label htmlFor="carePlanFilter">Care Plan</label>
+                <select
+                  id="carePlanFilter"
+                  className="form-control"
+                  value={carePlanFilter}
+                  onChange={(e) => setCarePlanFilter(e.target.value as typeof carePlanFilter)}
+                >
+                  <option value="all">All</option>
+                  <option value="with-care">With Care Plan</option>
+                  <option value="no-care">No Care Plan</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Error State */}
+            {websitesError && (
+              <div style={{ padding: '20px', background: '#FEE2E2', color: '#DC2626', borderRadius: '8px', marginBottom: '16px' }}>
+                {websitesError}
+                <button onClick={fetchWebsites} style={{ marginLeft: '16px', textDecoration: 'underline' }}>
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {websitesLoading ? (
+              <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
+                <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
+                <p style={{ color: '#6B7280' }}>Loading websites...</p>
+              </div>
+            ) : filteredWebsites.length === 0 ? (
+              <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
+                <p style={{ color: '#6B7280' }}>
+                  {websites.length === 0
+                    ? 'No clients with websites found.'
+                    : 'No websites match the selected filters.'}
+                </p>
+              </div>
+            ) : (
+              <div className="data-table-card">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '32px' }}></th>
+                      <th>Website</th>
+                      <th>Client</th>
+                      <th>Website Plan</th>
+                      <th>Care Plan</th>
+                      <th>Status</th>
+                      <th>Requests</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredWebsites.map((website) => (
+                      <>
+                        <tr
+                          key={website.id}
+                          onClick={() => website.pendingRequests > 0 && toggleRow(website.id)}
+                          style={{ cursor: website.pendingRequests > 0 ? 'pointer' : 'default' }}
+                        >
+                          <td style={{ width: '32px', paddingRight: 0 }}>
+                            {website.pendingRequests > 0 && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleRow(website.id) }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transform: expandedRows.has(website.id) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                  transition: 'transform 0.2s',
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                              </button>
+                            )}
+                          </td>
+                          <td>
+                            <div className="website-domain-cell">
+                              <a
+                                href={website.websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="domain-link"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {website.domain}
+                              </a>
+                              <span className="hosting-badge">{website.hostingProvider}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <Link
+                              href={`/admin/clients/${website.clientId}`}
+                              className="client-link"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {website.clientName}
+                            </Link>
+                          </td>
+                          <td>
+                            <span className={`type-badge ${website.websiteType}`}>
+                              {getTypeLabel(website.websiteType)}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ color: website.carePlan === 'None' ? '#9CA3AF' : '#374151' }}>
+                              {website.carePlan}
+                            </span>
+                          </td>
+                          <td>
+                            {getUptimeStatusPill(website.uptimeStatus, website.uptime)}
+                          </td>
+                          <td>
+                            {website.pendingRequests > 0 ? (
+                              <span className="pending-requests-badge">
+                                {website.pendingRequests}
+                              </span>
+                            ) : (
+                              <span className="no-requests">None</span>
+                            )}
+                          </td>
+                          <td>
+                            <div className="row-actions" onClick={(e) => e.stopPropagation()}>
+                              <Link href={`/admin/clients/${website.clientId}?tab=website`} className="btn btn-sm btn-secondary">
+                                View
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedRows.has(website.id) && website.editRequests.length > 0 && (
+                          <tr key={`${website.id}-requests`} className="expanded-row">
+                            <td colSpan={8} style={{ background: '#F9FAFB', padding: 0 }}>
+                              <div style={{ padding: '16px 16px 16px 48px' }}>
+                                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
+                                  Pending Requests
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  {website.editRequests.map((request) => (
+                                    <div
+                                      key={request.id}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '12px 16px',
+                                        background: 'white',
+                                        borderRadius: '8px',
+                                        border: '1px solid #E5E7EB',
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          width: '8px',
+                                          height: '8px',
+                                          borderRadius: '50%',
+                                          background: getPriorityColor(request.priority),
+                                          flexShrink: 0,
+                                        }}
+                                        title={`Priority: ${request.priority}`}
+                                      ></span>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 500, color: '#111827', marginBottom: '2px' }}>
+                                          {request.title}
+                                        </div>
+                                        {request.description && (
+                                          <div style={{ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {request.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span
+                                        style={{
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          fontSize: '12px',
+                                          fontWeight: 500,
+                                          ...getStatusStyle(request.status),
+                                        }}
+                                      >
+                                        {getStatusLabel(request.status)}
+                                      </span>
+                                      <span style={{ fontSize: '12px', color: '#9CA3AF', whiteSpace: 'nowrap' }}>
+                                        {getRequestTypeLabel(request.requestType)}
+                                      </span>
+                                      <span style={{ fontSize: '12px', color: '#9CA3AF', whiteSpace: 'nowrap' }}>
+                                        {request.createdAt}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
-            <p style={{ color: '#6B7280' }}>Loading websites...</p>
-          </div>
-        ) : filteredWebsites.length === 0 ? (
-          <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
-            <p style={{ color: '#6B7280' }}>
-              {websites.length === 0
-                ? 'No clients with websites found.'
-                : 'No websites match the selected filters.'}
-            </p>
-          </div>
-        ) : (
-          /* Websites Table */
-          <div className="data-table-card">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '32px' }}></th>
-                  <th>Website</th>
-                  <th>Client</th>
-                  <th>Website Plan</th>
-                  <th>Care Plan</th>
-                  <th>Status</th>
-                  <th>Requests</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredWebsites.map((website) => (
-                  <>
-                    <tr
-                      key={website.id}
-                      onClick={() => website.pendingRequests > 0 && toggleRow(website.id)}
-                      style={{ cursor: website.pendingRequests > 0 ? 'pointer' : 'default' }}
-                    >
-                      <td style={{ width: '32px', paddingRight: 0 }}>
-                        {website.pendingRequests > 0 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleRow(website.id) }}
+        {activeTab === 'requests' && (
+          <>
+            {/* Request Stats */}
+            <div className="stats-grid" style={{ marginBottom: '24px' }}>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#E0E7FF', color: '#4F46E5' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{requestsLoading ? '...' : requestStats.total}</span>
+                  <span className="stat-label">Total Requests</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{requestsLoading ? '...' : requestStats.pending}</span>
+                  <span className="stat-label">Pending</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{requestsLoading ? '...' : requestStats.inProgress}</span>
+                  <span className="stat-label">In Progress</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <span className="stat-value">{requestsLoading ? '...' : requestStats.completed}</span>
+                  <span className="stat-label">Completed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="content-filters">
+              <div className="filter-group">
+                <label htmlFor="requestStatusFilter">Status</label>
+                <select
+                  id="requestStatusFilter"
+                  className="form-control"
+                  value={requestStatusFilter}
+                  onChange={(e) => setRequestStatusFilter(e.target.value as typeof requestStatusFilter)}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Error State */}
+            {requestsError && (
+              <div style={{ padding: '20px', background: '#FEE2E2', color: '#DC2626', borderRadius: '8px', marginBottom: '16px' }}>
+                {requestsError}
+                <button onClick={fetchRequests} style={{ marginLeft: '16px', textDecoration: 'underline' }}>
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {requestsLoading ? (
+              <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
+                <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
+                <p style={{ color: '#6B7280' }}>Loading requests...</p>
+              </div>
+            ) : filteredRequests.length === 0 ? (
+              <div className="data-table-card" style={{ padding: '40px', textAlign: 'center' }}>
+                <p style={{ color: '#6B7280' }}>
+                  {requests.length === 0
+                    ? 'No edit requests found.'
+                    : 'No requests match the selected filter.'}
+                </p>
+              </div>
+            ) : (
+              <div className="data-table-card">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Request</th>
+                      <th>Type</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRequests.map((request) => (
+                      <tr key={request.id}>
+                        <td>
+                          <div>
+                            <Link href={`/admin/clients/${request.clientId}`} className="client-link" style={{ fontWeight: 500 }}>
+                              {request.clientName}
+                            </Link>
+                            {request.domain && (
+                              <div style={{ fontSize: '12px', color: '#6B7280' }}>{request.domain}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ maxWidth: '300px' }}>
+                            <div style={{ fontWeight: 500, color: '#111827' }}>{request.title}</div>
+                            {request.description && (
+                              <div style={{ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {request.description}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '13px', color: '#6B7280' }}>
+                            {getRequestTypeLabel(request.requestType)}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: getPriorityColor(request.priority),
+                              }}
+                            ></span>
+                            <span style={{ fontSize: '13px', textTransform: 'capitalize' }}>{request.priority}</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span
                             style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              padding: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transform: expandedRows.has(website.id) ? 'rotate(90deg)' : 'rotate(0deg)',
-                              transition: 'transform 0.2s',
+                              padding: '4px 10px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              ...getStatusStyle(request.status),
                             }}
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                          </button>
-                        )}
-                      </td>
-                      <td>
-                        <div className="website-domain-cell">
-                          <a
-                            href={website.websiteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="domain-link"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {website.domain}
-                          </a>
-                          <span className="hosting-badge">{website.hostingProvider}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <Link
-                          href={`/admin/clients/${website.clientId}`}
-                          className="client-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {website.clientName}
-                        </Link>
-                      </td>
-                      <td>
-                        <span className={`type-badge ${website.websiteType}`}>
-                          {getTypeLabel(website.websiteType)}
-                        </span>
-                      </td>
-                      <td>
-                        <span style={{ color: website.carePlan === 'None' ? '#9CA3AF' : '#374151' }}>
-                          {website.carePlan}
-                        </span>
-                      </td>
-                      <td>
-                        {getUptimeStatusPill(website.uptimeStatus, website.uptime)}
-                      </td>
-                      <td>
-                        {website.pendingRequests > 0 ? (
-                          <span className="pending-requests-badge">
-                            {website.pendingRequests}
+                            {getStatusLabel(request.status)}
                           </span>
-                        ) : (
-                          <span className="no-requests">None</span>
-                        )}
-                      </td>
-                      <td>
-                        <div className="row-actions" onClick={(e) => e.stopPropagation()}>
-                          <Link href={`/admin/clients/${website.clientId}?tab=website`} className="btn btn-sm btn-secondary">
-                            View
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedRows.has(website.id) && website.editRequests.length > 0 && (
-                      <tr key={`${website.id}-requests`} className="expanded-row">
-                        <td colSpan={8} style={{ background: '#F9FAFB', padding: 0 }}>
-                          <div style={{ padding: '16px 16px 16px 48px' }}>
-                            <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#374151' }}>
-                              Pending Requests
-                            </h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              {website.editRequests.map((request) => (
-                                <div
-                                  key={request.id}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    padding: '12px 16px',
-                                    background: 'white',
-                                    borderRadius: '8px',
-                                    border: '1px solid #E5E7EB',
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      width: '8px',
-                                      height: '8px',
-                                      borderRadius: '50%',
-                                      background: getPriorityColor(request.priority),
-                                      flexShrink: 0,
-                                    }}
-                                    title={`Priority: ${request.priority}`}
-                                  ></span>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontWeight: 500, color: '#111827', marginBottom: '2px' }}>
-                                      {request.title}
-                                    </div>
-                                    {request.description && (
-                                      <div style={{ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {request.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <span
-                                    style={{
-                                      padding: '4px 8px',
-                                      borderRadius: '4px',
-                                      fontSize: '12px',
-                                      fontWeight: 500,
-                                      background: request.status === 'in-progress' ? '#DBEAFE' : '#F3F4F6',
-                                      color: request.status === 'in-progress' ? '#1D4ED8' : '#6B7280',
-                                    }}
-                                  >
-                                    {request.status === 'in-progress' ? 'In Progress' : 'Pending'}
-                                  </span>
-                                  <span style={{ fontSize: '12px', color: '#9CA3AF', whiteSpace: 'nowrap' }}>
-                                    {getRequestTypeLabel(request.requestType)}
-                                  </span>
-                                  <span style={{ fontSize: '12px', color: '#9CA3AF', whiteSpace: 'nowrap' }}>
-                                    {request.createdAt}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '13px', color: '#6B7280' }}>
+                            {request.createdAt}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {request.status === 'pending' && (
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => updateRequestStatus(request.id, 'in-progress')}
+                                disabled={updatingRequestId === request.id}
+                              >
+                                {updatingRequestId === request.id ? '...' : 'Start'}
+                              </button>
+                            )}
+                            {request.status === 'in-progress' && (
+                              <button
+                                className="btn btn-sm btn-primary"
+                                onClick={() => updateRequestStatus(request.id, 'completed')}
+                                disabled={updatingRequestId === request.id}
+                              >
+                                {updatingRequestId === request.id ? '...' : 'Complete'}
+                              </button>
+                            )}
+                            {request.status === 'completed' && (
+                              <span style={{ fontSize: '12px', color: '#16A34A' }}>
+                                {request.completedAt}
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <style jsx>{`
+        .tabs-container {
+          display: flex;
+          gap: 0;
+          border-bottom: 1px solid #E5E7EB;
+        }
+        .tab-button {
+          padding: 12px 20px;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          color: #6B7280;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        .tab-button:hover {
+          color: #374151;
+        }
+        .tab-button.active {
+          color: #4F46E5;
+          border-bottom-color: #4F46E5;
+        }
+        .tab-count {
+          background: #E5E7EB;
+          color: #6B7280;
+          padding: 2px 8px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .tab-count.pending {
+          background: #FEF3C7;
+          color: #D97706;
+        }
+        .tab-button.active .tab-count {
+          background: #E0E7FF;
+          color: #4F46E5;
+        }
+        .tab-button.active .tab-count.pending {
+          background: #FEF3C7;
+          color: #D97706;
+        }
         .website-domain-cell {
           display: flex;
           align-items: center;
