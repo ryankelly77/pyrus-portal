@@ -34,9 +34,11 @@ export async function getDomainExpiry(domain: string): Promise<DomainInfo | null
   const apiKey = process.env.WHOISXML_API_KEY
 
   if (!apiKey) {
-    console.warn('WHOISXML_API_KEY not configured')
+    console.warn('[WhoisXML] WHOISXML_API_KEY not configured - domain expiry lookups disabled')
     return null
   }
+
+  console.log(`[WhoisXML] Looking up domain: ${domain}`)
 
   // Clean the domain (remove protocol, www, paths)
   let cleanDomain = domain

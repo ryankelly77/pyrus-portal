@@ -193,6 +193,8 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
             expiresAt: uptimeData.ssl.expiresAt,
             daysRemaining: uptimeData.ssl.daysRemaining,
           }
+        } else {
+          console.log(`[WebsiteService] No SSL data from UptimeRobot for client ${clientId} (monitor: ${client.uptimerobot_monitor_id})`)
         }
         if (uptimeData.currentStatus) {
           currentStatusInfo = {
@@ -200,6 +202,8 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
             checkInterval: uptimeData.currentStatus.checkInterval,
           }
         }
+      } else {
+        console.log(`[WebsiteService] UptimeRobot returned no data for client ${clientId} (monitor: ${client.uptimerobot_monitor_id})`)
       }
     }
 
@@ -221,8 +225,10 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
         daysRemaining: Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
         registrar: client.domain_registrar || 'Unknown',
       }
+      console.log(`[WebsiteService] Using cached domain info for client ${clientId}: expires ${domainInfo.expiresAt}`)
     } else if (domainCacheStale && client.website_url) {
       // Fetch fresh domain info from WhoisXML
+      console.log(`[WebsiteService] Fetching fresh domain info for client ${clientId} (cache stale: ${domainCacheStale}, url: ${client.website_url})`)
       try {
         const freshDomainInfo = await getDomainExpiry(client.website_url)
         if (freshDomainInfo) {
@@ -231,6 +237,7 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
             daysRemaining: freshDomainInfo.daysRemaining,
             registrar: freshDomainInfo.registrar,
           }
+          console.log(`[WebsiteService] Got domain info for client ${clientId}: expires ${domainInfo.expiresAt}, registrar: ${domainInfo.registrar}`)
           // Update cache in database (fire and forget)
           prisma.clients.update({
             where: { id: clientId },
@@ -240,10 +247,14 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
               domain_checked_at: new Date(),
             },
           }).catch(err => console.error('Failed to cache domain expiry:', err))
+        } else {
+          console.log(`[WebsiteService] WhoisXML returned no data for client ${clientId} (url: ${client.website_url})`)
         }
       } catch (err) {
-        console.error('Failed to fetch domain expiry:', err)
+        console.error(`[WebsiteService] Failed to fetch domain expiry for client ${clientId}:`, err)
       }
+    } else {
+      console.log(`[WebsiteService] Skipping domain lookup for client ${clientId} - no website_url or cache conditions not met`)
     }
 
     // Calculate last updated date from:

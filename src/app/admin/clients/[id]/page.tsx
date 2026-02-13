@@ -1769,7 +1769,7 @@ export default function ClientDetailPage() {
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
-    servicesCount: subscriptionServicesCount,
+    servicesCount: stripeSubscriptions.filter(s => s.status === 'active').flatMap(s => s.items).length,
     hasWebsite: hasWebsiteProducts,
     hasContent: hasContentProducts,
     websiteData: realWebsiteData,

@@ -112,6 +112,15 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
 
     const monitor = data.monitors[0]
 
+    // Debug logging to diagnose missing data
+    console.log(`[UptimeRobot] Monitor ${monitorId} (${monitor.friendly_name}):`, {
+      status: monitor.status,
+      hasSSL: !!monitor.ssl,
+      sslExpires: monitor.ssl?.expires,
+      logsCount: monitor.logs?.length || 0,
+      logTypes: monitor.logs?.map(l => l.type) || [],
+    })
+
     // Convert status code to status string
     let status: 'up' | 'down' | 'paused' | 'unknown'
     switch (monitor.status) {
@@ -194,13 +203,17 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
       }
     }
 
-    // Calculate current uptime duration (time since last "up" event)
+    // Calculate current uptime duration (time since last "up" event or monitoring started)
     let currentStatusInfo: CurrentStatusInfo | undefined
     if (status === 'up' && monitor.logs) {
-      // Find the most recent "up" event (type 2) to calculate duration
-      const upEvents = monitor.logs.filter(log => log.type === 2).sort((a, b) => b.datetime - a.datetime)
-      if (upEvents.length > 0) {
-        const lastUpTime = upEvents[0].datetime
+      // Find the most recent "up" event (type 2) or "started" event (type 98) to calculate duration
+      // Type 2 = recovered from down, Type 98 = monitoring started
+      const upOrStartEvents = monitor.logs
+        .filter(log => log.type === 2 || log.type === 98)
+        .sort((a, b) => b.datetime - a.datetime)
+
+      if (upOrStartEvents.length > 0) {
+        const lastUpTime = upOrStartEvents[0].datetime
         const uptimeSeconds = now - lastUpTime
         const days = Math.floor(uptimeSeconds / 86400)
         const hours = Math.floor((uptimeSeconds % 86400) / 3600)
