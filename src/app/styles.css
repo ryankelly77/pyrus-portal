@@ -7582,6 +7582,23 @@
             min-height: 100vh;
         }
 
+        /* Hide LeadConnector chat widgets on admin pages */
+        .admin-layout ~ #chat-widget-container,
+        .admin-layout ~ [id*="lc_text"],
+        .admin-layout ~ [id*="leadconnector"],
+        .admin-layout ~ iframe[src*="leadconnector"],
+        body:has(.admin-layout) #chat-widget-container,
+        body:has(.admin-layout) [id*="lc_text"],
+        body:has(.admin-layout) [id*="leadconnector"],
+        body:has(.admin-layout) iframe[src*="leadconnector"],
+        body:has(.admin-layout) [class*="lc-text-widget"],
+        body:has(.admin-layout) [class*="chat-widget"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
         .admin-sidebar {
             width: 260px;
             background: var(--pyrus-green);
