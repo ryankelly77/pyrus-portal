@@ -141,13 +141,8 @@ export default function WebsitesPage() {
 
   useEffect(() => {
     fetchWebsites()
+    fetchRequests() // Fetch on mount so count bubble shows immediately
   }, [])
-
-  useEffect(() => {
-    if (activeTab === 'requests' && requests.length === 0 && !requestsLoading) {
-      fetchRequests()
-    }
-  }, [activeTab])
 
   const fetchWebsites = async () => {
     try {
