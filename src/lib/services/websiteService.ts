@@ -158,45 +158,64 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
       }
     }
 
-    // Calculate last updated date from most recent "Website Updates" todo completion
+    // Calculate last updated date from:
+    // 1. Most recent completed edit request (completed_at), OR
+    // 2. Most recent Basecamp todo with "Website" in title
+    // If neither exists, show "N/A"
     let lastUpdatedDate: Date | null = null
+
+    // Check for completed edit requests first
     try {
-      const lastUpdate = await prisma.basecamp_activities.findFirst({
+      const lastCompletedRequest = await prisma.website_edit_requests.findFirst({
         where: {
           client_id: clientId,
-          kind: 'todo_completed',
-          recording_title: {
-            contains: 'Website Updates',
-            mode: 'insensitive',
-          },
+          status: 'completed',
+          completed_at: { not: null },
         },
-        orderBy: [{ basecamp_created_at: 'desc' }, { created_at: 'desc' }],
-        select: {
-          basecamp_created_at: true,
-          created_at: true,
-        },
+        orderBy: { completed_at: 'desc' },
+        select: { completed_at: true },
       })
-      if (lastUpdate) {
-        lastUpdatedDate = lastUpdate.basecamp_created_at || lastUpdate.created_at
+      if (lastCompletedRequest?.completed_at) {
+        lastUpdatedDate = lastCompletedRequest.completed_at
       }
     } catch {
       // Table may not exist
     }
 
-    // Fall back to launch date or 'Unknown'
+    // If no completed edit request, check Basecamp todos
+    if (!lastUpdatedDate) {
+      try {
+        const lastUpdate = await prisma.basecamp_activities.findFirst({
+          where: {
+            client_id: clientId,
+            kind: 'todo_completed',
+            recording_title: {
+              contains: 'Website',
+              mode: 'insensitive',
+            },
+          },
+          orderBy: [{ basecamp_created_at: 'desc' }, { created_at: 'desc' }],
+          select: {
+            basecamp_created_at: true,
+            created_at: true,
+          },
+        })
+        if (lastUpdate) {
+          lastUpdatedDate = lastUpdate.basecamp_created_at || lastUpdate.created_at
+        }
+      } catch {
+        // Table may not exist
+      }
+    }
+
+    // Show "N/A" if no valid update source found (don't fall back to launch date)
     const lastUpdatedDisplay = lastUpdatedDate
       ? lastUpdatedDate.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
         })
-      : client.website_launch_date
-        ? new Date(client.website_launch_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
-        : 'Unknown'
+      : 'N/A'
 
     websiteData = {
       domain,
