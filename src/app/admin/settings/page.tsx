@@ -56,7 +56,7 @@ interface QuestionTemplate {
   product: Product
 }
 
-type Tab = 'profile' | 'checklist' | 'questions' | 'video'
+type Tab = 'profile' | 'checklist' | 'questions' | 'video' | 'tutorials'
 
 // Video chapters for onboarding videos - each chapter has its own video
 const defaultVideoChapters = [
@@ -141,6 +141,17 @@ export default function AdminSettingsPage() {
 
   // Get current chapter's video URL
   const currentChapterVideo = videoChapters.find(c => c.id === activeChapter)?.videoUrl || ''
+
+  // Tutorial state
+  const [activeTutorial, setActiveTutorial] = useState<string>('')
+  const [tutorialPages, setTutorialPages] = useState<Array<{ id: string; title: string; description: string; videoUrl: string }>>([])
+  const [editingTutorialId, setEditingTutorialId] = useState<string | null>(null)
+  const [tutorialForm, setTutorialForm] = useState({ title: '', description: '', videoUrl: '' })
+  const [draggedTutorialId, setDraggedTutorialId] = useState<string | null>(null)
+  const [tutorialsLoading, setTutorialsLoading] = useState(false)
+
+  // Get current tutorial's video URL
+  const currentTutorialVideo = tutorialPages.find(p => p.id === activeTutorial)?.videoUrl || ''
 
   // Fetch video chapters on mount
   useEffect(() => {
@@ -352,6 +363,174 @@ export default function AdminSettingsPage() {
 
   const handleDragEnd = () => {
     setDraggedChapterId(null)
+  }
+
+  // ========== Tutorial Functions ==========
+
+  // Fetch tutorial pages on mount
+  useEffect(() => {
+    async function fetchTutorialPages() {
+      setTutorialsLoading(true)
+      try {
+        const res = await fetch('/api/admin/tutorials')
+        if (res.ok) {
+          const data = await res.json()
+          const pages = data.map((p: { id: string; title: string; description: string | null; video_url: string | null }) => ({
+            id: p.id,
+            title: p.title,
+            description: p.description || '',
+            videoUrl: p.video_url || ''
+          }))
+          setTutorialPages(pages)
+          setActiveTutorial(pages[0]?.id || '')
+        }
+      } catch (error) {
+        console.error('Failed to fetch tutorial pages:', error)
+      } finally {
+        setTutorialsLoading(false)
+      }
+    }
+    fetchTutorialPages()
+  }, [])
+
+  // Start editing a tutorial page
+  const startEditTutorial = (pageId: string) => {
+    const page = tutorialPages.find(p => p.id === pageId)
+    if (page) {
+      setTutorialForm({ title: page.title, description: page.description, videoUrl: page.videoUrl })
+      setEditingTutorialId(pageId)
+    }
+  }
+
+  // Save tutorial page changes
+  const saveTutorial = async () => {
+    if (!editingTutorialId) return
+    try {
+      const res = await fetch('/api/admin/tutorials', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingTutorialId,
+          title: tutorialForm.title,
+          description: tutorialForm.description,
+          videoUrl: tutorialForm.videoUrl
+        })
+      })
+      if (res.ok) {
+        setTutorialPages(prev => prev.map(p =>
+          p.id === editingTutorialId
+            ? { ...p, title: tutorialForm.title, description: tutorialForm.description, videoUrl: tutorialForm.videoUrl }
+            : p
+        ))
+        setEditingTutorialId(null)
+      } else {
+        alert('Failed to save page')
+      }
+    } catch (error) {
+      console.error('Error saving tutorial page:', error)
+      alert('Failed to save page')
+    }
+  }
+
+  // Cancel editing tutorial
+  const cancelEditTutorial = () => {
+    setEditingTutorialId(null)
+    setTutorialForm({ title: '', description: '', videoUrl: '' })
+  }
+
+  // Add new tutorial page
+  const addTutorial = async () => {
+    try {
+      const res = await fetch('/api/admin/tutorials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'New Page',
+          description: 'Click edit to customize',
+          videoUrl: ''
+        })
+      })
+      if (res.ok) {
+        const newPage = await res.json()
+        const page = {
+          id: newPage.id,
+          title: newPage.title,
+          description: newPage.description || '',
+          videoUrl: newPage.video_url || ''
+        }
+        setTutorialPages(prev => [...prev, page])
+        setTutorialForm({ title: page.title, description: page.description, videoUrl: '' })
+        setEditingTutorialId(page.id)
+      }
+    } catch (error) {
+      console.error('Error adding tutorial page:', error)
+      alert('Failed to add page')
+    }
+  }
+
+  // Delete tutorial page
+  const deleteTutorial = async () => {
+    if (!editingTutorialId) return
+    if (tutorialPages.length <= 1) {
+      alert('You must have at least one page')
+      return
+    }
+    try {
+      const res = await fetch(`/api/admin/tutorials?id=${editingTutorialId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setTutorialPages(prev => prev.filter(p => p.id !== editingTutorialId))
+        setEditingTutorialId(null)
+        if (activeTutorial === editingTutorialId && tutorialPages.length > 1) {
+          setActiveTutorial(tutorialPages[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting tutorial page:', error)
+      alert('Failed to delete page')
+    }
+  }
+
+  // Tutorial drag handlers
+  const handleTutorialDragStart = (e: React.DragEvent, pageId: string) => {
+    setDraggedTutorialId(pageId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleTutorialDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleTutorialDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!draggedTutorialId || draggedTutorialId === targetId) return
+
+    const draggedIndex = tutorialPages.findIndex(p => p.id === draggedTutorialId)
+    const targetIndex = tutorialPages.findIndex(p => p.id === targetId)
+
+    const newPages = [...tutorialPages]
+    const [draggedPage] = newPages.splice(draggedIndex, 1)
+    newPages.splice(targetIndex, 0, draggedPage)
+
+    setTutorialPages(newPages)
+    setDraggedTutorialId(null)
+
+    // Save new order to server
+    try {
+      await fetch('/api/admin/tutorials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pages: newPages })
+      })
+    } catch (error) {
+      console.error('Error saving page order:', error)
+    }
+  }
+
+  const handleTutorialDragEnd = () => {
+    setDraggedTutorialId(null)
   }
 
   // Handle image upload
@@ -832,50 +1011,58 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="tabs-container" style={{ marginBottom: '1.5rem' }}>
-          <div className="tabs">
-            <button
-              className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              Profile
-            </button>
-            <button
-              className={`tab ${activeTab === 'checklist' ? 'active' : ''}`}
-              onClick={() => setActiveTab('checklist')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
-              Onboarding Checklist
-            </button>
-            <button
-              className={`tab ${activeTab === 'questions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('questions')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              Onboarding Questions
-            </button>
-            <button
-              className={`tab ${activeTab === 'video' ? 'active' : ''}`}
-              onClick={() => setActiveTab('video')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-              </svg>
-              Onboarding Videos
-            </button>
-          </div>
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${activeTab === 'profile' ? 'active' : ''}`}
+            onClick={() => setActiveTab('profile')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Profile
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'checklist' ? 'active' : ''}`}
+            onClick={() => setActiveTab('checklist')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            Onboarding Checklist
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'questions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('questions')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            Onboarding Questions
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'video' ? 'active' : ''}`}
+            onClick={() => setActiveTab('video')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            Onboarding Videos
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'tutorials' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tutorials')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="10 8 16 12 10 16 10 8"></polygon>
+            </svg>
+            Tutorials
+          </button>
         </div>
 
         {/* Profile Tab */}
@@ -2287,6 +2474,258 @@ export default function AdminSettingsPage() {
                       <button
                         style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#885430', color: 'white', border: 'none' }}
                         onClick={saveChapter}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tutorials Tab */}
+        {activeTab === 'tutorials' && (
+          <div style={{ maxWidth: '1200px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '1.5rem' }}>
+              {/* Video Player Section */}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1.25rem 1.5rem', borderBottom: '1px solid #D4DCD2' }}>
+                    <div>
+                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 600 }}>
+                        {tutorialPages.find(p => p.id === activeTutorial)?.title || 'Tutorial Video'}
+                      </h2>
+                      <p style={{ margin: 0, fontSize: '0.813rem', color: '#5A6358' }}>
+                        {tutorialPages.find(p => p.id === activeTutorial)?.description || 'Select a page to view'}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
+                    {currentTutorialVideo ? (
+                      <iframe
+                        src={currentTutorialVideo}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                      />
+                    ) : (
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F5F5F4', color: '#5A6358', gap: '1rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48" style={{ opacity: 0.5 }}>
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <h3 style={{ margin: 0, fontSize: '1.125rem', color: '#1A1F16' }}>No Video Set</h3>
+                        <p style={{ margin: 0, fontSize: '0.875rem', maxWidth: '300px', textAlign: 'center' }}>
+                          Click the edit button on a page to add a tutorial video
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Instructions Card */}
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden', marginTop: '1rem' }}>
+                  <div style={{ padding: '1rem 1.5rem' }}>
+                    <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem' }}>How to Get Loom Embed URL</h4>
+                    <ol style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.813rem', color: '#5A6358', lineHeight: 1.6 }}>
+                      <li>Open your Loom video</li>
+                      <li>Click Share → Embed</li>
+                      <li>Copy the embed code</li>
+                      <li>Extract the URL from <code style={{ background: '#F5F5F4', padding: '0.125rem 0.375rem', borderRadius: '4px', fontSize: '0.75rem' }}>src="..."</code></li>
+                    </ol>
+                    <p style={{ margin: '0.75rem 0 0', fontSize: '0.75rem', color: '#8A928A' }}>
+                      Example: https://www.loom.com/embed/abc123def456
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Video Library Section */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid #D4DCD2', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #D4DCD2', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 600 }}>Video Library</h2>
+                      <p style={{ margin: 0, fontSize: '0.813rem', color: '#5A6358' }}>Drag to reorder</p>
+                    </div>
+                    <button
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.75rem', borderRadius: '6px', fontSize: '0.813rem', fontWeight: 500, cursor: 'pointer', background: '#885430', color: 'white', border: 'none' }}
+                      onClick={addTutorial}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Add
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {tutorialPages.map((page, index) => (
+                      <div
+                        key={page.id}
+                        draggable
+                        onDragStart={(e) => handleTutorialDragStart(e, page.id)}
+                        onDragOver={handleTutorialDragOver}
+                        onDrop={(e) => handleTutorialDrop(e, page.id)}
+                        onDragEnd={handleTutorialDragEnd}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '0.5rem',
+                          padding: '0.875rem 1rem',
+                          background: draggedTutorialId === page.id ? '#F5F5F4' : activeTutorial === page.id ? 'rgba(136, 84, 48, 0.08)' : 'none',
+                          borderBottom: index < tutorialPages.length - 1 ? '1px solid #D4DCD2' : 'none',
+                          opacity: draggedTutorialId === page.id ? 0.5 : 1,
+                          cursor: 'grab',
+                        }}
+                      >
+                        {/* Drag Handle */}
+                        <div style={{ color: '#8A928A', flexShrink: 0, cursor: 'grab', padding: '0.25rem 0' }}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <circle cx="9" cy="6" r="1.5"></circle>
+                            <circle cx="15" cy="6" r="1.5"></circle>
+                            <circle cx="9" cy="12" r="1.5"></circle>
+                            <circle cx="15" cy="12" r="1.5"></circle>
+                            <circle cx="9" cy="18" r="1.5"></circle>
+                            <circle cx="15" cy="18" r="1.5"></circle>
+                          </svg>
+                        </div>
+                        <button
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            background: 'none',
+                            border: 'none',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            flex: 1,
+                            padding: 0
+                          }}
+                          onClick={() => setActiveTutorial(page.id)}
+                        >
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: page.videoUrl ? '#22C55E' : activeTutorial === page.id ? '#885430' : '#F5F5F4',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: page.videoUrl || activeTutorial === page.id ? 'white' : '#5A6358',
+                            flexShrink: 0
+                          }}>
+                            {page.videoUrl ? (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="12" height="12">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                            ) : index + 1}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#1A1F16', marginBottom: '0.25rem' }}>{page.title}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#8A928A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {page.description}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          style={{ background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#5A6358', flexShrink: 0 }}
+                          onClick={() => startEditTutorial(page.id)}
+                          title="Edit page"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Page Modal */}
+            {editingTutorialId && (
+              <div
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+                onClick={cancelEditTutorial}
+              >
+                <div
+                  style={{ background: '#FFFFFF', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid #D4DCD2' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.125rem' }}>Edit Page</h2>
+                    <button
+                      style={{ background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#5A6358' }}
+                      onClick={cancelEditTutorial}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div style={{ padding: '1.5rem' }}>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Title</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="Page title"
+                        value={tutorialForm.title}
+                        onChange={(e) => setTutorialForm(prev => ({ ...prev, title: e.target.value }))}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Description</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="Brief description"
+                        value={tutorialForm.description}
+                        onChange={(e) => setTutorialForm(prev => ({ ...prev, description: e.target.value }))}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.813rem', fontWeight: 500, marginBottom: '0.5rem', color: '#1A1F16' }}>Loom Embed URL</label>
+                      <input
+                        type="text"
+                        style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #D4DCD2', borderRadius: '8px', background: '#FEFBF7', color: '#1A1F16', fontSize: '0.875rem' }}
+                        placeholder="https://www.loom.com/embed/abc123..."
+                        value={tutorialForm.videoUrl}
+                        onChange={(e) => setTutorialForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                      />
+                      <span style={{ display: 'block', fontSize: '0.75rem', color: '#5A6358', marginTop: '0.25rem' }}>
+                        Paste the embed URL from Loom (Share → Embed → extract src URL)
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 1.5rem', borderTop: '1px solid #D4DCD2' }}>
+                    <button
+                      style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#FEE2E2', color: '#991B1B', border: 'none' }}
+                      onClick={() => {
+                        if (confirm('Delete this page?')) {
+                          deleteTutorial()
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <button
+                        style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#F5F5F4', color: '#1A1F16', border: '1px solid #D4DCD2' }}
+                        onClick={cancelEditTutorial}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        style={{ padding: '0.625rem 1rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', background: '#885430', color: 'white', border: 'none' }}
+                        onClick={saveTutorial}
                       >
                         Save
                       </button>

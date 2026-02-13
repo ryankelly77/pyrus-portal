@@ -299,51 +299,63 @@
             display: block;
         }
 
-        /* Admin Tabs (Settings, Emails, etc.) */
-        .tabs-container {
-            margin-bottom: 24px;
-        }
-
-        .tabs {
+        /* ======================= */
+        /* ADMIN TABS - Standard Style */
+        /* Use .admin-tabs container with .admin-tab buttons */
+        /* ======================= */
+        .admin-tabs {
             display: flex;
-            gap: 4px;
-            background: var(--bg-white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-sm);
-            padding: 6px;
-            width: fit-content;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .tabs .tab {
+        .admin-tab {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            background: transparent;
+            padding: 12px 20px;
             border: none;
+            background: none;
             cursor: pointer;
-            transition: all 0.15s ease;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
             font-family: inherit;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
             white-space: nowrap;
         }
 
-        .tabs .tab:hover {
-            background: var(--pyrus-green-wash);
+        .admin-tab:hover {
             color: var(--text-primary);
         }
 
-        .tabs .tab.active {
-            background: var(--pyrus-green);
+        .admin-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .admin-tab svg {
+            flex-shrink: 0;
+        }
+
+        .admin-tab .tab-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        .admin-tab .tab-badge.coming-soon {
+            background-color: var(--pyrus-sage);
             color: white;
         }
 
-        .tabs .tab svg {
-            flex-shrink: 0;
+        .admin-tab .tab-badge.count {
+            background-color: var(--pyrus-green-wash);
+            color: var(--pyrus-green);
         }
 
         /* ======================= */

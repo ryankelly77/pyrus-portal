@@ -219,44 +219,31 @@ export default function AdminEmailTemplatesPage() {
         </div>
 
         {/* Tabs */}
-        <div className="tabs-container" style={{ marginBottom: '1.5rem' }}>
-          <div className="tabs">
-            <button
-              className={`tab ${activeTab === 'templates' ? 'active' : ''}`}
-              onClick={() => setActiveTab('templates')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
-              </svg>
-              Email Templates
-            </button>
-            <button
-              className={`tab ${activeTab === 'automation' ? 'active' : ''}`}
-              onClick={() => setActiveTab('automation')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polyline points="16 3 21 3 21 8"></polyline>
-                <line x1="4" y1="20" x2="21" y2="3"></line>
-                <polyline points="21 16 21 21 16 21"></polyline>
-                <line x1="15" y1="15" x2="21" y2="21"></line>
-                <line x1="4" y1="4" x2="9" y2="9"></line>
-              </svg>
-              Automation & Workflows
-              <span style={{
-                fontSize: '10px',
-                fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: '4px',
-                backgroundColor: 'var(--pyrus-sage)',
-                color: 'white',
-                marginLeft: '4px'
-              }}>
-                Coming Soon
-              </span>
-            </button>
-          </div>
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${activeTab === 'templates' ? 'active' : ''}`}
+            onClick={() => setActiveTab('templates')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Email Templates
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'automation' ? 'active' : ''}`}
+            onClick={() => setActiveTab('automation')}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+              <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+            Automation & Workflows
+            <span className="tab-badge coming-soon">Coming Soon</span>
+          </button>
         </div>
 
         {/* Email Templates Tab */}
