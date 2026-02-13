@@ -580,12 +580,26 @@ export async function calculateClientPerformance(
   const redFlags = generateRedFlags(metrics, lastAlertAt, velocity)
   const recommendations = generateRecommendations(finalScore, growthStage, metrics, lastAlertAt)
 
-  // Calculate MRR - prefer monthly_spend from client record, fall back to subscriptions
-  const mrr = client.monthly_spend
-    ? parseFloat(client.monthly_spend.toString())
-    : client.subscriptions.reduce((sum, sub) => {
-        return sum + (sub.monthly_amount ? parseFloat(sub.monthly_amount.toString()) : 0)
-      }, 0)
+  // Calculate MRR - prefer monthly_spend from client record, fall back to subscription items
+  let mrr = 0
+  if (client.monthly_spend && parseFloat(client.monthly_spend.toString()) > 0) {
+    mrr = parseFloat(client.monthly_spend.toString())
+  } else {
+    // Sum up all subscription items (unit_amount * quantity, or product price if no unit_amount)
+    for (const sub of client.subscriptions) {
+      for (const item of sub.subscription_items) {
+        const quantity = item.quantity || 1
+        // Try unit_amount first, then fall back to product's monthly_price
+        let unitAmount = 0
+        if (item.unit_amount) {
+          unitAmount = parseFloat(item.unit_amount.toString())
+        } else if (item.product?.monthly_price) {
+          unitAmount = parseFloat(item.product.monthly_price.toString())
+        }
+        mrr += unitAmount * quantity
+      }
+    }
+  }
 
   return {
     clientId: client.id,
