@@ -46,6 +46,15 @@ export async function DELETE(request: NextRequest) {
       console.warn('Could not delete recommendation invites (table may not exist):', inviteError)
     }
 
+    // Delete history (foreign key constraint)
+    try {
+      await prisma.recommendation_history.deleteMany({
+        where: { recommendation_id: id },
+      })
+    } catch (historyError) {
+      console.warn('Could not delete recommendation history (table may not exist):', historyError)
+    }
+
     // Delete recommendation items (foreign key constraint)
     await prisma.recommendation_items.deleteMany({
       where: { recommendation_id: id },
