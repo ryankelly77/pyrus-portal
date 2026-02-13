@@ -111,12 +111,16 @@ export async function getSubscriptionData(clientId: string): Promise<Subscriptio
   // Try to fetch from Stripe if customer ID exists
   if (client.stripe_customer_id) {
     try {
-      const stripeSubscriptions = await stripe.subscriptions.list({
+      const stripeSubscriptionsResponse = await stripe.subscriptions.list({
         customer: client.stripe_customer_id,
-        status: 'active',
         limit: 10,
         expand: ['data.latest_invoice', 'data.discounts', 'data.discounts.promotion_code'],
       })
+
+      // Filter for active or trialing subscriptions (trialing can occur with 100% coupons)
+      const stripeSubscriptions = {
+        data: stripeSubscriptionsResponse.data.filter(s => s.status === 'active' || s.status === 'trialing')
+      }
 
       if (stripeSubscriptions.data.length > 0) {
         const stripeSub = stripeSubscriptions.data[0] as any
