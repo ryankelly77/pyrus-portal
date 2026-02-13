@@ -1769,7 +1769,7 @@ export default function ClientDetailPage() {
     clientSince: formatDate(dbClient.created_at),
     status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
-    servicesCount: (subscriptions as any)?.services?.length || 0,
+    servicesCount: subscriptionServicesCount,
     hasWebsite: hasWebsiteProducts,
     hasContent: hasContentProducts,
     websiteData: realWebsiteData,
@@ -2040,7 +2040,7 @@ export default function ClientDetailPage() {
                       setActiveTab('recommendations')
                       setRecommendationsSubtab('current-services')
                     }}
-                  >{(subscriptions as any)?.services?.length || 0} services</span>
+                  >{subscriptionServicesCount} services</span>
                 </p>
               </div>
             </div>
