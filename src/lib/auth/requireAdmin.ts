@@ -32,9 +32,9 @@ export async function requireAdmin(): Promise<NextResponse | { user: User; profi
     const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
     if (!profile || !adminRoles.includes(profile.role)) {
       logAuthError(
-        'Admin auth check failed: Insufficient permissions',
+        `Admin auth denied: ${user.email} (role: ${profile?.role || 'none'})`,
         'warning',
-        { userId: user.id, role: profile?.role, step: 'check_role' },
+        { userId: user.id, email: user.email, role: profile?.role, step: 'check_role' },
         'auth/requireAdmin.ts'
       )
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

@@ -88,10 +88,10 @@ async function syncStripeSubscriptions(clientId: string, stripeCustomerId: strin
 
 // GET /api/admin/clients/[id]/stripe-subscriptions - Get subscriptions directly from Stripe
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { id: clientId } = await params
   try {
     const auth = await requireAdmin()
     if ((auth as any)?.user === undefined) return auth as any
-    const { id: clientId } = await params
 
     // Get client to find stripe_customer_id
     const client = await prisma.clients.findUnique({
@@ -202,11 +202,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch Stripe subscriptions:', error)
-    // Log critical Stripe API error
+    // Log critical Stripe API error with client context
     logCriticalError(
       'stripe_error',
-      'Failed to fetch subscriptions from Stripe',
-      { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined },
+      `Failed to fetch subscriptions from Stripe for client ${clientId}`,
+      {
+        clientId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       undefined,
       'stripe-subscriptions/route.ts:GET'
     )

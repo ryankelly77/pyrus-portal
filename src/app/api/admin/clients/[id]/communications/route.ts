@@ -69,6 +69,12 @@ export async function GET(
     if ((auth as any)?.user === undefined) return auth as any
     const { id: clientId } = await params
 
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(clientId)) {
+      return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
+    }
+
     // Get query params for filtering
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type') // Filter by comm_type
