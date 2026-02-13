@@ -299,6 +299,53 @@
             display: block;
         }
 
+        /* Admin Tabs (Settings, Emails, etc.) */
+        .tabs-container {
+            margin-bottom: 24px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            padding: 6px;
+            width: fit-content;
+        }
+
+        .tabs .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .tabs .tab:hover {
+            background: var(--pyrus-green-wash);
+            color: var(--text-primary);
+        }
+
+        .tabs .tab.active {
+            background: var(--pyrus-green);
+            color: white;
+        }
+
+        .tabs .tab svg {
+            flex-shrink: 0;
+        }
+
         /* ======================= */
         /* GETTING STARTED TAB */
         /* ======================= */
