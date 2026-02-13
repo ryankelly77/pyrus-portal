@@ -24,6 +24,7 @@ interface UptimeRobotMonitor {
   status: number // 0=paused, 1=not checked yet, 2=up, 8=seems down, 9=down
   all_time_uptime_ratio: string // e.g., "99.98"
   custom_uptime_ratio: string // For requested time range (e.g., "99.9-100" for 30d-1d)
+  interval: number // Check interval in seconds
   logs?: UptimeRobotLog[]
   ssl?: UptimeRobotSSL
 }
@@ -40,6 +41,11 @@ export interface Last24HoursStats {
   uptime: string // e.g., "100%"
   incidents: number
   downtimeMinutes: number
+  timeline: Array<{
+    hour: number // 0-23, where 0 is the most recent hour
+    status: 'up' | 'down' | 'partial' // partial means some downtime in that hour
+    downtimeMinutes: number
+  }>
 }
 
 export interface SSLInfo {
@@ -49,12 +55,18 @@ export interface SSLInfo {
   daysRemaining: number
 }
 
+export interface CurrentStatusInfo {
+  uptimeDuration: string // e.g., "1d 9h 37m"
+  checkInterval: string // e.g., "1 minute"
+}
+
 export interface UptimeData {
   uptime: string // e.g., "99.9%" (30 days)
   status: 'up' | 'down' | 'paused' | 'unknown'
   monitorName: string
   last24Hours?: Last24HoursStats
   ssl?: SSLInfo
+  currentStatus?: CurrentStatusInfo
 }
 
 export function isUptimeRobotConfigured(): boolean {
@@ -128,15 +140,38 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
     let incidents24h = 0
     let downtime24hSeconds = 0
 
+    // Initialize 24 hourly buckets for timeline (index 0 = most recent hour)
+    const hourlyDowntime: number[] = new Array(24).fill(0)
+
     if (monitor.logs) {
       for (const log of monitor.logs) {
         // Only count logs from last 24 hours, type 1 = down event
         if (log.type === 1 && log.datetime >= oneDayAgo) {
           incidents24h++
           downtime24hSeconds += log.duration
+
+          // Calculate which hourly bucket(s) this downtime falls into
+          const downtimeStart = log.datetime
+          const downtimeEnd = log.datetime + log.duration
+
+          for (let t = downtimeStart; t < downtimeEnd; t += 60) {
+            if (t >= oneDayAgo && t <= now) {
+              const hoursAgo = Math.floor((now - t) / 3600)
+              if (hoursAgo >= 0 && hoursAgo < 24) {
+                hourlyDowntime[hoursAgo] += 1 // Add 1 minute of downtime
+              }
+            }
+          }
         }
       }
     }
+
+    // Build timeline array
+    const timeline: Last24HoursStats['timeline'] = hourlyDowntime.map((minutes, hour) => ({
+      hour,
+      status: minutes === 0 ? 'up' : minutes >= 60 ? 'down' : 'partial',
+      downtimeMinutes: minutes,
+    }))
 
     const formattedUptime = `${uptime30d.toFixed(1)}%`
     const formattedUptime24h = `${uptime1d.toFixed(0)}%`
@@ -159,6 +194,30 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
       }
     }
 
+    // Calculate current uptime duration (time since last "up" event)
+    let currentStatusInfo: CurrentStatusInfo | undefined
+    if (status === 'up' && monitor.logs) {
+      // Find the most recent "up" event (type 2) to calculate duration
+      const upEvents = monitor.logs.filter(log => log.type === 2).sort((a, b) => b.datetime - a.datetime)
+      if (upEvents.length > 0) {
+        const lastUpTime = upEvents[0].datetime
+        const uptimeSeconds = now - lastUpTime
+        const days = Math.floor(uptimeSeconds / 86400)
+        const hours = Math.floor((uptimeSeconds % 86400) / 3600)
+        const minutes = Math.floor((uptimeSeconds % 3600) / 60)
+
+        let durationStr = ''
+        if (days > 0) durationStr += `${days}d `
+        if (hours > 0 || days > 0) durationStr += `${hours}h `
+        durationStr += `${minutes}m`
+
+        currentStatusInfo = {
+          uptimeDuration: durationStr.trim(),
+          checkInterval: monitor.interval >= 60 ? `${Math.round(monitor.interval / 60)} minute${monitor.interval >= 120 ? 's' : ''}` : `${monitor.interval} seconds`,
+        }
+      }
+    }
+
     return {
       uptime: formattedUptime,
       status,
@@ -167,8 +226,10 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
         uptime: formattedUptime24h,
         incidents: incidents24h,
         downtimeMinutes,
+        timeline,
       },
       ssl: sslInfo,
+      currentStatus: currentStatusInfo,
     }
   } catch (error: any) {
     console.error('Error fetching UptimeRobot data:', error)

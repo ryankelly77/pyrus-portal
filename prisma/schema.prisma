@@ -34,6 +34,9 @@ model clients {
   website_provider          String?   @db.VarChar(20)  // 'pear' | 'other' | null - who built the website
   website_launch_date       DateTime? @db.Date
   uptimerobot_monitor_id    String?   @db.VarChar(50)
+  domain_expires_at         DateTime? @db.Date
+  domain_registrar          String?   @db.VarChar(100)
+  domain_checked_at         DateTime? @db.Timestamptz(6) // Last WHOIS lookup
   notes                     String?
   referred_by               String?
   referral_source           String?

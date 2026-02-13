@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { getMonitorUptime } from '@/lib/uptimerobot/client'
+import { getDomainExpiry } from '@/lib/whoisxml/client'
 
 export interface WebsiteData {
   hasWebsiteProducts: boolean
@@ -23,11 +24,25 @@ export interface WebsiteData {
         uptime: string
         incidents: number
         downtimeMinutes: number
+        timeline?: Array<{
+          hour: number
+          status: 'up' | 'down' | 'partial'
+          downtimeMinutes: number
+        }>
       }
       ssl?: {
         brand: string
         expiresAt: string
         daysRemaining: number
+      }
+      domain?: {
+        expiresAt: string
+        daysRemaining: number
+        registrar: string
+      }
+      currentStatus?: {
+        uptimeDuration: string
+        checkInterval: string
       }
     }
     blocksIframe: boolean
@@ -60,6 +75,9 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
       uptimerobot_monitor_id: true,
       landingsite_preview_url: true,
       stripe_customer_id: true,
+      domain_expires_at: true,
+      domain_registrar: true,
+      domain_checked_at: true,
     },
   })
 
@@ -162,6 +180,7 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
     let uptimeStatus: 'up' | 'down' | 'paused' | 'unknown' | null = null
     let last24Hours: { uptime: string; incidents: number; downtimeMinutes: number } | undefined
     let sslInfo: { brand: string; expiresAt: string; daysRemaining: number } | undefined
+    let currentStatusInfo: { uptimeDuration: string; checkInterval: string } | undefined
     if (client.uptimerobot_monitor_id) {
       const uptimeData = await getMonitorUptime(client.uptimerobot_monitor_id)
       if (uptimeData) {
@@ -175,6 +194,55 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
             daysRemaining: uptimeData.ssl.daysRemaining,
           }
         }
+        if (uptimeData.currentStatus) {
+          currentStatusInfo = {
+            uptimeDuration: uptimeData.currentStatus.uptimeDuration,
+            checkInterval: uptimeData.currentStatus.checkInterval,
+          }
+        }
+      }
+    }
+
+    // Fetch domain expiry info (cached in DB, refreshed weekly)
+    let domainInfo: { expiresAt: string; daysRemaining: number; registrar: string } | undefined
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+    const domainCacheStale = !client.domain_checked_at ||
+      (Date.now() - new Date(client.domain_checked_at).getTime() > SEVEN_DAYS_MS)
+
+    if (client.domain_expires_at && !domainCacheStale) {
+      // Use cached domain info
+      const expiresDate = new Date(client.domain_expires_at)
+      domainInfo = {
+        expiresAt: expiresDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+        daysRemaining: Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        registrar: client.domain_registrar || 'Unknown',
+      }
+    } else if (domainCacheStale && client.website_url) {
+      // Fetch fresh domain info from WhoisXML
+      try {
+        const freshDomainInfo = await getDomainExpiry(client.website_url)
+        if (freshDomainInfo) {
+          domainInfo = {
+            expiresAt: freshDomainInfo.expiresAt,
+            daysRemaining: freshDomainInfo.daysRemaining,
+            registrar: freshDomainInfo.registrar,
+          }
+          // Update cache in database (fire and forget)
+          prisma.clients.update({
+            where: { id: clientId },
+            data: {
+              domain_expires_at: new Date(freshDomainInfo.expiresTimestamp),
+              domain_registrar: freshDomainInfo.registrar,
+              domain_checked_at: new Date(),
+            },
+          }).catch(err => console.error('Failed to cache domain expiry:', err))
+        }
+      } catch (err) {
+        console.error('Failed to fetch domain expiry:', err)
       }
     }
 
@@ -259,6 +327,8 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
         lastUpdated: lastUpdatedDisplay,
         last24Hours,
         ssl: sslInfo,
+        domain: domainInfo,
+        currentStatus: currentStatusInfo,
       },
       blocksIframe: blocksIframe || false,
     }

@@ -31,11 +31,25 @@ interface WebsiteData {
       uptime: string
       incidents: number
       downtimeMinutes: number
+      timeline?: Array<{
+        hour: number
+        status: 'up' | 'down' | 'partial'
+        downtimeMinutes: number
+      }>
     }
     ssl?: {
       brand: string
       expiresAt: string
       daysRemaining: number
+    }
+    domain?: {
+      expiresAt: string
+      daysRemaining: number
+      registrar: string
+    }
+    currentStatus?: {
+      uptimeDuration: string
+      checkInterval: string
     }
   }
   blocksIframe?: boolean
@@ -355,53 +369,108 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
               </div>
             </div>
 
-            {/* Last 24 Hours Stats */}
+            {/* Last 24 Hours Timeline */}
             {websiteData.hosting.last24Hours && (
               <div className="website-24h-stats">
-                <div className="stats-24h-header">Last 24 Hours</div>
-                <div className="stats-24h-grid">
-                  <div className="stat-24h">
-                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.uptime === '100%' ? 'success' : ''}`}>
-                      {websiteData.hosting.last24Hours.uptime}
-                    </span>
-                    <span className="stat-24h-label">Uptime</span>
+                <div className="stats-24h-header">
+                  <span>Last 24 Hours</span>
+                  <span className={`stats-24h-summary ${websiteData.hosting.last24Hours.uptime === '100%' ? 'success' : ''}`}>
+                    {websiteData.hosting.last24Hours.uptime} uptime
+                    {websiteData.hosting.last24Hours.incidents > 0 && (
+                      <span className="incidents-badge">{websiteData.hosting.last24Hours.incidents} incident{websiteData.hosting.last24Hours.incidents > 1 ? 's' : ''}</span>
+                    )}
+                  </span>
+                </div>
+                {websiteData.hosting.last24Hours.timeline && (
+                  <div className="uptime-timeline">
+                    {websiteData.hosting.last24Hours.timeline.slice().reverse().map((slot, index) => (
+                      <div
+                        key={index}
+                        className={`timeline-bar ${slot.status}`}
+                        title={`${24 - slot.hour}h ago: ${slot.status === 'up' ? 'Up' : slot.status === 'down' ? 'Down' : `${slot.downtimeMinutes}m down`}`}
+                      />
+                    ))}
                   </div>
-                  <div className="stat-24h">
-                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.incidents === 0 ? 'success' : 'danger'}`}>
-                      {websiteData.hosting.last24Hours.incidents}
-                    </span>
-                    <span className="stat-24h-label">Incidents</span>
-                  </div>
-                  <div className="stat-24h">
-                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.downtimeMinutes === 0 ? 'success' : 'danger'}`}>
-                      {websiteData.hosting.last24Hours.downtimeMinutes}m
-                    </span>
-                    <span className="stat-24h-label">Downtime</span>
+                )}
+              </div>
+            )}
+
+            {/* Security Info - SSL and Domain */}
+            {(websiteData.hosting.ssl || websiteData.hosting.domain) && (
+              <div className="website-security-info">
+                <div className="security-info-grid">
+                  {/* SSL Certificate */}
+                  {websiteData.hosting.ssl && (
+                    <div className="security-card">
+                      <div className="security-card-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        SSL Certificate
+                      </div>
+                      <div className="security-card-content">
+                        <div className={`security-expiry ${websiteData.hosting.ssl.daysRemaining > 30 ? 'success' : websiteData.hosting.ssl.daysRemaining > 7 ? 'warning' : 'danger'}`}>
+                          {websiteData.hosting.ssl.expiresAt}
+                        </div>
+                        <div className="security-provider">{websiteData.hosting.ssl.brand}</div>
+                      </div>
+                    </div>
+                  )}
+                  {/* Domain Info */}
+                  <div className="security-card">
+                    <div className="security-card-header">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                      </svg>
+                      Domain
+                    </div>
+                    <div className="security-card-content">
+                      {websiteData.hosting.domain ? (
+                        <>
+                          <div className={`security-expiry ${websiteData.hosting.domain.daysRemaining > 60 ? 'success' : websiteData.hosting.domain.daysRemaining > 30 ? 'warning' : 'danger'}`}>
+                            {websiteData.hosting.domain.expiresAt}
+                          </div>
+                          <div className="security-provider">{websiteData.hosting.domain.registrar}</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="security-expiry">{websiteData.domain}</div>
+                          <div className="security-provider">Registered</div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* SSL Certificate Info */}
-            {websiteData.hosting.ssl && (
-              <div className="website-ssl-info">
-                <div className="ssl-info-header">
+            {/* Current Status Info */}
+            {websiteData.hosting.currentStatus && (
+              <div className="website-current-status">
+                <div className="current-status-header">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
-                  SSL Certificate
+                  Current Status
                 </div>
-                <div className="ssl-info-content">
-                  <div className="ssl-info-row">
-                    <span className="ssl-info-label">Valid until</span>
-                    <span className={`ssl-info-value ${websiteData.hosting.ssl.daysRemaining > 30 ? 'success' : websiteData.hosting.ssl.daysRemaining > 7 ? 'warning' : 'danger'}`}>
-                      {websiteData.hosting.ssl.expiresAt}
-                    </span>
+                <div className="current-status-content">
+                  <div className="current-status-main">
+                    <span className={`status-indicator ${websiteData.hosting.uptimeStatus === 'up' ? 'up' : 'down'}`}></span>
+                    <span className="status-text">{websiteData.hosting.uptimeStatus === 'up' ? 'Up' : websiteData.hosting.uptimeStatus === 'down' ? 'Down' : 'Unknown'}</span>
                   </div>
-                  <div className="ssl-info-row">
-                    <span className="ssl-info-label">Provider</span>
-                    <span className="ssl-info-value">{websiteData.hosting.ssl.brand}</span>
+                  <div className="current-status-details">
+                    <div className="status-detail-row">
+                      <span className="status-detail-label">Uptime</span>
+                      <span className="status-detail-value">{websiteData.hosting.currentStatus.uptimeDuration}</span>
+                    </div>
+                    <div className="status-detail-row">
+                      <span className="status-detail-label">Check interval</span>
+                      <span className="status-detail-value">{websiteData.hosting.currentStatus.checkInterval}</span>
+                    </div>
                   </div>
                 </div>
               </div>

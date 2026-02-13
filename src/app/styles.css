@@ -23505,7 +23505,7 @@ input[type="date"].form-control {
     letter-spacing: 0.5px;
 }
 
-/* Last 24 Hours Stats */
+/* Last 24 Hours Timeline */
 .website-24h-stats {
     margin-top: 16px;
     padding-top: 16px;
@@ -23513,59 +23513,145 @@ input[type="date"].form-control {
 }
 
 .stats-24h-header {
-    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 12px;
-    text-align: center;
+    margin-bottom: 10px;
 }
 
-.stats-24h-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+.stats-24h-summary {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
     gap: 8px;
 }
 
-.stat-24h {
-    text-align: center;
-    padding: 10px 8px;
-    background: var(--bg-page);
-    border-radius: var(--radius-md);
-}
-
-.stat-24h-value {
-    display: block;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-}
-
-.stat-24h-value.success {
+.stats-24h-summary.success {
     color: var(--success-text);
 }
 
-.stat-24h-value.danger {
-    color: var(--danger);
-}
-
-.stat-24h-label {
+.incidents-badge {
     font-size: 10px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-radius: 10px;
 }
 
-/* SSL Certificate Info */
-.website-ssl-info {
+.uptime-timeline {
+    display: flex;
+    gap: 2px;
+    height: 24px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    padding: 4px;
+}
+
+.timeline-bar {
+    flex: 1;
+    border-radius: 2px;
+    min-width: 4px;
+    transition: opacity 0.2s;
+    cursor: default;
+}
+
+.timeline-bar.up {
+    background: var(--success-text);
+}
+
+.timeline-bar.down {
+    background: var(--danger);
+}
+
+.timeline-bar.partial {
+    background: var(--warning);
+}
+
+.timeline-bar:hover {
+    opacity: 0.8;
+}
+
+/* Security Info (SSL + Domain) */
+.website-security-info {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid var(--border-light);
 }
 
-.ssl-info-header {
+.security-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.security-card {
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    text-align: center;
+}
+
+.security-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.security-card-header svg {
+    opacity: 0.7;
+}
+
+.security-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.security-expiry {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.security-expiry.success {
+    color: var(--success-text);
+}
+
+.security-expiry.warning {
+    color: var(--warning);
+}
+
+.security-expiry.danger {
+    color: var(--danger);
+}
+
+.security-provider {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Current Status Info */
+.website-current-status {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+}
+
+.current-status-header {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -23577,46 +23663,65 @@ input[type="date"].form-control {
     margin-bottom: 10px;
 }
 
-.ssl-info-content {
+.current-status-content {
     background: var(--bg-page);
     border-radius: var(--radius-md);
     padding: 12px;
 }
 
-.ssl-info-row {
+.current-status-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+}
+
+.status-indicator.up {
+    background: var(--success-text);
+    box-shadow: 0 0 6px var(--success-text);
+}
+
+.status-indicator.down {
+    background: var(--danger);
+    box-shadow: 0 0 6px var(--danger);
+}
+
+.status-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.current-status-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.status-detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
 }
 
-.ssl-info-row + .ssl-info-row {
-    border-top: 1px solid var(--border-light);
-    margin-top: 4px;
-    padding-top: 8px;
-}
-
-.ssl-info-label {
+.status-detail-label {
     font-size: 12px;
     color: var(--text-secondary);
 }
 
-.ssl-info-value {
+.status-detail-value {
     font-size: 13px;
     font-weight: 500;
     color: var(--text-primary);
-}
-
-.ssl-info-value.success {
-    color: var(--success-text);
-}
-
-.ssl-info-value.warning {
-    color: var(--warning);
-}
-
-.ssl-info-value.danger {
-    color: var(--danger);
 }
 
 /* Edit Requests Section */
