@@ -589,11 +589,13 @@ export async function calculateClientPerformance(
     for (const sub of client.subscriptions) {
       for (const item of sub.subscription_items) {
         const quantity = item.quantity || 1
-        // Try unit_amount first, then fall back to product's monthly_price
+        // Try unit_amount first (stored in cents from Stripe), then fall back to product's monthly_price (in dollars)
         let unitAmount = 0
         if (item.unit_amount) {
-          unitAmount = parseFloat(item.unit_amount.toString())
+          // Stripe stores amounts in cents, convert to dollars
+          unitAmount = parseFloat(item.unit_amount.toString()) / 100
         } else if (item.product?.monthly_price) {
+          // Product prices are stored in dollars
           unitAmount = parseFloat(item.product.monthly_price.toString())
         }
         mrr += unitAmount * quantity
