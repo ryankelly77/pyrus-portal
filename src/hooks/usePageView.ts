@@ -13,8 +13,12 @@ export function usePageView({ page, pageName }: PageViewOptions) {
   const viewingAs = searchParams.get('viewingAs')
 
   useEffect(() => {
-    // Only log once per session per page (include viewingAs in key for admin preview)
-    const sessionKey = `pyrus_page_view_${page}${viewingAs ? `_${viewingAs}` : ''}`
+    // Don't log page views when admin is viewing as client
+    // Only count real client page views from logged-in client users
+    if (viewingAs) return
+
+    // Only log once per session per page
+    const sessionKey = `pyrus_page_view_${page}`
     if (sessionStorage.getItem(sessionKey)) return
     sessionStorage.setItem(sessionKey, 'true')
 
@@ -25,8 +29,7 @@ export function usePageView({ page, pageName }: PageViewOptions) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             page,
-            pageName,
-            clientId: viewingAs || undefined
+            pageName
           })
         })
       } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
 import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/proposal/[token] - Get recommendation by invite token (public)
 export async function GET(
@@ -9,6 +10,23 @@ export async function GET(
 ) {
   try {
     const { token } = await params
+
+    // Check if this is an admin preview (don't track admin views)
+    let isAdminPreview = false
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const profileResult = await dbPool.query(
+          `SELECT role FROM profiles WHERE id = $1`,
+          [user.id]
+        )
+        const role = profileResult.rows[0]?.role
+        isAdminPreview = role === 'super_admin' || role === 'admin'
+      }
+    } catch {
+      // Not logged in or error checking - treat as regular view
+    }
 
     if (!token) {
       return NextResponse.json(
@@ -66,7 +84,8 @@ export async function GET(
     }
 
     // Update viewed_at and status if not already viewed
-    if (!invite.viewed_at) {
+    // Skip tracking for admin previews - only count real prospect views
+    if (!invite.viewed_at && !isAdminPreview) {
       await prisma.recommendation_invites.update({
         where: { id: invite.id },
         data: {

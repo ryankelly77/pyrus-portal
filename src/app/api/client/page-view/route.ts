@@ -5,6 +5,7 @@ import { dbPool } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // POST /api/client/page-view - Log a page view for the current user
+// Only logs views from actual clients, NOT admin "view as client" sessions
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -14,41 +15,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { page, pageName, clientId: viewingAsClientId } = await request.json()
+    const { page, pageName } = await request.json()
 
     if (!page) {
       return NextResponse.json({ error: 'page is required' }, { status: 400 })
     }
 
-    // Get client ID - either from viewingAs parameter or user's profile
-    let clientId = viewingAsClientId
-    let clientName = null
+    // Check if user is an admin - don't log page views for admins
+    const profileResult = await dbPool.query(
+      `SELECT role, client_id FROM profiles WHERE id = $1`,
+      [user.id]
+    )
+    const profile = profileResult.rows[0]
 
-    if (viewingAsClientId) {
-      // Admin viewing as a specific client
-      const clientResult = await dbPool.query(
-        `SELECT id, name FROM clients WHERE id = $1`,
-        [viewingAsClientId]
-      )
-      if (clientResult.rows[0]) {
-        clientId = clientResult.rows[0].id
-        clientName = clientResult.rows[0].name
-      }
-    } else {
-      // Regular client user - get from profile
-      const clientResult = await dbPool.query(
-        `SELECT c.id, c.name FROM clients c
-         JOIN profiles p ON p.client_id = c.id
-         WHERE p.id = $1`,
-        [user.id]
-      )
-      if (clientResult.rows[0]) {
-        clientId = clientResult.rows[0].id
-        clientName = clientResult.rows[0].name
-      }
+    // Skip logging for admin users (super_admin or admin role)
+    if (profile?.role === 'super_admin' || profile?.role === 'admin') {
+      return NextResponse.json({ success: true, skipped: 'admin_user' })
     }
 
-    // Log the page view to activity_log
+    // Regular client user - get client info
+    let clientId = profile?.client_id
+    let clientName = null
+
+    if (clientId) {
+      const clientResult = await dbPool.query(
+        `SELECT name FROM clients WHERE id = $1`,
+        [clientId]
+      )
+      clientName = clientResult.rows[0]?.name
+    }
+
+    // Log the page view to activity_log (only for real client users)
     await dbPool.query(
       `INSERT INTO activity_log (user_id, client_id, activity_type, description, metadata)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -57,7 +54,7 @@ export async function POST(request: NextRequest) {
         clientId || null,
         'page_view',
         `Viewed ${pageName || page}`,
-        JSON.stringify({ page, pageName, clientName, viewingAs: !!viewingAsClientId, userAgent: request.headers.get('user-agent') })
+        JSON.stringify({ page, pageName, clientName, userAgent: request.headers.get('user-agent') })
       ]
     )
 
