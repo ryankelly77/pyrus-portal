@@ -93,6 +93,94 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/admin/websites/requests - Create a new request (admin)
+export async function POST(request: NextRequest) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    const body = await request.json()
+    const { clientId, title, description, requestType, priority } = body
+
+    // Validate required fields
+    if (!clientId || !title || !requestType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(clientId)) {
+      return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 })
+    }
+
+    // Validate request type
+    const validTypes = ['content_update', 'bug_fix', 'new_feature', 'design_change']
+    if (!validTypes.includes(requestType)) {
+      return NextResponse.json({ error: 'Invalid request type' }, { status: 400 })
+    }
+
+    // Validate priority if provided
+    if (priority) {
+      const validPriorities = ['low', 'normal', 'high', 'urgent']
+      if (!validPriorities.includes(priority)) {
+        return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
+      }
+    }
+
+    // Get client name for activity log
+    const client = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { name: true },
+    })
+    const clientName = client?.name || 'Unknown Client'
+
+    // Create the edit request
+    const newRequest = await prisma.website_edit_requests.create({
+      data: {
+        client_id: clientId,
+        title: title.substring(0, 255),
+        description: description || null,
+        request_type: requestType,
+        priority: priority || 'normal',
+        status: 'pending',
+        created_by: auth.user.id,
+      },
+    })
+
+    // Create activity log entry for notifications
+    const requestTypeLabel = requestType === 'content_update' ? 'Content Update' :
+      requestType === 'bug_fix' ? 'Bug Fix' :
+      requestType === 'new_feature' ? 'New Feature' :
+      requestType === 'design_change' ? 'Design Change' : requestType
+
+    await prisma.activity_log.create({
+      data: {
+        client_id: clientId,
+        user_id: auth.user.id,
+        activity_type: 'website_edit_request',
+        description: `New website edit request: ${title.substring(0, 100)}`,
+        metadata: {
+          requestId: newRequest.id,
+          requestType: requestType,
+          requestTypeLabel: requestTypeLabel,
+          title: title.substring(0, 255),
+          clientName: clientName,
+          submittedBy: auth.profile.full_name || auth.user.email,
+          source: 'admin',
+        },
+      },
+    })
+
+    return NextResponse.json({ success: true, request: newRequest })
+  } catch (error) {
+    console.error('Failed to create edit request:', error)
+    return NextResponse.json(
+      { error: 'Failed to create edit request' },
+      { status: 500 }
+    )
+  }
+}
+
 // PATCH /api/admin/websites/requests - Update a request status
 export async function PATCH(request: NextRequest) {
   try {

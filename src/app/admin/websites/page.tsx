@@ -139,6 +139,11 @@ export default function WebsitesPage() {
   const [editModalLoading, setEditModalLoading] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
+  // Create new request modal state
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createFormData, setCreateFormData] = useState({ clientId: '', title: '', description: '', requestType: 'content_update', priority: 'normal' })
+  const [createModalLoading, setCreateModalLoading] = useState(false)
+
   useEffect(() => {
     fetchWebsites()
     fetchRequests() // Fetch on mount so count bubble shows immediately
@@ -259,6 +264,43 @@ export default function WebsitesPage() {
       alert(err instanceof Error ? err.message : 'Failed to delete request')
     } finally {
       setUpdatingRequestId(null)
+    }
+  }
+
+  // Create new request
+  const createNewRequest = async () => {
+    if (!createFormData.clientId || !createFormData.title || !createFormData.requestType) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    try {
+      setCreateModalLoading(true)
+      const response = await fetch('/api/admin/websites/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: createFormData.clientId,
+          title: createFormData.title,
+          description: createFormData.description,
+          requestType: createFormData.requestType,
+          priority: createFormData.priority,
+        }),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create request')
+      }
+
+      // Refresh and close modal
+      await Promise.all([fetchRequests(), fetchWebsites()])
+      setShowCreateModal(false)
+      setCreateFormData({ clientId: '', title: '', description: '', requestType: 'content_update', priority: 'normal' })
+    } catch (err) {
+      console.error('Failed to create request:', err)
+      alert(err instanceof Error ? err.message : 'Failed to create request')
+    } finally {
+      setCreateModalLoading(false)
     }
   }
 
@@ -761,22 +803,35 @@ export default function WebsitesPage() {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="content-filters">
-              <div className="filter-group">
-                <label htmlFor="requestStatusFilter">Status</label>
-                <select
-                  id="requestStatusFilter"
-                  className="form-control"
-                  value={requestStatusFilter}
-                  onChange={(e) => setRequestStatusFilter(e.target.value as typeof requestStatusFilter)}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
+            {/* Filters and New Request Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+              <div className="content-filters" style={{ marginBottom: 0 }}>
+                <div className="filter-group">
+                  <label htmlFor="requestStatusFilter">Status</label>
+                  <select
+                    id="requestStatusFilter"
+                    className="form-control"
+                    value={requestStatusFilter}
+                    onChange={(e) => setRequestStatusFilter(e.target.value as typeof requestStatusFilter)}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
               </div>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowCreateModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Request
+              </button>
             </div>
 
             {/* Error State */}
@@ -1047,6 +1102,96 @@ export default function WebsitesPage() {
                   disabled={updatingRequestId === deleteConfirmId}
                 >
                   {updatingRequestId === deleteConfirmId ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Request Modal */}
+        {showCreateModal && (
+          <div className="edit-modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+              <div className="modal-header">
+                <h2>New Edit Request</h2>
+                <button className="modal-close" onClick={() => setShowCreateModal(false)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body" style={{ padding: '1.5rem' }}>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Client <span style={{ color: '#DC2626' }}>*</span></label>
+                  <select
+                    value={createFormData.clientId}
+                    onChange={(e) => setCreateFormData({ ...createFormData, clientId: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  >
+                    <option value="">Select a client...</option>
+                    {websites.map((website) => (
+                      <option key={website.clientId} value={website.clientId}>
+                        {website.clientName} ({website.domain})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Title <span style={{ color: '#DC2626' }}>*</span></label>
+                  <input
+                    type="text"
+                    value={createFormData.title}
+                    onChange={(e) => setCreateFormData({ ...createFormData, title: e.target.value })}
+                    placeholder="Brief description of the request"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Description</label>
+                  <textarea
+                    value={createFormData.description}
+                    onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
+                    placeholder="Detailed description of what needs to be changed..."
+                    rows={3}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Type <span style={{ color: '#DC2626' }}>*</span></label>
+                    <select
+                      value={createFormData.requestType}
+                      onChange={(e) => setCreateFormData({ ...createFormData, requestType: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                    >
+                      <option value="content_update">Content Update</option>
+                      <option value="bug_fix">Bug Fix</option>
+                      <option value="new_feature">New Feature</option>
+                      <option value="design_change">Design Change</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Priority</label>
+                    <select
+                      value={createFormData.priority}
+                      onChange={(e) => setCreateFormData({ ...createFormData, priority: e.target.value })}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                    >
+                      <option value="low">Low</option>
+                      <option value="normal">Normal</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button className="btn btn-outline" onClick={() => setShowCreateModal(false)} disabled={createModalLoading}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={createNewRequest} disabled={createModalLoading}>
+                  {createModalLoading ? 'Creating...' : 'Create Request'}
                 </button>
               </div>
             </div>
