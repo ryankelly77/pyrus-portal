@@ -162,6 +162,8 @@ export async function GET() {
 
         if (lowerName.includes('harvest seo')) {
           carePlan = 'Website Care (Harvest SEO)'
+        } else if (lowerName.includes('seedling seo')) {
+          carePlan = 'Basic Updates (Seedling SEO)'
         } else if (lowerName.includes('website care')) {
           carePlan = 'Website Care'
         } else if (lowerName.includes('wordpress care')) {

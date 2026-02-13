@@ -64,34 +64,21 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
         client_id: clientId,
         status: 'active',
       },
-      product: {
-        name: {
-          contains: '',
-        },
-      },
     },
     include: {
       product: {
         select: {
           name: true,
           category: true,
+          includes_website: true,
         },
       },
     },
   })
 
-  // Filter for website-related products
+  // Filter for website-related products using the includes_website flag
   const websiteProductNames = subscriptionItems
-    .filter((item) => {
-      const name = item.product?.name?.toLowerCase() || ''
-      return (
-        name.includes('site') ||
-        name.includes('website') ||
-        name.includes('wordpress') ||
-        name.includes('harvest') ||
-        name.includes('care')
-      )
-    })
+    .filter((item) => !!item.product?.includes_website)
     .map((item) => item.product?.name || '')
     .filter(Boolean)
 
@@ -113,7 +100,9 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
     } else if (lowerName.includes('harvest site')) {
       planName = 'Harvest Site (WordPress)'
     } else if (lowerName.includes('harvest seo')) {
-      carePlan = 'Website Care Plan (included with Harvest SEO)'
+      carePlan = 'Website Care (Harvest SEO)'
+    } else if (lowerName.includes('seedling seo')) {
+      carePlan = 'Basic Site Updates (Seedling SEO)'
     } else if (lowerName.includes('website care')) {
       carePlan = 'Website Care Plan'
     } else if (lowerName.includes('wordpress care')) {

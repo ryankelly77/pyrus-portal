@@ -191,8 +191,9 @@ export async function GET(request: NextRequest) {
     const hasWebsiteAccess = !!client.website_url
 
     // Flag-based product detection (replaces name matching)
-    const hasWebsiteProducts = allActiveProducts.some((p: any) => p.includes_website === true)
-    const hasContentProducts = allActiveProducts.some((p: any) => p.includes_content === true)
+    // Use truthy check instead of strict equality to handle various DB representations
+    const hasWebsiteProducts = allActiveProducts.some((p: any) => !!p.includes_website)
+    const hasContentProducts = allActiveProducts.some((p: any) => !!p.includes_content)
 
     // Check if client has actual content in the database
     const contentCountResult = await dbPool.query(
