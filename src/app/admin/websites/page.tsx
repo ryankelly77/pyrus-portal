@@ -111,8 +111,9 @@ const getStatusLabel = (status: string) => {
 }
 
 export default function WebsitesPage() {
-  const { user, hasNotifications } = useUserProfile()
+  const { user, hasNotifications, profile } = useUserProfile()
   const [activeTab, setActiveTab] = useState<Tab>('websites')
+  const isSuperAdmin = profile?.role === 'super_admin'
 
   // Websites tab state
   const [websites, setWebsites] = useState<Website[]>([])
@@ -131,6 +132,12 @@ export default function WebsitesPage() {
   const [requestsError, setRequestsError] = useState<string | null>(null)
   const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all')
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
+
+  // Edit modal state (super admin only)
+  const [editingRequest, setEditingRequest] = useState<EditRequest | null>(null)
+  const [editFormData, setEditFormData] = useState({ title: '', description: '', requestType: '', priority: '' })
+  const [editModalLoading, setEditModalLoading] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchWebsites()
@@ -188,6 +195,73 @@ export default function WebsitesPage() {
       await Promise.all([fetchRequests(), fetchWebsites()])
     } catch (err) {
       console.error('Failed to update request:', err)
+    } finally {
+      setUpdatingRequestId(null)
+    }
+  }
+
+  // Open edit modal (super admin only)
+  const openEditModal = (request: EditRequest) => {
+    setEditingRequest(request)
+    setEditFormData({
+      title: request.title,
+      description: request.description || '',
+      requestType: request.requestType,
+      priority: request.priority,
+    })
+  }
+
+  // Save edited request (super admin only)
+  const saveEditedRequest = async () => {
+    if (!editingRequest) return
+
+    try {
+      setEditModalLoading(true)
+      const response = await fetch('/api/admin/websites/requests', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: editingRequest.id,
+          title: editFormData.title,
+          description: editFormData.description,
+          requestType: editFormData.requestType,
+          priority: editFormData.priority,
+        }),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update request')
+      }
+
+      // Refresh and close modal
+      await Promise.all([fetchRequests(), fetchWebsites()])
+      setEditingRequest(null)
+    } catch (err) {
+      console.error('Failed to edit request:', err)
+      alert(err instanceof Error ? err.message : 'Failed to edit request')
+    } finally {
+      setEditModalLoading(false)
+    }
+  }
+
+  // Delete request (super admin only)
+  const deleteRequest = async (requestId: string) => {
+    try {
+      setUpdatingRequestId(requestId)
+      const response = await fetch(`/api/admin/websites/requests?requestId=${requestId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete request')
+      }
+
+      // Refresh and close confirmation
+      await Promise.all([fetchRequests(), fetchWebsites()])
+      setDeleteConfirmId(null)
+    } catch (err) {
+      console.error('Failed to delete request:', err)
+      alert(err instanceof Error ? err.message : 'Failed to delete request')
     } finally {
       setUpdatingRequestId(null)
     }
@@ -808,7 +882,7 @@ export default function WebsitesPage() {
                           </span>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             {request.status === 'pending' && (
                               <button
                                 className="btn btn-sm btn-secondary"
@@ -832,6 +906,35 @@ export default function WebsitesPage() {
                                 {request.completedAt}
                               </span>
                             )}
+                            {/* Super admin edit/delete buttons */}
+                            {isSuperAdmin && (
+                              <>
+                                <button
+                                  className="btn btn-sm"
+                                  style={{ background: 'none', border: 'none', padding: '4px', color: '#6B7280' }}
+                                  onClick={() => openEditModal(request)}
+                                  title="Edit"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                  </svg>
+                                </button>
+                                <button
+                                  className="btn btn-sm"
+                                  style={{ background: 'none', border: 'none', padding: '4px', color: '#DC2626' }}
+                                  onClick={() => setDeleteConfirmId(request.id)}
+                                  title="Delete"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                  </svg>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -841,6 +944,118 @@ export default function WebsitesPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Edit Modal (Super Admin) */}
+        {editingRequest && (
+          <div className="edit-modal-overlay" onClick={() => setEditingRequest(null)}>
+            <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+              <div className="modal-header">
+                <h2>Edit Request</h2>
+                <button className="modal-close" onClick={() => setEditingRequest(null)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body" style={{ padding: '1.5rem' }}>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Title</label>
+                  <input
+                    type="text"
+                    value={editFormData.title}
+                    onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Description</label>
+                  <textarea
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    rows={3}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Type</label>
+                  <select
+                    value={editFormData.requestType}
+                    onChange={(e) => setEditFormData({ ...editFormData, requestType: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  >
+                    <option value="content_update">Content Update</option>
+                    <option value="bug_fix">Bug Fix</option>
+                    <option value="new_feature">New Feature</option>
+                    <option value="design_change">Design Change</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Priority</label>
+                  <select
+                    value={editFormData.priority}
+                    onChange={(e) => setEditFormData({ ...editFormData, priority: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #E5E7EB', borderRadius: '6px' }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button className="btn btn-outline" onClick={() => setEditingRequest(null)} disabled={editModalLoading}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={saveEditedRequest} disabled={editModalLoading}>
+                  {editModalLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal (Super Admin) */}
+        {deleteConfirmId && (
+          <div className="edit-modal-overlay" onClick={() => setDeleteConfirmId(null)}>
+            <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+              <div className="modal-header">
+                <h2>Delete Request</h2>
+                <button className="modal-close" onClick={() => setDeleteConfirmId(null)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" width="32" height="32">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </div>
+                <p style={{ color: '#6B7280', margin: 0 }}>
+                  Are you sure you want to delete this request? This action cannot be undone.
+                </p>
+              </div>
+              <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+                <button className="btn btn-outline" onClick={() => setDeleteConfirmId(null)} disabled={updatingRequestId === deleteConfirmId}>
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  style={{ background: '#DC2626', color: 'white' }}
+                  onClick={() => deleteRequest(deleteConfirmId)}
+                  disabled={updatingRequestId === deleteConfirmId}
+                >
+                  {updatingRequestId === deleteConfirmId ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

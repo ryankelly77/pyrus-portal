@@ -68,6 +68,7 @@ export async function getClientActivity(
   let basecampActivities: any[] = []
   let communications: any[] = []
   let recommendationHistory: any[] = []
+  let websiteEditRequests: any[] = []
 
   // Get client's basecamp_project_id
   try {
@@ -160,6 +161,20 @@ export async function getClientActivity(
       clientId,
       'activityService.ts:getClientActivity'
     )
+  }
+
+  // Fetch website edit requests
+  try {
+    websiteEditRequests = await prisma.website_edit_requests.findMany({
+      where: {
+        client_id: clientId,
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching website edit requests:', error)
+    // Table may not exist, don't log as critical
   }
 
   // Map Basecamp activities to unified format
@@ -280,8 +295,55 @@ export async function getClientActivity(
     }
   })
 
+  // Map website edit requests to unified format
+  const mappedWebsiteEditRequests = websiteEditRequests.map((row) => {
+    const type: 'task' | 'update' | 'alert' | 'content' = 'update'
+
+    // Determine title and style based on status
+    let title: string
+    let iconStyle: { background: string; color: string }
+
+    const requestTypeLabel = row.request_type === 'content_update' ? 'Content Update' :
+      row.request_type === 'bug_fix' ? 'Bug Fix' :
+      row.request_type === 'new_feature' ? 'New Feature' :
+      row.request_type === 'design_change' ? 'Design Change' : row.request_type
+
+    switch (row.status) {
+      case 'completed':
+        title = `Website edit completed: ${row.title}`
+        iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
+        break
+      case 'in-progress':
+        title = `Website edit in progress: ${row.title}`
+        iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+        break
+      case 'pending':
+      default:
+        title = `Website edit requested: ${row.title}`
+        iconStyle = { background: 'var(--warning-bg)', color: 'var(--warning)' }
+    }
+
+    const date = new Date(row.created_at || new Date())
+
+    return {
+      id: row.id,
+      type,
+      title,
+      description: `Type: ${requestTypeLabel}`,
+      time: formatTime(date),
+      timestamp: date.getTime(),
+      iconStyle,
+      metadata: {
+        source: 'website_edit_request',
+        requestType: row.request_type,
+        status: row.status,
+        priority: row.priority,
+      },
+    }
+  })
+
   // Merge and sort by timestamp (most recent first)
-  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory]
+  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit)
     .map(({ timestamp, ...rest }) => rest as ActivityItem)

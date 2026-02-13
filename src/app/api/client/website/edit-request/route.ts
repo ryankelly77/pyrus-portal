@@ -4,6 +4,17 @@ import { dbPool } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+// Map request type to friendly label
+function getRequestTypeLabel(requestType: string): string {
+  switch (requestType) {
+    case 'content_update': return 'Content Update'
+    case 'bug_fix': return 'Bug Fix'
+    case 'new_feature': return 'New Feature'
+    case 'design_change': return 'Design Change'
+    default: return requestType
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -35,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user has access to this client
     const profileResult = await dbPool.query(
-      'SELECT client_id, role FROM profiles WHERE id = $1',
+      'SELECT client_id, role, full_name FROM profiles WHERE id = $1',
       [user.id]
     )
 
@@ -45,9 +56,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Allow if admin or if user belongs to this client
-    if (profile.role !== 'admin' && profile.client_id !== clientId) {
+    if (profile.role !== 'admin' && profile.role !== 'super_admin' && profile.client_id !== clientId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
+
+    // Get client name for activity log
+    const clientResult = await dbPool.query(
+      'SELECT name FROM clients WHERE id = $1',
+      [clientId]
+    )
+    const clientName = clientResult.rows[0]?.name || 'Unknown Client'
 
     // Create the edit request
     const result = await dbPool.query(`
@@ -56,7 +74,28 @@ export async function POST(request: NextRequest) {
       RETURNING id, title, description, request_type, status, created_at
     `, [clientId, title.substring(0, 255), description, requestType, user.id])
 
-    return NextResponse.json(result.rows[0])
+    const newRequest = result.rows[0]
+
+    // Create activity log entry for admin notifications
+    const requestTypeLabel = getRequestTypeLabel(requestType)
+    await dbPool.query(`
+      INSERT INTO activity_log (client_id, user_id, activity_type, description, metadata)
+      VALUES ($1, $2, 'website_edit_request', $3, $4)
+    `, [
+      clientId,
+      user.id,
+      `New website edit request: ${title.substring(0, 100)}`,
+      JSON.stringify({
+        requestId: newRequest.id,
+        requestType: requestType,
+        requestTypeLabel: requestTypeLabel,
+        title: title.substring(0, 255),
+        clientName: clientName,
+        submittedBy: profile.full_name || user.email,
+      })
+    ])
+
+    return NextResponse.json(newRequest)
   } catch (error) {
     console.error('Error creating edit request:', error)
     return NextResponse.json({ error: 'Failed to create edit request' }, { status: 500 })

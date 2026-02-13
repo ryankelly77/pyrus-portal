@@ -145,3 +145,109 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+
+// PUT /api/admin/websites/requests - Edit a request (super admin only)
+export async function PUT(request: NextRequest) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    // Check for super admin role
+    if (auth.profile.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { requestId, title, description, requestType, priority, status } = body
+
+    if (!requestId) {
+      return NextResponse.json({ error: 'Request ID required' }, { status: 400 })
+    }
+
+    const updateData: any = { updated_at: new Date() }
+
+    if (title !== undefined) {
+      updateData.title = title.substring(0, 255)
+    }
+
+    if (description !== undefined) {
+      updateData.description = description
+    }
+
+    if (requestType !== undefined) {
+      const validTypes = ['content_update', 'bug_fix', 'new_feature', 'design_change']
+      if (!validTypes.includes(requestType)) {
+        return NextResponse.json({ error: 'Invalid request type' }, { status: 400 })
+      }
+      updateData.request_type = requestType
+    }
+
+    if (priority !== undefined) {
+      const validPriorities = ['low', 'normal', 'high', 'urgent']
+      if (!validPriorities.includes(priority)) {
+        return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
+      }
+      updateData.priority = priority
+    }
+
+    if (status !== undefined) {
+      const validStatuses = ['pending', 'in-progress', 'completed', 'cancelled']
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+      }
+      updateData.status = status
+
+      // Set completed_at when marking as completed
+      if (status === 'completed') {
+        updateData.completed_at = new Date()
+      } else {
+        updateData.completed_at = null
+      }
+    }
+
+    const updated = await prisma.website_edit_requests.update({
+      where: { id: requestId },
+      data: updateData,
+    })
+
+    return NextResponse.json({ success: true, request: updated })
+  } catch (error) {
+    console.error('Failed to edit request:', error)
+    return NextResponse.json(
+      { error: 'Failed to edit request' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/admin/websites/requests - Delete a request (super admin only)
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    // Check for super admin role
+    if (auth.profile.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const requestId = searchParams.get('requestId')
+
+    if (!requestId) {
+      return NextResponse.json({ error: 'Request ID required' }, { status: 400 })
+    }
+
+    await prisma.website_edit_requests.delete({
+      where: { id: requestId },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Failed to delete request:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete request' },
+      { status: 500 }
+    )
+  }
+}
