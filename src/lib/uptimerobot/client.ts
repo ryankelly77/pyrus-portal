@@ -5,13 +5,20 @@ import { logUptimeError } from '@/lib/alerts'
 
 const UPTIMEROBOT_API_URL = 'https://api.uptimerobot.com/v2'
 
+interface UptimeRobotLog {
+  type: number // 1=down, 2=up, 98=started, 99=paused
+  datetime: number
+  duration: number // in seconds
+}
+
 interface UptimeRobotMonitor {
   id: number
   friendly_name: string
   url: string
   status: number // 0=paused, 1=not checked yet, 2=up, 8=seems down, 9=down
   all_time_uptime_ratio: string // e.g., "99.98"
-  custom_uptime_ratio: string // For requested time range
+  custom_uptime_ratio: string // For requested time range (e.g., "99.9-100" for 30d-1d)
+  logs?: UptimeRobotLog[]
 }
 
 interface UptimeRobotResponse {
@@ -22,10 +29,17 @@ interface UptimeRobotResponse {
   }
 }
 
+export interface Last24HoursStats {
+  uptime: string // e.g., "100%"
+  incidents: number
+  downtimeMinutes: number
+}
+
 export interface UptimeData {
-  uptime: string // e.g., "99.9%"
+  uptime: string // e.g., "99.9%" (30 days)
   status: 'up' | 'down' | 'paused' | 'unknown'
   monitorName: string
+  last24Hours?: Last24HoursStats
 }
 
 export function isUptimeRobotConfigured(): boolean {
@@ -50,7 +64,9 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
       body: new URLSearchParams({
         api_key: apiKey,
         monitors: monitorId,
-        custom_uptime_ratios: '30', // Last 30 days
+        custom_uptime_ratios: '30-1', // Last 30 days and 1 day
+        logs: '1', // Include logs
+        logs_limit: '50', // Last 50 log entries
       }),
     })
 
@@ -85,14 +101,40 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
         status = 'unknown'
     }
 
-    // Use 30-day uptime ratio, format to one decimal place
-    const uptimeRatio = parseFloat(monitor.custom_uptime_ratio || monitor.all_time_uptime_ratio)
-    const formattedUptime = `${uptimeRatio.toFixed(1)}%`
+    // Parse custom_uptime_ratio: "99.9-100" means 30d=99.9%, 1d=100%
+    const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || []
+    const uptime30d = parseFloat(uptimeRatios[0] || monitor.all_time_uptime_ratio)
+    const uptime1d = parseFloat(uptimeRatios[1] || uptimeRatios[0] || '100')
+
+    // Calculate 24-hour stats from logs
+    const now = Math.floor(Date.now() / 1000)
+    const oneDayAgo = now - (24 * 60 * 60)
+    let incidents24h = 0
+    let downtime24hSeconds = 0
+
+    if (monitor.logs) {
+      for (const log of monitor.logs) {
+        // Only count logs from last 24 hours, type 1 = down event
+        if (log.type === 1 && log.datetime >= oneDayAgo) {
+          incidents24h++
+          downtime24hSeconds += log.duration
+        }
+      }
+    }
+
+    const formattedUptime = `${uptime30d.toFixed(1)}%`
+    const formattedUptime24h = `${uptime1d.toFixed(0)}%`
+    const downtimeMinutes = Math.round(downtime24hSeconds / 60)
 
     return {
       uptime: formattedUptime,
       status,
       monitorName: monitor.friendly_name,
+      last24Hours: {
+        uptime: formattedUptime24h,
+        incidents: incidents24h,
+        downtimeMinutes,
+      },
     }
   } catch (error: any) {
     console.error('Error fetching UptimeRobot data:', error)

@@ -19,6 +19,11 @@ export interface WebsiteData {
       uptime: string
       uptimeStatus: 'up' | 'down' | 'paused' | 'unknown' | null
       lastUpdated: string
+      last24Hours?: {
+        uptime: string
+        incidents: number
+        downtimeMinutes: number
+      }
     }
     blocksIframe: boolean
   } | null
@@ -150,11 +155,13 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
     // Fetch uptime data from UptimeRobot if monitor is configured
     let uptimeDisplay = 'Not Monitored'
     let uptimeStatus: 'up' | 'down' | 'paused' | 'unknown' | null = null
+    let last24Hours: { uptime: string; incidents: number; downtimeMinutes: number } | undefined
     if (client.uptimerobot_monitor_id) {
       const uptimeData = await getMonitorUptime(client.uptimerobot_monitor_id)
       if (uptimeData) {
         uptimeDisplay = uptimeData.uptime
         uptimeStatus = uptimeData.status
+        last24Hours = uptimeData.last24Hours
       }
     }
 
@@ -237,6 +244,7 @@ export async function getWebsiteData(clientId: string): Promise<WebsiteData> {
         uptime: uptimeDisplay,
         uptimeStatus,
         lastUpdated: lastUpdatedDisplay,
+        last24Hours,
       },
       blocksIframe: blocksIframe || false,
     }

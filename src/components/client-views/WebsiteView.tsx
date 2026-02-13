@@ -27,6 +27,11 @@ interface WebsiteData {
     uptime: string
     uptimeStatus?: 'up' | 'down' | 'paused' | 'unknown' | null
     lastUpdated: string
+    last24Hours?: {
+      uptime: string
+      incidents: number
+      downtimeMinutes: number
+    }
   }
   blocksIframe?: boolean
 }
@@ -344,6 +349,33 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                 <div className="stat-mini-label">Last Updated</div>
               </div>
             </div>
+
+            {/* Last 24 Hours Stats */}
+            {websiteData.hosting.last24Hours && (
+              <div className="website-24h-stats">
+                <div className="stats-24h-header">Last 24 Hours</div>
+                <div className="stats-24h-grid">
+                  <div className="stat-24h">
+                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.uptime === '100%' ? 'success' : ''}`}>
+                      {websiteData.hosting.last24Hours.uptime}
+                    </span>
+                    <span className="stat-24h-label">Uptime</span>
+                  </div>
+                  <div className="stat-24h">
+                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.incidents === 0 ? 'success' : 'danger'}`}>
+                      {websiteData.hosting.last24Hours.incidents}
+                    </span>
+                    <span className="stat-24h-label">Incidents</span>
+                  </div>
+                  <div className="stat-24h">
+                    <span className={`stat-24h-value ${websiteData.hosting.last24Hours.downtimeMinutes === 0 ? 'success' : 'danger'}`}>
+                      {websiteData.hosting.last24Hours.downtimeMinutes}m
+                    </span>
+                    <span className="stat-24h-label">Downtime</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
