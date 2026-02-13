@@ -297,7 +297,7 @@ interface ClientData {
   avatarColor: string
   email: string
   clientSince: string
-  status: 'active' | 'paused' | 'onboarding'
+  status: 'active' | 'paused' | 'onboarding' | 'test'
   growthStage: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
   servicesCount: number
   hasWebsite: boolean
@@ -421,7 +421,7 @@ export default function ClientDetailPage() {
   const [editModalTab, setEditModalTab] = useState<'general' | 'integrations' | 'billing' | 'notifications'>('general')
   const [editFormData, setEditFormData] = useState({
     companyName: '',
-    status: 'active' as 'active' | 'paused' | 'onboarding',
+    status: 'active' as 'active' | 'paused' | 'onboarding' | 'test',
     primaryContact: '',
     email: '',
     phone: '',
@@ -897,7 +897,7 @@ export default function ClientDetailPage() {
           setEditFormData(prev => ({
             ...prev,
             companyName: data.name,
-            status: (data.status as 'active' | 'paused' | 'onboarding') || 'active',
+            status: (data.status as 'active' | 'paused' | 'onboarding' | 'test') || 'active',
             primaryContact: data.contact_name || '',
             email: data.contact_email || '',
             growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
@@ -1767,7 +1767,7 @@ export default function ClientDetailPage() {
     avatarColor: dbClient.avatar_color || getAvatarColor(dbClient.name),
     email: dbClient.contact_email || '',
     clientSince: formatDate(dbClient.created_at),
-    status: (dbClient.status as 'active' | 'paused' | 'onboarding') || 'active',
+    status: (dbClient.status as 'active' | 'paused' | 'onboarding' | 'test') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
     servicesCount: subscriptionServicesCount,
     hasWebsite: hasWebsiteProducts,
@@ -1933,8 +1933,10 @@ export default function ClientDetailPage() {
                     // Use same logic as client list page - based on db status/growth_stage
                     const growthStage = dbClient?.growth_stage || 'prospect'
                     const isProspect = growthStage === 'prospect'
-                    let displayStatus: 'active' | 'inactive' | 'paused' | 'prospect' = 'active'
-                    if (dbClient?.status === 'inactive') {
+                    let displayStatus: 'active' | 'inactive' | 'paused' | 'prospect' | 'test' = 'active'
+                    if (dbClient?.status === 'test') {
+                      displayStatus = 'test'
+                    } else if (dbClient?.status === 'inactive') {
                       displayStatus = 'inactive'
                     } else if (dbClient?.status === 'paused') {
                       displayStatus = 'paused'
@@ -1946,6 +1948,7 @@ export default function ClientDetailPage() {
                       inactive: 'Inactive',
                       paused: 'Paused',
                       prospect: 'Prospect',
+                      test: 'Test',
                     }
                     return (
                       <span className={`status-badge ${displayStatus}`}>
@@ -3274,11 +3277,12 @@ export default function ClientDetailPage() {
                         id="status"
                         className="form-control"
                         value={editFormData.status}
-                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as 'active' | 'paused' | 'onboarding' })}
+                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as 'active' | 'paused' | 'onboarding' | 'test' | 'test' })}
                       >
                         <option value="active">Active</option>
                         <option value="onboarding">Onboarding</option>
                         <option value="paused">Paused</option>
+                        <option value="test">Test</option>
                       </select>
                     </div>
                   </div>

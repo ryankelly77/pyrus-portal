@@ -17,7 +17,7 @@ import {
 import type { PerformanceData, ClientDetailData } from '@/components/admin/performance'
 import { PerformanceDashboardResponseSchema } from '@/lib/validation/performanceSchemas'
 
-type ClientStatus = 'active' | 'inactive' | 'prospect' | 'paused'
+type ClientStatus = 'active' | 'inactive' | 'prospect' | 'paused' | 'test'
 type Tab = 'clients' | 'performance'
 
 // Demo client ID - used to filter it from the regular list
@@ -170,7 +170,9 @@ export default function ClientsPage() {
         const isProspect = growthStage === 'prospect'
 
         let displayStatus: ClientStatus = 'active'
-        if (c.status === 'inactive') {
+        if (c.status === 'test') {
+          displayStatus = 'test'
+        } else if (c.status === 'inactive') {
           displayStatus = 'inactive'
         } else if (c.status === 'paused') {
           displayStatus = 'paused'
@@ -650,6 +652,12 @@ export default function ClientsPage() {
               onClick={() => setStatusFilter('paused')}
             >
               Paused
+            </button>
+            <button
+              className={`filter-btn ${statusFilter === 'test' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('test')}
+            >
+              Test
             </button>
           </div>
           <div className="sort-dropdown">

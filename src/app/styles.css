@@ -7496,6 +7496,11 @@
             color: var(--error-text);
         }
 
+        .status-badge.test {
+            background: #EDE9FE;
+            color: #7C3AED;
+        }
+
         .status-badge.seedling {
             background: #FEF3C7;
             color: #D97706;
