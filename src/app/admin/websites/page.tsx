@@ -303,7 +303,7 @@ export default function WebsitesPage() {
                   <th style={{ width: '32px' }}></th>
                   <th>Website</th>
                   <th>Client</th>
-                  <th>Type</th>
+                  <th>Website Plan</th>
                   <th>Care Plan</th>
                   <th>Status</th>
                   <th>Requests</th>
