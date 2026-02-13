@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
@@ -1490,13 +1489,6 @@ export default function GettingStartedPage() {
 
       `}</style>
 
-      {/* LeadConnector Chatbot - For all clients on Getting Started/Welcome page */}
-      <Script
-        src="https://widgets.leadconnectorhq.com/loader.js"
-        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-        data-widget-id="6879420133ee4bc0c5428d6b"
-        strategy="lazyOnload"
-      />
     </>
   )
 }
