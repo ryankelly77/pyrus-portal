@@ -23293,6 +23293,7 @@ input[type="date"].form-control {
     grid-template-columns: 2fr 1fr;
     gap: 24px;
     margin-bottom: 24px;
+    align-items: stretch;
 }
 
 .website-preview-card {
@@ -23300,6 +23301,8 @@ input[type="date"].form-control {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-light);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .website-preview-header {
@@ -23327,7 +23330,8 @@ input[type="date"].form-control {
 .website-preview-container {
     position: relative;
     width: 100%;
-    height: 500px;
+    min-height: 500px;
+    flex: 1;
     background: var(--bg-page);
 }
 
