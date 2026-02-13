@@ -107,6 +107,16 @@ function getStatusIcon(status: RequestStatus) {
   }
 }
 
+function getRequestTypeLabel(type: string): string {
+  switch (type) {
+    case 'content_update': return 'Content Update'
+    case 'bug_fix': return 'Bug Fix'
+    case 'new_feature': return 'New Feature'
+    case 'design_change': return 'Design Change'
+    default: return type
+  }
+}
+
 export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientName, onAddToCart, websiteServices }: WebsiteViewProps) {
   const [loading, setLoading] = useState(true)
   const [websiteData, setWebsiteData] = useState<WebsiteData | null>(null)
@@ -364,7 +374,7 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                   <div className="request-details">
                     <div className="request-title">{request.title}</div>
                     <div className="request-meta">
-                      <span className="request-type">{request.type}</span>
+                      <span className="request-type">{getRequestTypeLabel(request.type)}</span>
                     </div>
                   </div>
                   <div className="request-info">
