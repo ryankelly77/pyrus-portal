@@ -25,6 +25,7 @@ interface UptimeRobotMonitor {
   all_time_uptime_ratio: string // e.g., "99.98"
   custom_uptime_ratio: string // For requested time range (e.g., "99.9-100" for 30d-1d)
   interval: number // Check interval in seconds
+  create_datetime: number // Unix timestamp when monitor was created
   logs?: UptimeRobotLog[]
   ssl?: UptimeRobotSSL
 }
@@ -205,15 +206,27 @@ export async function getMonitorUptime(monitorId: string): Promise<UptimeData | 
 
     // Calculate current uptime duration (time since last "up" event or monitoring started)
     let currentStatusInfo: CurrentStatusInfo | undefined
-    if (status === 'up' && monitor.logs) {
+    if (status === 'up') {
       // Find the most recent "up" event (type 2) or "started" event (type 98) to calculate duration
       // Type 2 = recovered from down, Type 98 = monitoring started
-      const upOrStartEvents = monitor.logs
-        .filter(log => log.type === 2 || log.type === 98)
-        .sort((a, b) => b.datetime - a.datetime)
+      let lastUpTime: number | undefined
 
-      if (upOrStartEvents.length > 0) {
-        const lastUpTime = upOrStartEvents[0].datetime
+      if (monitor.logs && monitor.logs.length > 0) {
+        const upOrStartEvents = monitor.logs
+          .filter(log => log.type === 2 || log.type === 98)
+          .sort((a, b) => b.datetime - a.datetime)
+
+        if (upOrStartEvents.length > 0) {
+          lastUpTime = upOrStartEvents[0].datetime
+        }
+      }
+
+      // Fallback to monitor creation time if no logs available
+      if (!lastUpTime && monitor.create_datetime) {
+        lastUpTime = monitor.create_datetime
+      }
+
+      if (lastUpTime) {
         const uptimeSeconds = now - lastUpTime
         const days = Math.floor(uptimeSeconds / 86400)
         const hours = Math.floor((uptimeSeconds % 86400) / 3600)

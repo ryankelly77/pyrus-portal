@@ -1,12 +1,64 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { useClientPageData, type ClientPageTab } from '@/hooks/use-client-page-data'
 import { CommunicationItem, formatTimelineDate } from '@/components'
 import { ContentView, ResultsView, WebsiteView, ActivityView, RecommendationsView, CommunicationView, WelcomeView } from '@/components/client-views'
+import { EditClientModal, ResultAlertModal, AddProductModal } from '@/components/admin/clients/modals'
+import {
+  type MainTab,
+  type GettingStartedSubtab,
+  type ResultsSubtab,
+  type RecommendationsSubtab,
+  type ActivityFilter,
+  type ClientPageDBClient,
+  type RequestStatus,
+  type EditRequest,
+  type ClientData,
+  type ChecklistItem,
+  type OnboardingResponse,
+  type OnboardingSummary,
+  type OnboardingQuestion,
+  type OnboardingFormData,
+  type VideoChapter,
+  type PageRecommendationItem,
+  type RecommendationHistory,
+  type PageRecommendation,
+  type PageSubscriptionItem,
+  type SubscriptionHistory,
+  type PageSubscription,
+  type StripeSubscriptionItem,
+  type StripeSubscription,
+  type StripeHistoryEvent,
+  type ManualProduct,
+  type TestProduct,
+  type ContentProduct,
+  type AvailableProduct,
+  type Service,
+  type BasecampActivity,
+  type Activity,
+  type Communication,
+  type CommForExport,
+  type PaymentMethod,
+  type InvoiceLine,
+  type Invoice,
+  type StripeCustomer,
+  type KeywordRow,
+  type ResultAlertType,
+  type EditFormData,
+  AVATAR_COLORS,
+} from '@/types'
+
+// Type aliases to maintain compatibility with existing code
+type DBClient = ClientPageDBClient
+type RecommendationItem = PageRecommendationItem
+type Recommendation = PageRecommendation
+type SubscriptionItem = PageSubscriptionItem
+type Subscription = PageSubscription
 
 // Helper to generate initials from name (same as Clients page)
 function getInitials(name: string): string {
@@ -44,18 +96,6 @@ function formatPrice(amount: number): string {
 }
 
 // Export communications to CSV
-interface CommForExport {
-  sentAt: string | null
-  createdAt: string | null
-  type: string
-  title: string
-  subject: string | null
-  status: string | null
-  direction?: string
-  source?: string
-  body: string | null
-}
-
 function exportCommunicationsToCSV(communications: CommForExport[], filename: string) {
   const headers = ['Date', 'Type', 'Title', 'Subject', 'Status', 'Direction', 'Source', 'Body']
   const rows = communications.map(comm => [
@@ -82,262 +122,10 @@ function exportCommunicationsToCSV(communications: CommForExport[], filename: st
   URL.revokeObjectURL(link.href)
 }
 
-// Database client interface
-interface DBClient {
-  id: string
-  name: string
-  contact_name: string | null
-  contact_email: string | null
-  status: string | null
-  growth_stage: string | null
-  avatar_color: string | null
-  notes: string | null
-  referred_by: string | null
-  referral_source: string | null
-  created_at: string
-  start_date: string | null
-  // Integration fields
-  agency_dashboard_share_key: string | null
-  basecamp_id: string | null
-  basecamp_project_id: string | null
-  landingsite_preview_url: string | null
-  stripe_customer_id: string | null
-  // Website fields
-  website_url: string | null
-  hosting_type: 'ai_site' | 'pyrus_hosted' | 'client_hosted' | null
-  hosting_provider: string | null
-  website_provider: 'pear' | 'pyrus' | 'other' | null
-  website_launch_date: string | null
-  uptimerobot_monitor_id: string | null
-  // Onboarding
-  onboarding_completed_at: string | null
-  // Content approval workflow settings
-  content_approval_mode: 'full_approval' | 'initial_approval' | 'auto' | null
-  approval_threshold: number | null
-}
+// Use AVATAR_COLORS from types
+const avatarColors = AVATAR_COLORS
 
-type MainTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'communication' | 'recommendations'
-
-type RequestStatus = 'completed' | 'in-progress' | 'pending'
-
-interface EditRequest {
-  id: number
-  title: string
-  type: string
-  status: RequestStatus
-  date: string
-}
-
-interface ChecklistItem {
-  id: string
-  templateId: string
-  title: string
-  description: string | null
-  actionType: string | null
-  actionUrl: string | null
-  actionLabel: string | null
-  isCompleted: boolean
-  completedAt: string | null
-  notes: string | null
-  product: {
-    id: string
-    name: string
-    category: string
-  }
-}
-
-interface OnboardingResponse {
-  id: string
-  question: string
-  answer: string
-  questionType: string
-  product: {
-    id: string
-    name: string
-    category: string
-  }
-}
-
-interface OnboardingSummary {
-  [section: string]: OnboardingResponse[]
-}
-
-interface RecommendationItem {
-  id: string
-  tier: string | null  // 'good', 'better', 'best', or null
-  monthly_price: string | null
-  onetime_price: string | null
-  is_free: boolean | null
-  product: {
-    id: string
-    name: string
-    category: string
-    monthly_price: string | null
-    onetime_price: string | null
-    short_description: string | null
-    long_description: string | null
-  } | null
-  bundle: {
-    id: string
-    name: string
-    description: string | null
-    long_description: string | null
-    monthly_price: string | null
-    onetime_price: string | null
-  } | null
-  addon: {
-    id: string
-    name: string
-    description: string | null
-    long_description: string | null
-    price: string | null
-  } | null
-}
-
-interface RecommendationHistory {
-  id: string
-  action: string
-  details: string | null
-  created_at: string
-  created_by: string | null
-}
-
-interface Recommendation {
-  id: string
-  status: string
-  good_description: string | null
-  better_description: string | null
-  best_description: string | null
-  discount_applied: string | null
-  purchased_tier: string | null
-  purchased_at: string | null
-  recommendation_items: RecommendationItem[]
-  history?: RecommendationHistory[]
-}
-
-interface SubscriptionItem {
-  id: string
-  quantity: number | null
-  unit_amount: string | null
-  product: {
-    id: string
-    name: string
-    category: string
-    short_description: string | null
-    monthly_price: string | null
-  } | null
-  bundle: {
-    id: string
-    name: string
-    description: string | null
-    monthly_price: string | null
-  } | null
-}
-
-interface SubscriptionHistory {
-  id: string
-  action: string
-  details: string | null
-  created_at: string | null
-  created_by: string | null
-}
-
-interface Subscription {
-  id: string
-  status: string | null
-  current_period_start: string | null
-  current_period_end: string | null
-  monthly_amount: string | null
-  created_at: string | null
-  subscription_items: SubscriptionItem[]
-  subscription_history?: SubscriptionHistory[]
-}
-
-// Stripe subscription directly from Stripe API
-interface StripeSubscriptionItem {
-  id: string
-  priceId: string
-  product: {
-    id: string
-    name: string
-    description?: string
-  }
-  quantity: number | null
-  unitAmount: number
-  currency: string
-  interval: string
-  intervalCount: number
-}
-
-interface StripeSubscription {
-  id: string
-  status: string
-  currentPeriodStart: string | null
-  currentPeriodEnd: string | null
-  cancelAtPeriodEnd: boolean
-  canceledAt: string | null
-  created: string
-  items: StripeSubscriptionItem[]
-}
-
-// Stripe subscription history event
-interface StripeHistoryEvent {
-  id: string
-  type: string
-  action: string
-  details: string
-  date: string
-  products?: string[]
-}
-
-interface ClientData {
-  id: string
-  name: string
-  initials: string
-  avatarColor: string
-  email: string
-  clientSince: string
-  status: 'active' | 'paused' | 'onboarding' | 'test'
-  growthStage: 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting'
-  servicesCount: number
-  hasWebsite: boolean
-  hasContent: boolean
-  websiteData?: {
-    domain: string
-    previewUrl: string
-    plan: string
-    carePlan: string
-    status: 'active' | 'development' | 'maintenance'
-    launchDate: string
-    hosting: {
-      provider: string
-      uptime: string
-      lastUpdated: string
-    }
-  }
-  editRequests?: EditRequest[]
-  checklistProgress: {
-    completed: number
-    total: number
-  }
-}
-
-const avatarColors = [
-  { name: 'Brown', value: '#885430' },
-  { name: 'Blue', value: '#2563EB' },
-  { name: 'Purple', value: '#7C3AED' },
-  { name: 'Teal', value: '#0B7277' },
-  { name: 'Red', value: '#DC2626' },
-  { name: 'Orange', value: '#EA580C' },
-  { name: 'Green', value: '#16A34A' },
-  { name: 'Cyan', value: '#0891B2' },
-  { name: 'Indigo', value: '#4F46E5' },
-  { name: 'Pink', value: '#DB2777' },
-  { name: 'Gray', value: '#6B7280' },
-  { name: 'Violet', value: '#9333EA' },
-]
-
-// Client database
+// Client database (legacy hardcoded data for fallback)
 const clients: Record<string, ClientData> = {
   'tc-clinical': {
     id: 'tc-clinical',
@@ -388,384 +176,121 @@ const clients: Record<string, ClientData> = {
   },
 }
 
-// Video chapter interface
-interface VideoChapter {
-  id: string
-  title: string
-  description: string
-  videoUrl: string
-}
-
-type GettingStartedSubtab = 'questions' | 'checklist' | 'onboarding-summary'
-type ResultsSubtab = 'overview' | 'pro-dashboard'
-type RecommendationsSubtab = 'smart-recommendations' | 'original-plan' | 'current-services'
-type ActivityFilter = 'all' | 'task' | 'update' | 'alert' | 'content'
-
 export default function ClientDetailPage() {
   const { user, hasNotifications } = useUserProfile()
   const params = useParams()
   const router = useRouter()
   const clientId = params.id as string
 
-  // Database client state
-  const [dbClient, setDbClient] = useState<DBClient | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // Tab state (declared before hook so it can be passed for lazy loading)
+  const [activeTab, setActiveTab] = useState<ClientPageTab>('getting-started')
 
-  const [activeTab, setActiveTab] = useState<MainTab>('getting-started')
+  // =========================================================================
+  // DATA FROM CUSTOM HOOK
+  // =========================================================================
+  const {
+    client: dbClient,
+    isLoading,
+    checklistItems,
+    checklistLoading,
+    videoChapters,
+    onboardingSummary,
+    summaryLoading,
+    onboardingForm,
+    onboardingFormLoading,
+    recommendation,
+    recommendationLoading,
+    smartRecommendationsCount,
+    subscriptions,
+    subscriptionsLoading,
+    subscriptionServicesCount,
+    stripeSubscriptions,
+    stripeSubscriptionsLoading,
+    stripeHistory,
+    stripeHistoryLoading,
+    manualProducts,
+    manualProductsLoading,
+    availableProducts,
+    testProducts,
+    testProductsLoading,
+    allProducts,
+    availableContentProducts,
+    contentServices,
+    websiteServices,
+    hasContentProductsFromApi,
+    hasWebsiteProductsFromApi,
+    approvedContentCount,
+    basecampActivities,
+    activitiesLoading,
+    communications,
+    communicationsLoading,
+    invoices,
+    stripeCustomer,
+    stripeCustomerId,
+    invoicesLoading,
+    isSuperAdmin,
+    // Actions
+    refetchClient,
+    refetchChecklist,
+    refetchSmartRecsCount,
+    refetchSubscriptions,
+    refetchManualProducts,
+    refetchTestProducts,
+    refetchCommunications,
+    refetchInvoices,
+    refetchAvailableProducts,
+    setManualProducts,
+    setTestProducts,
+    setChecklistItems,
+    setCommunications,
+    setSubscriptions,
+    setSubscriptionServicesCount,
+  } = useClientPageData(clientId, activeTab)
+
+  // =========================================================================
+  // UI STATE (kept in component)
+  // =========================================================================
   const [activeSubtab, setActiveSubtab] = useState<GettingStartedSubtab>('questions')
   const [resultsSubtab, setResultsSubtab] = useState<ResultsSubtab>('overview')
   const [recommendationsSubtab, setRecommendationsSubtab] = useState<RecommendationsSubtab>('original-plan')
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
   const [isClientView, setIsClientView] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editModalTab, setEditModalTab] = useState<'general' | 'integrations' | 'billing' | 'notifications'>('general')
-  const [editFormData, setEditFormData] = useState({
-    companyName: '',
-    status: 'active' as 'active' | 'paused' | 'onboarding' | 'test',
-    primaryContact: '',
-    email: '',
-    phone: '',
-    growthStage: 'prospect' as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting',
-    internalNotes: '',
-    referredBy: '',
-    referralSource: '',
-    avatarColor: '#885430',
-    // Website
-    websiteUrl: '',
-    hostingType: '' as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted',
-    hostingProvider: '',
-    websiteProvider: '' as '' | 'pear' | 'pyrus' | 'other',
-    websiteLaunchDate: '',
-    uptimerobotMonitorId: '',
-    // Integrations
-    agencyDashboardShareKey: '',
-    basecampProjectId: '',
-    stripeCustomerId: '',
-    // Billing
-    billingEmail: '',
-    paymentMethod: '**** **** **** 4242',
-    billingCycle: 'monthly' as 'monthly' | 'quarterly' | 'annually',
-    // Notifications
-    monthlyReports: true,
-    resultAlerts: true,
-    recommendationUpdates: true,
-    weeklyDigest: false,
-    // Content approval workflow
-    contentApprovalMode: 'full_approval' as 'full_approval' | 'initial_approval' | 'auto',
-    approvalThreshold: 3,
-  })
-  const [isSaving, setIsSaving] = useState(false)
 
-  // Checklist state
-  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
-  const [checklistLoading, setChecklistLoading] = useState(false)
+  // Checklist sync UI state
   const [syncingChecklist, setSyncingChecklist] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
-  // Video chapters state
-  const [videoChapters, setVideoChapters] = useState<VideoChapter[]>([])
+  // Video chapter selection
   const [activeVideoChapter, setActiveVideoChapter] = useState<string>('')
 
-  // Onboarding summary state
-  const [onboardingSummary, setOnboardingSummary] = useState<OnboardingSummary | null>(null)
-  const [summaryLoading, setSummaryLoading] = useState(false)
-
-  // Onboarding questions form state (for Questions tab)
-  interface OnboardingQuestion {
-    id: string
-    questionText: string
-    questionType: string
-    options: string[] | null
-    placeholder: string | null
-    helpText: string | null
-    isRequired: boolean
-    section: string | null
-    product: {
-      id: string
-      name: string
-      category: string
+  // Set active video chapter when chapters load
+  useEffect(() => {
+    if (videoChapters.length > 0 && !activeVideoChapter) {
+      setActiveVideoChapter(videoChapters[0].id)
     }
-    response: {
-      id: string
-      text: string | null
-      options: string[] | null
-    } | null
-  }
-  interface OnboardingFormData {
-    questions: OnboardingQuestion[]
-    grouped: Record<string, OnboardingQuestion[]>
-    hasProducts: boolean
-    progress: {
-      answered: number
-      total: number
-      percent: number
-    }
-  }
-  const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData | null>(null)
-  const [onboardingFormLoading, setOnboardingFormLoading] = useState(false)
+  }, [videoChapters, activeVideoChapter])
 
-  // Recommendation state
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
-  const [recommendationLoading, setRecommendationLoading] = useState(false)
-
-  // Subscription state (from database)
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-
-  // Stripe subscriptions (directly from Stripe API)
-  const [stripeSubscriptions, setStripeSubscriptions] = useState<StripeSubscription[]>([])
-  const [stripeSubscriptionsLoading, setStripeSubscriptionsLoading] = useState(false)
-
-  // Stripe subscription history
-  const [stripeHistory, setStripeHistory] = useState<StripeHistoryEvent[]>([])
-  const [stripeHistoryLoading, setStripeHistoryLoading] = useState(false)
-
-  // Manual products state
-  interface ManualProduct {
-    id: string
-    productId: string
-    name: string
-    category: string
-    description: string | null
-    source: 'manual'
-    assignedAt: string | null
-    notes: string | null
-    monthlyPrice: number
-    hasCustomPrice: boolean
-  }
-  const [manualProducts, setManualProducts] = useState<ManualProduct[]>([])
-  const [manualProductsLoading, setManualProductsLoading] = useState(false)
+  // Add product modal state
   const [showAddProductModal, setShowAddProductModal] = useState(false)
-  const [availableProducts, setAvailableProducts] = useState<{ id: string; name: string; category: string }[]>([])
-  const [selectedProductId, setSelectedProductId] = useState('')
-  const [productNotes, setProductNotes] = useState('')
-  const [addingProduct, setAddingProduct] = useState(false)
   const [removingProductId, setRemovingProductId] = useState<string | null>(null)
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
   const [editingPriceValue, setEditingPriceValue] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
 
-  // Smart recommendations count for tab badge
-  const [smartRecommendationsCount, setSmartRecommendationsCount] = useState(0)
+  // Test products UI state
+  const [addingTestProduct, setAddingTestProduct] = useState(false)
+  const [removingTestProductId, setRemovingTestProductId] = useState<string | null>(null)
 
-  // Current user role
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-
-  // Basecamp activities state
-  interface BasecampActivity {
-    id: string
-    taskId: string
-    kind: string
-    title: string | null
-    status: string
-    todolist: string | null
-    content: string | null
-    position: number | null
-    createdAt: string | null
-  }
-  const [basecampActivities, setBasecampActivities] = useState<BasecampActivity[]>([])
-  const [activitiesLoading, setActivitiesLoading] = useState(false)
-  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
-  const [subscriptionServicesCount, setSubscriptionServicesCount] = useState(0)
-
-  // Payment methods state
-  interface PaymentMethod {
-    id: string
-    type: string
-    card?: {
-      brand: string
-      last4: string
-      expMonth: number
-      expYear: number
-    }
-    usBankAccount?: {
-      bankName: string
-      last4: string
-      accountType: string
-    }
-    link?: {
-      email: string
-    }
-    isDefault: boolean
-    created: string
-  }
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(false)
-  const [stripeBillingEmail, setStripeBillingEmail] = useState<string | null>(null)
-
-  // Content state
+  // Content modals
   const [showContentRequirementsModal, setShowContentRequirementsModal] = useState(false)
-
-  // Content upsell state
-  interface ContentProduct {
-    id: string
-    name: string
-    short_description: string | null
-    long_description: string | null
-    category: string
-    monthly_price: string | null
-    onetime_price: string | null
-    supports_quantity: boolean | null
-  }
-  const [availableContentProducts, setAvailableContentProducts] = useState<ContentProduct[]>([])
   const [showProductModal, setShowProductModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ContentProduct | null>(null)
 
-  // Aggregated content services from product flags
-  interface Service {
-    name: string
-    quantity: number
-    details?: string
-  }
-  const [contentServices, setContentServices] = useState<Service[]>([])
-  const [websiteServices, setWebsiteServices] = useState<Service[]>([])
-  // Flags from API based on product includes_content/includes_website fields
-  const [hasContentProductsFromApi, setHasContentProductsFromApi] = useState<boolean | null>(null)
-  const [hasWebsiteProductsFromApi, setHasWebsiteProductsFromApi] = useState<boolean | null>(null)
-
-  // Content approval workflow progress (count of approved/posted content for initial_approval mode)
-  const [approvedContentCount, setApprovedContentCount] = useState(0)
-  const [showApprovalModeConfirm, setShowApprovalModeConfirm] = useState(false)
-  const [originalApprovalMode, setOriginalApprovalMode] = useState<'full_approval' | 'initial_approval' | 'auto'>('full_approval')
-
-  // Result Alert modal state
+  // Result Alert modal
   const [showResultAlertModal, setShowResultAlertModal] = useState(false)
-  const [resultAlertType, setResultAlertType] = useState<'ranking' | 'traffic' | 'leads' | 'milestone' | 'other' | 'ai'>('ranking')
-  const [resultAlertSubject, setResultAlertSubject] = useState('')
-  const [resultAlertMessage, setResultAlertMessage] = useState('')
-  const [isSendingResultAlert, setIsSendingResultAlert] = useState(false)
-  // Optional structured data for highlight box
-  interface KeywordRow {
-    keyword: string
-    newPosition: string
-    prevPosition: string
-  }
-  const [resultAlertKeywords, setResultAlertKeywords] = useState<KeywordRow[]>([{ keyword: '', newPosition: '', prevPosition: '' }])
-  const [resultAlertMilestone, setResultAlertMilestone] = useState('')
 
-  // Helper to update a specific keyword row
-  const updateKeywordRow = (index: number, field: keyof KeywordRow, value: string) => {
-    setResultAlertKeywords(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
-  }
-
-  // Add a new keyword row
-  const addKeywordRow = () => {
-    setResultAlertKeywords(prev => [...prev, { keyword: '', newPosition: '', prevPosition: '' }])
-  }
-
-  // Remove a keyword row
-  const removeKeywordRow = (index: number) => {
-    setResultAlertKeywords(prev => prev.filter((_, i) => i !== index))
-  }
-
-  // Alert type options with icons and default subjects
-  const alertTypes = {
-    ranking: {
-      label: 'Keyword Ranking',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          <line x1="11" y1="8" x2="11" y2="14"></line>
-          <line x1="8" y1="11" x2="14" y2="11"></line>
-        </svg>
-      ),
-      color: '#10B981',
-      bgColor: '#D1FAE5',
-      defaultSubject: 'Your Keywords Are Climbing!',
-      placeholder: 'e.g., Your keyword "wound care san antonio" jumped from #24 to #7 this month!',
-    },
-    traffic: {
-      label: 'Traffic Milestone',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-          <polyline points="17 6 23 6 23 12"></polyline>
-        </svg>
-      ),
-      color: '#3B82F6',
-      bgColor: '#DBEAFE',
-      defaultSubject: 'Traffic Milestone Reached!',
-      placeholder: 'e.g., Your website just hit 3,000 monthly visitors - up 45% from last month!',
-    },
-    leads: {
-      label: 'Lead Increase',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <line x1="19" y1="8" x2="19" y2="14"></line>
-          <line x1="22" y1="11" x2="16" y2="11"></line>
-        </svg>
-      ),
-      color: '#8B5CF6',
-      bgColor: '#EDE9FE',
-      defaultSubject: 'New Lead Alert!',
-      placeholder: 'e.g., Great news! You received 12 new leads this week through your Google Ads campaign.',
-    },
-    milestone: {
-      label: 'Campaign Milestone',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <circle cx="12" cy="8" r="7"></circle>
-          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-        </svg>
-      ),
-      color: '#F59E0B',
-      bgColor: '#FEF3C7',
-      defaultSubject: 'Campaign Milestone Achieved!',
-      placeholder: 'e.g., Your Google Ads campaign just completed its first 90 days with a 3.2x ROI!',
-    },
-    other: {
-      label: 'Other Update',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
-      ),
-      color: '#DB2777',
-      bgColor: '#FDF2F8',
-      defaultSubject: 'Marketing Update',
-      placeholder: 'Write a custom message about the results you want to share...',
-    },
-    ai: {
-      label: 'AI Alert',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"></path>
-          <path d="M20 3v4"></path>
-          <path d="M22 5h-4"></path>
-          <path d="M4 17v2"></path>
-          <path d="M5 18H3"></path>
-        </svg>
-      ),
-      color: '#06B6D4',
-      bgColor: '#CFFAFE',
-      defaultSubject: 'AI Insights for Your Business',
-      placeholder: 'e.g., Our AI analysis identified 3 new keyword opportunities that could increase your traffic by 25%.',
-    },
-  }
-
-  // Communications state
-  interface Communication {
-    id: string
-    clientId: string
-    type: string  // 'email_invite', 'email_reminder', 'email_highlevel', 'result_alert', 'sms', 'chat', 'chat_facebook', 'chat_instagram', 'chat_whatsapp', 'monthly_report', etc.
-    title: string
-    subject: string | null
-    body: string | null
-    status: string | null  // 'sent', 'delivered', 'opened', 'clicked', 'failed', 'bounced'
-    metadata: Record<string, any> | null
-    highlightType: string | null  // 'success' | 'failed' | null
-    recipientEmail: string | null
-    openedAt: string | null
-    clickedAt: string | null
-    sentAt: string | null
-    createdAt: string | null
-    source?: 'database' | 'highlevel'
-    direction?: 'inbound' | 'outbound'
-  }
-  const [communications, setCommunications] = useState<Communication[]>([])
-  const [communicationsLoading, setCommunicationsLoading] = useState(false)
+  // Communications UI state
   const [commFilter, setCommFilter] = useState<'all' | 'emails' | 'alerts' | 'sms' | 'chat' | 'content'>('all')
   const [commDateRange, setCommDateRange] = useState<'all' | '7days' | '30days' | '90days'>('all')
   const [showCommDateDropdown, setShowCommDateDropdown] = useState(false)
@@ -775,633 +300,19 @@ export default function ClientDetailPage() {
   const [isResendingInvite, setIsResendingInvite] = useState(false)
   const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // Billing/Invoices state
-  interface InvoiceLine {
-    id: string
-    description: string | null
-    amount: number
-    quantity: number | null
-    period: { start: string; end: string } | null
-  }
-  interface Invoice {
-    id: string
-    number: string | null
-    status: string | null
-    amountDue: number
-    amountPaid: number
-    amountRemaining: number
-    subtotal: number
-    total: number
-    tax: number | null
-    currency: string
-    created: string | null
-    dueDate: string | null
-    paidAt: string | null
-    periodStart: string | null
-    periodEnd: string | null
-    hostedInvoiceUrl: string | null
-    invoicePdf: string | null
-    description: string | null
-    subscriptionId: string | null
-    lines: InvoiceLine[]
-  }
-  interface StripeCustomer {
-    id: string
-    email: string | null
-    name: string | null
-    phone: string | null
-    created: string | null
-    balance: number
-    currency: string
-    defaultPaymentMethod: string | null
-  }
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [stripeCustomer, setStripeCustomer] = useState<StripeCustomer | null>(null)
-  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null)
-  const [invoicesLoading, setInvoicesLoading] = useState(false)
-
-  // Handle saving client changes
-  const handleSaveClient = async (skipConfirmation = false) => {
-    if (!dbClient) return
-
-    // Check if approval mode changed and show confirmation if needed
-    const modeChanged = editFormData.contentApprovalMode !== originalApprovalMode
-    if (modeChanged && !skipConfirmation) {
-      setShowApprovalModeConfirm(true)
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editFormData.companyName,
-          contactName: editFormData.primaryContact,
-          contactEmail: editFormData.email,
-          status: editFormData.status,
-          growthStage: editFormData.growthStage,
-          notes: editFormData.internalNotes,
-          referredBy: editFormData.referredBy,
-          referralSource: editFormData.referralSource,
-          avatarColor: editFormData.avatarColor,
-          // Website fields
-          websiteUrl: editFormData.websiteUrl,
-          hostingType: editFormData.hostingType || null,
-          hostingProvider: editFormData.hostingProvider || null,
-          websiteProvider: editFormData.websiteProvider || null,
-          websiteLaunchDate: editFormData.websiteLaunchDate || null,
-          uptimerobotMonitorId: editFormData.uptimerobotMonitorId || null,
-          // Integration fields
-          agencyDashboardShareKey: editFormData.agencyDashboardShareKey,
-          basecampProjectId: editFormData.basecampProjectId,
-          stripeCustomerId: editFormData.stripeCustomerId,
-          // Content approval workflow
-          contentApprovalMode: editFormData.contentApprovalMode,
-          approvalThreshold: editFormData.contentApprovalMode === 'initial_approval' ? editFormData.approvalThreshold : null,
-        }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error('API error:', errorData)
-        throw new Error(errorData.error || 'Failed to update client')
-      }
-
-      // Refetch client to get updated data
-      const updatedClient = await res.json()
-      setDbClient(updatedClient)
-      // Update original approval mode after successful save
-      setOriginalApprovalMode(editFormData.contentApprovalMode)
-
-      setShowEditModal(false)
-      setShowApprovalModeConfirm(false)
-    } catch (error) {
-      console.error('Failed to save client:', error)
-      alert('Failed to save changes')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  // Fetch client from database
+  // Fetch available products when add modal opens
   useEffect(() => {
-    const fetchClient = async () => {
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}`)
-        if (res.ok) {
-          const data: DBClient = await res.json()
-          setDbClient(data)
-          // Update edit form with fetched data
-          setEditFormData(prev => ({
-            ...prev,
-            companyName: data.name,
-            status: (data.status as 'active' | 'paused' | 'onboarding' | 'test') || 'active',
-            primaryContact: data.contact_name || '',
-            email: data.contact_email || '',
-            growthStage: (data.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
-            internalNotes: data.notes || '',
-            referredBy: data.referred_by || '',
-            referralSource: data.referral_source || '',
-            avatarColor: data.avatar_color || getAvatarColor(data.name),
-            // Website fields
-            websiteUrl: data.website_url || '',
-            hostingType: (data.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
-            hostingProvider: data.hosting_provider || '',
-            websiteProvider: (data.website_provider as '' | 'pear' | 'pyrus' | 'other') || '',
-            websiteLaunchDate: data.website_launch_date ? new Date(data.website_launch_date).toISOString().split('T')[0] : '',
-            uptimerobotMonitorId: data.uptimerobot_monitor_id || '',
-            // Integration fields
-            agencyDashboardShareKey: data.agency_dashboard_share_key || '',
-            basecampProjectId: data.basecamp_project_id || '',
-            stripeCustomerId: data.stripe_customer_id || '',
-            // Content approval workflow
-            contentApprovalMode: (data.content_approval_mode as 'full_approval' | 'initial_approval' | 'auto') || 'full_approval',
-            approvalThreshold: data.approval_threshold || 3,
-          }))
-          // Track original approval mode for confirmation dialog
-          setOriginalApprovalMode((data.content_approval_mode as 'full_approval' | 'initial_approval' | 'auto') || 'full_approval')
-        }
-      } catch (error) {
-        console.error('Failed to fetch client:', error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (showAddProductModal) {
+      refetchAvailableProducts(manualProducts, subscriptions)
     }
-    fetchClient()
-  }, [clientId])
+  }, [showAddProductModal, manualProducts, subscriptions, refetchAvailableProducts])
 
-  // Fetch checklist items
-  useEffect(() => {
-    const fetchChecklist = async () => {
-      setChecklistLoading(true)
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/checklist`)
-        if (res.ok) {
-          const data: ChecklistItem[] = await res.json()
-          setChecklistItems(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch checklist:', error)
-      } finally {
-        setChecklistLoading(false)
-      }
-    }
-    fetchChecklist()
-  }, [clientId])
-
-  // Fetch smart recommendations count for tab badge (only active items - filtered server-side)
-  const fetchSmartRecsCount = async () => {
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/smart-recommendations`)
-      if (res.ok) {
-        const data = await res.json()
-        // API already filters to only active items
-        const items = data.recommendation?.items || []
-        setSmartRecommendationsCount(items.length)
-      }
-    } catch (error) {
-      console.error('Failed to fetch smart recommendations count:', error)
-    }
-  }
-
-  useEffect(() => {
-    fetchSmartRecsCount()
-  }, [clientId])
-
-  // Fetch current user's role to check if super admin
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const res = await fetch('/api/auth/me')
-        if (res.ok) {
-          const data = await res.json()
-          setIsSuperAdmin(data.role === 'super_admin')
-        }
-      } catch (error) {
-        console.error('Failed to fetch user role:', error)
-      }
-    }
-    fetchUserRole()
-  }, [])
-
-  // Fetch payment methods
-  useEffect(() => {
-    const fetchPaymentMethods = async () => {
-      if (!dbClient?.stripe_customer_id) return
-      setPaymentMethodsLoading(true)
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/payment-methods`)
-        if (res.ok) {
-          const data = await res.json()
-          setPaymentMethods(data.paymentMethods || [])
-          // Store billing email from Stripe
-          if (data.billingEmail) {
-            setStripeBillingEmail(data.billingEmail)
-            setEditFormData(prev => ({
-              ...prev,
-              billingEmail: data.billingEmail,
-            }))
-          }
-          // Update edit form with default payment method display
-          const defaultMethod = data.paymentMethods?.find((pm: PaymentMethod) => pm.isDefault)
-          if (defaultMethod?.card) {
-            const brandDisplay = defaultMethod.card.brand.charAt(0).toUpperCase() + defaultMethod.card.brand.slice(1)
-            setEditFormData(prev => ({
-              ...prev,
-              paymentMethod: `${brandDisplay} •••• ${defaultMethod.card.last4}`,
-            }))
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch payment methods:', error)
-      } finally {
-        setPaymentMethodsLoading(false)
-      }
-    }
-    fetchPaymentMethods()
-  }, [clientId, dbClient?.stripe_customer_id])
-
-  // Fetch approved content count for approval workflow progress
-  useEffect(() => {
-    const fetchApprovedContentCount = async () => {
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/content-stats`)
-        if (res.ok) {
-          const data = await res.json()
-          // Count approved + posted content for the threshold progress
-          setApprovedContentCount((data.approved || 0) + (data.posted || 0))
-        }
-      } catch (error) {
-        console.error('Failed to fetch approved content count:', error)
-      }
-    }
-    fetchApprovedContentCount()
-  }, [clientId])
-
-  // Fetch video chapters
-  useEffect(() => {
-    const fetchVideoChapters = async () => {
-      try {
-        const res = await fetch('/api/admin/onboarding/video-chapters')
-        if (res.ok) {
-          const data = await res.json()
-          const chapters = data.map((c: { id: string; title: string; description: string | null; video_url: string | null }) => ({
-            id: c.id,
-            title: c.title,
-            description: c.description || '',
-            videoUrl: c.video_url || ''
-          })).filter((c: VideoChapter) => c.videoUrl)
-          setVideoChapters(chapters)
-          if (chapters.length > 0) {
-            setActiveVideoChapter(chapters[0].id)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch video chapters:', error)
-      }
-    }
-    fetchVideoChapters()
-  }, [])
-
-  // Fetch onboarding summary
-  useEffect(() => {
-    const fetchOnboardingSummary = async () => {
-      setSummaryLoading(true)
-      try {
-        const res = await fetch(`/api/client/onboarding?clientId=${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setOnboardingSummary(data.onboardingSummary || null)
-        }
-      } catch (error) {
-        console.error('Failed to fetch onboarding summary:', error)
-      } finally {
-        setSummaryLoading(false)
-      }
-    }
-    fetchOnboardingSummary()
-  }, [clientId])
-
-  // Fetch onboarding form questions
-  useEffect(() => {
-    const fetchOnboardingForm = async () => {
-      setOnboardingFormLoading(true)
-      try {
-        const res = await fetch(`/api/client/onboarding-form?clientId=${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setOnboardingForm(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch onboarding form:', error)
-      } finally {
-        setOnboardingFormLoading(false)
-      }
-    }
-    fetchOnboardingForm()
-  }, [clientId])
-
-  // Fetch recommendation data
-  useEffect(() => {
-    const fetchRecommendation = async () => {
-      setRecommendationLoading(true)
-      try {
-        const res = await fetch(`/api/admin/recommendations/client/${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setRecommendation(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch recommendation:', error)
-      } finally {
-        setRecommendationLoading(false)
-      }
-    }
-    fetchRecommendation()
-  }, [clientId])
-
-  // Fetch subscription data (from database)
-  useEffect(() => {
-    const fetchSubscriptions = async () => {
-      setSubscriptionsLoading(true)
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/subscriptions`)
-        if (res.ok) {
-          const data = await res.json()
-          setSubscriptions(data)
-          // Set services count from subscription data (from subscriptionService.ts)
-          setSubscriptionServicesCount(data.services?.length || 0)
-        }
-      } catch (error) {
-        console.error('Failed to fetch subscriptions:', error)
-      } finally {
-        setSubscriptionsLoading(false)
-      }
-    }
-    fetchSubscriptions()
-  }, [clientId])
-
-  // Fetch Stripe subscriptions (directly from Stripe API)
-  useEffect(() => {
-    const fetchStripeSubscriptions = async () => {
-      setStripeSubscriptionsLoading(true)
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/stripe-subscriptions`)
-        if (res.ok) {
-          const data = await res.json()
-          setStripeSubscriptions(data.subscriptions || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch Stripe subscriptions:', error)
-      } finally {
-        setStripeSubscriptionsLoading(false)
-      }
-    }
-    fetchStripeSubscriptions()
-  }, [clientId])
-
-  // Fetch Stripe subscription history
-  useEffect(() => {
-    const fetchStripeHistory = async () => {
-      setStripeHistoryLoading(true)
-      try {
-        const res = await fetch(`/api/admin/clients/${clientId}/stripe-subscription-history`)
-        if (res.ok) {
-          const data = await res.json()
-          setStripeHistory(data.history || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch Stripe history:', error)
-      } finally {
-        setStripeHistoryLoading(false)
-      }
-    }
-    fetchStripeHistory()
-  }, [clientId])
-
-  // Fetch manual products
-  const fetchManualProducts = async () => {
-    setManualProductsLoading(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/products`)
-      if (res.ok) {
-        const data = await res.json()
-        setManualProducts(data.manual || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch manual products:', error)
-    } finally {
-      setManualProductsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchManualProducts()
-  }, [clientId])
-
-  // Fetch all products for the add product modal
-  const fetchAvailableProducts = async () => {
-    try {
-      const res = await fetch('/api/admin/products')
-      if (res.ok) {
-        const data = await res.json()
-        // Filter out products already assigned
-        const assignedIds = new Set(manualProducts.map(p => p.productId))
-        // Get product IDs from subscription services (new format from subscriptionService.ts)
-        const subProductIds = new Set(
-          ((subscriptions as any)?.services || []).map((s: any) => s.id).filter(Boolean)
-        )
-        const available = data
-          .filter((p: { id: string }) => !assignedIds.has(p.id) && !subProductIds.has(p.id))
-          .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
-        setAvailableProducts(available)
-      }
-    } catch (error) {
-      console.error('Failed to fetch products:', error)
-    }
-  }
-
-  // Add product to client
-  const handleAddProduct = async () => {
-    if (!selectedProductId) return
-    setAddingProduct(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: selectedProductId,
-          notes: productNotes || null,
-        }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setManualProducts(prev => [data, ...prev])
-        setShowAddProductModal(false)
-        setSelectedProductId('')
-        setProductNotes('')
-      } else {
-        alert(data.error || 'Failed to add product')
-      }
-    } catch (error) {
-      console.error('Failed to add product:', error)
-      alert('Failed to add product. Check console for details.')
-    } finally {
-      setAddingProduct(false)
-    }
-  }
-
-  // Remove product from client
-  const handleRemoveProduct = async (clientProductId: string) => {
-    if (!confirm('Remove this product from the client?')) return
-    setRemovingProductId(clientProductId)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/products?clientProductId=${clientProductId}`, {
-        method: 'DELETE',
-      })
-      if (res.ok) {
-        setManualProducts(prev => prev.filter(p => p.id !== clientProductId))
-      }
-    } catch (error) {
-      console.error('Failed to remove product:', error)
-    } finally {
-      setRemovingProductId(null)
-    }
-  }
-
-  // Update product price
-  const handleUpdatePrice = async (clientProductId: string) => {
-    const price = parseFloat(editingPriceValue)
-    if (isNaN(price) || price < 0) {
-      alert('Please enter a valid price')
-      return
-    }
-    setSavingPrice(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientProductId,
-          monthlyPrice: price,
-        }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setManualProducts(prev => prev.map(p => p.id === clientProductId ? data : p))
-        setEditingPriceId(null)
-        setEditingPriceValue('')
-      } else {
-        alert(data.error || 'Failed to update price')
-      }
-    } catch (error) {
-      console.error('Failed to update price:', error)
-      alert('Failed to update price')
-    } finally {
-      setSavingPrice(false)
-    }
-  }
-
-  // Fetch available content products for upsell and aggregated services
-  useEffect(() => {
-    const fetchContentProducts = async () => {
-      try {
-        const res = await fetch(`/api/admin/products/content?clientId=${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setAvailableContentProducts(data.available || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch content products:', error)
-      }
-    }
-
-    // Fetch aggregated services and product flags from client info API
-    const fetchClientServices = async () => {
-      try {
-        const res = await fetch(`/api/client/info?clientId=${clientId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setContentServices(data.access?.contentServices || [])
-          setWebsiteServices(data.access?.websiteServices || [])
-          setHasContentProductsFromApi(data.access?.hasContentProducts ?? false)
-          setHasWebsiteProductsFromApi(data.access?.hasWebsiteProducts ?? false)
-        }
-      } catch (error) {
-        console.error('Failed to fetch client services:', error)
-      }
-    }
-
-    fetchContentProducts()
-    fetchClientServices()
-  }, [clientId, subscriptions])
-
-  // Fetch communications
-  const refreshCommunications = async () => {
-    setCommunicationsLoading(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/communications`)
-      if (res.ok) {
-        const data = await res.json()
-        setCommunications(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch communications:', error)
-    } finally {
-      setCommunicationsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    refreshCommunications()
-  }, [clientId])
-
-  // Fetch Basecamp activities
-  const fetchBasecampActivities = async () => {
-    if (!clientId) return
-    setActivitiesLoading(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/activities`)
-      if (res.ok) {
-        const data = await res.json()
-        setBasecampActivities(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch activities:', error)
-    } finally {
-      setActivitiesLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchBasecampActivities()
-  }, [clientId])
-
-  // Fetch invoices from Stripe
-  const fetchInvoices = async () => {
-    setInvoicesLoading(true)
-    try {
-      const res = await fetch(`/api/admin/clients/${clientId}/invoices`)
-      if (res.ok) {
-        const data = await res.json()
-        setInvoices(data.invoices || [])
-        setStripeCustomer(data.customer || null)
-        setStripeCustomerId(data.stripeCustomerId || null)
-      }
-    } catch (error) {
-      console.error('Failed to fetch invoices:', error)
-    } finally {
-      setInvoicesLoading(false)
-    }
-  }
-
+  // Fetch invoices when viewing billing tab
   useEffect(() => {
     if (activeTab === 'recommendations' && recommendationsSubtab === 'current-services') {
-      fetchInvoices()
+      refetchInvoices()
     }
-  }, [clientId, activeTab, recommendationsSubtab])
+  }, [activeTab, recommendationsSubtab, refetchInvoices])
 
   // Close date dropdown when clicking outside
   useEffect(() => {
@@ -1536,92 +447,121 @@ export default function ClientDetailPage() {
     }
   }
 
-  // Handle sending result alert
-  const handleSendResultAlert = async () => {
-    if (!dbClient || !resultAlertSubject.trim() || !resultAlertMessage.trim()) return
+  // Add product to client (manual products)
+  const handleAddProduct = async (productId: string, notes: string) => {
+    const res = await fetch(`/api/admin/clients/${clientId}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId,
+        notes: notes || null,
+      }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setManualProducts(prev => [data, ...prev])
+      setShowAddProductModal(false)
+    } else {
+      throw new Error(data.error || 'Failed to add product')
+    }
+  }
 
-    setIsSendingResultAlert(true)
-
+  // Remove product from client
+  const handleRemoveProduct = async (clientProductId: string) => {
+    if (!confirm('Remove this product from the client?')) return
+    setRemovingProductId(clientProductId)
     try {
-      // Build metadata with optional structured data
-      const metadata: Record<string, any> = {
-        alertType: resultAlertType,
-        alertTypeLabel: alertTypes[resultAlertType].label,
-      }
-
-      // Add keyword/position data if provided (supports multiple keywords)
-      const validKeywords = resultAlertKeywords.filter(row => row.keyword.trim())
-      if (validKeywords.length > 0) {
-        metadata.keywords = validKeywords.map(row => ({
-          keyword: row.keyword.trim(),
-          newPosition: row.newPosition ? parseInt(row.newPosition) : null,
-          previousPosition: row.prevPosition ? parseInt(row.prevPosition) : null,
-        }))
-        // Also store first keyword in legacy format for backward compatibility
-        const first = validKeywords[0]
-        metadata.keyword = first.keyword.trim()
-        if (first.newPosition) {
-          metadata.newPosition = parseInt(first.newPosition)
-        }
-        if (first.prevPosition) {
-          metadata.previousPosition = parseInt(first.prevPosition)
-        }
-      }
-
-      // Add milestone data if provided
-      if (resultAlertMilestone.trim()) {
-        metadata.milestone = resultAlertMilestone.trim()
-      }
-
-      const res = await fetch(`/api/admin/clients/${clientId}/communications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'result_alert',
-          title: resultAlertSubject,
-          subject: resultAlertSubject,
-          body: resultAlertMessage,
-          recipientEmail: dbClient.contact_email,
-          highlightType: 'success',
-          metadata,
-        }),
+      const res = await fetch(`/api/admin/clients/${clientId}/products?clientProductId=${clientProductId}`, {
+        method: 'DELETE',
       })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to send result alert')
-      }
-
-      // Close modal and reset fields
-      setShowResultAlertModal(false)
-      setResultAlertType('ranking')
-      setResultAlertSubject('')
-      setResultAlertMessage('')
-      setResultAlertKeywords([{ keyword: '', newPosition: '', prevPosition: '' }])
-      setResultAlertMilestone('')
-
-      // Show success message
-      setResendMessage({
-        type: 'success',
-        text: `Result alert sent to ${dbClient.contact_email}`,
-      })
-      setTimeout(() => setResendMessage(null), 5000)
-
-      // Refresh communications
-      const commsRes = await fetch(`/api/admin/clients/${clientId}/communications`)
-      if (commsRes.ok) {
-        setCommunications(await commsRes.json())
+      if (res.ok) {
+        setManualProducts(prev => prev.filter(p => p.id !== clientProductId))
       }
     } catch (error) {
-      console.error('Failed to send result alert:', error)
-      setResendMessage({
-        type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to send result alert',
-      })
-      setTimeout(() => setResendMessage(null), 5000)
+      console.error('Failed to remove product:', error)
     } finally {
-      setIsSendingResultAlert(false)
+      setRemovingProductId(null)
+    }
+  }
+
+  // Update product price
+  const handleUpdatePrice = async (clientProductId: string) => {
+    const price = parseFloat(editingPriceValue)
+    if (isNaN(price) || price < 0) {
+      alert('Please enter a valid price')
+      return
+    }
+    setSavingPrice(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientProductId,
+          monthlyPrice: price,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setManualProducts(prev => prev.map(p => p.id === clientProductId ? data : p))
+        setEditingPriceId(null)
+        setEditingPriceValue('')
+      } else {
+        alert(data.error || 'Failed to update price')
+      }
+    } catch (error) {
+      console.error('Failed to update price:', error)
+      alert('Failed to update price')
+    } finally {
+      setSavingPrice(false)
+    }
+  }
+
+  // Add test product
+  const handleAddTestProduct = async (productId: string) => {
+    setAddingTestProduct(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/test-products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      })
+      if (res.ok) {
+        await refetchTestProducts()
+        // Refresh subscriptions to update feature flags
+        await refetchSubscriptions()
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to add product')
+      }
+    } catch (error) {
+      console.error('Failed to add test product:', error)
+      alert('Failed to add product')
+    } finally {
+      setAddingTestProduct(false)
+    }
+  }
+
+  // Remove test product
+  const handleRemoveTestProduct = async (productId: string) => {
+    setRemovingTestProductId(productId)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/test-products?productId=${productId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        await refetchTestProducts()
+        // Refresh subscriptions to update feature flags
+        await refetchSubscriptions()
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to remove product')
+      }
+    } catch (error) {
+      console.error('Failed to remove test product:', error)
+      alert('Failed to remove product')
+    } finally {
+      setRemovingTestProductId(null)
     }
   }
 
@@ -1767,7 +707,7 @@ export default function ClientDetailPage() {
     avatarColor: dbClient.avatar_color || getAvatarColor(dbClient.name),
     email: dbClient.contact_email || '',
     clientSince: formatDate(dbClient.created_at),
-    status: (dbClient.status as 'active' | 'paused' | 'onboarding' | 'test') || 'active',
+    status: (dbClient.status as 'active' | 'paused' | 'onboarding' | 'test' | 'prospect') || 'active',
     growthStage: (dbClient.growth_stage as 'prospect' | 'seedling' | 'sprouting' | 'blooming' | 'harvesting') || 'prospect',
     servicesCount: subscriptionServicesCount,
     hasWebsite: hasWebsiteProducts,
@@ -1776,15 +716,6 @@ export default function ClientDetailPage() {
     editRequests: dummyEditRequests,
     checklistProgress: isActiveClient ? { completed: 5, total: 6 } : { completed: 0, total: 6 },
   } : clients['tc-clinical'] // Fallback to hardcoded data while loading
-
-  // Activity type and data
-  type Activity = {
-    id: number
-    type: 'content' | 'alert' | 'task' | 'update'
-    title: string
-    description: string
-    time: string
-  }
 
   // Activity data - varies by client (dummy data for now)
   const activitiesByClient: Record<string, Activity[]> = {
@@ -2097,6 +1028,133 @@ export default function ClientDetailPage() {
           </div>
         </div>
 
+        {/* Test Products Section - Only for test clients */}
+        {dbClient?.status === 'test' && (
+          <div className="test-products-section" style={{
+            background: 'linear-gradient(135deg, #EDE9FE 0%, #F3E8FF 100%)',
+            border: '1px solid #DDD6FE',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: '#7C3AED',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="20" height="20">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#5B21B6', margin: 0 }}>Test Products</h3>
+                  <p style={{ fontSize: '13px', color: '#7C3AED', margin: 0 }}>Add/remove products to test feature activation without checkout</p>
+                </div>
+              </div>
+              <select
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #C4B5FD',
+                  background: 'white',
+                  color: '#5B21B6',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleAddTestProduct(e.target.value)
+                    e.target.value = ''
+                  }
+                }}
+                disabled={addingTestProduct}
+              >
+                <option value="">+ Add Product...</option>
+                {allProducts
+                  .filter(p => !testProducts.some(tp => tp.product_id === p.id))
+                  .map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.category})</option>
+                  ))}
+              </select>
+            </div>
+
+            {testProductsLoading ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#7C3AED' }}>Loading test products...</div>
+            ) : testProducts.length === 0 ? (
+              <div style={{
+                padding: '24px',
+                textAlign: 'center',
+                background: 'rgba(255,255,255,0.5)',
+                borderRadius: '8px',
+                color: '#6B7280',
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32" style={{ margin: '0 auto 8px' }}>
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <p style={{ margin: 0 }}>No test products added yet. Select a product from the dropdown to add it.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {testProducts.map(product => (
+                  <div
+                    key={product.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      background: 'white',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 500, color: '#1F2937', fontSize: '14px' }}>{product.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                        {product.category} {product.monthly_price > 0 && `• $${product.monthly_price}/mo`}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveTestProduct(product.product_id)}
+                      disabled={removingTestProductId === product.product_id}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        color: '#9CA3AF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title="Remove product"
+                    >
+                      {removingTestProductId === product.product_id ? (
+                        <div style={{ width: '16px', height: '16px', border: '2px solid #7C3AED', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <div className="tab-nav">
           <button className={`tab-btn ${activeTab === 'getting-started' ? 'active' : ''}`} onClick={() => setActiveTab('getting-started')}>
@@ -2121,7 +1179,7 @@ export default function ClientDetailPage() {
           <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>
             Content
             {!hasActiveSubscriptions && <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>}
-            {hasActiveSubscriptions && hasContentProducts && !hasActivityAccess && <span className="tab-badge coming-soon">Coming Soon</span>}
+            {hasActiveSubscriptions && hasContentProducts && approvedContentCount === 0 && <span className="tab-badge coming-soon">Coming Soon</span>}
             {hasActiveSubscriptions && !hasContentProducts && <span className="tab-badge inactive">Inactive</span>}
           </button>
           <button className={`tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>
@@ -3172,7 +2230,7 @@ export default function ClientDetailPage() {
             clientName={dbClient?.name}
             communications={communications}
             communicationsLoading={communicationsLoading}
-            onRefresh={refreshCommunications}
+            onRefresh={refetchCommunications}
           />
         )}
 
@@ -3198,905 +2256,26 @@ export default function ClientDetailPage() {
             invoices={(subscriptions as any)?.invoices || []}
             invoicesLoading={subscriptionsLoading}
             stripeCustomerId={dbClient?.stripe_customer_id || null}
-            onRecommendationChange={fetchSmartRecsCount}
+            onRecommendationChange={refetchSmartRecsCount}
             isSuperAdmin={isSuperAdmin}
           />
         )}
 
       </div>
 
+
       {/* Edit Client Modal */}
-      {showEditModal && (
-        <div className="edit-modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="edit-modal-content edit-modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-header-left">
-                <div className="modal-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h2>Edit Client</h2>
-                  <p className="modal-subtitle">Update client information and settings</p>
-                </div>
-              </div>
-              <button className="modal-close" onClick={() => setShowEditModal(false)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-
-            <div className="modal-tabs">
-              <button
-                className={`modal-tab ${editModalTab === 'general' ? 'active' : ''}`}
-                onClick={() => setEditModalTab('general')}
-              >
-                General
-              </button>
-              <button
-                className={`modal-tab ${editModalTab === 'integrations' ? 'active' : ''}`}
-                onClick={() => setEditModalTab('integrations')}
-              >
-                Integrations
-              </button>
-              <button
-                className={`modal-tab ${editModalTab === 'billing' ? 'active' : ''}`}
-                onClick={() => setEditModalTab('billing')}
-              >
-                Billing
-              </button>
-              <button
-                className={`modal-tab ${editModalTab === 'notifications' ? 'active' : ''}`}
-                onClick={() => setEditModalTab('notifications')}
-              >
-                Notifications
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {editModalTab === 'general' && (
-                <>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="companyName">Company Name</label>
-                      <input
-                        type="text"
-                        id="companyName"
-                        className="form-control"
-                        value={editFormData.companyName}
-                        onChange={(e) => setEditFormData({ ...editFormData, companyName: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="status">Status</label>
-                      <select
-                        id="status"
-                        className="form-control"
-                        value={editFormData.status}
-                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as 'active' | 'paused' | 'onboarding' | 'test' | 'test' })}
-                      >
-                        <option value="active">Active</option>
-                        <option value="onboarding">Onboarding</option>
-                        <option value="paused">Paused</option>
-                        <option value="test">Test</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="primaryContact">Primary Contact Name</label>
-                      <input
-                        type="text"
-                        id="primaryContact"
-                        className="form-control"
-                        value={editFormData.primaryContact}
-                        onChange={(e) => setEditFormData({ ...editFormData, primaryContact: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="email">Email Address</label>
-                      <input
-                        type="email"
-                        id="email"
-                        className="form-control"
-                        value={editFormData.email}
-                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="phone">Phone Number</label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        className="form-control"
-                        value={editFormData.phone}
-                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="websiteUrl">Website</label>
-                      <input
-                        type="url"
-                        id="websiteUrl"
-                        className="form-control"
-                        value={editFormData.websiteUrl}
-                        onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
-                        placeholder="https://example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Growth Stage</label>
-                    <div className="growth-stage-options">
-                      {(['seedling', 'sprouting', 'blooming', 'harvesting'] as const).map((stage) => (
-                        <button
-                          key={stage}
-                          type="button"
-                          className={`growth-stage-btn ${editFormData.growthStage === stage ? 'active' : ''}`}
-                          onClick={() => setEditFormData({ ...editFormData, growthStage: stage })}
-                        >
-                          {stage.charAt(0).toUpperCase() + stage.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Avatar Color</label>
-                    <div className="color-picker-grid">
-                      {avatarColors.map((color) => (
-                        <button
-                          key={color.value}
-                          type="button"
-                          className={`color-picker-option ${editFormData.avatarColor === color.value ? 'selected' : ''}`}
-                          style={{ background: color.value }}
-                          onClick={() => setEditFormData({ ...editFormData, avatarColor: color.value })}
-                          title={color.name}
-                        >
-                          {editFormData.avatarColor === color.value && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="internalNotes">Internal Notes</label>
-                    <textarea
-                      id="internalNotes"
-                      className="form-control"
-                      rows={4}
-                      value={editFormData.internalNotes}
-                      onChange={(e) => setEditFormData({ ...editFormData, internalNotes: e.target.value })}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div className="form-group">
-                      <label htmlFor="referredBy">Referred By</label>
-                      <input
-                        type="text"
-                        id="referredBy"
-                        className="form-control"
-                        value={editFormData.referredBy}
-                        onChange={(e) => setEditFormData({ ...editFormData, referredBy: e.target.value })}
-                        placeholder="Name of referrer"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="referralSource">Referral Source</label>
-                      <select
-                        id="referralSource"
-                        className="form-control"
-                        value={editFormData.referralSource}
-                        onChange={(e) => setEditFormData({ ...editFormData, referralSource: e.target.value })}
-                      >
-                        <option value="">Select source...</option>
-                        <option value="client">Existing Client</option>
-                        <option value="partner">Partner</option>
-                        <option value="employee">Employee</option>
-                        <option value="website">Website</option>
-                        <option value="social">Social Media</option>
-                        <option value="event">Event</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Content Approval Workflow Settings */}
-                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#14B8A6" strokeWidth="2" width="20" height="20">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <polyline points="16 13 12 17 8 13"></polyline>
-                        <line x1="12" y1="17" x2="12" y2="9"></line>
-                      </svg>
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1F2937', margin: 0 }}>Content Approval Workflow</h4>
-                    </div>
-                    <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '1rem' }}>
-                      How should content be reviewed for this client?
-                    </p>
-
-                    {/* Progress Bar - shown when initial_approval mode is active */}
-                    {editFormData.contentApprovalMode === 'initial_approval' && (
-                      <div style={{
-                        background: approvedContentCount >= editFormData.approvalThreshold ? '#ECFDF5' : '#FFFBEB',
-                        border: `1px solid ${approvedContentCount >= editFormData.approvalThreshold ? '#A7F3D0' : '#FDE68A'}`,
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        marginBottom: '1rem',
-                      }}>
-                        {approvedContentCount >= editFormData.approvalThreshold ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '50%',
-                              background: '#22C55E',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600, color: '#065F46', fontSize: '0.9rem' }}>
-                                Threshold Reached
-                              </div>
-                              <div style={{ color: '#047857', fontSize: '0.8rem' }}>
-                                {approvedContentCount} pieces approved — new content will auto-approve
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" width="18" height="18">
-                                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                </svg>
-                                <span style={{ fontWeight: 600, color: '#92400E', fontSize: '0.9rem' }}>
-                                  Initial Approval Progress
-                                </span>
-                              </div>
-                              <span style={{ fontWeight: 600, color: '#D97706', fontSize: '0.9rem' }}>
-                                {approvedContentCount} / {editFormData.approvalThreshold}
-                              </span>
-                            </div>
-                            <div style={{ height: '8px', background: '#FDE68A', borderRadius: '4px', overflow: 'hidden' }}>
-                              <div
-                                style={{
-                                  height: '100%',
-                                  width: `${Math.min((approvedContentCount / editFormData.approvalThreshold) * 100, 100)}%`,
-                                  background: 'linear-gradient(90deg, #F59E0B, #FBBF24)',
-                                  borderRadius: '4px',
-                                  transition: 'width 0.3s ease',
-                                }}
-                              />
-                            </div>
-                            <div style={{ color: '#92400E', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                              {editFormData.approvalThreshold - approvedContentCount} more piece{editFormData.approvalThreshold - approvedContentCount !== 1 ? 's' : ''} until auto-approval activates
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {/* Full Approval Option */}
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '0.75rem',
-                          padding: '1rem',
-                          borderRadius: '8px',
-                          border: editFormData.contentApprovalMode === 'full_approval' ? '2px solid #14B8A6' : '1px solid #E5E7EB',
-                          background: editFormData.contentApprovalMode === 'full_approval' ? '#F0FDFA' : 'white',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="approvalMode"
-                          checked={editFormData.contentApprovalMode === 'full_approval'}
-                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'full_approval' })}
-                          style={{ marginTop: '3px' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Full Approval</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                            Client reviews and approves every piece of content before it goes to production.
-                          </div>
-                        </div>
-                      </label>
-
-                      {/* Initial Approval Option */}
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '0.75rem',
-                          padding: '1rem',
-                          borderRadius: '8px',
-                          border: editFormData.contentApprovalMode === 'initial_approval' ? '2px solid #F59E0B' : '1px solid #E5E7EB',
-                          background: editFormData.contentApprovalMode === 'initial_approval' ? '#FFFBEB' : 'white',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="approvalMode"
-                          checked={editFormData.contentApprovalMode === 'initial_approval'}
-                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'initial_approval' })}
-                          style={{ marginTop: '3px' }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Initial Approval</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '0.75rem' }}>
-                            Client reviews the first{' '}
-                            <input
-                              type="number"
-                              min={1}
-                              max={20}
-                              value={editFormData.approvalThreshold}
-                              onChange={(e) => setEditFormData({ ...editFormData, approvalThreshold: parseInt(e.target.value) || 3 })}
-                              onClick={(e) => e.stopPropagation()}
-                              disabled={editFormData.contentApprovalMode !== 'initial_approval'}
-                              style={{
-                                width: '50px',
-                                padding: '2px 6px',
-                                border: '1px solid #D1D5DB',
-                                borderRadius: '4px',
-                                textAlign: 'center',
-                                fontSize: '0.875rem',
-                                margin: '0 4px',
-                                background: editFormData.contentApprovalMode === 'initial_approval' ? 'white' : '#F3F4F6',
-                              }}
-                            />
-                            {' '}pieces, then content moves to production automatically.
-                          </div>
-
-                          {/* Progress indicator */}
-                          {editFormData.contentApprovalMode === 'initial_approval' && (
-                            <div style={{
-                              background: '#F9FAFB',
-                              borderRadius: '6px',
-                              padding: '0.75rem',
-                              marginTop: '0.5rem',
-                            }}>
-                              {approvedContentCount >= editFormData.approvalThreshold ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '0.875rem', fontWeight: 500 }}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                  Threshold reached — new content auto-approves
-                                </div>
-                              ) : (
-                                <>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6B7280', marginBottom: '0.5rem' }}>
-                                    <span>{approvedContentCount} of {editFormData.approvalThreshold} approved so far</span>
-                                    <span>{Math.round((approvedContentCount / editFormData.approvalThreshold) * 100)}%</span>
-                                  </div>
-                                  <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
-                                    <div
-                                      style={{
-                                        height: '100%',
-                                        width: `${Math.min((approvedContentCount / editFormData.approvalThreshold) * 100, 100)}%`,
-                                        background: 'linear-gradient(90deg, #F59E0B, #FBBF24)',
-                                        borderRadius: '3px',
-                                        transition: 'width 0.3s ease',
-                                      }}
-                                    />
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </label>
-
-                      {/* Auto Option */}
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '0.75rem',
-                          padding: '1rem',
-                          borderRadius: '8px',
-                          border: editFormData.contentApprovalMode === 'auto' ? '2px solid #22C55E' : '1px solid #E5E7EB',
-                          background: editFormData.contentApprovalMode === 'auto' ? '#F0FDF4' : 'white',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="approvalMode"
-                          checked={editFormData.contentApprovalMode === 'auto'}
-                          onChange={() => setEditFormData({ ...editFormData, contentApprovalMode: 'auto' })}
-                          style={{ marginTop: '3px' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 500, color: '#1F2937', marginBottom: '0.25rem' }}>Auto / No Review</div>
-                          <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                            Content moves directly to production without client review. Best for clients who trust the process.
-                          </div>
-                          {editFormData.contentApprovalMode === 'auto' && (
-                            <div style={{
-                              marginTop: '0.75rem',
-                              padding: '0.5rem 0.75rem',
-                              background: '#ECFDF5',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem',
-                              color: '#065F46',
-                            }}>
-                              <strong>Workflow:</strong> Draft → Internal Review → Final Optimization → Image Selection → Published
-                            </div>
-                          )}
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {editModalTab === 'integrations' && (
-                <>
-                  <p className="form-section-desc" style={{ marginBottom: '1.5rem', color: '#6B7280' }}>
-                    Connect external services to enable features like Results dashboard and Activity feed.
-                  </p>
-
-                  <div className="form-group">
-                    <label htmlFor="agencyDashboardShareKey">Agency Dashboard Share Key</label>
-                    <input
-                      type="text"
-                      id="agencyDashboardShareKey"
-                      className="form-control"
-                      placeholder="e.g., MjI5MTgtfC00NDUyMC18LXJPN0xveFpTQmM="
-                      value={editFormData.agencyDashboardShareKey}
-                      onChange={(e) => setEditFormData({ ...editFormData, agencyDashboardShareKey: e.target.value })}
-                    />
-                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                      From agencydashboard.io campaign share link. Enables the Results tab.
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="basecampProjectId">Basecamp Project ID</label>
-                    <input
-                      type="text"
-                      id="basecampProjectId"
-                      className="form-control"
-                      placeholder="e.g., 43126663"
-                      value={editFormData.basecampProjectId}
-                      onChange={(e) => setEditFormData({ ...editFormData, basecampProjectId: e.target.value })}
-                    />
-                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                      From URL: 3.basecamp.com/5202430/projects/<strong>[this number]</strong>. Enables Activity tab.
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="stripeCustomerId">Stripe Customer ID</label>
-                    <input
-                      type="text"
-                      id="stripeCustomerId"
-                      className="form-control"
-                      placeholder="e.g., cus_ABC123..."
-                      value={editFormData.stripeCustomerId}
-                      onChange={(e) => setEditFormData({ ...editFormData, stripeCustomerId: e.target.value })}
-                    />
-                    <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                      Links invoices and billing from Stripe. Find in Stripe Dashboard → Customers.
-                    </small>
-                  </div>
-
-                  {/* Website Section */}
-                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '1rem' }}>
-                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '1rem' }}>Website</h4>
-
-                    <div className="form-group">
-                      <label htmlFor="websiteUrl">Website Address</label>
-                      <input
-                        type="url"
-                        id="websiteUrl"
-                        className="form-control"
-                        placeholder="e.g., https://example.com"
-                        value={editFormData.websiteUrl}
-                        onChange={(e) => setEditFormData({ ...editFormData, websiteUrl: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="websiteProvider">Built By</label>
-                      <select
-                        id="websiteProvider"
-                        className="form-control"
-                        value={editFormData.websiteProvider}
-                        onChange={(e) => setEditFormData({ ...editFormData, websiteProvider: e.target.value as '' | 'pear' | 'pyrus' | 'other' })}
-                      >
-                        <option value="">Select...</option>
-                        <option value="pear">Pear Analytics</option>
-                        <option value="pyrus">Pyrus Digital</option>
-                        <option value="other">Other / Client-managed</option>
-                      </select>
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        Who built or maintains this website
-                      </small>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Hosting Type</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                          <input
-                            type="radio"
-                            name="hostingType"
-                            value="ai_site"
-                            checked={editFormData.hostingType === 'ai_site'}
-                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'ai_site', hostingProvider: '' })}
-                          />
-                          <span>AI Site (Landingsite.ai)</span>
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                          <input
-                            type="radio"
-                            name="hostingType"
-                            value="pyrus_hosted"
-                            checked={editFormData.hostingType === 'pyrus_hosted'}
-                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'pyrus_hosted', hostingProvider: '' })}
-                          />
-                          <span>Pyrus Hosted (WordPress)</span>
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                          <input
-                            type="radio"
-                            name="hostingType"
-                            value="client_hosted"
-                            checked={editFormData.hostingType === 'client_hosted'}
-                            onChange={(e) => setEditFormData({ ...editFormData, hostingType: 'client_hosted' })}
-                          />
-                          <span>Client Hosted</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {editFormData.hostingType === 'client_hosted' && (
-                      <div className="form-group">
-                        <label htmlFor="hostingProvider">Hosting Provider</label>
-                        <input
-                          type="text"
-                          id="hostingProvider"
-                          className="form-control"
-                          placeholder="e.g., HubSpot, Wix, Squarespace, GoDaddy"
-                          value={editFormData.hostingProvider}
-                          onChange={(e) => setEditFormData({ ...editFormData, hostingProvider: e.target.value })}
-                        />
-                      </div>
-                    )}
-
-                    <div className="form-group">
-                      <label htmlFor="websiteLaunchDate">Launch Date</label>
-                      <input
-                        type="date"
-                        id="websiteLaunchDate"
-                        className="form-control"
-                        value={editFormData.websiteLaunchDate}
-                        onChange={(e) => setEditFormData({ ...editFormData, websiteLaunchDate: e.target.value })}
-                      />
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        Leave blank if website hasn&apos;t launched yet
-                      </small>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="uptimerobotMonitorId">UptimeRobot Monitor ID</label>
-                      <input
-                        type="text"
-                        id="uptimerobotMonitorId"
-                        className="form-control"
-                        placeholder="e.g., 123456789"
-                        value={editFormData.uptimerobotMonitorId}
-                        onChange={(e) => setEditFormData({ ...editFormData, uptimerobotMonitorId: e.target.value })}
-                      />
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        Get from UptimeRobot dashboard. Leave blank to show &quot;Not Monitored&quot;
-                      </small>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {editModalTab === 'billing' && (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="billingEmail">Billing Contact Email</label>
-                    <input
-                      type="email"
-                      id="billingEmail"
-                      className="form-control"
-                      value={editFormData.billingEmail}
-                      onChange={(e) => setEditFormData({ ...editFormData, billingEmail: e.target.value })}
-                      readOnly={!!stripeBillingEmail}
-                      style={stripeBillingEmail ? { backgroundColor: '#F9FAFB' } : {}}
-                    />
-                    {stripeBillingEmail && (
-                      <small style={{ color: '#6B7280', marginTop: '0.25rem', display: 'block' }}>
-                        From Stripe customer record.{' '}
-                        <a
-                          href={`https://dashboard.stripe.com/customers/${dbClient?.stripe_customer_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#2563EB' }}
-                        >
-                          Edit in Stripe
-                        </a>
-                      </small>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Payment Methods</label>
-                    {paymentMethodsLoading ? (
-                      <div className="payment-method-display" style={{ opacity: 0.6 }}>
-                        <div className="payment-method-info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                          </svg>
-                          <span>Loading...</span>
-                        </div>
-                      </div>
-                    ) : !dbClient?.stripe_customer_id ? (
-                      <div className="payment-method-display" style={{ background: '#F9FAFB', border: '1px dashed #D1D5DB' }}>
-                        <div className="payment-method-info" style={{ color: '#6B7280' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                            <line x1="1" y1="10" x2="23" y2="10"></line>
-                          </svg>
-                          <span>No Stripe customer linked</span>
-                        </div>
-                      </div>
-                    ) : paymentMethods.length === 0 ? (
-                      <div className="payment-method-display" style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }}>
-                        <div className="payment-method-info" style={{ color: '#92400E' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                          </svg>
-                          <span>No payment method on file</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {paymentMethods.map(pm => (
-                          <div key={pm.id} className="payment-method-display" style={pm.isDefault ? { borderColor: '#10B981' } : {}}>
-                            <div className="payment-method-info">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                <line x1="1" y1="10" x2="23" y2="10"></line>
-                              </svg>
-                              <span>
-                                {pm.card ? (
-                                  <>
-                                    {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
-                                    <span style={{ color: '#6B7280', marginLeft: '0.5rem' }}>
-                                      Exp {pm.card.expMonth.toString().padStart(2, '0')}/{pm.card.expYear.toString().slice(-2)}
-                                    </span>
-                                  </>
-                                ) : pm.usBankAccount ? (
-                                  <>
-                                    {pm.usBankAccount.bankName} •••• {pm.usBankAccount.last4}
-                                    <span style={{ color: '#6B7280', marginLeft: '0.5rem' }}>
-                                      {pm.usBankAccount.accountType.charAt(0).toUpperCase() + pm.usBankAccount.accountType.slice(1)}
-                                    </span>
-                                  </>
-                                ) : pm.link ? (
-                                  <>
-                                    Stripe Link ({pm.link.email})
-                                  </>
-                                ) : (
-                                  pm.type
-                                )}
-                              </span>
-                              {pm.isDefault && (
-                                <span style={{
-                                  background: '#D1FAE5',
-                                  color: '#065F46',
-                                  padding: '0.125rem 0.5rem',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.75rem',
-                                  marginLeft: '0.5rem',
-                                }}>Default</span>
-                              )}
-                            </div>
-                            {dbClient?.stripe_customer_id && (
-                              <a
-                                href={`https://dashboard.stripe.com/customers/${dbClient.stripe_customer_id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="payment-update-btn"
-                                style={{ textDecoration: 'none' }}
-                              >
-                                Manage in Stripe
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="billingCycle">Billing Cycle</label>
-                    <select
-                      id="billingCycle"
-                      className="form-control"
-                      value={editFormData.billingCycle}
-                      onChange={(e) => setEditFormData({ ...editFormData, billingCycle: e.target.value as 'monthly' | 'quarterly' | 'annually' })}
-                    >
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                      <option value="annually">Annually</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {editModalTab === 'notifications' && (
-                <div className="notification-toggles">
-                  <div className="notification-toggle-item">
-                    <div className="notification-toggle-info">
-                      <div className="notification-toggle-title">Monthly Reports</div>
-                      <div className="notification-toggle-desc">Send automated monthly performance reports</div>
-                    </div>
-                    <div className="edit-toggle-wrap">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.monthlyReports}
-                        onChange={(e) => setEditFormData({ ...editFormData, monthlyReports: e.target.checked })}
-                      />
-                      <span className="edit-toggle-track"></span>
-                    </div>
-                  </div>
-
-                  <div className="notification-toggle-item">
-                    <div className="notification-toggle-info">
-                      <div className="notification-toggle-title">Result Alerts</div>
-                      <div className="notification-toggle-desc">Notify when significant milestones are achieved</div>
-                    </div>
-                    <div className="edit-toggle-wrap">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.resultAlerts}
-                        onChange={(e) => setEditFormData({ ...editFormData, resultAlerts: e.target.checked })}
-                      />
-                      <span className="edit-toggle-track"></span>
-                    </div>
-                  </div>
-
-                  <div className="notification-toggle-item">
-                    <div className="notification-toggle-info">
-                      <div className="notification-toggle-title">Recommendation Updates</div>
-                      <div className="notification-toggle-desc">Notify when new recommendations are available</div>
-                    </div>
-                    <div className="edit-toggle-wrap">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.recommendationUpdates}
-                        onChange={(e) => setEditFormData({ ...editFormData, recommendationUpdates: e.target.checked })}
-                      />
-                      <span className="edit-toggle-track"></span>
-                    </div>
-                  </div>
-
-                  <div className="notification-toggle-item">
-                    <div className="notification-toggle-info">
-                      <div className="notification-toggle-title">Weekly Digest</div>
-                      <div className="notification-toggle-desc">Send weekly summary of activity and results</div>
-                    </div>
-                    <div className="edit-toggle-wrap">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.weeklyDigest}
-                        onChange={(e) => setEditFormData({ ...editFormData, weeklyDigest: e.target.checked })}
-                      />
-                      <span className="edit-toggle-track"></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={() => handleSaveClient()} disabled={isSaving}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {dbClient && (
+        <EditClientModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          client={dbClient}
+          clientId={clientId}
+          approvedContentCount={approvedContentCount}
+          onSave={refetchClient}
+        />
       )}
 
-      {/* Approval Mode Change Confirmation Modal */}
-      {showApprovalModeConfirm && (
-        <div className="modal-overlay active" onClick={() => setShowApprovalModeConfirm(false)} style={{ zIndex: 1001 }}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-            <div className="modal-header">
-              <div className="modal-header-content">
-                <div className="modal-header-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="modal-title">Change approval workflow?</h2>
-                  <p className="modal-subtitle">For {dbClient?.name || 'this client'}</p>
-                </div>
-              </div>
-              <button className="modal-close" onClick={() => setShowApprovalModeConfirm(false)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <p style={{ color: '#4B5563', lineHeight: 1.6 }}>
-                You're changing from <strong style={{ color: '#1F2937' }}>
-                  {originalApprovalMode === 'full_approval' ? 'Full Approval' :
-                   originalApprovalMode === 'initial_approval' ? 'Initial Approval' : 'Auto / No Review'}
-                </strong> to <strong style={{ color: '#1F2937' }}>
-                  {editFormData.contentApprovalMode === 'full_approval' ? 'Full Approval' :
-                   editFormData.contentApprovalMode === 'initial_approval' ? 'Initial Approval' : 'Auto / No Review'}
-                </strong>.
-              </p>
-              <p style={{ color: '#6B7280', fontSize: '0.875rem', marginTop: '0.75rem' }}>
-                This will affect how new content is handled. Content already in progress will not be changed.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowApprovalModeConfirm(false)}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => handleSaveClient(true)}
-                disabled={isSaving}
-                style={{ background: '#D97706', borderColor: '#D97706' }}
-              >
-                {isSaving ? 'Saving...' : 'Confirm Change'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Content Requirements Modal */}
       {showContentRequirementsModal && (
@@ -4429,476 +2608,38 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      {/* Send Result Alert Modal */}
-      {showResultAlertModal && (
-        <div className="modal-overlay active" onClick={() => setShowResultAlertModal(false)}>
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-header-content">
-                <div className="modal-header-icon" style={{ background: alertTypes[resultAlertType].bgColor, color: alertTypes[resultAlertType].color }}>
-                  {alertTypes[resultAlertType].icon}
-                </div>
-                <div>
-                  <h2 className="modal-title">Send Result Alert</h2>
-                  <p className="modal-subtitle">Share exciting marketing wins with {dbClient?.name || 'the client'}</p>
-                </div>
-              </div>
-              <button className="modal-close" onClick={() => setShowResultAlertModal(false)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              {/* Alert Type Selection */}
-              <div className="form-group">
-                <label className="form-label">What type of win are you sharing?</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
-                  {(Object.keys(alertTypes) as Array<keyof typeof alertTypes>).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        setResultAlertType(type)
-                        if (!resultAlertSubject || Object.values(alertTypes).some(t => t.defaultSubject === resultAlertSubject)) {
-                          setResultAlertSubject(alertTypes[type].defaultSubject)
-                        }
-                        // Clear all type-specific fields when switching to prevent cross-contamination
-                        setResultAlertKeywords([{ keyword: '', newPosition: '', prevPosition: '' }])
-                        setResultAlertMilestone('')
-                      }}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '16px 12px',
-                        border: resultAlertType === type ? `2px solid ${alertTypes[type].color}` : '2px solid var(--border-color)',
-                        borderRadius: '12px',
-                        background: resultAlertType === type ? alertTypes[type].bgColor : 'white',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ color: alertTypes[type].color }}>
-                        {alertTypes[type].icon}
-                      </div>
-                      <span style={{
-                        fontSize: '12px',
-                        fontWeight: resultAlertType === type ? 600 : 500,
-                        color: resultAlertType === type ? alertTypes[type].color : 'var(--text-secondary)',
-                        textAlign: 'center',
-                        lineHeight: 1.2,
-                      }}>
-                        {alertTypes[type].label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="form-group">
-                  <label className="form-label">Recipient</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={dbClient?.contact_email || ''}
-                    disabled
-                    style={{ background: '#f9fafb' }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Subject Line</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder={alertTypes[resultAlertType].defaultSubject}
-                    value={resultAlertSubject}
-                    onChange={(e) => setResultAlertSubject(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Optional Keyword/Position fields for ranking alerts */}
-              {(resultAlertType === 'ranking' || resultAlertType === 'traffic') && (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#166534' }}>
-                      Keyword Rankings (Optional)
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addKeywordRow}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 10px',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        color: '#166534',
-                        background: '#D1FAE5',
-                        border: '1px solid #A7F3D0',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                      Add Keyword
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {resultAlertKeywords.map((row, index) => (
-                      <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>Keyword</label>}
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="e.g., wound care san antonio"
-                            value={row.keyword}
-                            onChange={(e) => updateKeywordRow(index, 'keyword', e.target.value)}
-                            style={{ fontSize: '13px' }}
-                          />
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>New Pos.</label>}
-                          <input
-                            type="number"
-                            className="form-input"
-                            placeholder="7"
-                            value={row.newPosition}
-                            onChange={(e) => updateKeywordRow(index, 'newPosition', e.target.value)}
-                            style={{ fontSize: '13px' }}
-                          />
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          {index === 0 && <label className="form-label" style={{ fontSize: '11px' }}>Prev Pos.</label>}
-                          <input
-                            type="number"
-                            className="form-input"
-                            placeholder="24"
-                            value={row.prevPosition}
-                            onChange={(e) => updateKeywordRow(index, 'prevPosition', e.target.value)}
-                            style={{ fontSize: '13px' }}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeKeywordRow(index)}
-                          disabled={resultAlertKeywords.length === 1}
-                          style={{
-                            width: '32px',
-                            height: '38px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'transparent',
-                            border: '1px solid #E5E7EB',
-                            borderRadius: '6px',
-                            cursor: resultAlertKeywords.length === 1 ? 'not-allowed' : 'pointer',
-                            opacity: resultAlertKeywords.length === 1 ? 0.4 : 1,
-                            color: '#6B7280',
-                          }}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Optional Milestone field for milestone alerts */}
-              {resultAlertType === 'milestone' && (
-                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#92400E', marginBottom: '12px' }}>
-                    Highlight Box (Optional)
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '12px' }}>Milestone Achievement</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g., 10,000 Monthly Visitors!"
-                      value={resultAlertMilestone}
-                      onChange={(e) => setResultAlertMilestone(e.target.value)}
-                      style={{ fontSize: '13px' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Optional Highlight field for leads alerts */}
-              {resultAlertType === 'leads' && (
-                <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#5B21B6', marginBottom: '12px' }}>
-                    Highlight Box (Optional)
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '12px' }}>Lead Highlight</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g., 15 New Leads This Week!"
-                      value={resultAlertMilestone}
-                      onChange={(e) => setResultAlertMilestone(e.target.value)}
-                      style={{ fontSize: '13px' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Optional Highlight field for other alerts */}
-              {resultAlertType === 'other' && (
-                <div style={{ background: '#FDF2F8', border: '1px solid #FBCFE8', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#9D174D', marginBottom: '12px' }}>
-                    Highlight Box (Optional)
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '12px' }}>Highlight Text</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g., Campaign Launch Complete!"
-                      value={resultAlertMilestone}
-                      onChange={(e) => setResultAlertMilestone(e.target.value)}
-                      style={{ fontSize: '13px' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Optional Highlight field for AI alerts */}
-              {resultAlertType === 'ai' && (
-                <div style={{ background: '#ECFEFF', border: '1px solid #A5F3FC', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#0E7490', marginBottom: '12px' }}>
-                    Highlight Box (Optional)
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '12px' }}>AI Insight</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g., 3 New Keyword Opportunities Identified"
-                      value={resultAlertMilestone}
-                      onChange={(e) => setResultAlertMilestone(e.target.value)}
-                      style={{ fontSize: '13px' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">Message</label>
-                <textarea
-                  className="form-textarea"
-                  placeholder={alertTypes[resultAlertType].placeholder}
-                  rows={4}
-                  value={resultAlertMessage}
-                  onChange={(e) => setResultAlertMessage(e.target.value)}
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              {/* Preview Card */}
-              <div style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginTop: '8px',
-              }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Email Preview
-                </div>
-                <div style={{
-                  background: 'white',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  border: '1px solid var(--border-color)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '12px',
-                      background: alertTypes[resultAlertType].bgColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: alertTypes[resultAlertType].color,
-                    }}>
-                      {alertTypes[resultAlertType].icon}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '15px' }}>
-                        {resultAlertSubject || alertTypes[resultAlertType].defaultSubject}
-                      </div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                        From: Pyrus Digital Media
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: '14px',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}>
-                    {resultAlertMessage || <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Your message will appear here...</span>}
-                  </div>
-
-                  {/* Preview highlight box */}
-                  {(resultAlertKeywords.some(row => row.keyword.trim()) || resultAlertMilestone) && (
-                    <div style={{
-                      marginTop: '16px',
-                      padding: '14px 16px',
-                      background: `linear-gradient(135deg, ${alertTypes[resultAlertType].bgColor} 0%, ${alertTypes[resultAlertType].bgColor}dd 100%)`,
-                      borderLeft: `4px solid ${alertTypes[resultAlertType].color}`,
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '12px',
-                    }}>
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '8px',
-                        background: alertTypes[resultAlertType].color,
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        <div style={{ transform: 'scale(0.75)' }}>
-                          {alertTypes[resultAlertType].icon}
-                        </div>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        {resultAlertKeywords.filter(row => row.keyword.trim()).map((row, idx) => (
-                          <div key={idx} style={{ marginBottom: idx < resultAlertKeywords.filter(r => r.keyword.trim()).length - 1 ? '12px' : 0 }}>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
-                              &quot;{row.keyword}&quot; — Now Position #{row.newPosition || '?'}
-                            </div>
-                            {row.prevPosition && row.newPosition && (
-                              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                Moved from position #{row.prevPosition} to #{row.newPosition} (up {parseInt(row.prevPosition) - parseInt(row.newPosition)} spots!)
-                                {parseInt(row.newPosition) <= 10 && ' - First page visibility achieved'}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {resultAlertMilestone && (
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
-                            {resultAlertMilestone}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowResultAlertModal(false)}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSendResultAlert}
-                disabled={isSendingResultAlert || !resultAlertSubject.trim() || !resultAlertMessage.trim()}
-                style={{ background: alertTypes[resultAlertType].color }}
-              >
-                {isSendingResultAlert ? (
-                  <>
-                    <span className="spinner" style={{ width: 16, height: 16 }}></span>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                    Send {alertTypes[resultAlertType].label} Alert
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Result Alert Modal */}
+      {dbClient && (
+        <ResultAlertModal
+          isOpen={showResultAlertModal}
+          onClose={() => setShowResultAlertModal(false)}
+          clientId={clientId}
+          clientName={dbClient.name}
+          clientEmail={dbClient.contact_email}
+          onSuccess={(msg) => {
+            setResendMessage({ type: 'success', text: msg })
+            setTimeout(() => setResendMessage(null), 5000)
+          }}
+          onError={(msg) => {
+            setResendMessage({ type: 'error', text: msg })
+            setTimeout(() => setResendMessage(null), 5000)
+          }}
+          onSent={async () => {
+            const commsRes = await fetch(`/api/admin/clients/${clientId}/communications`)
+            if (commsRes.ok) {
+              setCommunications(await commsRes.json())
+            }
+          }}
+        />
       )}
 
       {/* Add Product Modal */}
-      {showAddProductModal && (
-        <div className="modal-overlay active" onClick={() => setShowAddProductModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h2>Add Product to Client</h2>
-              <button className="modal-close" onClick={() => setShowAddProductModal(false)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <p style={{ color: '#6B7280', marginBottom: '1rem' }}>
-                Manually assign a product to this client. This is for clients who haven&apos;t gone through the standard purchase flow.
-              </p>
-              <div className="form-group">
-                <label htmlFor="product-select">Select Product</label>
-                <select
-                  id="product-select"
-                  className="form-input"
-                  value={selectedProductId}
-                  onChange={e => setSelectedProductId(e.target.value)}
-                >
-                  <option value="">Choose a product...</option>
-                  {availableProducts.map(product => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} ({product.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="product-notes">Notes (optional)</label>
-                <textarea
-                  id="product-notes"
-                  className="form-input"
-                  value={productNotes}
-                  onChange={e => setProductNotes(e.target.value)}
-                  placeholder="e.g., Transferred from legacy system, Comp'd for beta testing"
-                  rows={2}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAddProductModal(false)}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleAddProduct}
-                disabled={!selectedProductId || addingProduct}
-              >
-                {addingProduct ? 'Adding...' : 'Add Product'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddProductModal
+        isOpen={showAddProductModal}
+        onClose={() => setShowAddProductModal(false)}
+        availableProducts={availableProducts}
+        onAdd={handleAddProduct}
+      />
     </>
   )
 }

@@ -35,21 +35,31 @@ export async function updateSession(request: NextRequest) {
   try {
     const { data, error } = await supabase.auth.getUser()
     if (error) {
-      console.error('[AUTH] Session refresh failed in middleware:', {
-        error: error.message,
-        path: request.nextUrl.pathname,
-      })
-      // Fire-and-forget alert to API (async, don't await)
-      fetch(new URL('/api/alerts/log', request.url), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          severity: 'critical',
-          category: 'auth_error',
-          message: `Session refresh failed in middleware: ${error.message}`,
-          metadata: { path: request.nextUrl.pathname, error: error.message },
-        }),
-      }).catch(() => {})
+      // Only log actual errors, not expected "no session" cases
+      // Common expected errors: "Auth session missing", "invalid claim: missing sub claim"
+      const isExpectedNoSession =
+        error.message.includes('session') ||
+        error.message.includes('missing sub claim') ||
+        error.message.includes('not authenticated') ||
+        error.code === 'session_not_found'
+
+      if (!isExpectedNoSession) {
+        console.error('[AUTH] Session refresh failed in middleware:', {
+          error: error.message,
+          path: request.nextUrl.pathname,
+        })
+        // Fire-and-forget alert to API (async, don't await)
+        fetch(new URL('/api/alerts/log', request.url), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'critical',
+            category: 'auth_error',
+            message: `Session refresh failed in middleware: ${error.message}`,
+            metadata: { path: request.nextUrl.pathname, error: error.message },
+          }),
+        }).catch(() => {})
+      }
     }
     user = data.user
   } catch (error) {
