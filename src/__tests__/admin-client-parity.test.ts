@@ -34,8 +34,21 @@ vi.mock('@/lib/services/subscriptionService', () => ({
   getSubscriptionData: vi.fn().mockResolvedValue(null),
 }))
 
+// Test client type that matches the real client structure
+interface TestClient {
+  id: string
+  name: string
+  contact_name: string | null
+  status: string
+  stripe_customer_id: string | null
+  start_date: Date | null
+  created_at: Date
+  onboarding_completed_at: Date | null
+  growth_stage: string | null
+}
+
 // Test clients representing different states
-const testClients = {
+const testClients: Record<string, TestClient> = {
   // Pending prospect - no subscription
   pendingProspect: {
     id: 'client-prospect-001',
@@ -93,7 +106,7 @@ const testClients = {
  * Shared logic that mirrors both admin and client welcome-summary endpoints
  * This ensures both endpoints use the same calculation
  */
-function calculateWelcomeSummaryState(client: typeof testClients.pendingProspect) {
+function calculateWelcomeSummaryState(client: TestClient) {
   const clientStartDate = client.start_date
     ? new Date(client.start_date)
     : new Date(client.created_at)
@@ -115,7 +128,7 @@ function calculateWelcomeSummaryState(client: typeof testClients.pendingProspect
 /**
  * Simulates how admin page determines if client has active subscription
  */
-function adminDetermineHasActiveSubscription(client: typeof testClients.pendingProspect, subscriptionsWithItems: Array<{ status: string, items: any[] }>) {
+function adminDetermineHasActiveSubscription(client: TestClient, subscriptionsWithItems: Array<{ status: string, items: any[] }>) {
   // Admin should use BOTH client.status AND subscription data
   // A client with status='active' should be treated as active even without Stripe data
 

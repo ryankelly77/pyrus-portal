@@ -27,8 +27,20 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
+// Test client type that matches the real client structure
+interface TestClient {
+  id: string
+  name: string
+  contact_name: string | null
+  status: string
+  start_date: Date | null
+  created_at: Date
+  onboarding_completed_at: Date | null
+  growth_stage: string | null
+}
+
 // Test data representing real client lifecycle scenarios
-const testClients = {
+const testClients: Record<string, TestClient> = {
   // Pending prospect - hasn't purchased yet
   pendingProspect: {
     id: 'client-prospect-001',
@@ -105,7 +117,7 @@ const testClients = {
 /**
  * Helper function that mirrors the isOnboarding logic from welcome-summary endpoints
  */
-function calculateIsOnboarding(client: typeof testClients.pendingProspect): boolean {
+function calculateIsOnboarding(client: TestClient): boolean {
   const clientStartDate = client.start_date
     ? new Date(client.start_date)
     : new Date(client.created_at)
@@ -118,7 +130,7 @@ function calculateIsOnboarding(client: typeof testClients.pendingProspect): bool
 /**
  * Helper function for client state determination
  */
-function getClientState(client: typeof testClients.pendingProspect): 'prospect' | 'onboarding' | 'established' {
+function getClientState(client: TestClient): 'prospect' | 'onboarding' | 'established' {
   if (client.status === 'pending') {
     return 'prospect'
   }
@@ -135,7 +147,7 @@ function getClientState(client: typeof testClients.pendingProspect): 'prospect' 
 /**
  * Helper function for tab label
  */
-function getTabLabel(client: typeof testClients.pendingProspect): string {
+function getTabLabel(client: TestClient): string {
   const state = getClientState(client)
 
   switch (state) {
