@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
@@ -131,6 +131,102 @@ export async function GET() {
     console.error('Failed to fetch email templates:', error)
     return NextResponse.json(
       { error: 'Failed to fetch email templates' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * POST /api/admin/email-templates
+ * Create a new email template
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const auth = await requireAdmin()
+    if (auth instanceof NextResponse) return auth
+
+    const body = await request.json()
+    const {
+      name,
+      slug,
+      description,
+      categoryId,
+      recipientType,
+      triggerEvent,
+      triggerDescription,
+      subjectTemplate,
+      bodyHtml,
+      bodyText,
+      availableVariables,
+      isActive = true,
+    } = body
+
+    // Validate required fields
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+    if (!slug?.trim()) {
+      return NextResponse.json({ error: 'Slug is required' }, { status: 400 })
+    }
+    if (!subjectTemplate?.trim()) {
+      return NextResponse.json({ error: 'Subject is required' }, { status: 400 })
+    }
+    if (!bodyHtml?.trim()) {
+      return NextResponse.json({ error: 'HTML body is required' }, { status: 400 })
+    }
+
+    // Validate slug format (lowercase, alphanumeric with hyphens)
+    const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+    if (!slugPattern.test(slug)) {
+      return NextResponse.json(
+        { error: 'Slug must be lowercase with hyphens only (e.g., my-template-name)' },
+        { status: 400 }
+      )
+    }
+
+    // Check if slug is unique
+    const existingTemplate = await prisma.email_templates.findUnique({
+      where: { slug },
+    })
+    if (existingTemplate) {
+      return NextResponse.json(
+        { error: 'A template with this slug already exists' },
+        { status: 400 }
+      )
+    }
+
+    // Create the template
+    const template = await prisma.email_templates.create({
+      data: {
+        name: name.trim(),
+        slug: slug.trim(),
+        description: description?.trim() || null,
+        category_id: categoryId || null,
+        recipient_type: recipientType || 'any',
+        trigger_event: triggerEvent?.trim() || 'manual',
+        trigger_description: triggerDescription?.trim() || null,
+        subject_template: subjectTemplate.trim(),
+        body_html: bodyHtml,
+        body_text: bodyText?.trim() || null,
+        available_variables: availableVariables || [],
+        is_active: isActive,
+        is_system: false,
+        updated_by: auth.user.id,
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      template: {
+        id: template.id,
+        slug: template.slug,
+        name: template.name,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to create email template:', error)
+    return NextResponse.json(
+      { error: 'Failed to create email template' },
       { status: 500 }
     )
   }

@@ -10,43 +10,67 @@ interface ConditionNodeData {
   value?: string;
 }
 
+const targetHandleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#a855f7',
+  border: '2px solid #7e22ce',
+};
+
+const yesHandleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#22c55e',
+  border: '2px solid #15803d',
+};
+
+const noHandleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#ef4444',
+  border: '2px solid #b91c1c',
+};
+
 export function ConditionNode({ data, selected }: NodeProps<ConditionNodeData>) {
+  const containerStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: selected ? '2px solid #a855f7' : '2px solid #d8b4fe',
+    backgroundColor: '#faf5ff',
+    minWidth: '160px',
+    boxShadow: selected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+  };
+
   return (
-    <div
-      className={`px-4 py-3 rounded-lg border-2 bg-purple-50 min-w-[160px] ${
-        selected ? 'border-purple-500 shadow-lg' : 'border-purple-300'
-      }`}
-    >
+    <div style={containerStyle}>
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-purple-700"
+        style={targetHandleStyle}
       />
-      <div className="flex items-center gap-2">
-        <span className="text-lg">◆</span>
-        <span className="font-medium text-purple-900">Condition</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '18px' }}>◆</span>
+        <span style={{ fontWeight: 500, color: '#581c87' }}>Condition</span>
       </div>
-      <div className="text-xs text-purple-700 mt-1">
+      <div style={{ fontSize: '12px', color: '#7e22ce', marginTop: '4px', textAlign: 'center' }}>
         {data.conditionLabel || 'Set condition...'}
       </div>
       {/* Two outputs: Yes and No */}
-      <div className="flex justify-between text-xs mt-3 px-1">
-        <span className="text-green-600 font-medium">Yes</span>
-        <span className="text-red-600 font-medium">No</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '12px', padding: '0 4px' }}>
+        <span style={{ color: '#16a34a', fontWeight: 500 }}>Yes</span>
+        <span style={{ color: '#dc2626', fontWeight: 500 }}>No</span>
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
         id="yes"
-        style={{ left: '25%' }}
-        className="!w-3 !h-3 !bg-green-500 !border-2 !border-green-700"
+        style={{ ...yesHandleStyle, left: '25%' }}
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="no"
-        style={{ left: '75%' }}
-        className="!w-3 !h-3 !bg-red-500 !border-2 !border-red-700"
+        style={{ ...noHandleStyle, left: '75%' }}
       />
     </div>
   );

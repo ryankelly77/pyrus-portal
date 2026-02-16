@@ -7,6 +7,13 @@ interface TriggerNodeData {
   triggerType?: string;
 }
 
+const handleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#f59e0b',
+  border: '2px solid #b45309',
+};
+
 export function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   const triggerLabels: Record<string, string> = {
     proposal_sent: 'Proposal Sent',
@@ -16,23 +23,28 @@ export function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
     manual: 'Manual',
   };
 
+  const containerStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: selected ? '2px solid #f59e0b' : '2px solid #fcd34d',
+    backgroundColor: '#fffbeb',
+    minWidth: '160px',
+    boxShadow: selected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+  };
+
   return (
-    <div
-      className={`px-4 py-3 rounded-lg border-2 bg-amber-50 min-w-[160px] ${
-        selected ? 'border-amber-500 shadow-lg' : 'border-amber-300'
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-lg">⚡</span>
-        <span className="font-medium text-amber-900">{data.label || 'Trigger'}</span>
+    <div style={containerStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '18px' }}>⚡</span>
+        <span style={{ fontWeight: 500, color: '#78350f' }}>{data.label || 'Trigger'}</span>
       </div>
-      <div className="text-xs text-amber-700 mt-1">
+      <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px', textAlign: 'center' }}>
         {data.triggerType ? triggerLabels[data.triggerType] || data.triggerType : 'Select trigger...'}
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-amber-500 !border-2 !border-amber-700"
+        style={handleStyle}
       />
     </div>
   );

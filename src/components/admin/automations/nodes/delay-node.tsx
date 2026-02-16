@@ -8,6 +8,13 @@ interface DelayNodeData {
   delayHours?: number;
 }
 
+const handleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#3b82f6',
+  border: '2px solid #1d4ed8',
+};
+
 export function DelayNode({ data, selected }: NodeProps<DelayNodeData>) {
   const days = data.delayDays || 0;
   const hours = data.delayHours || 0;
@@ -23,26 +30,31 @@ export function DelayNode({ data, selected }: NodeProps<DelayNodeData>) {
     delayText = 'Set delay...';
   }
 
+  const containerStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: selected ? '2px solid #3b82f6' : '2px solid #93c5fd',
+    backgroundColor: '#eff6ff',
+    minWidth: '140px',
+    boxShadow: selected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+  };
+
   return (
-    <div
-      className={`px-4 py-3 rounded-lg border-2 bg-blue-50 min-w-[140px] ${
-        selected ? 'border-blue-500 shadow-lg' : 'border-blue-300'
-      }`}
-    >
+    <div style={containerStyle}>
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-blue-700"
+        style={handleStyle}
       />
-      <div className="flex items-center gap-2">
-        <span className="text-lg">⏱️</span>
-        <span className="font-medium text-blue-900">Wait</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '18px' }}>⏱️</span>
+        <span style={{ fontWeight: 500, color: '#1e3a8a' }}>Wait</span>
       </div>
-      <div className="text-xs text-blue-700 mt-1">{delayText}</div>
+      <div style={{ fontSize: '12px', color: '#1d4ed8', marginTop: '4px', textAlign: 'center' }}>{delayText}</div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-blue-700"
+        style={handleStyle}
       />
     </div>
   );

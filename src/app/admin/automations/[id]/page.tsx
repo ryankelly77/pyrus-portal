@@ -374,15 +374,14 @@ function AutomationEditor() {
       {/* Header */}
       <div className="automation-editor-header">
         <div className="automation-editor-header-left">
-          <Link href="/admin/emails" className="back-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back
-          </Link>
-          <div className="automation-title">
-            <h1>{isNew ? 'New Automation' : automation.name || 'Edit Automation'}</h1>
-            {automation.slug && <span className="automation-slug">{automation.slug}</span>}
+          <div className="page-header-with-back">
+            <Link href="/admin/emails" className="back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Back to Emails
+            </Link>
+            <h1 className="page-title-inline">{isNew ? 'New Automation' : automation.name || 'Edit Automation'}</h1>
           </div>
         </div>
         <div className="automation-editor-header-right">
@@ -545,32 +544,31 @@ function AutomationEditor() {
         .automation-editor-header-left {
           display: flex;
           align-items: center;
-          gap: 16px;
         }
 
-        .back-link {
+        .automation-editor-header-left :global(.page-header-with-back) {
           display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .automation-editor-header-left :global(.back-link) {
+          display: inline-flex;
           align-items: center;
-          gap: 6px;
-          color: var(--text-secondary);
+          gap: 4px;
+          font-size: 13px;
+          color: var(--pyrus-brown, #885430);
           text-decoration: none;
-          font-size: 14px;
+          transition: color 0.15s ease;
         }
 
-        .back-link:hover {
-          color: var(--text-primary);
+        .automation-editor-header-left :global(.back-link:hover) {
+          color: var(--pyrus-brown-dark, #6d4326);
         }
 
-        .automation-title h1 {
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin: 0;
-        }
-
-        .automation-slug {
-          font-size: 12px;
-          color: var(--text-secondary);
+        .automation-editor-header-left :global(.back-link svg) {
+          width: 16px;
+          height: 16px;
         }
 
         .automation-editor-header-right {

@@ -1,13 +1,13 @@
-'use client';
+'use client'
 
-import { DragEvent } from 'react';
+import { DragEvent } from 'react'
 
 interface NodeType {
-  type: string;
-  label: string;
-  icon: string;
-  bgColor: string;
-  borderColor: string;
+  type: string
+  label: string
+  icon: string
+  bgColor: string
+  borderColor: string
 }
 
 const nodeTypes: NodeType[] = [
@@ -15,63 +15,111 @@ const nodeTypes: NodeType[] = [
     type: 'trigger',
     label: 'Trigger',
     icon: '⚡',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-300 hover:border-amber-400',
+    bgColor: '#fffbeb',
+    borderColor: '#fcd34d',
   },
   {
     type: 'delay',
     label: 'Delay',
     icon: '⏱️',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-300 hover:border-blue-400',
+    bgColor: '#eff6ff',
+    borderColor: '#93c5fd',
   },
   {
     type: 'email',
     label: 'Send Email',
     icon: '✉️',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-300 hover:border-green-400',
+    bgColor: '#ecfdf5',
+    borderColor: '#6ee7b7',
   },
   {
     type: 'condition',
     label: 'Condition',
     icon: '◆',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-300 hover:border-purple-400',
+    bgColor: '#faf5ff',
+    borderColor: '#c4b5fd',
   },
   {
     type: 'end',
     label: 'End',
     icon: '🛑',
-    bgColor: 'bg-gray-100',
-    borderColor: 'border-gray-300 hover:border-gray-400',
+    bgColor: '#f3f4f6',
+    borderColor: '#d1d5db',
   },
-];
+]
 
 interface ToolboxProps {
-  onDragStart: (event: DragEvent, nodeType: string) => void;
+  onDragStart: (event: DragEvent, nodeType: string) => void
 }
 
 export function Toolbox({ onDragStart }: ToolboxProps) {
   return (
-    <div className="w-[200px] border-r border-gray-200 p-4 bg-gray-50 flex-shrink-0">
-      <h3 className="font-semibold text-gray-700 mb-4">Nodes</h3>
-      <div className="space-y-2">
+    <div style={{
+      width: '220px',
+      borderRight: '1px solid var(--border-color)',
+      padding: '20px',
+      backgroundColor: 'var(--bg-secondary, #f8fafc)',
+      flexShrink: 0,
+      overflowY: 'auto',
+    }}>
+      <h3 style={{
+        fontWeight: 600,
+        color: 'var(--text-primary)',
+        marginBottom: '16px',
+        fontSize: '14px',
+      }}>Nodes</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {nodeTypes.map((node) => (
           <div
             key={node.type}
             draggable
             onDragStart={(e) => onDragStart(e, node.type)}
-            className={`p-3 rounded-lg border-2 ${node.bgColor} ${node.borderColor} cursor-grab active:cursor-grabbing flex items-center gap-2 hover:shadow-md transition-all`}
+            style={{
+              padding: '12px',
+              borderRadius: '8px',
+              border: `2px solid ${node.borderColor}`,
+              backgroundColor: node.bgColor,
+              cursor: 'grab',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.transform = 'none'
+            }}
           >
-            <span className="text-lg">{node.icon}</span>
-            <span className="font-medium text-sm">{node.label}</span>
+            <span style={{ fontSize: '18px' }}>{node.icon}</span>
+            <span style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>{node.label}</span>
           </div>
         ))}
       </div>
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <h4 className="font-medium text-gray-600 text-sm mb-2">Tips</h4>
-        <ul className="text-xs text-gray-500 space-y-1">
+      <div style={{
+        marginTop: '24px',
+        paddingTop: '16px',
+        borderTop: '1px solid var(--border-color)',
+      }}>
+        <h4 style={{
+          fontWeight: 500,
+          color: 'var(--text-secondary)',
+          fontSize: '12px',
+          marginBottom: '8px',
+        }}>Tips</h4>
+        <ul style={{
+          fontSize: '11px',
+          color: 'var(--text-secondary)',
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+        }}>
           <li>• Drag nodes to canvas</li>
           <li>• Connect by dragging handles</li>
           <li>• Delete with Backspace</li>
@@ -79,5 +127,5 @@ export function Toolbox({ onDragStart }: ToolboxProps) {
         </ul>
       </div>
     </div>
-  );
+  )
 }

@@ -7,24 +7,36 @@ interface EndNodeData {
   reason?: string;
 }
 
+const handleStyle: React.CSSProperties = {
+  width: '12px',
+  height: '12px',
+  backgroundColor: '#6b7280',
+  border: '2px solid #374151',
+};
+
 export function EndNode({ data, selected }: NodeProps<EndNodeData>) {
+  const containerStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: selected ? '2px solid #6b7280' : '2px solid #d1d5db',
+    backgroundColor: '#f3f4f6',
+    minWidth: '120px',
+    boxShadow: selected ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+  };
+
   return (
-    <div
-      className={`px-4 py-3 rounded-lg border-2 bg-gray-100 min-w-[120px] ${
-        selected ? 'border-gray-500 shadow-lg' : 'border-gray-300'
-      }`}
-    >
+    <div style={containerStyle}>
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-gray-500 !border-2 !border-gray-700"
+        style={handleStyle}
       />
-      <div className="flex items-center gap-2">
-        <span className="text-lg">🛑</span>
-        <span className="font-medium text-gray-700">End</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '18px' }}>🛑</span>
+        <span style={{ fontWeight: 500, color: '#374151' }}>End</span>
       </div>
       {data.reason && (
-        <div className="text-xs text-gray-500 mt-1">{data.reason}</div>
+        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', textAlign: 'center' }}>{data.reason}</div>
       )}
     </div>
   );
