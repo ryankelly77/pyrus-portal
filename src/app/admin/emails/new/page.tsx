@@ -90,7 +90,9 @@ export default function NewEmailTemplatePage() {
 
     async function fetchCloneSource() {
       try {
-        const res = await fetch(`/api/admin/email-templates/${cloneSlug}`)
+        const res = await fetch(`/api/admin/email-templates/${cloneSlug}`, {
+          cache: 'no-store',
+        })
         if (res.ok) {
           const data: CloneSourceTemplate = await res.json()
           setCloneSourceName(data.name)

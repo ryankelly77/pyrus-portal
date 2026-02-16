@@ -46,7 +46,9 @@ export default function EmailTemplateEditPage() {
   useEffect(() => {
     async function fetchTemplate() {
       try {
-        const res = await fetch(`/api/admin/email-templates/${slug}`)
+        const res = await fetch(`/api/admin/email-templates/${slug}`, {
+          cache: 'no-store',
+        })
         if (res.status === 404) {
           setError('Template not found')
           return
