@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, DragEvent } from 'react'
+import { useState, useEffect, useCallback, useMemo, DragEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -27,6 +27,24 @@ import 'reactflow/dist/style.css'
 interface Template {
   slug: string
   name: string
+}
+
+interface EnrollmentContact {
+  email: string
+  name: string | null
+  type: string | null
+  enrolledAt: string
+}
+
+interface StepCount {
+  count: number
+  contacts: EnrollmentContact[]
+}
+
+interface EnrollmentData {
+  totalActive: number
+  stepCounts: Record<number, StepCount>
+  steps: Array<{ stepOrder: number; templateSlug: string }>
 }
 
 interface AutomationData {
@@ -85,6 +103,7 @@ function AutomationEditor() {
   const [error, setError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const [showSettings, setShowSettings] = useState(isNew)
+  const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null)
 
   // Fetch templates
   useEffect(() => {
@@ -146,6 +165,30 @@ function AutomationEditor() {
     }
     fetchAutomation()
   }, [isNew, params.id, setNodes, setEdges])
+
+  // Fetch enrollment counts for existing automations
+  useEffect(() => {
+    if (isNew) return
+
+    const fetchEnrollmentCounts = async () => {
+      try {
+        const res = await fetch(`/api/admin/automations/${params.id}/enrollment-counts`)
+        if (res.ok) {
+          const data = await res.json()
+          setEnrollmentData(data)
+        }
+      } catch (err) {
+        console.error('Error fetching enrollment counts:', err)
+      }
+    }
+
+    // Fetch immediately
+    fetchEnrollmentCounts()
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchEnrollmentCounts, 30000)
+    return () => clearInterval(interval)
+  }, [isNew, params.id])
 
   // Track dirty state
   useEffect(() => {
@@ -360,6 +403,90 @@ function AutomationEditor() {
     }
   }
 
+  // Enhance nodes with enrollment data
+  const nodesWithEnrollment = useMemo(() => {
+    if (!enrollmentData) return nodes
+
+    // Build step order mapping: find email nodes in order
+    const emailNodes = nodes
+      .filter((n) => n.type === 'email')
+      .sort((a, b) => a.position.y - b.position.y)
+
+    // Map step_order to node IDs
+    const stepToNodeId: Record<number, string> = {}
+    emailNodes.forEach((node, index) => {
+      stepToNodeId[index + 1] = node.id
+    })
+
+    // Find delay nodes that come before each email node
+    const delayNodes = nodes.filter((n) => n.type === 'delay')
+    const delayToStepOrder: Record<string, number> = {}
+
+    for (const delay of delayNodes) {
+      // Find which email node this delay leads to by checking edges
+      const outgoingEdge = edges.find((e) => e.source === delay.id)
+      if (outgoingEdge) {
+        const targetNode = nodes.find((n) => n.id === outgoingEdge.target)
+        if (targetNode?.type === 'email') {
+          const stepOrder = emailNodes.findIndex((e) => e.id === targetNode.id) + 1
+          if (stepOrder > 0) {
+            // The delay before step N shows enrollments that completed step N-1
+            delayToStepOrder[delay.id] = stepOrder - 1
+          }
+        }
+      }
+    }
+
+    return nodes.map((node) => {
+      if (node.type === 'trigger') {
+        // Trigger shows total active enrollments
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            enrollmentCount: enrollmentData.totalActive,
+            enrollmentContacts: Object.values(enrollmentData.stepCounts)
+              .flatMap((sc) => sc.contacts)
+              .slice(0, 10),
+          },
+        }
+      }
+
+      if (node.type === 'email') {
+        const stepOrder = emailNodes.findIndex((e) => e.id === node.id) + 1
+        // Email node shows enrollments that completed the previous step (waiting for this step)
+        const previousStep = stepOrder - 1
+        const stepCount = enrollmentData.stepCounts[previousStep]
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            enrollmentCount: stepCount?.count || 0,
+            enrollmentContacts: stepCount?.contacts || [],
+          },
+        }
+      }
+
+      if (node.type === 'delay') {
+        // Delay shows enrollments waiting for this delay to complete
+        const stepOrder = delayToStepOrder[node.id]
+        if (stepOrder !== undefined) {
+          const stepCount = enrollmentData.stepCounts[stepOrder]
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              enrollmentCount: stepCount?.count || 0,
+              enrollmentContacts: stepCount?.contacts || [],
+            },
+          }
+        }
+      }
+
+      return node
+    })
+  }, [nodes, edges, enrollmentData])
+
   if (loading) {
     return (
       <div className="automation-editor-loading">
@@ -483,7 +610,7 @@ function AutomationEditor() {
         <Toolbox onDragStart={onDragStart} />
 
         <WorkflowCanvas
-          nodes={nodes}
+          nodes={nodesWithEnrollment}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}

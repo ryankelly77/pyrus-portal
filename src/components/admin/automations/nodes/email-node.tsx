@@ -1,12 +1,15 @@
 'use client';
 
 import { Handle, Position, NodeProps } from 'reactflow';
+import { EnrollmentBadge, EnrollmentContact } from '../enrollment-badge';
 
 interface EmailNodeData {
   label?: string;
   templateSlug?: string;
   templateName?: string;
   subjectOverride?: string;
+  enrollmentCount?: number;
+  enrollmentContacts?: EnrollmentContact[];
 }
 
 const handleStyle: React.CSSProperties = {
@@ -38,12 +41,18 @@ export function EmailNode({ data, selected }: NodeProps<EmailNodeData>) {
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={{ ...containerStyle, position: 'relative' }}>
       <Handle
         type="target"
         position={Position.Top}
         style={handleStyle}
       />
+      {data.enrollmentCount && data.enrollmentCount > 0 && (
+        <EnrollmentBadge
+          count={data.enrollmentCount}
+          contacts={data.enrollmentContacts || []}
+        />
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontSize: '18px' }}>✉️</span>
         <span style={{ fontWeight: 500, color: '#14532d' }}>Send Email</span>

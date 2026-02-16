@@ -1,10 +1,13 @@
 'use client';
 
 import { Handle, Position, NodeProps } from 'reactflow';
+import { EnrollmentBadge, EnrollmentContact } from '../enrollment-badge';
 
 interface TriggerNodeData {
   label?: string;
   triggerType?: string;
+  enrollmentCount?: number;
+  enrollmentContacts?: EnrollmentContact[];
 }
 
 const handleStyle: React.CSSProperties = {
@@ -49,7 +52,13 @@ export function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={{ ...containerStyle, position: 'relative' }}>
+      {data.enrollmentCount && data.enrollmentCount > 0 && (
+        <EnrollmentBadge
+          count={data.enrollmentCount}
+          contacts={data.enrollmentContacts || []}
+        />
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontSize: '18px' }}>⚡</span>
         <span style={{ fontWeight: 500, color: '#78350f' }}>{data.label || 'Trigger'}</span>
