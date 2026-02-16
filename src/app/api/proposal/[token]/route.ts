@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma, dbPool } from '@/lib/prisma'
 import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
 import { createClient } from '@/lib/supabase/server'
+import { enrollInAutomations } from '@/lib/email/automation-service'
 
 // GET /api/proposal/[token] - Get recommendation by invite token (public)
 export async function GET(
@@ -99,7 +100,7 @@ export async function GET(
         await prisma.recommendation_history.create({
           data: {
             recommendation_id: invite.recommendation_id,
-            action: 'Proposal viewed',
+            action: 'Recommendation viewed',
             details: `Viewed by ${invite.first_name} ${invite.last_name}`,
           },
         })
@@ -107,8 +108,25 @@ export async function GET(
         // Don't fail if history creation fails
       }
 
+      // Enroll in automations triggered by recommendation_viewed (non-blocking)
+      enrollInAutomations('recommendation_viewed', {
+        recipientEmail: invite.email,
+        recipientName: `${invite.first_name} ${invite.last_name}`,
+        triggerRecordType: 'recommendation_invite',
+        triggerRecordId: invite.id,
+        contextData: {
+          inviteId: invite.id,
+          recommendationId: invite.recommendation_id,
+          clientId: invite.recommendation.client.id,
+          clientName: invite.recommendation.client.name,
+          firstName: invite.first_name,
+          lastName: invite.last_name,
+          viewedAt: new Date().toISOString(),
+        },
+      }).catch(console.error)
+
       // Trigger score recalculation (non-blocking)
-      triggerRecalculation(invite.recommendation_id, 'proposal_viewed').catch(console.error)
+      triggerRecalculation(invite.recommendation_id, 'recommendation_viewed').catch(console.error)
     }
 
     const recommendation = invite.recommendation
