@@ -60,6 +60,11 @@ export const GLOBAL_EMAIL_VARIABLES: TemplateVariable[] = [
     description: 'Current year',
     example: '2026',
   },
+  {
+    key: 'proposalSentDate',
+    description: 'Date the recommendation/proposal was first sent',
+    example: 'February 16, 2026',
+  },
 ]
 
 /**

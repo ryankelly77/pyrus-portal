@@ -207,12 +207,22 @@ async function refreshContextData(
       .single();
 
     if (data) {
+      // Format the proposal sent date from the invite's sent_at
+      const proposalSentDate = data.sent_at
+        ? new Date(data.sent_at).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : existingContext.proposalSentDate || '';
+
       return {
         ...existingContext,
         email_opened: !!data.email_opened_at,
         proposal_viewed: !!data.viewed_at,
         deal_status: data.recommendations?.status,
         clientName: data.recommendations?.clients?.name,
+        proposalSentDate,
       };
     }
   }
