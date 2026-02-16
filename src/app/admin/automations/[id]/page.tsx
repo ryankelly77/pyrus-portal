@@ -291,8 +291,8 @@ function AutomationEditor() {
 
   // Save automation
   const handleSave = async () => {
-    // Validate
-    const errors = validateWorkflow(nodes, edges)
+    // Validate - strict validation only when automation is active
+    const errors = validateWorkflow(nodes, edges, automation.is_active)
     if (errors.length > 0) {
       alert('Validation errors:\n' + errors.join('\n'))
       return

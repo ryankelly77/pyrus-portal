@@ -250,8 +250,9 @@ export function automationToFlow(
 
 /**
  * Validate a workflow before saving
+ * @param strict - If true, requires all email nodes to have templates (for activation)
  */
-export function validateWorkflow(nodes: Node[], edges: Edge[]): string[] {
+export function validateWorkflow(nodes: Node[], edges: Edge[], strict: boolean = false): string[] {
   const errors: string[] = [];
 
   // Must have exactly one trigger
@@ -264,16 +265,18 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): string[] {
     errors.push('Trigger must have a trigger type selected');
   }
 
-  // Must have at least one email action
-  const emailNodes = nodes.filter((n) => n.type === 'email');
-  if (emailNodes.length === 0) {
-    errors.push('Automation must have at least one email action');
-  }
+  // Strict validation (for activation): require at least one email with template
+  if (strict) {
+    const emailNodes = nodes.filter((n) => n.type === 'email');
+    if (emailNodes.length === 0) {
+      errors.push('Automation must have at least one email action');
+    }
 
-  // All email nodes must have template selected
-  for (const emailNode of emailNodes) {
-    if (!emailNode.data.templateSlug) {
-      errors.push(`Email node must have a template selected`);
+    // All email nodes must have template selected
+    for (const emailNode of emailNodes) {
+      if (!emailNode.data.templateSlug) {
+        errors.push(`Email node must have a template selected`);
+      }
     }
   }
 
