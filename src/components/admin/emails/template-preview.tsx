@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { GLOBAL_EMAIL_VARIABLES } from '@/lib/email/global-variables'
 
 interface TemplateVariable {
   key: string
@@ -43,19 +44,26 @@ export function TemplatePreview({
 }: TemplatePreviewProps) {
   const [viewMode, setViewMode] = useState<'html' | 'text'>('html')
 
+  // Merge template variables with global variables for preview
+  const allVariables = useMemo(() => {
+    const templateKeys = new Set(variables.map((v) => v.key))
+    const uniqueGlobals = GLOBAL_EMAIL_VARIABLES.filter((v) => !templateKeys.has(v.key))
+    return [...variables, ...uniqueGlobals]
+  }, [variables])
+
   const renderedSubject = useMemo(
-    () => replaceVariables(subject, variables),
-    [subject, variables]
+    () => replaceVariables(subject, allVariables),
+    [subject, allVariables]
   )
 
   const renderedHtml = useMemo(
-    () => replaceVariables(bodyHtml, variables),
-    [bodyHtml, variables]
+    () => replaceVariables(bodyHtml, allVariables),
+    [bodyHtml, allVariables]
   )
 
   const renderedText = useMemo(
-    () => replaceVariables(bodyText, variables),
-    [bodyText, variables]
+    () => replaceVariables(bodyText, allVariables),
+    [bodyText, allVariables]
   )
 
   return (

@@ -16,6 +16,7 @@ import {
   TemplateInactiveError,
   InvalidSlugError,
 } from './template-errors'
+import { getGlobalVariableValues } from './global-variables'
 import type {
   EmailTemplate,
   RenderResult,
@@ -519,13 +520,21 @@ export async function sendTemplatedEmail(
       throw new TemplateInactiveError(templateSlug)
     }
 
-    // 3. Render template
-    rendered = await renderTemplate(templateSlug, variables)
+    // 3. Merge global variables with passed variables
+    // Passed variables take precedence over global ones
+    const globalVars = getGlobalVariableValues()
+    const mergedVariables = {
+      ...globalVars,
+      ...variables,
+    }
 
-    // 4. Apply subject override if provided
+    // 4. Render template with merged variables
+    rendered = await renderTemplate(templateSlug, mergedVariables)
+
+    // 5. Apply subject override if provided
     const finalSubject = options.subject || rendered.subject
 
-    // 5. Create log entry with status='sending'
+    // 6. Create log entry with status='sending'
     logId = await createEmailLog({
       templateId: template.id,
       templateSlug,
@@ -533,11 +542,11 @@ export async function sendTemplatedEmail(
       recipientUserId: userId,
       recipientClientId: clientId,
       subject: finalSubject,
-      variablesUsed: variables,
+      variablesUsed: mergedVariables,
       status: 'sending',
     })
 
-    // 6. Send via Mailgun
+    // 7. Send via Mailgun
     const result = await sendEmail({
       to,
       subject: finalSubject,
@@ -547,7 +556,7 @@ export async function sendTemplatedEmail(
       tags: tags || [template.triggerEvent, templateSlug],
     })
 
-    // 7-8. Update log based on result
+    // 8-9. Update log based on result
     if (result.success) {
       await updateEmailLog(logId, {
         status: 'sent',
