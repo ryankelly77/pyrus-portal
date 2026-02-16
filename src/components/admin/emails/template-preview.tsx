@@ -104,6 +104,9 @@ export function TemplatePreview({
           border: '1px solid var(--border-color)',
           borderRadius: '8px',
           overflow: 'hidden',
+          resize: 'vertical',
+          minHeight: '350px',
+          maxHeight: '80vh',
         }}
       >
         {/* Subject line */}
@@ -125,8 +128,7 @@ export function TemplatePreview({
         {/* Body preview */}
         <div
           style={{
-            minHeight: '300px',
-            maxHeight: '500px',
+            height: 'calc(100% - 45px)',
             overflow: 'auto',
           }}
         >
@@ -157,7 +159,7 @@ export function TemplatePreview({
               style={{
                 width: '100%',
                 height: '100%',
-                minHeight: '300px',
+                minHeight: '280px',
                 border: 'none',
                 background: 'white',
               }}
@@ -175,7 +177,8 @@ export function TemplatePreview({
                 wordBreak: 'break-word',
                 color: 'var(--text-primary)',
                 background: 'white',
-                minHeight: '268px',
+                height: '100%',
+                boxSizing: 'border-box',
               }}
             >
               {renderedText || '(No plain text version)'}
