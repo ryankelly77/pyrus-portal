@@ -930,10 +930,11 @@ model email_templates {
   updated_at          DateTime  @default(now()) @db.Timestamptz(6)
   updated_by          String?   @db.Uuid
 
-  category email_categories?        @relation(fields: [category_id], references: [id], onDelete: SetNull)
-  updater  profiles?                @relation("EmailTemplateUpdater", fields: [updated_by], references: [id], onDelete: SetNull)
-  versions email_template_versions[]
-  logs     email_logs[]
+  category         email_categories?        @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  updater          profiles?                @relation("EmailTemplateUpdater", fields: [updated_by], references: [id], onDelete: SetNull)
+  versions         email_template_versions[]
+  logs             email_logs[]
+  automation_steps email_automation_steps[]
 
   @@index([slug])
   @@index([category_id])
@@ -975,9 +976,10 @@ model email_logs {
   error_message       String?
   created_at          DateTime  @default(now()) @db.Timestamptz(6)
 
-  template        email_templates? @relation(fields: [template_id], references: [id], onDelete: SetNull)
-  recipient_user  profiles?        @relation("EmailLogRecipientUser", fields: [recipient_user_id], references: [id], onDelete: SetNull)
-  recipient_client clients?        @relation("EmailLogRecipientClient", fields: [recipient_client_id], references: [id], onDelete: SetNull)
+  template           email_templates?            @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  recipient_user     profiles?                   @relation("EmailLogRecipientUser", fields: [recipient_user_id], references: [id], onDelete: SetNull)
+  recipient_client   clients?                    @relation("EmailLogRecipientClient", fields: [recipient_client_id], references: [id], onDelete: SetNull)
+  automation_step_logs email_automation_step_logs[]
 
   @@index([template_id])
   @@index([template_slug])
@@ -1026,4 +1028,128 @@ model bug_reports {
   @@index([status])
   @@index([user_id])
   @@index([created_at(sort: Desc)])
+}
+
+// ============ Email Automations ============
+
+model email_automations {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  slug                   String    @unique
+  description            String?
+
+  // Trigger
+  trigger_type           String    // 'proposal_sent', 'client_created', 'content_approved', 'invoice_sent', 'manual'
+  trigger_conditions     Json      @default("{}")
+
+  // Stop conditions (checked before each step)
+  global_stop_conditions Json      @default("{}")
+
+  // Send window (only send during these hours)
+  send_window_start      DateTime? @db.Time(6)
+  send_window_end        DateTime? @db.Time(6)
+  send_window_timezone   String    @default("America/Chicago")
+  send_on_weekends       Boolean   @default(false)
+
+  is_active              Boolean   @default(true)
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
+
+  steps       email_automation_steps[]
+  enrollments email_automation_enrollments[]
+
+  @@index([slug])
+  @@index([trigger_type])
+  @@index([is_active])
+}
+
+model email_automation_steps {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  automation_id    String   @db.Uuid
+  step_order       Int
+
+  // Delay before this step
+  delay_days       Int      @default(0)
+  delay_hours      Int      @default(0)
+  delay_from       String   @default("previous_step") // 'trigger', 'previous_step'
+
+  // Email to send
+  template_slug    String
+  subject_override String?
+
+  // Conditions for this specific step
+  send_conditions  Json     @default("{}")
+  skip_conditions  Json     @default("{}")
+
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  automation email_automations  @relation(fields: [automation_id], references: [id], onDelete: Cascade)
+  template   email_templates    @relation(fields: [template_slug], references: [slug])
+  step_logs  email_automation_step_logs[]
+
+  @@unique([automation_id, step_order])
+  @@index([automation_id])
+  @@index([template_slug])
+}
+
+model email_automation_enrollments {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  automation_id       String    @db.Uuid
+
+  // Who/what triggered this
+  trigger_record_type String    // 'recommendation_invite', 'client', etc.
+  trigger_record_id   String    @db.Uuid
+
+  // Recipient
+  recipient_email     String
+  recipient_name      String?
+
+  // Context data (variables available to templates)
+  context_data        Json      @default("{}")
+
+  // Progress
+  status              String    @default("active") // 'active', 'completed', 'stopped', 'paused'
+  current_step_order  Int       @default(0)
+  next_step_due_at    DateTime? @db.Timestamptz(6)
+
+  // Stop tracking
+  stopped_reason      String?
+  stopped_at          DateTime? @db.Timestamptz(6)
+
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  automation email_automations @relation(fields: [automation_id], references: [id], onDelete: Cascade)
+  step_logs  email_automation_step_logs[]
+
+  @@index([automation_id])
+  @@index([status, next_step_due_at])
+  @@index([trigger_record_type, trigger_record_id])
+}
+
+model email_automation_step_logs {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  enrollment_id String    @db.Uuid
+  step_id       String    @db.Uuid
+
+  scheduled_for DateTime  @db.Timestamptz(6)
+  processed_at  DateTime? @db.Timestamptz(6)
+
+  status        String    // 'pending', 'sent', 'skipped', 'failed', 'stopped'
+  skip_reason   String?
+  error_message String?
+
+  // Link to actual email sent
+  email_log_id  String?   @db.Uuid
+
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+
+  enrollment email_automation_enrollments @relation(fields: [enrollment_id], references: [id], onDelete: Cascade)
+  step       email_automation_steps       @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  email_log  email_logs?                  @relation(fields: [email_log_id], references: [id])
+
+  @@index([enrollment_id])
+  @@index([step_id])
+  @@index([status, scheduled_for])
+  @@index([email_log_id])
 }
