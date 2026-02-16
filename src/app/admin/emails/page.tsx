@@ -69,6 +69,7 @@ export default function AdminEmailTemplatesPage() {
   // Automation state
   const [automations, setAutomations] = useState<Automation[]>([])
   const [automationsLoading, setAutomationsLoading] = useState(false)
+  const [automationsFetched, setAutomationsFetched] = useState(false)
   const [automationsError, setAutomationsError] = useState<string | null>(null)
   const [togglingAutomationId, setTogglingAutomationId] = useState<string | null>(null)
 
@@ -95,7 +96,7 @@ export default function AdminEmailTemplatesPage() {
   // Fetch automations when automation tab is active
   useEffect(() => {
     if (activeTab !== 'automation') return
-    if (automations.length > 0) return // Already loaded
+    if (automationsFetched) return // Already fetched (even if empty)
 
     async function fetchAutomations() {
       setAutomationsLoading(true)
@@ -105,6 +106,7 @@ export default function AdminEmailTemplatesPage() {
         if (!res.ok) throw new Error('Failed to fetch automations')
         const data = await res.json()
         setAutomations(data.automations || [])
+        setAutomationsFetched(true)
       } catch (err) {
         console.error('Failed to fetch automations:', err)
         setAutomationsError('Failed to load automations')
@@ -113,7 +115,7 @@ export default function AdminEmailTemplatesPage() {
       }
     }
     fetchAutomations()
-  }, [activeTab, automations.length])
+  }, [activeTab, automationsFetched])
 
   // Toggle automation active status
   const handleToggleAutomation = async (id: string, currentStatus: boolean) => {
