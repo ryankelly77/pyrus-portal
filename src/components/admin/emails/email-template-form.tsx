@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { TemplateCodeEditor, SimpleTextEditor } from './template-code-editor'
+import { TemplateCodeEditor, SimpleTextEditor, type TemplateCodeEditorRef } from './template-code-editor'
 import { VariablePanel } from './variable-panel'
 import { TemplatePreview } from './template-preview'
 import { VersionHistoryModal } from './version-history-modal'
@@ -68,6 +68,14 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showTestEmail, setShowTestEmail] = useState(false)
   const [editorMode, setEditorMode] = useState<'code' | 'rich'>('code')
+
+  // Ref for the HTML editor to support variable insertion
+  const htmlEditorRef = useRef<TemplateCodeEditorRef>(null)
+
+  // Handle variable insertion from the panel
+  const handleInsertVariable = useCallback((variable: string) => {
+    htmlEditorRef.current?.insertText(variable)
+  }, [])
 
   // Track dirty state
   const isDirty = useMemo(() => {
@@ -430,6 +438,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
             </div>
           </div>
           <TemplateCodeEditor
+            ref={htmlEditorRef}
             value={bodyHtml}
             onChange={setBodyHtml}
             language="html"
@@ -530,7 +539,10 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
       <div style={{ flex: '1 1 38%', minWidth: '350px' }}>
         {/* Variables Panel */}
         <div style={{ marginBottom: '24px' }}>
-          <VariablePanel variables={template.availableVariables || []} />
+          <VariablePanel
+            variables={template.availableVariables || []}
+            onInsert={handleInsertVariable}
+          />
         </div>
 
         {/* Preview */}

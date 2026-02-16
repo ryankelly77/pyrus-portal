@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Monaco to avoid SSR issues
@@ -31,60 +31,86 @@ interface TemplateCodeEditorProps {
   readOnly?: boolean
 }
 
-export function TemplateCodeEditor({
-  value,
-  onChange,
-  language = 'html',
-  height = '400px',
-  readOnly = false,
-}: TemplateCodeEditorProps) {
-  const editorRef = useRef<any>(null)
-
-  const handleEditorDidMount = useCallback((editor: any) => {
-    editorRef.current = editor
-  }, [])
-
-  const handleChange = useCallback(
-    (newValue: string | undefined) => {
-      onChange(newValue || '')
-    },
-    [onChange]
-  )
-
-  return (
-    <div
-      style={{
-        border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        height: typeof height === 'number' ? `${height}px` : height,
-      }}
-    >
-      <MonacoEditor
-        height="100%"
-        language={language}
-        value={value}
-        onChange={handleChange}
-        onMount={handleEditorDidMount}
-        theme="vs-dark"
-        options={{
-          minimap: { enabled: false },
-          fontSize: 13,
-          lineNumbers: 'on',
-          wordWrap: 'on',
-          scrollBeyondLastLine: false,
-          readOnly,
-          automaticLayout: true,
-          tabSize: 2,
-          renderWhitespace: 'selection',
-          folding: true,
-          lineDecorationsWidth: 10,
-          lineNumbersMinChars: 3,
-        }}
-      />
-    </div>
-  )
+export interface TemplateCodeEditorRef {
+  insertText: (text: string) => void
+  focus: () => void
 }
+
+export const TemplateCodeEditor = forwardRef<TemplateCodeEditorRef, TemplateCodeEditorProps>(
+  function TemplateCodeEditor(
+    { value, onChange, language = 'html', height = '400px', readOnly = false },
+    ref
+  ) {
+    const editorRef = useRef<any>(null)
+
+    const handleEditorDidMount = useCallback((editor: any) => {
+      editorRef.current = editor
+    }, [])
+
+    const handleChange = useCallback(
+      (newValue: string | undefined) => {
+        onChange(newValue || '')
+      },
+      [onChange]
+    )
+
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+      insertText: (text: string) => {
+        const editor = editorRef.current
+        if (!editor) return
+
+        const selection = editor.getSelection()
+        const id = { major: 1, minor: 1 }
+        const op = {
+          identifier: id,
+          range: selection,
+          text: text,
+          forceMoveMarkers: true,
+        }
+        editor.executeEdits('insert-variable', [op])
+        editor.focus()
+      },
+      focus: () => {
+        editorRef.current?.focus()
+      },
+    }))
+
+    return (
+      <div
+        style={{
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          height: typeof height === 'number' ? `${height}px` : height,
+        }}
+      >
+        <MonacoEditor
+          height="100%"
+          language={language}
+          value={value}
+          onChange={handleChange}
+          onMount={handleEditorDidMount}
+          theme="vs-dark"
+          options={{
+            minimap: { enabled: false },
+            fontSize: 13,
+            lineNumbers: 'on',
+            wordWrap: 'on',
+            scrollBeyondLastLine: false,
+            readOnly,
+            automaticLayout: true,
+            tabSize: 2,
+            renderWhitespace: 'selection',
+            folding: true,
+            lineDecorationsWidth: 10,
+            lineNumbersMinChars: 3,
+          }}
+        />
+      </div>
+    )
+  }
+)
 
 // Simple textarea fallback for plain text
 interface SimpleTextEditorProps {
