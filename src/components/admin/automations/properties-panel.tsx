@@ -124,11 +124,11 @@ function TriggerProperties({
   onChange: (data: any) => void
 }) {
   const triggerTypes = [
-    // Proposal engagement triggers
-    { value: 'proposal_sent', label: 'Proposal Sent', group: 'Proposals' },
-    { value: 'proposal_email_opened', label: 'Proposal Email Opened', group: 'Proposals' },
-    { value: 'proposal_email_clicked', label: 'Proposal Email Clicked', group: 'Proposals' },
-    { value: 'proposal_viewed', label: 'Proposal Viewed', group: 'Proposals' },
+    // Recommendation engagement triggers
+    { value: 'recommendation_sent', label: 'Recommendation Sent', group: 'Recommendations' },
+    { value: 'recommendation_email_opened', label: 'Recommendation Email Opened', group: 'Recommendations' },
+    { value: 'recommendation_email_clicked', label: 'Recommendation Email Clicked', group: 'Recommendations' },
+    { value: 'recommendation_viewed', label: 'Recommendation Viewed', group: 'Recommendations' },
     // Client triggers
     { value: 'client_created', label: 'Client Created', group: 'Clients' },
     { value: 'client_login', label: 'Client Logged In', group: 'Clients' },
@@ -304,7 +304,7 @@ function ConditionProperties({
 }) {
   const fields = [
     { value: 'email_opened', label: 'Email Opened' },
-    { value: 'proposal_viewed', label: 'Proposal Viewed' },
+    { value: 'recommendation_viewed', label: 'Recommendation Viewed' },
     { value: 'deal_status', label: 'Deal Status' },
   ]
 

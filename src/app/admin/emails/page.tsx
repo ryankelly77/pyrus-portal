@@ -47,11 +47,11 @@ interface Automation {
 }
 
 const triggerLabels: Record<string, string> = {
-  // Proposals
-  proposal_sent: 'Proposal Sent',
-  proposal_email_opened: 'Proposal Email Opened',
-  proposal_email_clicked: 'Proposal Email Clicked',
-  proposal_viewed: 'Proposal Viewed',
+  // Recommendations
+  recommendation_sent: 'Recommendation Sent',
+  recommendation_email_opened: 'Recommendation Email Opened',
+  recommendation_email_clicked: 'Recommendation Email Clicked',
+  recommendation_viewed: 'Recommendation Viewed',
   // Clients
   client_created: 'Client Created',
   client_login: 'Client Logged In',
