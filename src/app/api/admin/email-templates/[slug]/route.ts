@@ -98,6 +98,7 @@ export async function PATCH(
 
     // Build update data
     const updateData: {
+      name?: string
       is_active?: boolean
       description?: string
       subject_template?: string
@@ -110,6 +111,22 @@ export async function PATCH(
     }
 
     // Handle all updatable fields
+    if (typeof body.name === 'string') {
+      if (!body.name.trim()) {
+        return NextResponse.json(
+          { error: 'Template name is required' },
+          { status: 400 }
+        )
+      }
+      if (body.name.length > 100) {
+        return NextResponse.json(
+          { error: 'Template name must be 100 characters or less' },
+          { status: 400 }
+        )
+      }
+      updateData.name = body.name.trim()
+    }
+
     if (typeof body.isActive === 'boolean') {
       updateData.is_active = body.isActive
     }

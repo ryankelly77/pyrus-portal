@@ -44,6 +44,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   const router = useRouter()
 
   // Form state
+  const [name, setName] = useState(template.name)
   const [description, setDescription] = useState(template.description || '')
   const [subjectTemplate, setSubjectTemplate] = useState(template.subjectTemplate)
   const [bodyHtml, setBodyHtml] = useState(template.bodyHtml)
@@ -52,6 +53,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
 
   // Track saved values for dirty comparison
   const [savedValues, setSavedValues] = useState({
+    name: template.name,
     description: template.description || '',
     subjectTemplate: template.subjectTemplate,
     bodyHtml: template.bodyHtml,
@@ -70,13 +72,14 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   // Track dirty state
   const isDirty = useMemo(() => {
     return (
+      name !== savedValues.name ||
       description !== savedValues.description ||
       subjectTemplate !== savedValues.subjectTemplate ||
       bodyHtml !== savedValues.bodyHtml ||
       bodyText !== savedValues.bodyText ||
       isActive !== savedValues.isActive
     )
-  }, [description, subjectTemplate, bodyHtml, bodyText, isActive, savedValues])
+  }, [name, description, subjectTemplate, bodyHtml, bodyText, isActive, savedValues])
 
   // Warn on unsaved changes when navigating away
   useEffect(() => {
@@ -116,6 +119,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name,
           description,
           subjectTemplate,
           bodyHtml,
@@ -136,6 +140,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
 
       // Update saved values to reset dirty state
       setSavedValues({
+        name,
         description,
         subjectTemplate,
         bodyHtml,
@@ -218,10 +223,33 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ margin: '0 0 8px', fontSize: '24px', color: 'var(--text-primary)' }}>
-              {template.name}
-            </h1>
+          <div style={{ flex: 1, marginRight: '16px' }}>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{
+                margin: '0 0 8px',
+                fontSize: '24px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '2px solid transparent',
+                padding: '0 0 4px 0',
+                width: '100%',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderBottomColor = 'var(--pyrus-brown)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderBottomColor = 'transparent'
+              }}
+              maxLength={100}
+              placeholder="Template name..."
+            />
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               {template.isSystem && (
                 <span
@@ -248,6 +276,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
                 }}
               >
                 {isActive ? 'Active' : 'Inactive'}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {template.slug}
               </span>
             </div>
           </div>
