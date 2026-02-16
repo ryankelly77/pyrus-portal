@@ -124,12 +124,35 @@ function TriggerProperties({
   onChange: (data: any) => void
 }) {
   const triggerTypes = [
-    { value: 'proposal_sent', label: 'Proposal Sent' },
-    { value: 'client_created', label: 'Client Created' },
-    { value: 'content_approved', label: 'Content Approved' },
-    { value: 'invoice_sent', label: 'Invoice Sent' },
-    { value: 'manual', label: 'Manual Trigger' },
+    // Proposal engagement triggers
+    { value: 'proposal_sent', label: 'Proposal Sent', group: 'Proposals' },
+    { value: 'proposal_email_opened', label: 'Proposal Email Opened', group: 'Proposals' },
+    { value: 'proposal_email_clicked', label: 'Proposal Email Clicked', group: 'Proposals' },
+    { value: 'proposal_viewed', label: 'Proposal Viewed', group: 'Proposals' },
+    // Client triggers
+    { value: 'client_created', label: 'Client Created', group: 'Clients' },
+    { value: 'client_login', label: 'Client Logged In', group: 'Clients' },
+    // Content triggers
+    { value: 'content_approved', label: 'Content Approved', group: 'Content' },
+    // Page view triggers
+    { value: 'page_view_dashboard', label: 'Viewed Dashboard', group: 'Page Views' },
+    { value: 'page_view_results', label: 'Viewed Results', group: 'Page Views' },
+    { value: 'page_view_recommendations', label: 'Viewed Recommendations', group: 'Page Views' },
+    // Billing triggers
+    { value: 'invoice_sent', label: 'Invoice Sent', group: 'Billing' },
+    { value: 'payment_received', label: 'Payment Received', group: 'Billing' },
+    { value: 'subscription_started', label: 'Subscription Started', group: 'Billing' },
+    // Other
+    { value: 'manual', label: 'Manual Trigger', group: 'Other' },
   ]
+
+  // Group triggers for display
+  const groupedTriggers = triggerTypes.reduce((acc, t) => {
+    const group = t.group || 'Other'
+    if (!acc[group]) acc[group] = []
+    acc[group].push(t)
+    return acc
+  }, {} as Record<string, typeof triggerTypes>)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -141,10 +164,14 @@ function TriggerProperties({
           style={selectStyle}
         >
           <option value="">Select trigger...</option>
-          {triggerTypes.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
+          {Object.entries(groupedTriggers).map(([group, triggers]) => (
+            <optgroup key={group} label={group}>
+              {triggers.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>

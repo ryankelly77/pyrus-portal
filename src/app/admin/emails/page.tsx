@@ -47,10 +47,25 @@ interface Automation {
 }
 
 const triggerLabels: Record<string, string> = {
+  // Proposals
   proposal_sent: 'Proposal Sent',
+  proposal_email_opened: 'Proposal Email Opened',
+  proposal_email_clicked: 'Proposal Email Clicked',
+  proposal_viewed: 'Proposal Viewed',
+  // Clients
   client_created: 'Client Created',
+  client_login: 'Client Logged In',
+  // Content
   content_approved: 'Content Approved',
+  // Page Views
+  page_view_dashboard: 'Viewed Dashboard',
+  page_view_results: 'Viewed Results',
+  page_view_recommendations: 'Viewed Recommendations',
+  // Billing
   invoice_sent: 'Invoice Sent',
+  payment_received: 'Payment Received',
+  subscription_started: 'Subscription Started',
+  // Other
   manual: 'Manual',
 }
 
