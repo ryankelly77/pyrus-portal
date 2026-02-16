@@ -435,15 +435,7 @@ export default function WebsitesPage() {
               </svg>
               Edit Requests
               {requestStats.pending > 0 && (
-                <span style={{
-                  background: 'var(--accent-orange)',
-                  color: 'white',
-                  fontSize: '12px',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  marginLeft: '4px',
-                }}>{requestStats.pending}</span>
+                <span className="tab-badge alert">{requestStats.pending}</span>
               )}
             </button>
           </div>

@@ -1,0 +1,392 @@
+/* Bug Report Floating Action Button */
+.bug-report-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #6b7280;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 1000;
+  opacity: 0.7;
+}
+
+.bug-report-fab:hover {
+  background: #4b5563;
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+.bug-report-fab:active {
+  transform: scale(0.95);
+}
+
+/* Middle-right position for client pages (to avoid chatbot conflict) */
+.bug-report-fab.bug-report-fab-middle {
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bug-report-fab.bug-report-fab-middle:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.bug-report-fab.bug-report-fab-middle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Bug Report Modal Overlay */
+.bug-report-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 16px;
+}
+
+/* Bug Report Modal */
+.bug-report-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.bug-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.bug-report-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.bug-report-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bug-report-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* Bug Report Form */
+.bug-report-form {
+  padding: 24px;
+}
+
+.bug-report-field {
+  margin-bottom: 20px;
+}
+
+.bug-report-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.bug-report-field .required {
+  color: #ef4444;
+}
+
+.bug-report-field input,
+.bug-report-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.bug-report-field input:focus,
+.bug-report-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.bug-report-field input::placeholder,
+.bug-report-field textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Auto-captured info */
+.bug-report-captured {
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bug-report-captured summary {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  background: #f9fafb;
+  user-select: none;
+}
+
+.bug-report-captured summary:hover {
+  background: #f3f4f6;
+}
+
+.bug-report-captured-content {
+  padding: 16px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.captured-item {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.captured-item:last-child {
+  margin-bottom: 0;
+}
+
+.captured-label {
+  font-weight: 500;
+  color: #6b7280;
+  margin-right: 8px;
+}
+
+.captured-value {
+  color: #374151;
+  word-break: break-all;
+}
+
+.captured-logs pre {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1f2937;
+  color: #f3f4f6;
+  border-radius: 4px;
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* Actions */
+.bug-report-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.bug-report-cancel,
+.bug-report-submit {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bug-report-cancel {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.bug-report-cancel:hover {
+  background: #f3f4f6;
+}
+
+.bug-report-submit {
+  background: #3b82f6;
+  border: none;
+  color: white;
+}
+
+.bug-report-submit:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.bug-report-submit:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+
+/* Error message */
+.bug-report-error {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Success state */
+.bug-report-success {
+  padding: 48px 24px;
+  text-align: center;
+  color: #059669;
+}
+
+.bug-report-success svg {
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.bug-report-success p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.bug-report-success-sub {
+  color: #6b7280;
+  font-weight: 400;
+  margin-top: 4px !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bug-report-modal {
+    background: #1f2937;
+  }
+
+  .bug-report-header {
+    border-color: #374151;
+  }
+
+  .bug-report-header h2 {
+    color: #f9fafb;
+  }
+
+  .bug-report-close {
+    color: #9ca3af;
+  }
+
+  .bug-report-close:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .bug-report-field label {
+    color: #e5e7eb;
+  }
+
+  .bug-report-field input,
+  .bug-report-field textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .bug-report-field input:focus,
+  .bug-report-field textarea:focus {
+    border-color: #3b82f6;
+  }
+
+  .bug-report-captured {
+    border-color: #374151;
+  }
+
+  .bug-report-captured summary {
+    background: #111827;
+    color: #9ca3af;
+  }
+
+  .bug-report-captured summary:hover {
+    background: #1f2937;
+  }
+
+  .bug-report-captured-content {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  .captured-value {
+    color: #e5e7eb;
+  }
+
+  .bug-report-cancel {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+  }
+
+  .bug-report-cancel:hover {
+    background: #4b5563;
+  }
+
+  .bug-report-error {
+    background: #450a0a;
+    border-color: #7f1d1d;
+    color: #fca5a5;
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .bug-report-fab {
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .bug-report-fab.bug-report-fab-middle {
+    bottom: auto;
+    top: 50%;
+  }
+
+  .bug-report-modal {
+    max-height: 100vh;
+    border-radius: 12px 12px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+  }
+
+  .bug-report-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+}

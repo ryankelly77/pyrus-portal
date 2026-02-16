@@ -1,0 +1,286 @@
+.rich-text-editor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 8px;
+  background: white;
+  resize: vertical;
+  overflow: hidden;
+  min-height: 300px;
+  height: 500px;
+}
+
+.rich-text-editor .editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border-color, #d1d5db);
+  flex-shrink: 0;
+}
+
+.rich-text-editor .toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.rich-text-editor .toolbar-btn:hover {
+  background: var(--bg-hover, #e5e7eb);
+  color: var(--text-primary, #111827);
+}
+
+.rich-text-editor .toolbar-btn:active {
+  background: var(--bg-active, #d1d5db);
+}
+
+.rich-text-editor .toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color, #d1d5db);
+  margin: 4px 8px;
+}
+
+.rich-text-editor .editor-content {
+  padding: 16px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-primary, #111827);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.rich-text-editor .editor-content:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-muted, #9ca3af);
+  pointer-events: none;
+}
+
+/* Content styles */
+.rich-text-editor .editor-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+.rich-text-editor .editor-content h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 24px 0 12px 0;
+  line-height: 1.3;
+}
+
+.rich-text-editor .editor-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 20px 0 10px 0;
+  line-height: 1.4;
+}
+
+.rich-text-editor .editor-content p {
+  margin: 0 0 12px 0;
+}
+
+.rich-text-editor .editor-content ul {
+  margin: 0 0 12px 0 !important;
+  padding-left: 28px !important;
+  list-style: disc outside !important;
+}
+
+.rich-text-editor .editor-content ol {
+  margin: 0 0 12px 0 !important;
+  padding-left: 28px !important;
+  list-style: decimal outside !important;
+}
+
+.rich-text-editor .editor-content li {
+  margin-bottom: 4px;
+  display: list-item !important;
+  padding-left: 4px;
+}
+
+/* Nested lists */
+.rich-text-editor .editor-content ul ul,
+.rich-text-editor .editor-content ol ul {
+  list-style: circle outside !important;
+  margin: 4px 0 4px 0 !important;
+}
+
+.rich-text-editor .editor-content ul ul ul,
+.rich-text-editor .editor-content ol ul ul {
+  list-style: square outside !important;
+}
+
+.rich-text-editor .editor-content ol ol,
+.rich-text-editor .editor-content ul ol {
+  list-style: lower-alpha outside !important;
+  margin: 4px 0 4px 0 !important;
+}
+
+.rich-text-editor .editor-content a {
+  color: var(--link-color, #2563eb);
+  text-decoration: underline;
+}
+
+.rich-text-editor .editor-content blockquote {
+  border-left: 3px solid var(--border-color, #d1d5db);
+  margin: 16px 0;
+  padding: 8px 16px;
+  color: var(--text-secondary, #6b7280);
+  font-style: italic;
+}
+
+/* Tables */
+.rich-text-editor .editor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.rich-text-editor .editor-content th,
+.rich-text-editor .editor-content td {
+  border: 1px solid var(--border-color, #d1d5db);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-text-editor .editor-content th {
+  background: var(--bg-secondary, #f9fafb);
+  font-weight: 600;
+}
+
+.rich-text-editor .editor-content tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Horizontal rule */
+.rich-text-editor .editor-content hr {
+  border: none;
+  border-top: 1px solid var(--border-color, #d1d5db);
+  margin: 24px 0;
+}
+
+/* Focus state */
+.rich-text-editor:focus-within {
+  border-color: var(--primary, #885430);
+  box-shadow: 0 0 0 3px rgba(136, 84, 48, 0.1);
+}
+
+/* Mode Toggle */
+.rich-text-editor .editor-mode-toggle {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color, #d1d5db);
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.rich-text-editor .mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.rich-text-editor .mode-btn:hover {
+  color: var(--text-primary, #111827);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.rich-text-editor .mode-btn.active {
+  color: var(--primary, #885430);
+  border-bottom-color: var(--primary, #885430);
+  background: white;
+}
+
+.rich-text-editor .mode-btn svg {
+  flex-shrink: 0;
+}
+
+/* Google Doc Mode */
+.rich-text-editor .gdoc-mode {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.rich-text-editor .gdoc-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border-color, #d1d5db);
+}
+
+.rich-text-editor .gdoc-url-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.rich-text-editor .gdoc-url-input:focus {
+  border-color: var(--primary, #885430);
+  box-shadow: 0 0 0 2px rgba(136, 84, 48, 0.1);
+}
+
+.rich-text-editor .gdoc-error {
+  color: var(--error, #ef4444);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.rich-text-editor .gdoc-preview {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+.rich-text-editor .gdoc-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted, #9ca3af);
+  text-align: center;
+  padding: 40px;
+}
+
+.rich-text-editor .gdoc-placeholder p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.rich-text-editor .gdoc-placeholder span {
+  font-size: 13px;
+  opacity: 0.8;
+}

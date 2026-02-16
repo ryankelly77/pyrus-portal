@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { StatusProgressBar, StatusHistoryFeed } from '@/components/content'
+import { RichTextEditor } from '@/components/content/RichTextEditor'
 
 interface ContentItem {
   id: string
@@ -38,6 +39,7 @@ interface ContentItem {
   published_url: string | null
   featured_image: string | null
   video_url: string | null
+  google_doc_url: string | null
   social_platforms: {
     facebook: boolean
     instagram: boolean
@@ -105,6 +107,8 @@ export default function ContentViewPage() {
   const [imageUploading, setImageUploading] = useState(false)
   // Video URL (optional)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  // Google Doc URL
+  const [googleDocUrl, setGoogleDocUrl] = useState<string>('')
   // Social platforms (for social content)
   const [socialPlatforms, setSocialPlatforms] = useState({
     facebook: true,
@@ -162,6 +166,7 @@ export default function ContentViewPage() {
       setAiOptimized(data.ai_optimized || false)
       setFeaturedImage(data.featured_image || null)
       setVideoUrl(data.video_url || null)
+      setGoogleDocUrl(data.google_doc_url || '')
       if (data.social_platforms) {
         setSocialPlatforms(data.social_platforms)
       }
@@ -242,6 +247,7 @@ export default function ContentViewPage() {
           aiOptimized,
           featuredImage,
           videoUrl,
+          googleDocUrl: googleDocUrl || null,
           socialPlatforms: platform === 'social' ? socialPlatforms : null,
         }),
       })
@@ -398,13 +404,21 @@ export default function ContentViewPage() {
 
   const isWebsitePlatform = platform === 'website' || content.platform === 'website'
 
+  // Check if a Google Doc URL is valid
+  const isValidGoogleDocUrl = (url: string): boolean => {
+    if (!url) return false
+    return /\/document\/d\/([a-zA-Z0-9_-]+)/.test(url)
+  }
+
   // Check if all required fields are complete
   const validateRequiredFields = (mode: 'save' | 'submit' | 'publish' = 'save') => {
     const missingFields: string[] = []
 
     // Core required fields
     if (!title?.trim()) missingFields.push('Title')
-    if (!bodyContent?.trim()) missingFields.push('Content')
+    // Content can be either body text OR a valid Google Doc URL
+    const hasContent = bodyContent?.trim() || isValidGoogleDocUrl(googleDocUrl)
+    if (!hasContent) missingFields.push('Content')
     if (!clientId) missingFields.push('Client')
     if (!platform) missingFields.push('Platform')
     if (!contentType) missingFields.push('Content Type')
@@ -454,8 +468,9 @@ export default function ContentViewPage() {
     if (!validateRequiredFields('publish')) {
       return
     }
-    // Check word count for website content
-    if (platform === 'website' && wordCount && wordCount > 0 && actualWordCount < wordCount) {
+    // Check word count for website content (skip if using Google Doc - can't count words)
+    const usingGoogleDoc = isValidGoogleDocUrl(googleDocUrl)
+    if (platform === 'website' && wordCount && wordCount > 0 && actualWordCount < wordCount && !usingGoogleDoc) {
       setShowWordCountWarning(true)
       return
     }
@@ -683,54 +698,13 @@ export default function ContentViewPage() {
                 <label className="form-label">
                   Content <span className="required">*</span>
                 </label>
-                <div className="editor-toolbar">
-                  <button type="button" className="toolbar-btn" title="Bold"><strong>B</strong></button>
-                  <button type="button" className="toolbar-btn" title="Italic"><em>I</em></button>
-                  <button type="button" className="toolbar-btn" title="Underline"><u>U</u></button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Heading 2">H2</button>
-                  <button type="button" className="toolbar-btn" title="Heading 3">H3</button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Bullet List">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="8" y1="6" x2="21" y2="6"></line>
-                      <line x1="8" y1="12" x2="21" y2="12"></line>
-                      <line x1="8" y1="18" x2="21" y2="18"></line>
-                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                      <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                  </button>
-                  <button type="button" className="toolbar-btn" title="Numbered List">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="10" y1="6" x2="21" y2="6"></line>
-                      <line x1="10" y1="12" x2="21" y2="12"></line>
-                      <line x1="10" y1="18" x2="21" y2="18"></line>
-                      <path d="M4 6h1v4"></path>
-                      <path d="M4 10h2"></path>
-                      <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
-                    </svg>
-                  </button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                    </svg>
-                  </button>
-                  <button type="button" className="toolbar-btn" title="Image">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                      <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                  </button>
-                </div>
-                <textarea
-                  className="form-textarea content-textarea"
-                  rows={16}
+                <RichTextEditor
                   value={bodyContent}
-                  onChange={(e) => setBodyContent(e.target.value)}
+                  onChange={setBodyContent}
+                  placeholder="Write your content here... (paste from Google Docs to preserve formatting)"
+                  minHeight={400}
+                  googleDocUrl={googleDocUrl}
+                  onGoogleDocUrlChange={setGoogleDocUrl}
                 />
                 <div style={{
                   display: 'flex',
@@ -740,26 +714,36 @@ export default function ContentViewPage() {
                   fontSize: '0.85rem',
                   color: 'var(--text-muted)',
                 }}>
-                  <span>
-                    <strong style={{
-                      color: wordCount && actualWordCount < wordCount ? '#DC2626' :
-                             wordCount && actualWordCount >= wordCount ? '#059669' : 'inherit'
-                    }}>
-                      {actualWordCount.toLocaleString()}
-                    </strong> words
-                    {wordCount && wordCount > 0 && (
-                      <span style={{ marginLeft: '8px' }}>
-                        / {wordCount.toLocaleString()} target
-                        {actualWordCount >= wordCount ? (
-                          <span style={{ color: '#059669', marginLeft: '6px' }}>✓</span>
-                        ) : (
-                          <span style={{ color: '#DC2626', marginLeft: '6px' }}>
-                            ({(wordCount - actualWordCount).toLocaleString()} more needed)
-                          </span>
-                        )}
-                      </span>
-                    )}
-                  </span>
+                  {isValidGoogleDocUrl(googleDocUrl) ? (
+                    <span style={{ color: '#6366F1' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }}>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      Using linked Google Doc (word count not available)
+                    </span>
+                  ) : (
+                    <span>
+                      <strong style={{
+                        color: wordCount && actualWordCount < wordCount ? '#DC2626' :
+                               wordCount && actualWordCount >= wordCount ? '#059669' : 'inherit'
+                      }}>
+                        {actualWordCount.toLocaleString()}
+                      </strong> words
+                      {wordCount && wordCount > 0 && (
+                        <span style={{ marginLeft: '8px' }}>
+                          / {wordCount.toLocaleString()} target
+                          {actualWordCount >= wordCount ? (
+                            <span style={{ color: '#059669', marginLeft: '6px' }}>✓</span>
+                          ) : (
+                            <span style={{ color: '#DC2626', marginLeft: '6px' }}>
+                              ({(wordCount - actualWordCount).toLocaleString()} more needed)
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1434,8 +1418,8 @@ export default function ContentViewPage() {
                 </>
               )}
 
-              {/* Approved: Publish */}
-              {content.status === 'approved' && (
+              {/* Approved or Production Statuses: Publish */}
+              {(content.status === 'approved' || content.status === 'internal_review' || content.status === 'final_optimization' || content.status === 'image_selection') && (
                 <button
                   type="button"
                   className="btn btn-primary btn-block"
@@ -1446,7 +1430,7 @@ export default function ContentViewPage() {
                     <line x1="22" y1="2" x2="11" y2="13"></line>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                   </svg>
-                  Publish
+                  Mark as Published
                 </button>
               )}
             </div>

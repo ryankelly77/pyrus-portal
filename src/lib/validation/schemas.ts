@@ -130,6 +130,9 @@ export const contentCreateSchema = z.object({
   seoOptimized: z.boolean().optional(),
   aiOptimized: z.boolean().optional(),
   status: z.string().nullable().optional(),
+  featuredImage: z.string().nullable().optional(),
+  videoUrl: z.string().nullable().optional(),
+  googleDocUrl: z.string().nullable().optional(),
 })
 
 export const linkUserSchema = z.object({

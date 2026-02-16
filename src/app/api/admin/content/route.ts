@@ -187,9 +187,12 @@ export async function POST(request: NextRequest) {
       targetKeyword,
       secondaryKeywords,
       wordCount,
-      seoOptimized,
-      aiOptimized,
-      status = 'draft'
+      seoOptimized = false,
+      aiOptimized = false,
+      status = 'draft',
+      featuredImage,
+      videoUrl,
+      googleDocUrl,
     } = (validated as any).data
 
     if (!clientId || !title) {
@@ -228,26 +231,46 @@ export async function POST(request: NextRequest) {
       ? parseInt(wordCount, 10)
       : null
 
+    // Determine actual status based on approval requirements and completion level
+    // For auto-approval clients, detect what steps are already complete
+    let actualStatus = status
+    if (status === 'sent_for_review' && !approvalRequired) {
+      // Auto-approval: detect completion level
+      // Workflow: internal_review → final_optimization → image_selection → scheduled → posted
+      if (featuredImage) {
+        // Image is uploaded - skip to image_selection (ready for scheduling)
+        actualStatus = 'image_selection'
+      } else if (seoOptimized || aiOptimized) {
+        // Optimization done but no image - final_optimization
+        actualStatus = 'final_optimization'
+      } else {
+        // Just content - internal_review
+        actualStatus = 'internal_review'
+      }
+    }
+
     const result = await dbPool.query(
       `INSERT INTO content (
         client_id, title, content_type, platform, body, excerpt,
         urgent, deadline, target_keyword, secondary_keywords,
         word_count, seo_optimized, ai_optimized, status,
-        approval_required, review_round, status_history, status_changed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+        approval_required, review_round, status_history, status_changed_at,
+        featured_image, video_url, google_doc_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), $18, $19, $20)
       RETURNING *`,
       [
         clientId, title, contentType || null, platform || null, bodyContent || null, excerpt || null,
         urgent || false, deadline || null, targetKeyword || null, secondaryKeywords || null,
-        validWordCount, seoOptimized || false, aiOptimized || false, status,
-        approvalRequired, 0, JSON.stringify([{ status, changed_at: new Date().toISOString(), changed_by_name: profile.full_name || 'Unknown' }])
+        validWordCount, seoOptimized || false, aiOptimized || false, actualStatus,
+        approvalRequired, 0, JSON.stringify([{ status: actualStatus, changed_at: new Date().toISOString(), changed_by_name: profile.full_name || 'Unknown' }]),
+        featuredImage || null, videoUrl || null, googleDocUrl || null
       ]
     )
 
     const newContent = result.rows[0]
 
-    // Send email notification if submitting directly for review
-    if (status === 'sent_for_review') {
+    // Send email notification only if submitting for review AND approval is required
+    if (status === 'sent_for_review' && approvalRequired) {
       try {
         // Get client info for email
         const clientResult = await dbPool.query(
@@ -283,6 +306,10 @@ export async function POST(request: NextRequest) {
 
           if (!emailResult.success) {
             console.error('POST: Failed to send review notification:', emailResult.error)
+            // If template not found, log helpful message
+            if (emailResult.error?.includes('not found')) {
+              console.error('POST: Template "content-ready-for-review" may not exist. Create it at /admin/emails')
+            }
           }
         } else {
           console.log('POST: No client email found - skipping notification')

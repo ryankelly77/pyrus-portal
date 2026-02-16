@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { RichTextEditor } from '@/components/content/RichTextEditor'
 
 interface Client {
   id: string
@@ -18,7 +19,6 @@ export default function CreateContentPage() {
   const { user, hasNotifications } = useUserProfile()
   const [platform, setPlatform] = useState<'website' | 'gbp' | 'social'>('website')
   const [timeline, setTimeline] = useState<'standard' | 'urgent'>('standard')
-  const [basecampTask, setBasecampTask] = useState(true)
   const [emailNotification, setEmailNotification] = useState(true)
   const [socialPlatforms, setSocialPlatforms] = useState({
     facebook: true,
@@ -39,11 +39,62 @@ export default function CreateContentPage() {
   const [secondaryKeywords, setSecondaryKeywords] = useState('')
   const [wordCountTarget, setWordCountTarget] = useState('')
 
+  // Optimization checkboxes
+  const [seoOptimized, setSeoOptimized] = useState(false)
+  const [aiOptimized, setAiOptimized] = useState(false)
+
+  // Media fields
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [googleDocUrl, setGoogleDocUrl] = useState('')
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImageUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/admin/content/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) throw new Error('Upload failed')
+
+      const data = await res.json()
+      setFeaturedImage(data.url)
+    } catch (err) {
+      console.error('Image upload failed:', err)
+      setError('Failed to upload image')
+    } finally {
+      setImageUploading(false)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setFeaturedImage(null)
+  }
+
   // Client state
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [approvedContentCount, setApprovedContentCount] = useState(0)
+
+  // Determine if client requires approval
+  const clientRequiresApproval = (() => {
+    if (!selectedClient) return true // Default to requiring approval
+    if (selectedClient.content_approval_mode === 'auto') return false
+    if (selectedClient.content_approval_mode === 'initial_approval' && selectedClient.approval_threshold) {
+      return approvedContentCount < selectedClient.approval_threshold
+    }
+    return true // full_approval or default
+  })()
 
   // Fetch clients from API
   useEffect(() => {
@@ -123,6 +174,13 @@ export default function CreateContentPage() {
           targetKeyword: platform === 'website' ? targetKeyword || null : null,
           secondaryKeywords: platform === 'website' ? secondaryKeywords || null : null,
           wordCount: platform === 'website' && wordCountTarget ? parseInt(wordCountTarget) : null,
+          // Optimization fields
+          seoOptimized: platform === 'website' ? seoOptimized : false,
+          aiOptimized: platform === 'website' ? aiOptimized : false,
+          // Media fields
+          featuredImage: featuredImage || null,
+          videoUrl: videoUrl || null,
+          googleDocUrl: googleDocUrl || null,
         }),
       })
 
@@ -169,6 +227,13 @@ export default function CreateContentPage() {
           targetKeyword: platform === 'website' ? targetKeyword || null : null,
           secondaryKeywords: platform === 'website' ? secondaryKeywords || null : null,
           wordCount: platform === 'website' && wordCountTarget ? parseInt(wordCountTarget) : null,
+          // Optimization fields
+          seoOptimized: platform === 'website' ? seoOptimized : false,
+          aiOptimized: platform === 'website' ? aiOptimized : false,
+          // Media fields
+          featuredImage: featuredImage || null,
+          videoUrl: videoUrl || null,
+          googleDocUrl: googleDocUrl || null,
         }),
       })
 
@@ -386,55 +451,13 @@ export default function CreateContentPage() {
                 <label className="form-label">
                   Content <span className="required">*</span>
                 </label>
-                <div className="editor-toolbar">
-                  <button type="button" className="toolbar-btn" title="Bold"><strong>B</strong></button>
-                  <button type="button" className="toolbar-btn" title="Italic"><em>I</em></button>
-                  <button type="button" className="toolbar-btn" title="Underline"><u>U</u></button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Heading 2">H2</button>
-                  <button type="button" className="toolbar-btn" title="Heading 3">H3</button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Bullet List">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="8" y1="6" x2="21" y2="6"></line>
-                      <line x1="8" y1="12" x2="21" y2="12"></line>
-                      <line x1="8" y1="18" x2="21" y2="18"></line>
-                      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                      <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                  </button>
-                  <button type="button" className="toolbar-btn" title="Numbered List">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <line x1="10" y1="6" x2="21" y2="6"></line>
-                      <line x1="10" y1="12" x2="21" y2="12"></line>
-                      <line x1="10" y1="18" x2="21" y2="18"></line>
-                      <path d="M4 6h1v4"></path>
-                      <path d="M4 10h2"></path>
-                      <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
-                    </svg>
-                  </button>
-                  <div className="toolbar-divider"></div>
-                  <button type="button" className="toolbar-btn" title="Link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                    </svg>
-                  </button>
-                  <button type="button" className="toolbar-btn" title="Image">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                      <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                  </button>
-                </div>
-                <textarea
-                  className="form-textarea content-textarea"
-                  rows={16}
-                  placeholder="Write your content here..."
+                <RichTextEditor
                   value={bodyContent}
-                  onChange={(e) => setBodyContent(e.target.value)}
+                  onChange={setBodyContent}
+                  placeholder="Write your content here... (paste from Google Docs to preserve formatting)"
+                  minHeight={400}
+                  googleDocUrl={googleDocUrl}
+                  onGoogleDocUrlChange={setGoogleDocUrl}
                 />
               </div>
             </div>
@@ -590,6 +613,104 @@ export default function CreateContentPage() {
                 </select>
               </div>
 
+              {/* Featured Image */}
+              <div className="form-group">
+                <label className="form-label">Featured Image</label>
+                {featuredImage ? (
+                  <div style={{
+                    position: 'relative',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid #E5E7EB',
+                  }}>
+                    <img
+                      src={featuredImage}
+                      alt="Featured"
+                      style={{
+                        width: '100%',
+                        height: '160px',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <label style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px',
+                    border: '2px dashed #D1D5DB',
+                    borderRadius: '8px',
+                    cursor: imageUploading ? 'wait' : 'pointer',
+                    background: '#F9FAFB',
+                    transition: 'border-color 0.15s',
+                  }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={imageUploading}
+                      style={{ display: 'none' }}
+                    />
+                    {imageUploading ? (
+                      <span style={{ color: '#6B7280', fontSize: '14px' }}>Uploading...</span>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" width="32" height="32">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span style={{ color: '#6B7280', fontSize: '14px', marginTop: '8px' }}>
+                          Click to upload image
+                        </span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* Video URL */}
+              <div className="form-group">
+                <label className="form-label">Video URL</label>
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder="YouTube or Vimeo URL..."
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                />
+                {videoUrl && (
+                  <span style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', display: 'block' }}>
+                    Video will be embedded in the content
+                  </span>
+                )}
+              </div>
+
               {/* SEO Information - only for website platform */}
               {platform === 'website' && (
                 <div className="form-card" style={{ marginTop: '16px', padding: '16px', background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
@@ -616,7 +737,7 @@ export default function CreateContentPage() {
                       onChange={(e) => setSecondaryKeywords(e.target.value)}
                     />
                   </div>
-                  <div className="form-group" style={{ marginBottom: '0' }}>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
                     <label className="form-label" style={{ fontSize: '13px' }}>Word Count Target</label>
                     <input
                       type="number"
@@ -626,10 +747,57 @@ export default function CreateContentPage() {
                       onChange={(e) => setWordCountTarget(e.target.value)}
                     />
                   </div>
+
+                  {/* Optimization Checkboxes */}
+                  <div style={{
+                    borderTop: '1px solid #E5E7EB',
+                    paddingTop: '12px',
+                    marginTop: '4px',
+                  }}>
+                    <label className="form-label" style={{ fontSize: '13px', marginBottom: '8px' }}>
+                      Optimization Status
+                    </label>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 0',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#374151',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={seoOptimized}
+                        onChange={(e) => setSeoOptimized(e.target.checked)}
+                        style={{ width: '16px', height: '16px' }}
+                      />
+                      <span>SEO Optimized</span>
+                      <span style={{ color: '#9CA3AF', fontSize: '12px' }}>(keywords, meta, headings)</span>
+                    </label>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 0',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#374151',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={aiOptimized}
+                        onChange={(e) => setAiOptimized(e.target.checked)}
+                        style={{ width: '16px', height: '16px' }}
+                      />
+                      <span>AI Optimized</span>
+                      <span style={{ color: '#9CA3AF', fontSize: '12px' }}>(AI review completed)</span>
+                    </label>
+                  </div>
                 </div>
               )}
 
-              <div className="form-group">
+              <div className="form-group" style={{ marginTop: '24px' }}>
                 <label className="form-label">
                   Review Timeline <span className="required">*</span>
                 </label>
@@ -667,17 +835,6 @@ export default function CreateContentPage() {
               <h3 className="form-card-title">Notifications</h3>
 
               <div className="notification-options">
-                <label className="notification-option">
-                  <input
-                    type="checkbox"
-                    checked={basecampTask}
-                    onChange={(e) => setBasecampTask(e.target.checked)}
-                  />
-                  <div className="notification-option-content">
-                    <strong>Create Basecamp Task</strong>
-                    <span>Automatically create a task in Basecamp for tracking</span>
-                  </div>
-                </label>
                 <label className="notification-option">
                   <input
                     type="checkbox"
@@ -728,7 +885,7 @@ export default function CreateContentPage() {
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
-                {isSaving ? 'Submitting...' : 'Submit for Review'}
+                {isSaving ? 'Submitting...' : (clientRequiresApproval ? 'Submit for Client Review' : 'Submit for Internal Review')}
               </button>
             </div>
           </div>

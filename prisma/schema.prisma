@@ -69,6 +69,7 @@ model clients {
   system_alerts         system_alerts[]
   activity_feed         activity_feed[]
   email_logs            email_logs[]             @relation("EmailLogRecipientClient")
+  bug_reports           bug_reports[]
 }
 
 // Centralized activity log for all significant portal activities
@@ -131,6 +132,8 @@ model profiles {
   email_templates_updated   email_templates[]          @relation("EmailTemplateUpdater")
   email_template_versions   email_template_versions[]  @relation("EmailTemplateVersionChanger")
   email_logs_received       email_logs[]               @relation("EmailLogRecipientUser")
+  bug_reports_submitted     bug_reports[]              @relation("BugReportSubmitter")
+  bug_reports_resolved      bug_reports[]              @relation("BugReportResolver")
 }
 
 model user_invites {
@@ -297,6 +300,8 @@ model content {
   approval_required   Boolean?  @default(true)
   review_round        Int?      @default(0)
   featured_image      String?   // URL to featured image
+  video_url           String?   // Video URL (YouTube, Vimeo, etc.)
+  google_doc_url      String?   // Google Doc URL for embedded preview
 
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamptz(6)
@@ -982,4 +987,43 @@ model email_logs {
   @@index([status])
   @@index([created_at(sort: Desc)])
   @@index([mailgun_message_id])
+}
+
+// ============ Bug Reports ============
+
+model bug_reports {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String?   @db.Uuid
+  client_id           String?   @db.Uuid
+
+  // Context
+  page_url            String
+  page_title          String?
+  user_agent          String?
+  screen_size         String?
+
+  // Report
+  title               String
+  description         String
+  steps_to_reproduce  String?
+  expected_behavior   String?
+
+  // Console errors
+  console_logs        String?
+
+  // Status
+  status              String    @default("new") // 'new', 'reviewed', 'in_progress', 'resolved', 'dismissed'
+  admin_notes         String?
+  resolved_at         DateTime? @db.Timestamptz(6)
+  resolved_by         String?   @db.Uuid
+
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  user     profiles? @relation("BugReportSubmitter", fields: [user_id], references: [id], onDelete: SetNull)
+  client   clients?  @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  resolver profiles? @relation("BugReportResolver", fields: [resolved_by], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([user_id])
+  @@index([created_at(sort: Desc)])
 }

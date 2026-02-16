@@ -107,6 +107,7 @@ export async function PUT(
       clientId,
       featuredImage,
       videoUrl,
+      googleDocUrl,
       socialPlatforms
     } = body
 
@@ -188,6 +189,10 @@ export async function PUT(
     if (videoUrl !== undefined) {
       updates.push(`video_url = $${paramIndex++}`)
       values.push(videoUrl)
+    }
+    if (googleDocUrl !== undefined) {
+      updates.push(`google_doc_url = $${paramIndex++}`)
+      values.push(googleDocUrl)
     }
     if (socialPlatforms !== undefined) {
       updates.push(`social_platforms = $${paramIndex++}`)
@@ -342,10 +347,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     }
 
-    // Create a revision record for tracking
+    // Create a revision record for tracking (use empty string if body is null - e.g., Google Doc content)
     await dbPool.query(
       `INSERT INTO content_revisions (content_id, body, revision_notes)
-       SELECT id, body, $2 FROM content WHERE id = $1`,
+       SELECT id, COALESCE(body, ''), $2 FROM content WHERE id = $1`,
       [id, `Status changed to ${getStatusLabel(newStatus)}${feedback ? ': ' + feedback : ''}`]
     )
 
@@ -399,6 +404,10 @@ export async function PATCH(
             console.log(`Review notification email sent successfully to ${contentInfo.client_email}, messageId: ${emailResult.messageId}`)
           } else {
             console.error(`Email send failed: ${emailResult.error}`)
+            // If template not found, log helpful message
+            if (emailResult.error?.includes('not found')) {
+              console.error(`Template "${templateSlug}" may not exist. Create it at /admin/emails`)
+            }
           }
         } catch (emailError) {
           // Log but don't fail the request if email fails
