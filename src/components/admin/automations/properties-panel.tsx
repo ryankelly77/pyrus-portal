@@ -304,6 +304,7 @@ function ConditionProperties({
 }) {
   const fields = [
     { value: 'email_opened', label: 'Email Opened' },
+    { value: 'email_clicked', label: 'Email Clicked' },
     { value: 'recommendation_viewed', label: 'Recommendation Viewed' },
     { value: 'deal_status', label: 'Deal Status' },
   ]
