@@ -18,6 +18,7 @@ interface EmailTemplate {
   recipientType: RecipientType
   isActive: boolean
   isSystem: boolean
+  sortOrder: number
   updatedAt: string | null
 }
 
@@ -88,6 +89,10 @@ export default function AdminEmailTemplatesPage() {
   const [automationsError, setAutomationsError] = useState<string | null>(null)
   const [togglingAutomationId, setTogglingAutomationId] = useState<string | null>(null)
 
+  // Drag-and-drop state for template reordering
+  const [draggedTemplate, setDraggedTemplate] = useState<{id: string, categoryId: string | null} | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<{categoryId: string | null, index: number} | null>(null)
+
   // Fetch templates on mount
   useEffect(() => {
     async function fetchTemplates() {
@@ -151,6 +156,92 @@ export default function AdminEmailTemplatesPage() {
     } finally {
       setTogglingAutomationId(null)
     }
+  }
+
+  // Drag handlers for template reordering
+  const handleTemplateDragStart = (e: React.DragEvent, template: EmailTemplate, categoryId: string | null) => {
+    setDraggedTemplate({ id: template.id, categoryId })
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', template.id)
+  }
+
+  const handleTemplateDragOver = (e: React.DragEvent, categoryId: string | null, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedTemplate && draggedTemplate.categoryId === categoryId) {
+      setDragOverIndex({ categoryId, index })
+    }
+  }
+
+  const handleTemplateDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleTemplateDrop = async (e: React.DragEvent, categoryId: string | null, toIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!draggedTemplate || draggedTemplate.categoryId !== categoryId || !data) {
+      setDraggedTemplate(null)
+      setDragOverIndex(null)
+      return
+    }
+
+    const templates = categoryId
+      ? data.categories.find(c => c.id === categoryId)?.templates || []
+      : data.uncategorized
+
+    const fromIndex = templates.findIndex(t => t.id === draggedTemplate.id)
+    if (fromIndex === -1 || fromIndex === toIndex) {
+      setDraggedTemplate(null)
+      setDragOverIndex(null)
+      return
+    }
+
+    // Reorder templates
+    const reorderedTemplates = [...templates]
+    const [movedTemplate] = reorderedTemplates.splice(fromIndex, 1)
+    reorderedTemplates.splice(toIndex, 0, movedTemplate)
+
+    // Update local state immediately
+    setData(prev => {
+      if (!prev) return prev
+      if (categoryId) {
+        return {
+          ...prev,
+          categories: prev.categories.map(cat =>
+            cat.id === categoryId ? { ...cat, templates: reorderedTemplates } : cat
+          ),
+        }
+      } else {
+        return { ...prev, uncategorized: reorderedTemplates }
+      }
+    })
+
+    setDraggedTemplate(null)
+    setDragOverIndex(null)
+
+    // Persist to server
+    try {
+      const res = await fetch('/api/admin/email-templates/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId,
+          templateIds: reorderedTemplates.map(t => t.id),
+        }),
+      })
+      if (!res.ok) {
+        console.error('Failed to save order')
+      }
+    } catch (err) {
+      console.error('Failed to reorder templates:', err)
+    }
+  }
+
+  const handleTemplateDragEnd = () => {
+    setDraggedTemplate(null)
+    setDragOverIndex(null)
   }
 
   // Filter templates
@@ -422,18 +513,44 @@ export default function AdminEmailTemplatesPage() {
                   <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ width: '25%' }}>Template</th>
-                        <th style={{ width: '30%' }}>Trigger</th>
-                        <th style={{ width: '12%' }}>Recipient</th>
+                        <th style={{ width: '32px' }}></th>
+                        <th style={{ width: '24%' }}>Template</th>
+                        <th style={{ width: '29%' }}>Trigger</th>
+                        <th style={{ width: '11%' }}>Recipient</th>
                         <th style={{ width: '13%' }}>Status</th>
-                        <th style={{ width: '20%' }}>Actions</th>
+                        <th style={{ width: '18%' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {category.templates.map((template) => {
+                      {category.templates.map((template, index) => {
                         const badge = getRecipientBadge(template.recipientType)
+                        const isDragging = draggedTemplate?.id === template.id
+                        const isDragOver = dragOverIndex?.categoryId === category.id && dragOverIndex?.index === index
                         return (
-                          <tr key={template.id}>
+                          <tr
+                            key={template.id}
+                            draggable
+                            onDragStart={(e) => handleTemplateDragStart(e, template, category.id)}
+                            onDragOver={(e) => handleTemplateDragOver(e, category.id, index)}
+                            onDragLeave={handleTemplateDragLeave}
+                            onDrop={(e) => handleTemplateDrop(e, category.id, index)}
+                            onDragEnd={handleTemplateDragEnd}
+                            style={{
+                              opacity: isDragging ? 0.5 : 1,
+                              background: isDragOver ? 'var(--pyrus-sage-light, #E8F5E9)' : undefined,
+                              boxShadow: isDragOver ? 'inset 0 2px 0 var(--pyrus-sage, #2E7D32)' : undefined,
+                            }}
+                          >
+                            <td style={{ cursor: 'grab', padding: '8px', width: '32px' }}>
+                              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{ color: 'var(--text-secondary)' }}>
+                                <circle cx="9" cy="5" r="1.5"></circle>
+                                <circle cx="9" cy="12" r="1.5"></circle>
+                                <circle cx="9" cy="19" r="1.5"></circle>
+                                <circle cx="15" cy="5" r="1.5"></circle>
+                                <circle cx="15" cy="12" r="1.5"></circle>
+                                <circle cx="15" cy="19" r="1.5"></circle>
+                              </svg>
+                            </td>
                             <td>
                               <div>
                                 <div style={{ fontWeight: 500, marginBottom: '2px' }}>{template.name}</div>
@@ -547,18 +664,44 @@ export default function AdminEmailTemplatesPage() {
                   <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ width: '25%' }}>Template</th>
-                        <th style={{ width: '30%' }}>Trigger</th>
-                        <th style={{ width: '12%' }}>Recipient</th>
+                        <th style={{ width: '32px' }}></th>
+                        <th style={{ width: '24%' }}>Template</th>
+                        <th style={{ width: '29%' }}>Trigger</th>
+                        <th style={{ width: '11%' }}>Recipient</th>
                         <th style={{ width: '13%' }}>Status</th>
-                        <th style={{ width: '20%' }}>Actions</th>
+                        <th style={{ width: '18%' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredData.uncategorized.map((template) => {
+                      {filteredData.uncategorized.map((template, index) => {
                         const badge = getRecipientBadge(template.recipientType)
+                        const isDragging = draggedTemplate?.id === template.id
+                        const isDragOver = dragOverIndex?.categoryId === null && dragOverIndex?.index === index
                         return (
-                          <tr key={template.id}>
+                          <tr
+                            key={template.id}
+                            draggable
+                            onDragStart={(e) => handleTemplateDragStart(e, template, null)}
+                            onDragOver={(e) => handleTemplateDragOver(e, null, index)}
+                            onDragLeave={handleTemplateDragLeave}
+                            onDrop={(e) => handleTemplateDrop(e, null, index)}
+                            onDragEnd={handleTemplateDragEnd}
+                            style={{
+                              opacity: isDragging ? 0.5 : 1,
+                              background: isDragOver ? 'var(--pyrus-sage-light, #E8F5E9)' : undefined,
+                              boxShadow: isDragOver ? 'inset 0 2px 0 var(--pyrus-sage, #2E7D32)' : undefined,
+                            }}
+                          >
+                            <td style={{ cursor: 'grab', padding: '8px', width: '32px' }}>
+                              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{ color: 'var(--text-secondary)' }}>
+                                <circle cx="9" cy="5" r="1.5"></circle>
+                                <circle cx="9" cy="12" r="1.5"></circle>
+                                <circle cx="9" cy="19" r="1.5"></circle>
+                                <circle cx="15" cy="5" r="1.5"></circle>
+                                <circle cx="15" cy="12" r="1.5"></circle>
+                                <circle cx="15" cy="19" r="1.5"></circle>
+                              </svg>
+                            </td>
                             <td>
                               <div>
                                 <div style={{ fontWeight: 500, marginBottom: '2px' }}>{template.name}</div>

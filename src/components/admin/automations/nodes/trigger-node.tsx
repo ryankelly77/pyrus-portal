@@ -16,10 +16,26 @@ const handleStyle: React.CSSProperties = {
 
 export function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   const triggerLabels: Record<string, string> = {
+    // Recommendations
+    recommendation_sent: 'Recommendation Sent',
+    recommendation_email_opened: 'Recommendation Email Opened',
+    recommendation_email_clicked: 'Recommendation Email Clicked',
+    recommendation_viewed: 'Recommendation Viewed',
     proposal_sent: 'Proposal Sent',
+    // Clients
     client_created: 'Client Created',
+    client_login: 'Client Logged In',
+    // Content
     content_approved: 'Content Approved',
+    // Page Views
+    page_view_dashboard: 'Viewed Dashboard',
+    page_view_results: 'Viewed Results',
+    page_view_recommendations: 'Viewed Recommendations',
+    // Billing
     invoice_sent: 'Invoice Sent',
+    payment_received: 'Payment Received',
+    subscription_started: 'Subscription Started',
+    // Other
     manual: 'Manual',
   };
 

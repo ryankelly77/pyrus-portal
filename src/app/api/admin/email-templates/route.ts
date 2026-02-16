@@ -14,6 +14,7 @@ interface EmailTemplateRecord {
   recipient_type: string
   is_active: boolean
   is_system: boolean
+  sort_order: number
   updated_at: Date | null
   category_id: string | null
 }
@@ -47,6 +48,7 @@ export interface EmailTemplatesResponse {
       recipientType: string
       isActive: boolean
       isSystem: boolean
+      sortOrder: number
       updatedAt: string | null
     }>
   }>
@@ -60,6 +62,7 @@ export interface EmailTemplatesResponse {
     recipientType: string
     isActive: boolean
     isSystem: boolean
+    sortOrder: number
     updatedAt: string | null
   }>
 }
@@ -82,6 +85,7 @@ export async function GET() {
     const templates = await prisma.email_templates.findMany({
       orderBy: [
         { category_id: 'asc' },
+        { sort_order: 'asc' },
         { name: 'asc' },
       ],
     })
@@ -111,6 +115,7 @@ export async function GET() {
       recipientType: t.recipient_type,
       isActive: t.is_active,
       isSystem: t.is_system,
+      sortOrder: t.sort_order,
       updatedAt: t.updated_at?.toISOString() || null,
     })
 
