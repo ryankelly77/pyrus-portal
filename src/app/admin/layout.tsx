@@ -27,6 +27,7 @@ const pathToMenuKey: { [path: string]: string } = {
   '/admin/pipeline': 'pipeline',
   '/admin/performance': 'performance',
   '/admin/emails': 'emails',
+  '/admin/automations': 'emails',
   '/admin/settings': 'settings',
   '/admin/alerts': 'alerts',
 }
