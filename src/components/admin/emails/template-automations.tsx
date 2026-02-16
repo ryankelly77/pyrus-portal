@@ -41,7 +41,6 @@ function formatDelay(days: number, hours: number): string {
 export function TemplateAutomations({ templateSlug }: TemplateAutomationsProps) {
   const [automations, setAutomations] = useState<Automation[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAutomations()
@@ -50,11 +49,17 @@ export function TemplateAutomations({ templateSlug }: TemplateAutomationsProps) 
   const fetchAutomations = async () => {
     try {
       const res = await fetch(`/api/admin/email-templates/${templateSlug}/automations`)
-      if (!res.ok) throw new Error('Failed to fetch automations')
+      if (!res.ok) {
+        // Fail gracefully - just show no automations
+        setAutomations([])
+        return
+      }
       const data = await res.json()
       setAutomations(data.automations || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load automations')
+      // Fail gracefully - just show no automations
+      console.error('Failed to fetch automations:', err)
+      setAutomations([])
     } finally {
       setLoading(false)
     }
@@ -73,21 +78,6 @@ export function TemplateAutomations({ templateSlug }: TemplateAutomationsProps) 
         <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
           Loading automations...
         </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          padding: '16px',
-          background: '#FEF2F2',
-          borderRadius: '8px',
-          border: '1px solid #FECACA',
-        }}
-      >
-        <div style={{ color: '#991B1B', fontSize: '14px' }}>{error}</div>
       </div>
     )
   }
