@@ -140,6 +140,11 @@ export async function POST(
           firstName,
           clientName: recommendation.client.name,
           inviteUrl,
+          proposalSentDate: new Date().toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          }),
         },
         clientId: recommendation.client.id,
         tags: ['recommendation-invite'],

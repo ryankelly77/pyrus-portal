@@ -50,6 +50,15 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   const [bodyText, setBodyText] = useState(template.bodyText || '')
   const [isActive, setIsActive] = useState(template.isActive)
 
+  // Track saved values for dirty comparison
+  const [savedValues, setSavedValues] = useState({
+    description: template.description || '',
+    subjectTemplate: template.subjectTemplate,
+    bodyHtml: template.bodyHtml,
+    bodyText: template.bodyText || '',
+    isActive: template.isActive,
+  })
+
   // UI state
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -61,13 +70,13 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   // Track dirty state
   const isDirty = useMemo(() => {
     return (
-      description !== (template.description || '') ||
-      subjectTemplate !== template.subjectTemplate ||
-      bodyHtml !== template.bodyHtml ||
-      bodyText !== (template.bodyText || '') ||
-      isActive !== template.isActive
+      description !== savedValues.description ||
+      subjectTemplate !== savedValues.subjectTemplate ||
+      bodyHtml !== savedValues.bodyHtml ||
+      bodyText !== savedValues.bodyText ||
+      isActive !== savedValues.isActive
     )
-  }, [description, subjectTemplate, bodyHtml, bodyText, isActive, template])
+  }, [description, subjectTemplate, bodyHtml, bodyText, isActive, savedValues])
 
   // Warn on unsaved changes when navigating away
   useEffect(() => {
@@ -125,12 +134,14 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
 
-      // Update template reference to reset dirty state
-      template.description = description
-      template.subjectTemplate = subjectTemplate
-      template.bodyHtml = bodyHtml
-      template.bodyText = bodyText || null
-      template.isActive = isActive
+      // Update saved values to reset dirty state
+      setSavedValues({
+        description,
+        subjectTemplate,
+        bodyHtml,
+        bodyText: bodyText || '',
+        isActive,
+      })
     } catch (err) {
       setSaveError('Failed to save template')
       console.error(err)
