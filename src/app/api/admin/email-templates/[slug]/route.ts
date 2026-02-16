@@ -101,6 +101,9 @@ export async function PATCH(
       name?: string
       is_active?: boolean
       description?: string
+      trigger_event?: string
+      trigger_description?: string | null
+      recipient_type?: string
       subject_template?: string
       body_html?: string
       body_text?: string | null
@@ -133,6 +136,21 @@ export async function PATCH(
 
     if (typeof body.description === 'string') {
       updateData.description = body.description
+    }
+
+    if (typeof body.triggerEvent === 'string') {
+      updateData.trigger_event = body.triggerEvent.trim() || 'manual'
+    }
+
+    if (body.triggerDescription !== undefined) {
+      updateData.trigger_description = body.triggerDescription?.trim() || null
+    }
+
+    if (typeof body.recipientType === 'string') {
+      const validTypes = ['user', 'client', 'admin', 'prospect', 'any']
+      if (validTypes.includes(body.recipientType)) {
+        updateData.recipient_type = body.recipientType
+      }
     }
 
     if (typeof body.subjectTemplate === 'string') {

@@ -7,6 +7,7 @@ import { VariablePanel } from './variable-panel'
 import { TemplatePreview } from './template-preview'
 import { VersionHistoryModal } from './version-history-modal'
 import { TestEmailModal } from './test-email-modal'
+import { TemplateAutomations } from './template-automations'
 
 interface TemplateVariable {
   key: string
@@ -46,6 +47,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   // Form state
   const [name, setName] = useState(template.name)
   const [description, setDescription] = useState(template.description || '')
+  const [triggerEvent, setTriggerEvent] = useState(template.triggerEvent)
+  const [triggerDescription, setTriggerDescription] = useState(template.triggerDescription || '')
+  const [recipientType, setRecipientType] = useState(template.recipientType)
   const [subjectTemplate, setSubjectTemplate] = useState(template.subjectTemplate)
   const [bodyHtml, setBodyHtml] = useState(template.bodyHtml)
   const [bodyText, setBodyText] = useState(template.bodyText || '')
@@ -55,6 +59,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
   const [savedValues, setSavedValues] = useState({
     name: template.name,
     description: template.description || '',
+    triggerEvent: template.triggerEvent,
+    triggerDescription: template.triggerDescription || '',
+    recipientType: template.recipientType,
     subjectTemplate: template.subjectTemplate,
     bodyHtml: template.bodyHtml,
     bodyText: template.bodyText || '',
@@ -82,12 +89,15 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
     return (
       name !== savedValues.name ||
       description !== savedValues.description ||
+      triggerEvent !== savedValues.triggerEvent ||
+      triggerDescription !== savedValues.triggerDescription ||
+      recipientType !== savedValues.recipientType ||
       subjectTemplate !== savedValues.subjectTemplate ||
       bodyHtml !== savedValues.bodyHtml ||
       bodyText !== savedValues.bodyText ||
       isActive !== savedValues.isActive
     )
-  }, [name, description, subjectTemplate, bodyHtml, bodyText, isActive, savedValues])
+  }, [name, description, triggerEvent, triggerDescription, recipientType, subjectTemplate, bodyHtml, bodyText, isActive, savedValues])
 
   // Warn on unsaved changes when navigating away
   useEffect(() => {
@@ -114,7 +124,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
     return styles[recipientType] || styles.any
   }
 
-  const recipientBadge = getRecipientBadge(template.recipientType)
+  const recipientBadge = getRecipientBadge(recipientType)
 
   // Handle save
   const handleSave = async () => {
@@ -129,6 +139,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
         body: JSON.stringify({
           name,
           description,
+          triggerEvent,
+          triggerDescription: triggerDescription || null,
+          recipientType,
           subjectTemplate,
           bodyHtml,
           bodyText: bodyText || null,
@@ -150,6 +163,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
       setSavedValues({
         name,
         description,
+        triggerEvent,
+        triggerDescription,
+        recipientType,
         subjectTemplate,
         bodyHtml,
         bodyText: bodyText || '',
@@ -355,28 +371,72 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
           <h4 style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
             Trigger Info
           </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: '14px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Event:</span>
-            <code style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>{template.triggerEvent}</code>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Event Code
+              </label>
+              <input
+                type="text"
+                value={triggerEvent}
+                onChange={(e) => setTriggerEvent(e.target.value)}
+                placeholder="e.g., recommendation_sent"
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  fontSize: '13px',
+                  fontFamily: 'monospace',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  background: 'white',
+                }}
+              />
+            </div>
 
-            <span style={{ color: 'var(--text-secondary)' }}>When:</span>
-            <span style={{ color: 'var(--text-primary)' }}>{template.triggerDescription || '-'}</span>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                When is this triggered?
+              </label>
+              <input
+                type="text"
+                value={triggerDescription}
+                onChange={(e) => setTriggerDescription(e.target.value)}
+                placeholder="e.g., Admin sends recommendation/proposal to prospect"
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  fontSize: '13px',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  background: 'white',
+                }}
+              />
+            </div>
 
-            <span style={{ color: 'var(--text-secondary)' }}>Recipient:</span>
-            <span
-              style={{
-                display: 'inline-block',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 500,
-                backgroundColor: recipientBadge.bg,
-                color: recipientBadge.color,
-                width: 'fit-content',
-              }}
-            >
-              {recipientBadge.label}
-            </span>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Recipient Type
+              </label>
+              <select
+                value={recipientType}
+                onChange={(e) => setRecipientType(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  fontSize: '13px',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  background: 'white',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="any">Any</option>
+                <option value="user">User</option>
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+                <option value="prospect">Prospect</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -571,6 +631,7 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
             color: 'var(--text-secondary)',
             cursor: 'pointer',
             fontSize: '14px',
+            marginBottom: '24px',
           }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -579,6 +640,9 @@ export function EmailTemplateForm({ template, userEmail }: EmailTemplateFormProp
           </svg>
           View History
         </button>
+
+        {/* Automations using this template */}
+        <TemplateAutomations templateSlug={template.slug} />
       </div>
 
       {/* Modals */}
