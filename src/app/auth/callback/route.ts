@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { logAuthError } from '@/lib/alerts'
+import { prisma } from '@/lib/prisma'
+import { enrollInAutomations } from '@/lib/email/automation-service'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -36,6 +38,9 @@ export async function GET(request: Request) {
         )
         return NextResponse.redirect(new URL('/login?error=auth_callback_failed', requestUrl.origin))
       }
+
+      // Track client login for automations (non-blocking)
+      trackClientLogin(supabase).catch(console.error)
     }
 
     // Redirect to the next page (e.g., /reset-password)
@@ -49,5 +54,53 @@ export async function GET(request: Request) {
       'auth/callback/route.ts'
     )
     return NextResponse.redirect(new URL('/login?error=auth_callback_failed', requestUrl.origin))
+  }
+}
+
+/**
+ * Track client login for automation triggers
+ */
+async function trackClientLogin(supabase: Awaited<ReturnType<typeof createClient>>) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Get user profile
+    const profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+
+    // Only track client logins (not admin logins)
+    if (!profile || profile.role !== 'client' || !profile.client) {
+      return
+    }
+
+    // Enroll in client_login automations
+    await enrollInAutomations('client_login', {
+      recipientEmail: profile.email,
+      recipientName: profile.full_name || profile.email,
+      triggerRecordType: 'profile',
+      triggerRecordId: profile.id,
+      contextData: {
+        userId: profile.id,
+        email: profile.email,
+        fullName: profile.full_name,
+        clientId: profile.client.id,
+        clientName: profile.client.name,
+        loginAt: new Date().toISOString(),
+      },
+    })
+
+    console.log(`Tracked client login for ${profile.email}`)
+  } catch (error) {
+    console.error('Failed to track client login:', error)
   }
 }

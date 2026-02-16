@@ -8,6 +8,7 @@ import { sendTemplatedEmail } from '@/lib/email/template-service'
 import { isEmailConfigured } from '@/lib/email/mailgun'
 import { logEmailError } from '@/lib/alerts'
 import { triggerRecalculation } from '@/lib/pipeline/recalculate-score'
+import { enrollInAutomations } from '@/lib/email/automation-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -187,8 +188,27 @@ export async function POST(
       // Don't fail the request if communication logging fails
     }
 
+    // Enroll in automations triggered by recommendation_sent (non-blocking)
+    enrollInAutomations('recommendation_sent', {
+      recipientEmail: email,
+      recipientName: `${firstName} ${lastName}`,
+      triggerRecordType: 'recommendation_invite',
+      triggerRecordId: invite.id,
+      contextData: {
+        inviteId: invite.id,
+        recommendationId: id,
+        clientId: recommendation.client.id,
+        clientName: recommendation.client.name,
+        firstName,
+        lastName,
+        email,
+        sentAt: new Date().toISOString(),
+        emailSent,
+      },
+    }).catch(console.error)
+
     // Trigger score recalculation (non-blocking)
-    triggerRecalculation(id, 'invite_sent').catch(console.error)
+    triggerRecalculation(id, 'recommendation_sent').catch(console.error)
 
     return NextResponse.json({
       ...invite,
