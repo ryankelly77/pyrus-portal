@@ -11,6 +11,7 @@ import {
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
+  useReactFlow,
 } from 'reactflow'
 import {
   Toolbox,
@@ -95,6 +96,7 @@ function AutomationEditor() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const { screenToFlowPosition } = useReactFlow()
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [automation, setAutomation] = useState<AutomationData>(defaultAutomation)
   const [templates, setTemplates] = useState<Template[]>([])
@@ -235,15 +237,15 @@ function AutomationEditor() {
         return
       }
 
-      const reactFlowBounds = (event.target as HTMLElement)
-        .closest('.react-flow')
-        ?.getBoundingClientRect()
-      if (!reactFlowBounds) return
+      // Convert screen coordinates to flow coordinates (accounts for zoom/pan)
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
 
-      const position = {
-        x: event.clientX - reactFlowBounds.left - 80,
-        y: event.clientY - reactFlowBounds.top - 20,
-      }
+      // Offset to center the node on the cursor
+      position.x -= 80
+      position.y -= 20
 
       const newNode: Node = {
         id: generateNodeId(type),
@@ -254,7 +256,7 @@ function AutomationEditor() {
 
       setNodes((nds) => [...nds, newNode])
     },
-    [nodes, setNodes]
+    [nodes, setNodes, screenToFlowPosition]
   )
 
   // Handle drag over
