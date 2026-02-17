@@ -25,12 +25,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { clientId, title, description, requestType, priority } = body
+    const { clientId, title, description, requestType, priority, attachments } = body
 
     // Validate required fields
     if (!clientId || !title || !requestType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+
+    // Validate attachments if provided
+    const validatedAttachments = Array.isArray(attachments) ? attachments : []
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -73,10 +76,10 @@ export async function POST(request: NextRequest) {
 
     // Create the edit request
     const result = await dbPool.query(`
-      INSERT INTO website_edit_requests (client_id, title, description, request_type, priority, status, created_by)
-      VALUES ($1, $2, $3, $4, $5, 'pending', $6)
-      RETURNING id, title, description, request_type, priority, status, created_at
-    `, [clientId, title.substring(0, 255), description, requestType, priorityValue, user.id])
+      INSERT INTO website_edit_requests (client_id, title, description, request_type, priority, status, created_by, attachments)
+      VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
+      RETURNING id, title, description, request_type, priority, status, created_at, attachments
+    `, [clientId, title.substring(0, 255), description, requestType, priorityValue, user.id, JSON.stringify(validatedAttachments)])
 
     const newRequest = result.rows[0]
 

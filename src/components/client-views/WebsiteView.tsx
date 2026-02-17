@@ -154,6 +154,12 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
   const [requestDescription, setRequestDescription] = useState('')
   const [requestPriority, setRequestPriority] = useState('normal')
 
+  // File upload state
+  const [attachments, setAttachments] = useState<Array<{ name: string; url: string; type: string; size: number }>>([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
   useEffect(() => {
     async function fetchWebsiteData() {
       if (isDemo) {
@@ -188,6 +194,77 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  // Handle file upload
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    if (fileArray.length === 0) return
+
+    setUploadingFiles(true)
+    setUploadError(null)
+
+    try {
+      const uploadPromises = fileArray.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const res = await fetch('/api/client/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Upload failed')
+        }
+
+        return res.json()
+      })
+
+      const uploadedFiles = await Promise.all(uploadPromises)
+      setAttachments((prev) => [...prev, ...uploadedFiles])
+    } catch (err) {
+      console.error('Upload error:', err)
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload files')
+    } finally {
+      setUploadingFiles(false)
+    }
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files)
+      e.target.value = '' // Reset input
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files)
+    }
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -203,6 +280,7 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
           description: requestDescription,
           requestType: requestType.replace('-', '_'), // Convert 'content-update' to 'content_update'
           priority: requestPriority,
+          attachments: attachments,
         }),
       })
 
@@ -224,6 +302,7 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
       setRequestType('')
       setRequestDescription('')
       setRequestPriority('normal')
+      setAttachments([])
     } catch (err) {
       console.error('Error submitting request:', err)
       setSubmitError('Failed to submit request. Please try again.')
@@ -581,6 +660,79 @@ export function WebsiteView({ clientId, isAdmin = false, isDemo = false, clientN
                     <option value="high">High</option>
                     <option value="urgent">Urgent</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Attachments</label>
+                  <div
+                    className={`file-drop-zone ${isDragging ? 'dragging' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('fileInput')?.click()}
+                  >
+                    <input
+                      type="file"
+                      id="fileInput"
+                      multiple
+                      onChange={handleFileInputChange}
+                      style={{ display: 'none' }}
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,video/*"
+                    />
+                    {uploadingFiles ? (
+                      <div className="file-drop-content">
+                        <span className="spinner" style={{ width: 24, height: 24 }}></span>
+                        <span>Uploading...</span>
+                      </div>
+                    ) : (
+                      <div className="file-drop-content">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="17 8 12 3 7 8"></polyline>
+                          <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Drop files here or click to upload</span>
+                        <span className="file-drop-hint">Images, PDFs, documents, videos (max 25MB each)</span>
+                      </div>
+                    )}
+                  </div>
+                  {uploadError && (
+                    <div className="form-error" style={{ color: 'var(--color-danger)', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                      {uploadError}
+                    </div>
+                  )}
+                  {attachments.length > 0 && (
+                    <div className="attachments-list">
+                      {attachments.map((file, index) => (
+                        <div key={index} className="attachment-item">
+                          <div className="attachment-info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              {file.type.startsWith('image/') ? (
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                              ) : file.type.includes('pdf') ? (
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              ) : file.type.startsWith('video/') ? (
+                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                              ) : (
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              )}
+                            </svg>
+                            <span className="attachment-name">{file.name}</span>
+                            <span className="attachment-size">{formatFileSize(file.size)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="attachment-remove"
+                            onClick={() => removeAttachment(index)}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {submitError && (
                   <div className="form-error" style={{ color: 'var(--color-danger)', marginBottom: '1rem', fontSize: '0.875rem' }}>
