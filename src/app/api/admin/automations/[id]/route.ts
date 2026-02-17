@@ -36,6 +36,11 @@ export async function GET(
       );
     }
 
+    console.log('GET automation - flow_definition exists:', !!automation.flow_definition);
+    if (automation.flow_definition) {
+      console.log('flow_definition nodes count:', automation.flow_definition.nodes?.length);
+    }
+
     return NextResponse.json({ automation });
   } catch (error) {
     console.error('Error in GET automation:', error);
@@ -90,7 +95,10 @@ export async function PATCH(
     if (sendWindowTimezone !== undefined) updates.send_window_timezone = sendWindowTimezone;
     if (sendOnWeekends !== undefined) updates.send_on_weekends = sendOnWeekends;
     if (isActive !== undefined) updates.is_active = isActive;
-    if (flowDefinition !== undefined) updates.flow_definition = flowDefinition;
+    if (flowDefinition !== undefined) {
+      updates.flow_definition = flowDefinition;
+      console.log('Saving flow_definition with', flowDefinition?.nodes?.length, 'nodes');
+    }
 
     const { data: automation, error: automationError } = await supabase
       .from('email_automations')
