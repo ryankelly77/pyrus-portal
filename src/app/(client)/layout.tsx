@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ClientSidebar, PreviewBanner, ChatbotWidget } from '@/components/layout'
-import { AlertBanner } from '@/components/client'
+import { AlertBanner, AnnouncementPopup } from '@/components/client'
 import type { Profile } from '@/types/database'
 
 export default async function ClientLayout({
@@ -43,6 +43,9 @@ export default async function ClientLayout({
       </main>
       <Suspense fallback={null}>
         <ChatbotWidget />
+      </Suspense>
+      <Suspense fallback={null}>
+        <AnnouncementPopup />
       </Suspense>
     </div>
   )

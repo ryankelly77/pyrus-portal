@@ -1159,3 +1159,69 @@ model email_automation_step_logs {
   @@index([status, scheduled_for])
   @@index([email_log_id])
 }
+
+// ============ Client Announcements ============
+
+model client_announcements {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                  String    @db.VarChar(255)
+  message                String
+  announcement_type      String    @default("general") @db.VarChar(50)
+  // 'general', 'billing', 'platform_update', 'offer', 'maintenance'
+
+  // Display rules
+  display_pages          Json      @default("[\"all\"]")
+  display_frequency      String    @default("once_per_session") @db.VarChar(50)
+  // 'once_per_session', 'every_page_load', 'once_per_day'
+
+  // Persistence rules
+  persistence_type       String    @default("dismissable") @db.VarChar(50)
+  // 'dismissable', 'show_for_duration', 'required_action'
+  show_duration_days     Int?
+  allow_permanent_dismiss Boolean  @default(true)
+
+  // Targeting
+  target_all_clients     Boolean   @default(true)
+  target_client_ids      Json      @default("[]")
+
+  // Scheduling
+  start_date             DateTime? @db.Timestamptz(6)
+  end_date               DateTime? @db.Timestamptz(6)
+
+  // Extended content (for "read more" page)
+  has_detail_page        Boolean   @default(false)
+  detail_html            String?
+  cta_button_text        String?   @db.VarChar(100)
+  cta_button_url         String?   @db.VarChar(500)
+
+  // Status & metadata
+  status                 String    @default("draft") @db.VarChar(20)
+  // 'draft', 'active', 'expired', 'archived'
+  priority               Int       @default(0)
+  created_by             String?   @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
+
+  dismissals             announcement_dismissals[]
+
+  @@index([status])
+  @@index([start_date, end_date])
+  @@index([priority(sort: Desc)])
+}
+
+model announcement_dismissals {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  announcement_id  String    @db.Uuid
+  client_id        String    @db.Uuid
+  user_id          String?   @db.Uuid
+  dismissed_at     DateTime  @default(now()) @db.Timestamptz(6)
+  is_permanent     Boolean   @default(false)
+  first_viewed_at  DateTime? @db.Timestamptz(6)
+  view_count       Int       @default(0)
+
+  announcement     client_announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade)
+
+  @@unique([announcement_id, client_id])
+  @@index([announcement_id])
+  @@index([client_id])
+}
