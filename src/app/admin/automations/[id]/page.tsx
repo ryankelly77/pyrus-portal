@@ -353,6 +353,10 @@ function AutomationEditor() {
     setError(null)
 
     try {
+      console.log('Saving automation...')
+      console.log('Nodes:', nodes)
+      console.log('Edges:', edges)
+
       const { automation: flowAutomation, steps } = flowToAutomation(nodes, edges, {
         name: automation.name,
         slug: automation.slug,

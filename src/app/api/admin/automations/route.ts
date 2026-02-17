@@ -106,10 +106,20 @@ export async function POST(request: NextRequest) {
 
     if (automationError) {
       console.error('Error creating automation:', automationError);
+      console.error('Attempted to insert:', {
+        name,
+        slug,
+        triggerType,
+        description: description || null,
+      });
       if (automationError.code === '23505') {
         return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
       }
-      return NextResponse.json({ error: 'Failed to create automation' }, { status: 500 });
+      // Return more detailed error for debugging
+      return NextResponse.json(
+        { error: `Failed to create automation: ${automationError.message || automationError.code || 'Unknown error'}` },
+        { status: 500 }
+      );
     }
 
     // Create steps if provided
