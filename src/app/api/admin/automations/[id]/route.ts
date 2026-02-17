@@ -110,6 +110,15 @@ export async function PATCH(
 
       // Insert new steps
       if (steps.length > 0) {
+        // Validate all steps have template_slug
+        const invalidSteps = steps.filter((step: any) => !step.template_slug);
+        if (invalidSteps.length > 0) {
+          return NextResponse.json(
+            { error: 'All email steps must have a template selected' },
+            { status: 400 }
+          );
+        }
+
         const stepsToInsert = steps.map((step: any, index: number) => ({
           automation_id: id,
           step_order: step.step_order || index + 1,
@@ -128,6 +137,13 @@ export async function PATCH(
 
         if (stepsError) {
           console.error('Error updating steps:', stepsError);
+          // Provide more specific error message
+          if (stepsError.code === '23503') {
+            return NextResponse.json(
+              { error: 'Invalid email template selected. Please select a valid template.' },
+              { status: 400 }
+            );
+          }
           return NextResponse.json({ error: 'Failed to update steps' }, { status: 500 });
         }
       }
