@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export async function GET(
 
     const { slug } = await context.params
 
-    const supabase = await createClient() as any
+    const supabase = await createServiceClient() as any
 
     // Find all automation steps that use this template
     const { data: steps, error: stepsError } = await supabase
