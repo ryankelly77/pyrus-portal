@@ -709,8 +709,29 @@ export default function WebsitesPage() {
                                         title={`Priority: ${request.priority}`}
                                       ></span>
                                       <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 500, color: '#111827', marginBottom: '2px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500, color: '#111827', marginBottom: '2px' }}>
                                           {request.title}
+                                          {request.attachments && request.attachments.length > 0 && (
+                                            <span
+                                              style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                padding: '2px 6px',
+                                                background: '#E0E7FF',
+                                                color: '#4F46E5',
+                                                borderRadius: '4px',
+                                                fontSize: '11px',
+                                                fontWeight: 500,
+                                              }}
+                                              title={`${request.attachments.length} attachment${request.attachments.length > 1 ? 's' : ''}`}
+                                            >
+                                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                              </svg>
+                                              {request.attachments.length}
+                                            </span>
+                                          )}
                                         </div>
                                         {request.description && (
                                           <div style={{ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

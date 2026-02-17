@@ -26,6 +26,7 @@ interface WebsiteListItem {
     requestType: string
     status: string
     priority: string
+    attachments: Array<{ name: string; url: string; type: string; size: number }>
     createdAt: string
   }>
 }
@@ -105,6 +106,7 @@ export async function GET() {
         status: true,
         priority: true,
         created_at: true,
+        attachments: true,
       },
     })
 
@@ -223,6 +225,7 @@ export async function GET() {
           requestType: r.request_type,
           status: r.status,
           priority: r.priority || 'normal',
+          attachments: Array.isArray(r.attachments) ? r.attachments as Array<{ name: string; url: string; type: string; size: number }> : [],
           createdAt: r.created_at
             ? new Date(r.created_at).toLocaleDateString('en-US', {
                 month: 'short',
