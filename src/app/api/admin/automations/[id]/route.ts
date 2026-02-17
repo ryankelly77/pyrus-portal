@@ -67,6 +67,7 @@ export async function PATCH(
       sendOnWeekends,
       isActive,
       steps,
+      flowDefinition,
     } = body;
 
     const supabase = await createServiceClient() as any;
@@ -89,6 +90,7 @@ export async function PATCH(
     if (sendWindowTimezone !== undefined) updates.send_window_timezone = sendWindowTimezone;
     if (sendOnWeekends !== undefined) updates.send_on_weekends = sendOnWeekends;
     if (isActive !== undefined) updates.is_active = isActive;
+    if (flowDefinition !== undefined) updates.flow_definition = flowDefinition;
 
     const { data: automation, error: automationError } = await supabase
       .from('email_automations')

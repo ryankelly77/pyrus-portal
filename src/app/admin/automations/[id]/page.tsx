@@ -155,10 +155,16 @@ function AutomationEditor() {
 
         setAutomation(data.automation)
 
-        // Convert to flow
-        const { nodes: flowNodes, edges: flowEdges } = automationToFlow(data.automation)
-        setNodes(flowNodes)
-        setEdges(flowEdges)
+        // Use saved flow definition if available, otherwise reconstruct from steps
+        if (data.automation.flow_definition?.nodes && data.automation.flow_definition?.edges) {
+          setNodes(data.automation.flow_definition.nodes)
+          setEdges(data.automation.flow_definition.edges)
+        } else {
+          // Fallback: reconstruct from database steps
+          const { nodes: flowNodes, edges: flowEdges } = automationToFlow(data.automation)
+          setNodes(flowNodes)
+          setEdges(flowEdges)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load automation')
       } finally {
@@ -388,6 +394,8 @@ function AutomationEditor() {
           sendOnWeekends: flowAutomation.send_on_weekends,
           isActive: flowAutomation.is_active,
           steps,
+          // Save the full visual layout
+          flowDefinition: { nodes, edges },
         }),
       })
 

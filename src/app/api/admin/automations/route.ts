@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       sendOnWeekends,
       isActive,
       steps,
+      flowDefinition,
     } = body;
 
     if (!name || !slug || !triggerType) {
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
         send_window_timezone: sendWindowTimezone || 'America/Chicago',
         send_on_weekends: sendOnWeekends || false,
         is_active: isActive ?? true,
+        flow_definition: flowDefinition || null,
       })
       .select()
       .single();
