@@ -71,6 +71,11 @@ export async function PATCH(
 
     const supabase = await createClient() as any;
 
+    // Format time values for PostgreSQL (HH:MM:SS format)
+    const formatTime = (time: string) => {
+      return time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
+    };
+
     // Update the automation
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
@@ -79,8 +84,8 @@ export async function PATCH(
     if (triggerType !== undefined) updates.trigger_type = triggerType;
     if (triggerConditions !== undefined) updates.trigger_conditions = triggerConditions;
     if (globalStopConditions !== undefined) updates.global_stop_conditions = globalStopConditions;
-    if (sendWindowStart !== undefined) updates.send_window_start = sendWindowStart;
-    if (sendWindowEnd !== undefined) updates.send_window_end = sendWindowEnd;
+    if (sendWindowStart !== undefined) updates.send_window_start = formatTime(sendWindowStart);
+    if (sendWindowEnd !== undefined) updates.send_window_end = formatTime(sendWindowEnd);
     if (sendWindowTimezone !== undefined) updates.send_window_timezone = sendWindowTimezone;
     if (sendOnWeekends !== undefined) updates.send_on_weekends = sendOnWeekends;
     if (isActive !== undefined) updates.is_active = isActive;

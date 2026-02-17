@@ -85,6 +85,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient() as any;
 
+    // Format time values for PostgreSQL (HH:MM:SS format)
+    const formatTime = (time: string | undefined, defaultTime: string) => {
+      const t = time || defaultTime;
+      // If already has seconds, return as-is, otherwise add :00
+      return t.includes(':') && t.split(':').length === 2 ? `${t}:00` : t;
+    };
+
     // Create the automation
     const { data: automation, error: automationError } = await supabase
       .from('email_automations')
@@ -95,8 +102,8 @@ export async function POST(request: NextRequest) {
         trigger_type: triggerType,
         trigger_conditions: triggerConditions || {},
         global_stop_conditions: globalStopConditions || {},
-        send_window_start: sendWindowStart || '09:00',
-        send_window_end: sendWindowEnd || '17:00',
+        send_window_start: formatTime(sendWindowStart, '09:00'),
+        send_window_end: formatTime(sendWindowEnd, '17:00'),
         send_window_timezone: sendWindowTimezone || 'America/Chicago',
         send_on_weekends: sendOnWeekends || false,
         is_active: isActive ?? true,
