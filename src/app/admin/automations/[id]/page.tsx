@@ -365,8 +365,8 @@ function AutomationEditor() {
 
     try {
       console.log('Saving automation...')
-      console.log('Nodes:', nodes)
-      console.log('Edges:', edges)
+      console.log('Nodes:', nodes.map(n => ({ id: n.id, type: n.type, position: n.position })))
+      console.log('Edges:', edges.length)
 
       const { automation: flowAutomation, steps } = flowToAutomation(nodes, edges, {
         name: automation.name,
@@ -399,8 +399,24 @@ function AutomationEditor() {
           sendOnWeekends: flowAutomation.send_on_weekends,
           isActive: flowAutomation.is_active,
           steps,
-          // Save the full visual layout
-          flowDefinition: { nodes, edges },
+          // Save the full visual layout - create clean copies without internal ReactFlow properties
+          flowDefinition: {
+            nodes: nodes.map(n => ({
+              id: n.id,
+              type: n.type,
+              position: n.position,
+              data: n.data,
+            })),
+            edges: edges.map(e => ({
+              id: e.id,
+              source: e.source,
+              target: e.target,
+              sourceHandle: e.sourceHandle,
+              targetHandle: e.targetHandle,
+              type: e.type,
+              animated: e.animated,
+            })),
+          },
         }),
       })
 
