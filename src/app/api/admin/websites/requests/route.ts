@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
         requestType: req.request_type,
         status: req.status,
         priority: req.priority || 'normal',
+        attachments: req.attachments || [],
         createdAt: req.created_at
           ? new Date(req.created_at).toLocaleDateString('en-US', {
               month: 'short',

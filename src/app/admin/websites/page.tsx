@@ -10,6 +10,13 @@ type WebsiteType = 'seed-site' | 'sprout' | 'bloom' | 'harvest' | 'other'
 type UptimeStatus = 'up' | 'down' | 'paused' | 'unknown' | null
 type RequestStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled'
 
+interface Attachment {
+  name: string
+  url: string
+  type: string
+  size: number
+}
+
 interface EditRequest {
   id: string
   clientId: string
@@ -20,6 +27,7 @@ interface EditRequest {
   requestType: string
   status: string
   priority: string
+  attachments: Attachment[]
   createdAt: string
   completedAt: string | null
 }
@@ -138,6 +146,9 @@ export default function WebsitesPage() {
   const [editFormData, setEditFormData] = useState({ title: '', description: '', requestType: '', priority: '' })
   const [editModalLoading, setEditModalLoading] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+
+  // View request details modal
+  const [viewingRequest, setViewingRequest] = useState<EditRequest | null>(null)
 
   // Create new request modal state
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -879,7 +890,30 @@ export default function WebsitesPage() {
                         </td>
                         <td>
                           <div style={{ maxWidth: '300px' }}>
-                            <div style={{ fontWeight: 500, color: '#111827' }}>{request.title}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontWeight: 500, color: '#111827' }}>{request.title}</span>
+                              {request.attachments && request.attachments.length > 0 && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 6px',
+                                    background: '#E0E7FF',
+                                    color: '#4F46E5',
+                                    borderRadius: '4px',
+                                    fontSize: '11px',
+                                    fontWeight: 500,
+                                  }}
+                                  title={`${request.attachments.length} attachment${request.attachments.length > 1 ? 's' : ''}`}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                  </svg>
+                                  {request.attachments.length}
+                                </span>
+                              )}
+                            </div>
                             {request.description && (
                               <div style={{ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {request.description}
@@ -925,6 +959,17 @@ export default function WebsitesPage() {
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: 'none', border: '1px solid #E5E7EB', padding: '4px 8px', color: '#374151' }}
+                              onClick={() => setViewingRequest(request)}
+                              title="View Details"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            </button>
                             {request.status === 'pending' && (
                               <button
                                 className="btn btn-sm btn-secondary"
@@ -1184,6 +1229,155 @@ export default function WebsitesPage() {
                 </button>
                 <button className="btn btn-primary" onClick={createNewRequest} disabled={createModalLoading}>
                   {createModalLoading ? 'Creating...' : 'Create Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Request Details Modal */}
+        {viewingRequest && (
+          <div className="edit-modal-overlay" onClick={() => setViewingRequest(null)}>
+            <div className="edit-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+              <div className="modal-header">
+                <h2>Request Details</h2>
+                <button className="modal-close" onClick={() => setViewingRequest(null)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body" style={{ padding: '1.5rem' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Client</div>
+                  <div style={{ fontWeight: 500, color: '#111827' }}>{viewingRequest.clientName}</div>
+                  {viewingRequest.domain && (
+                    <div style={{ fontSize: '13px', color: '#6B7280' }}>{viewingRequest.domain}</div>
+                  )}
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Title</div>
+                  <div style={{ fontWeight: 500, color: '#111827' }}>{viewingRequest.title}</div>
+                </div>
+                {viewingRequest.description && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Description</div>
+                    <div style={{ color: '#374151', whiteSpace: 'pre-wrap' }}>{viewingRequest.description}</div>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Type</div>
+                    <div style={{ color: '#374151' }}>{getRequestTypeLabel(viewingRequest.requestType)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Priority</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: getPriorityColor(viewingRequest.priority) }}></span>
+                      <span style={{ textTransform: 'capitalize' }}>{viewingRequest.priority}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Status</div>
+                    <span style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: 500, ...getStatusStyle(viewingRequest.status) }}>
+                      {getStatusLabel(viewingRequest.status)}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Submitted</div>
+                  <div style={{ color: '#374151' }}>{viewingRequest.createdAt}</div>
+                </div>
+
+                {/* Attachments Section */}
+                {viewingRequest.attachments && viewingRequest.attachments.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                      Attachments ({viewingRequest.attachments.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {viewingRequest.attachments.map((attachment, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px',
+                            background: '#F9FAFB',
+                            borderRadius: '8px',
+                            border: '1px solid #E5E7EB',
+                          }}
+                        >
+                          {/* Thumbnail for images */}
+                          {attachment.type.startsWith('image/') ? (
+                            <a href={attachment.url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
+                              <img
+                                src={attachment.url}
+                                alt={attachment.name}
+                                style={{
+                                  width: '60px',
+                                  height: '60px',
+                                  objectFit: 'cover',
+                                  borderRadius: '6px',
+                                  border: '1px solid #E5E7EB',
+                                }}
+                              />
+                            </a>
+                          ) : (
+                            <div
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#E0E7FF',
+                                borderRadius: '6px',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" width="24" height="24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                              </svg>
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 500, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {attachment.name}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                              {attachment.type.split('/')[1]?.toUpperCase() || 'File'} &bull; {(attachment.size / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-secondary"
+                            style={{ flexShrink: 0 }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                              <polyline points="15 3 21 3 21 9"></polyline>
+                              <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            Open
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer" style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" onClick={() => setViewingRequest(null)}>
+                  Close
                 </button>
               </div>
             </div>
