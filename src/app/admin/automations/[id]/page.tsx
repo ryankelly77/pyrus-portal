@@ -155,11 +155,16 @@ function AutomationEditor() {
 
         setAutomation(data.automation)
 
+        console.log('Loaded automation:', data.automation)
+        console.log('flow_definition:', data.automation.flow_definition)
+
         // Use saved flow definition if available, otherwise reconstruct from steps
         if (data.automation.flow_definition?.nodes && data.automation.flow_definition?.edges) {
+          console.log('Using saved flow_definition')
           setNodes(data.automation.flow_definition.nodes)
           setEdges(data.automation.flow_definition.edges)
         } else {
+          console.log('Reconstructing from steps (no flow_definition)')
           // Fallback: reconstruct from database steps
           const { nodes: flowNodes, edges: flowEdges } = automationToFlow(data.automation)
           setNodes(flowNodes)
