@@ -302,106 +302,117 @@ function ConditionProperties({
   data: any
   onChange: (data: any) => void
 }) {
-  const fields = [
-    { value: 'email_opened', label: 'Email Opened' },
-    { value: 'email_clicked', label: 'Email Clicked' },
-    { value: 'recommendation_viewed', label: 'Recommendation Viewed' },
-    { value: 'deal_status', label: 'Deal Status' },
+  // Condition types with clear, descriptive labels
+  const conditionTypes = [
+    {
+      value: 'has_purchased',
+      label: 'Has Purchased',
+      description: 'Client has made a purchase',
+      yesLabel: 'Purchased',
+      noLabel: 'Not Purchased'
+    },
+    {
+      value: 'email_opened',
+      label: 'Opened Previous Email',
+      description: 'Recipient opened the last email in this sequence',
+      yesLabel: 'Opened',
+      noLabel: 'Not Opened'
+    },
+    {
+      value: 'email_clicked',
+      label: 'Clicked Previous Email',
+      description: 'Recipient clicked a link in the last email',
+      yesLabel: 'Clicked',
+      noLabel: 'Not Clicked'
+    },
+    {
+      value: 'recommendation_viewed',
+      label: 'Viewed Recommendation',
+      description: 'Client has viewed their recommendation page',
+      yesLabel: 'Viewed',
+      noLabel: 'Not Viewed'
+    },
+    {
+      value: 'is_active_subscriber',
+      label: 'Is Active Subscriber',
+      description: 'Client has an active subscription',
+      yesLabel: 'Active',
+      noLabel: 'Not Active'
+    },
   ]
 
-  const operators = [
-    { value: 'equals', label: 'Equals' },
-    { value: 'not_equals', label: 'Not Equals' },
-    { value: 'is_true', label: 'Is True' },
-    { value: 'is_false', label: 'Is False' },
-  ]
+  const selectedCondition = conditionTypes.find(c => c.value === data.conditionType)
 
-  const updateConditionLabel = (field: string, operator: string, value: string) => {
-    let label = ''
-    if (field && operator) {
-      const fieldLabel = fields.find((f) => f.value === field)?.label || field
-      if (operator === 'is_true') {
-        label = `${fieldLabel} is true`
-      } else if (operator === 'is_false') {
-        label = `${fieldLabel} is false`
-      } else if (operator === 'equals') {
-        label = `${fieldLabel} = ${value}`
-      } else if (operator === 'not_equals') {
-        label = `${fieldLabel} ≠ ${value}`
-      }
-    }
-    return label
+  const updateCondition = (conditionType: string) => {
+    const condition = conditionTypes.find(c => c.value === conditionType)
+    onChange({
+      ...data,
+      conditionType,
+      field: conditionType, // Keep for backwards compatibility
+      operator: 'is_true', // Simplified - the condition type itself defines what we're checking
+      conditionLabel: condition?.label || conditionType,
+    })
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
-        <label style={labelStyle}>Field</label>
+        <label style={labelStyle}>Check If...</label>
         <select
-          value={data.field || ''}
-          onChange={(e) => {
-            const newData = { ...data, field: e.target.value }
-            newData.conditionLabel = updateConditionLabel(
-              e.target.value,
-              data.operator,
-              data.value
-            )
-            onChange(newData)
-          }}
+          value={data.conditionType || data.field || ''}
+          onChange={(e) => updateCondition(e.target.value)}
           style={selectStyle}
         >
-          <option value="">Select field...</option>
-          {fields.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
+          <option value="">Select condition...</option>
+          {conditionTypes.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
             </option>
           ))}
         </select>
       </div>
 
-      <div>
-        <label style={labelStyle}>Operator</label>
-        <select
-          value={data.operator || ''}
-          onChange={(e) => {
-            const newData = { ...data, operator: e.target.value }
-            newData.conditionLabel = updateConditionLabel(
-              data.field,
-              e.target.value,
-              data.value
-            )
-            onChange(newData)
-          }}
-          style={selectStyle}
-        >
-          <option value="">Select operator...</option>
-          {operators.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {selectedCondition && (
+        <>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+            {selectedCondition.description}
+          </p>
 
-      {(data.operator === 'equals' || data.operator === 'not_equals') && (
-        <div>
-          <label style={labelStyle}>Value</label>
-          <input
-            type="text"
-            value={data.value || ''}
-            onChange={(e) => {
-              const newData = { ...data, value: e.target.value }
-              newData.conditionLabel = updateConditionLabel(
-                data.field,
-                data.operator,
-                e.target.value
-              )
-              onChange(newData)
-            }}
-            placeholder="Enter value..."
-            style={inputStyle}
-          />
-        </div>
+          <div style={{
+            backgroundColor: 'var(--card-bg, white)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            padding: '12px',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }}>
+              Branch Labels:
+            </div>
+            <div style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: '#22c55e',
+                  display: 'inline-block'
+                }}></span>
+                <span style={{ color: '#16a34a', fontWeight: 500 }}>Yes:</span>
+                <span>{selectedCondition.yesLabel}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  display: 'inline-block'
+                }}></span>
+                <span style={{ color: '#dc2626', fontWeight: 500 }}>No:</span>
+                <span>{selectedCondition.noLabel}</span>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

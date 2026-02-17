@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 
@@ -72,8 +72,10 @@ const triggerLabels: Record<string, string> = {
 
 export default function AdminEmailTemplatesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, hasNotifications } = useUserProfile()
-  const [activeTab, setActiveTab] = useState<EmailTab>('templates')
+  const initialTab = (searchParams.get('tab') === 'automation' ? 'automation' : 'templates') as EmailTab
+  const [activeTab, setActiveTab] = useState<EmailTab>(initialTab)
   const [data, setData] = useState<EmailTemplatesData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

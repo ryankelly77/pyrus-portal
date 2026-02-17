@@ -63,7 +63,27 @@ export function WorkflowCanvas({
 
   const onPaneClick = useCallback(() => {
     onNodeSelect(null);
-  }, [onNodeSelect]);
+    // Deselect all edges when clicking on pane
+    onEdgesChange(
+      edges.map((e) => ({ type: 'select' as const, id: e.id, selected: false }))
+    );
+  }, [onNodeSelect, edges, onEdgesChange]);
+
+  const onEdgeClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      // Deselect all nodes
+      onNodeSelect(null);
+      // Select only the clicked edge
+      onEdgesChange(
+        edges.map((e) => ({
+          type: 'select' as const,
+          id: e.id,
+          selected: e.id === edge.id,
+        }))
+      );
+    },
+    [edges, onEdgesChange, onNodeSelect]
+  );
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -86,6 +106,14 @@ export function WorkflowCanvas({
     [nodes, edges, onDeleteNode, onEdgesChange]
   );
 
+  // Apply selected styling to edges
+  const styledEdges = edges.map((edge) => ({
+    ...edge,
+    style: edge.selected
+      ? { stroke: '#ef4444', strokeWidth: 3 }
+      : { stroke: '#64748b', strokeWidth: 2 },
+  }));
+
   return (
     <div
       ref={reactFlowWrapper}
@@ -95,12 +123,13 @@ export function WorkflowCanvas({
     >
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={styledEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onEdgeClick={onEdgeClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
         nodeTypes={nodeTypes}

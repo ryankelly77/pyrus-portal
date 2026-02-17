@@ -35,6 +35,20 @@ export async function enrollInAutomations(
       continue;
     }
 
+    // Check if already enrolled in this automation (prevent duplicates)
+    const { data: existingEnrollment } = await supabase
+      .from('email_automation_enrollments' as any)
+      .select('id')
+      .eq('automation_id', automation.id)
+      .eq('recipient_email', context.recipientEmail)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (existingEnrollment) {
+      console.log(`Skipping enrollment - ${context.recipientEmail} already active in automation ${automation.id}`);
+      continue;
+    }
+
     // Get first step
     const firstStep = automation.email_automation_steps
       ?.sort((a: any, b: any) => a.step_order - b.step_order)[0];

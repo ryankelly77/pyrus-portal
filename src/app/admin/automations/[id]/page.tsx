@@ -537,11 +537,11 @@ function AutomationEditor() {
       <div className="automation-editor-header">
         <div className="automation-editor-header-left">
           <div className="page-header-with-back">
-            <Link href="/admin/emails" className="back-link">
+            <Link href="/admin/emails?tab=automation" className="back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-              Back to Emails
+              Back to Automations
             </Link>
             <h1 className="page-title-inline">{isNew ? 'New Automation' : automation.name || 'Edit Automation'}</h1>
           </div>
@@ -634,6 +634,116 @@ function AutomationEditor() {
                   }
                 />
                 Send on weekends
+              </label>
+            </div>
+          </div>
+
+          {/* Exit Conditions */}
+          <div className="automation-exit-conditions">
+            <label className="exit-conditions-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              Automatically exit users from this sequence when:
+            </label>
+            <div className="exit-conditions-grid">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_purchase || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_purchase: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They make a purchase
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_email_open || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_email_open: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They open any email
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_email_click || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_email_click: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They click a link in any email
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_recommendation_view || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_recommendation_view: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They view their recommendation
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_reply || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_reply: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They reply to any email
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automation.global_stop_conditions?.on_unsubscribe || false}
+                  onChange={(e) =>
+                    setAutomation((a) => ({
+                      ...a,
+                      global_stop_conditions: {
+                        ...a.global_stop_conditions,
+                        on_unsubscribe: e.target.checked,
+                      },
+                    }))
+                  }
+                />
+                They unsubscribe
               </label>
             </div>
           </div>
@@ -821,9 +931,44 @@ function AutomationEditor() {
           overflow: hidden;
         }
 
+        .automation-exit-conditions {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .exit-conditions-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-primary);
+          margin-bottom: 12px;
+        }
+
+        .exit-conditions-label svg {
+          color: var(--pyrus-brown);
+        }
+
+        .exit-conditions-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px 24px;
+        }
+
+        .exit-conditions-grid .checkbox-label {
+          font-size: 13px;
+          color: var(--text-primary);
+        }
+
         @media (max-width: 768px) {
           .automation-settings-grid {
             grid-template-columns: repeat(2, 1fr);
+          }
+          .exit-conditions-grid {
+            flex-direction: column;
+            gap: 8px;
           }
         }
       `}</style>

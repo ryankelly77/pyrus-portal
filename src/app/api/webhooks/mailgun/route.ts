@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       await checkAndStopEnrollments(
         'recommendation_invite',
         invite.id,
-        { email_opened: true }
+        { on_email_open: true }
       )
 
       // Trigger score recalculation
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       await checkAndStopEnrollments(
         'recommendation_invite',
         invite.id,
-        { email_clicked: true }
+        { on_email_click: true }
       )
 
       // Trigger score recalculation
