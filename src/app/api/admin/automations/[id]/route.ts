@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth/requireAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function GET(
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
-    const supabase = await createClient() as any;
+    const supabase = await createServiceClient() as any;
 
     const { data: automation, error } = await supabase
       .from('email_automations')
@@ -69,7 +69,7 @@ export async function PATCH(
       steps,
     } = body;
 
-    const supabase = await createClient() as any;
+    const supabase = await createServiceClient() as any;
 
     // Format time values for PostgreSQL (HH:MM:SS format)
     const formatTime = (time: string) => {
@@ -171,7 +171,7 @@ export async function DELETE(
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
-    const supabase = await createClient() as any;
+    const supabase = await createServiceClient() as any;
 
     // Check for active enrollments
     const { count: activeEnrollments } = await supabase
