@@ -170,6 +170,9 @@ function AutomationEditor() {
           setNodes(flowNodes)
           setEdges(flowEdges)
         }
+
+        // Mark that we've loaded initial data (for template name hydration)
+        setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load automation')
       } finally {
@@ -209,6 +212,33 @@ function AutomationEditor() {
       setIsDirty(true)
     }
   }, [nodes, edges, automation, loading])
+
+  // Hydrate template names when templates are loaded
+  useEffect(() => {
+    if (templates.length === 0 || loading) return
+
+    // Check if any email nodes are missing templateName
+    const needsHydration = nodes.some(
+      (n) => n.type === 'email' && n.data.templateSlug && !n.data.templateName
+    )
+
+    if (needsHydration) {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'email' && node.data.templateSlug && !node.data.templateName) {
+            const template = templates.find((t) => t.slug === node.data.templateSlug)
+            if (template) {
+              return {
+                ...node,
+                data: { ...node.data, templateName: template.name },
+              }
+            }
+          }
+          return node
+        })
+      )
+    }
+  }, [templates, nodes, loading, setNodes])
 
   // Connect nodes
   const onConnect = useCallback(
