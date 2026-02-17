@@ -68,13 +68,22 @@ export function WorkflowCanvas({
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'Backspace' || event.key === 'Delete') {
+        // Delete selected nodes
         const selectedNodes = nodes.filter((n) => n.selected);
         selectedNodes.forEach((node) => {
           onDeleteNode(node.id);
         });
+
+        // Delete selected edges
+        const selectedEdges = edges.filter((e) => e.selected);
+        if (selectedEdges.length > 0) {
+          onEdgesChange(
+            selectedEdges.map((e) => ({ type: 'remove' as const, id: e.id }))
+          );
+        }
       }
     },
-    [nodes, onDeleteNode]
+    [nodes, edges, onDeleteNode, onEdgesChange]
   );
 
   return (
@@ -97,6 +106,9 @@ export function WorkflowCanvas({
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
+        edgesFocusable={true}
+        edgesUpdatable={true}
+        deleteKeyCode={['Backspace', 'Delete']}
         defaultEdgeOptions={{
           type: 'smoothstep',
           animated: true,
