@@ -44,14 +44,34 @@ const ANNOUNCEMENT_TYPES = [
 ]
 
 const DISPLAY_PAGES = [
-  { value: 'all', label: 'All Pages' },
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'results', label: 'Results' },
-  { value: 'content', label: 'Content' },
-  { value: 'website', label: 'Website' },
-  { value: 'communication', label: 'Communication' },
-  { value: 'recommendations', label: 'Recommendations' },
-  { value: 'billing', label: 'Billing' },
+  { value: 'all', label: 'All Pages', group: 'general' },
+  // Client pages
+  { value: 'client_dashboard', label: 'Client: Dashboard', group: 'client' },
+  { value: 'client_results', label: 'Client: Results', group: 'client' },
+  { value: 'client_content', label: 'Client: Content', group: 'client' },
+  { value: 'client_website', label: 'Client: Website', group: 'client' },
+  { value: 'client_communication', label: 'Client: Communication', group: 'client' },
+  { value: 'client_recommendations', label: 'Client: Recommendations', group: 'client' },
+  { value: 'client_billing', label: 'Client: Billing', group: 'client' },
+  { value: 'client_getting_started', label: 'Client: Getting Started', group: 'client' },
+  { value: 'client_settings', label: 'Client: Settings', group: 'client' },
+  // Admin pages
+  { value: 'admin_dashboard', label: 'Admin: Dashboard', group: 'admin' },
+  { value: 'admin_recommendations', label: 'Admin: Recommendations', group: 'admin' },
+  { value: 'admin_clients', label: 'Admin: Clients', group: 'admin' },
+  { value: 'admin_users', label: 'Admin: Users', group: 'admin' },
+  { value: 'admin_content', label: 'Admin: Content', group: 'admin' },
+  { value: 'admin_websites', label: 'Admin: Websites', group: 'admin' },
+  { value: 'admin_notifications', label: 'Admin: Notifications', group: 'admin' },
+  { value: 'admin_products', label: 'Admin: Products', group: 'admin' },
+  { value: 'admin_rewards', label: 'Admin: Rewards', group: 'admin' },
+  { value: 'admin_revenue', label: 'Admin: Revenue / MRR', group: 'admin' },
+  { value: 'admin_pipeline', label: 'Admin: Sales Pipeline', group: 'admin' },
+  { value: 'admin_performance', label: 'Admin: Client Performance', group: 'admin' },
+  { value: 'admin_emails', label: 'Admin: Email Templates', group: 'admin' },
+  { value: 'admin_settings', label: 'Admin: Settings', group: 'admin' },
+  { value: 'admin_alerts', label: 'Admin: System Alerts', group: 'admin' },
+  { value: 'admin_automations', label: 'Admin: Automations', group: 'admin' },
 ]
 
 const DISPLAY_FREQUENCIES = [
@@ -565,9 +585,11 @@ export default function AnnouncementsPage() {
 
                   {/* Display Pages */}
                   <div className="form-group full-width">
-                    <label>Display on Pages</label>
-                    <div className="checkbox-group">
-                      {DISPLAY_PAGES.map(page => (
+                    <label>Display on Pages & Tabs</label>
+
+                    {/* All Pages Option */}
+                    <div className="pages-section">
+                      {DISPLAY_PAGES.filter(p => p.group === 'general').map(page => (
                         <label key={page.value} className="checkbox-label">
                           <input
                             type="checkbox"
@@ -577,6 +599,42 @@ export default function AnnouncementsPage() {
                           {page.label}
                         </label>
                       ))}
+                    </div>
+
+                    {/* Client Pages */}
+                    <div className="pages-group">
+                      <h4 className="pages-group-title">Client Portal</h4>
+                      <div className="checkbox-group">
+                        {DISPLAY_PAGES.filter(p => p.group === 'client').map(page => (
+                          <label key={page.value} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={form.display_pages.includes(page.value)}
+                              onChange={() => toggleDisplayPage(page.value)}
+                              disabled={form.display_pages.includes('all')}
+                            />
+                            {page.label.replace('Client: ', '')}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Admin Pages */}
+                    <div className="pages-group">
+                      <h4 className="pages-group-title">Admin Panel</h4>
+                      <div className="checkbox-group">
+                        {DISPLAY_PAGES.filter(p => p.group === 'admin').map(page => (
+                          <label key={page.value} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={form.display_pages.includes(page.value)}
+                              onChange={() => toggleDisplayPage(page.value)}
+                              disabled={form.display_pages.includes('all')}
+                            />
+                            {page.label.replace('Admin: ', '')}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -1169,10 +1227,34 @@ export default function AnnouncementsPage() {
           color: #6B7280;
         }
 
+        .pages-section {
+          margin-bottom: 16px;
+        }
+
+        .pages-group {
+          margin-top: 16px;
+          padding: 16px;
+          background: #F9FAFB;
+          border-radius: 8px;
+        }
+
+        .pages-group-title {
+          margin: 0 0 12px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #374151;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
         .checkbox-group {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px 20px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px 16px;
+        }
+
+        .pages-group .checkbox-group {
+          grid-template-columns: repeat(4, 1fr);
         }
 
         .client-selector {
@@ -1426,6 +1508,11 @@ export default function AnnouncementsPage() {
 
           .form-group.full-width {
             grid-column: span 1;
+          }
+
+          .checkbox-group,
+          .pages-group .checkbox-group {
+            grid-template-columns: repeat(2, 1fr);
           }
         }
       `}</style>
