@@ -567,7 +567,7 @@ function AutomationEditor() {
       <div className="automation-editor-header">
         <div className="automation-editor-header-left">
           <div className="page-header-with-back">
-            <Link href="/admin/emails?tab=automation" className="back-link">
+            <Link href="/admin/emails/automations" className="back-link">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
