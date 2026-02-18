@@ -85,15 +85,22 @@ export function SelectedItemsList({
   const handleItemDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', index.toString())
+    // Use a specific type to identify internal reordering
+    e.dataTransfer.setData('text/reorder', index.toString())
   }
 
   const handleItemDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
-    e.stopPropagation()
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index)
+    // Check if this is an internal reorder (has our reorder data type)
+    // If it's a new product drop from sidebar, let it bubble up to parent
+    const isReorder = draggedIndex !== null
+    if (isReorder) {
+      e.stopPropagation()
+      if (draggedIndex !== index) {
+        setDragOverIndex(index)
+      }
     }
+    // For new products from sidebar, don't stop propagation - let parent handle it
   }
 
   const handleItemDragLeave = () => {
@@ -101,13 +108,16 @@ export function SelectedItemsList({
   }
 
   const handleItemDrop = (e: React.DragEvent, toIndex: number) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (draggedIndex !== null && draggedIndex !== toIndex) {
+    // Check if this is an internal reorder
+    const isReorder = draggedIndex !== null
+    if (isReorder && draggedIndex !== toIndex) {
+      e.preventDefault()
+      e.stopPropagation()
       onReorder(draggedIndex, toIndex)
+      setDraggedIndex(null)
+      setDragOverIndex(null)
     }
-    setDraggedIndex(null)
-    setDragOverIndex(null)
+    // For new products from sidebar, don't handle here - let parent handle it
   }
 
   const handleItemDragEnd = () => {
