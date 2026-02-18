@@ -302,16 +302,23 @@ export default function AnnouncementsPage() {
     setForm(prev => {
       let newPages: string[]
       if (page === 'all') {
-        newPages = ['all']
+        // Toggle "All Pages" on/off
+        if (prev.display_pages.includes('all')) {
+          newPages = [] // Uncheck all - user will select specific pages
+        } else {
+          newPages = ['all'] // Check all
+        }
       } else {
+        // Clicking individual page - remove 'all' if present
         const filtered = prev.display_pages.filter(p => p !== 'all')
         if (filtered.includes(page)) {
           newPages = filtered.filter(p => p !== page)
         } else {
           newPages = [...filtered, page]
         }
-        if (newPages.length === 0) newPages = ['all']
       }
+      // If nothing selected, default back to 'all'
+      if (newPages.length === 0) newPages = ['all']
       return { ...prev, display_pages: newPages }
     })
   }
@@ -609,9 +616,8 @@ export default function AnnouncementsPage() {
                           <label key={page.value} className="checkbox-label">
                             <input
                               type="checkbox"
-                              checked={form.display_pages.includes(page.value)}
+                              checked={form.display_pages.includes('all') || form.display_pages.includes(page.value)}
                               onChange={() => toggleDisplayPage(page.value)}
-                              disabled={form.display_pages.includes('all')}
                             />
                             {page.label.replace('Client: ', '')}
                           </label>
@@ -627,9 +633,8 @@ export default function AnnouncementsPage() {
                           <label key={page.value} className="checkbox-label">
                             <input
                               type="checkbox"
-                              checked={form.display_pages.includes(page.value)}
+                              checked={form.display_pages.includes('all') || form.display_pages.includes(page.value)}
                               onChange={() => toggleDisplayPage(page.value)}
-                              disabled={form.display_pages.includes('all')}
                             />
                             {page.label.replace('Admin: ', '')}
                           </label>
