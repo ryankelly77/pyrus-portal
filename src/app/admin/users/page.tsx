@@ -2,12 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { AdminHeader } from '@/components/layout'
-import { useUserProfile } from '@/hooks/useUserProfile'
 
 type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
 type UserStatus = 'registered' | 'invited'
-type Tab = 'users' | 'roles'
 
 interface AdminUser {
   id: string
@@ -51,20 +48,7 @@ interface ClientOption {
   name: string
 }
 
-interface MenuItem {
-  key: string
-  label: string
-}
-
-interface RolePermissions {
-  [role: string]: {
-    [menuKey: string]: boolean
-  }
-}
-
-export default function AdminUsersPage() {
-  const { user, hasNotifications } = useUserProfile()
-  const [activeTab, setActiveTab] = useState<Tab>('users')
+export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'invited'>('all')
   const [clientFilter, setClientFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -78,16 +62,6 @@ export default function AdminUsersPage() {
   const [clientUsers, setClientUsers] = useState<ClientUser[]>([])
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
-
-  // Current user role (fetched from admin users)
-  const [currentUserRole, setCurrentUserRole] = useState<AdminRole | null>(null)
-
-  // Role permissions state
-  const [permissions, setPermissions] = useState<RolePermissions>({})
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [roles, setRoles] = useState<string[]>([])
-  const [permissionsLoading, setPermissionsLoading] = useState(false)
-  const [savingRole, setSavingRole] = useState<string | null>(null)
 
   // Unified invite form state
   type InviteRole = 'client' | 'admin' | 'super_admin' | 'production_team' | 'sales'
@@ -116,11 +90,6 @@ export default function AdminUsersPage() {
           setClientUsers(data.clientUsers || [])
           setPendingInvites(data.pendingInvites || [])
           setClients(data.clients || [])
-
-          // Find current user's role from their session
-          if (data.currentUserRole) {
-            setCurrentUserRole(data.currentUserRole)
-          }
         }
       } catch (error) {
         console.error('Failed to fetch users:', error)
@@ -130,92 +99,6 @@ export default function AdminUsersPage() {
     }
     fetchUsers()
   }, [])
-
-  // Fetch role permissions when roles tab is active and user is super_admin
-  useEffect(() => {
-    if (activeTab === 'roles' && currentUserRole === 'super_admin') {
-      const fetchPermissions = async () => {
-        setPermissionsLoading(true)
-        try {
-          const res = await fetch('/api/admin/role-permissions')
-          if (res.ok) {
-            const data = await res.json()
-            setPermissions(data.permissions || {})
-            setMenuItems(data.menuItems || [])
-            setRoles(data.roles || [])
-          }
-        } catch (error) {
-          console.error('Failed to fetch role permissions:', error)
-        } finally {
-          setPermissionsLoading(false)
-        }
-      }
-      fetchPermissions()
-    }
-  }, [activeTab, currentUserRole])
-
-  // Handle permission toggle
-  const handlePermissionToggle = async (role: string, menuKey: string, currentValue: boolean) => {
-    if (role === 'super_admin') return // Cannot modify super_admin permissions
-
-    // Optimistic update
-    setPermissions(prev => ({
-      ...prev,
-      [role]: {
-        ...prev[role],
-        [menuKey]: !currentValue,
-      }
-    }))
-
-    setSavingRole(role)
-    try {
-      const res = await fetch('/api/admin/role-permissions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role,
-          permissions: {
-            ...permissions[role],
-            [menuKey]: !currentValue,
-          }
-        }),
-      })
-
-      if (!res.ok) {
-        // Revert on failure
-        setPermissions(prev => ({
-          ...prev,
-          [role]: {
-            ...prev[role],
-            [menuKey]: currentValue,
-          }
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to update permission:', error)
-      // Revert on failure
-      setPermissions(prev => ({
-        ...prev,
-        [role]: {
-          ...prev[role],
-          [menuKey]: currentValue,
-        }
-      }))
-    } finally {
-      setSavingRole(null)
-    }
-  }
-
-  // Get role display name
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'Super Admin'
-      case 'admin': return 'Admin'
-      case 'production_team': return 'Production Team'
-      case 'sales': return 'Sales'
-      default: return role
-    }
-  }
 
   const filteredAdminUsers = useMemo(() => {
     return adminUsers.filter((user) => {
@@ -500,373 +383,107 @@ export default function AdminUsersPage() {
 
   if (isLoading) {
     return (
-      <>
-        <AdminHeader
-          title="Users"
-          user={user}
-          hasNotifications={hasNotifications}
-        />
-        <div className="admin-content">
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            Loading users...
-          </div>
-        </div>
-      </>
+      <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+        Loading users...
+      </div>
     )
   }
 
   return (
     <>
-      <AdminHeader
-        title="Users"
-        user={user}
-        hasNotifications={hasNotifications}
-      />
+      {/* Action Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+        <button className="btn btn-primary" onClick={() => setShowInviteModal(true)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Invite User
+        </button>
+      </div>
 
-      <div className="admin-content">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="page-header-content">
-            <p>Manage portal users and their access</p>
-          </div>
-          {activeTab === 'users' && (
-            <button className="btn btn-primary" onClick={() => setShowInviteModal(true)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Invite User
-            </button>
-          )}
+      {/* Filters */}
+      <div className="clients-toolbar">
+        <div className="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-
-        {/* Tabs - Only show Roles Management tab for super_admin */}
-        {currentUserRole === 'super_admin' && (
-          <div className="tabs-container" style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', gap: '0' }}>
-              <button
-                className={`tab ${activeTab === 'users' ? 'active' : ''}`}
-                onClick={() => setActiveTab('users')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  color: activeTab === 'users' ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  borderBottom: activeTab === 'users' ? '2px solid var(--primary)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                Users
-              </button>
-              <button
-                className={`tab ${activeTab === 'roles' ? 'active' : ''}`}
-                onClick={() => setActiveTab('roles')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  color: activeTab === 'roles' ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  borderBottom: activeTab === 'roles' ? '2px solid var(--primary)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                Roles Management
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Roles Management Tab Content */}
-        {activeTab === 'roles' && currentUserRole === 'super_admin' && (
-          <div className="roles-management">
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                Configure which menu items each role can access. Super Admin always has full access.
-              </p>
-            </div>
-
-            {permissionsLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                Loading permissions...
-              </div>
-            ) : (
-              <div className="permissions-matrix" style={{ overflowX: 'auto' }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '180px repeat(4, 120px)',
-                  gap: '0',
-                  minWidth: '660px'
-                }}>
-                  {/* Header Row */}
-                  <div style={{
-                    padding: '12px',
-                    fontWeight: 500,
-                    fontSize: '12px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    color: 'var(--text-muted)',
-                    borderBottom: '1px solid var(--border-light)'
-                  }}>
-                    Menu Item
-                  </div>
-                  {roles.map(role => (
-                    <div key={role} style={{
-                      padding: '12px',
-                      textAlign: 'center',
-                      fontWeight: 500,
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      color: 'var(--text-muted)',
-                      borderBottom: '1px solid var(--border-light)'
-                    }}>
-                      {getRoleDisplayName(role)}
-                      {role === 'super_admin' && (
-                        <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 'normal', textTransform: 'none', letterSpacing: 'normal' }}>
-                          (Always Full Access)
-                        </span>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Data Rows */}
-                  {menuItems.map((item, idx) => (
-                    <>
-                      <div key={`label-${item.key}`} style={{
-                        padding: '12px',
-                        fontWeight: 500,
-                        fontSize: '14px',
-                        color: 'var(--text-primary)',
-                        borderBottom: idx === menuItems.length - 1 ? 'none' : '1px solid var(--border-light)'
-                      }}>
-                        {item.label}
-                      </div>
-                      {roles.map(role => (
-                        <div key={`${role}-${item.key}`} style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          borderBottom: idx === menuItems.length - 1 ? 'none' : '1px solid var(--border-light)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          {role === 'super_admin' ? (
-                            <span style={{ color: 'var(--success-color)' }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </span>
-                          ) : (
-                            <input
-                              type="checkbox"
-                              checked={permissions[role]?.[item.key] ?? false}
-                              onChange={() => handlePermissionToggle(role, item.key, permissions[role]?.[item.key] ?? false)}
-                              disabled={savingRole === role}
-                              style={{
-                                width: '18px',
-                                height: '18px',
-                                cursor: 'pointer',
-                                accentColor: 'var(--pyrus-brown)',
-                              }}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {savingRole && (
-              <div style={{ marginTop: '12px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                Saving changes...
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Users Tab Content */}
-        {activeTab === 'users' && (
-          <>
-        {/* Filters */}
-        <div className="clients-toolbar">
-          <div className="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="filter-buttons">
-            <button
-              className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('all')}
-            >
-              All Users
-            </button>
-            <button
-              className={`filter-btn ${statusFilter === 'registered' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('registered')}
-            >
-              Registered
-            </button>
-            <button
-              className={`filter-btn ${statusFilter === 'invited' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('invited')}
-            >
-              Invited
-            </button>
-          </div>
-          <select
-            className="sort-select"
-            value={clientFilter}
-            onChange={(e) => setClientFilter(e.target.value)}
+        <div className="filter-buttons">
+          <button
+            className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('all')}
           >
-            <option value="all">All Clients</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
+            All Users
+          </button>
+          <button
+            className={`filter-btn ${statusFilter === 'registered' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('registered')}
+          >
+            Registered
+          </button>
+          <button
+            className={`filter-btn ${statusFilter === 'invited' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('invited')}
+          >
+            Invited
+          </button>
         </div>
+        <select
+          className="sort-select"
+          value={clientFilter}
+          onChange={(e) => setClientFilter(e.target.value)}
+        >
+          <option value="all">All Clients</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* Pending Invites Section */}
-        {pendingInvites.length > 0 && (
-          <div className="admin-users-section" style={{ marginBottom: '32px' }}>
-            <h3>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Pending Invites ({pendingInvites.length})
-            </h3>
-            <div className="users-table-container">
-              <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th style={{ width: '18%' }}>Name</th>
-                    <th style={{ width: '14%' }}>Role</th>
-                    <th style={{ width: '24%' }}>Email</th>
-                    <th style={{ width: '16%' }}>Invited By</th>
-                    <th style={{ width: '12%' }}>Expires</th>
-                    <th style={{ width: '16%' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingInvites.map((invite) => {
-                    const roleContent = getRoleBadgeContent(invite.role as AdminRole)
-                    const expiresDate = new Date(invite.expiresAt)
-                    const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                    return (
-                      <tr key={invite.id}>
-                        <td className="user-name">
-                          <div className="user-avatar" style={{ background: invite.avatarColor, opacity: 0.7 }}>
-                            {invite.initials}
-                          </div>
-                          <span>{invite.name}</span>
-                        </td>
-                        <td>
-                          <span className={`role-badge ${roleContent.className}`}>
-                            {roleContent.icon}
-                            {roleContent.label}
-                          </span>
-                        </td>
-                        <td>{invite.email}</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{invite.invitedBy || '-'}</td>
-                        <td>
-                          <span style={{
-                            color: daysLeft <= 2 ? 'var(--error-color)' : 'var(--text-secondary)',
-                            fontSize: '13px'
-                          }}>
-                            {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className="btn btn-sm btn-outline"
-                              onClick={() => handleResendInvite(invite.id)}
-                            >
-                              Resend
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline"
-                              style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
-                              onClick={() => handleDeleteInvite(invite.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Admin Users Section (Super Admin + Admin only) */}
-        {adminOnlyUsers.length > 0 && (
+      {/* Pending Invites Section */}
+      {pendingInvites.length > 0 && (
         <div className="admin-users-section" style={{ marginBottom: '32px' }}>
           <h3>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            Admin Users ({adminOnlyUsers.length})
+            Pending Invites ({pendingInvites.length})
           </h3>
           <div className="users-table-container">
             <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '20%' }}>Name</th>
-                  <th style={{ width: '15%' }}>Role</th>
-                  <th style={{ width: '30%' }}>Email</th>
-                  <th style={{ width: '15%' }}>Status</th>
-                  <th style={{ width: '20%' }}>Actions</th>
+                  <th style={{ width: '18%' }}>Name</th>
+                  <th style={{ width: '14%' }}>Role</th>
+                  <th style={{ width: '24%' }}>Email</th>
+                  <th style={{ width: '16%' }}>Invited By</th>
+                  <th style={{ width: '12%' }}>Expires</th>
+                  <th style={{ width: '16%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {adminOnlyUsers.map((user) => {
-                  const roleContent = getRoleBadgeContent(user.role)
+                {pendingInvites.map((invite) => {
+                  const roleContent = getRoleBadgeContent(invite.role as AdminRole)
+                  const expiresDate = new Date(invite.expiresAt)
+                  const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
                   return (
-                    <tr key={user.id}>
+                    <tr key={invite.id}>
                       <td className="user-name">
-                        <div className="user-avatar" style={{ background: user.avatarColor }}>
-                          {user.initials}
+                        <div className="user-avatar" style={{ background: invite.avatarColor, opacity: 0.7 }}>
+                          {invite.initials}
                         </div>
-                        <span>{user.name}</span>
+                        <span>{invite.name}</span>
                       </td>
                       <td>
                         <span className={`role-badge ${roleContent.className}`}>
@@ -874,30 +491,32 @@ export default function AdminUsersPage() {
                           {roleContent.label}
                         </span>
                       </td>
-                      <td>{user.email}</td>
+                      <td>{invite.email}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{invite.invitedBy || '-'}</td>
                       <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status === 'registered' ? 'Active' : 'Invited'}
+                        <span style={{
+                          color: daysLeft <= 2 ? 'var(--error-color)' : 'var(--text-secondary)',
+                          fontSize: '13px'
+                        }}>
+                          {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
                         </span>
                       </td>
                       <td>
-                        {user.isOwner ? (
-                          <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
-                        ) : user.status === 'invited' ? (
+                        <div style={{ display: 'flex', gap: '8px' }}>
                           <button
                             className="btn btn-sm btn-outline"
-                            onClick={() => handleResendAdmin(user.id)}
+                            onClick={() => handleResendInvite(invite.id)}
                           >
                             Resend
                           </button>
-                        ) : (
                           <button
                             className="btn btn-sm btn-outline"
-                            onClick={() => handleEditAdmin(user.id)}
+                            style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
+                            onClick={() => handleDeleteInvite(invite.id)}
                           >
-                            Edit
+                            Delete
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -906,220 +525,288 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </div>
-        )}
+      )}
 
-        {/* Sales Users Section */}
-        {salesUsers.length > 0 && (
-        <div className="admin-users-section" style={{ marginBottom: '32px' }}>
-          <h3>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-            Sales Users ({salesUsers.length})
-          </h3>
-          <div className="users-table-container">
-            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>Name</th>
-                  <th style={{ width: '15%' }}>Role</th>
-                  <th style={{ width: '30%' }}>Email</th>
-                  <th style={{ width: '15%' }}>Status</th>
-                  <th style={{ width: '20%' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {salesUsers.map((user) => {
-                  const roleContent = getRoleBadgeContent(user.role)
-                  return (
-                    <tr key={user.id}>
-                      <td className="user-name">
-                        <div className="user-avatar" style={{ background: user.avatarColor }}>
-                          {user.initials}
-                        </div>
-                        <span>{user.name}</span>
-                      </td>
-                      <td>
-                        <span className={`role-badge ${roleContent.className}`}>
-                          {roleContent.icon}
-                          {roleContent.label}
-                        </span>
-                      </td>
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status === 'registered' ? 'Active' : 'Invited'}
-                        </span>
-                      </td>
-                      <td>
-                        {user.status === 'invited' ? (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleResendAdmin(user.id)}
-                          >
-                            Resend
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleEditAdmin(user.id)}
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        )}
-
-        {/* Production Users Section */}
-        {productionUsers.length > 0 && (
-        <div className="admin-users-section" style={{ marginBottom: '32px' }}>
-          <h3>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-            </svg>
-            Production Users ({productionUsers.length})
-          </h3>
-          <div className="users-table-container">
-            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>Name</th>
-                  <th style={{ width: '15%' }}>Role</th>
-                  <th style={{ width: '30%' }}>Email</th>
-                  <th style={{ width: '15%' }}>Status</th>
-                  <th style={{ width: '20%' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productionUsers.map((user) => {
-                  const roleContent = getRoleBadgeContent(user.role)
-                  return (
-                    <tr key={user.id}>
-                      <td className="user-name">
-                        <div className="user-avatar" style={{ background: user.avatarColor }}>
-                          {user.initials}
-                        </div>
-                        <span>{user.name}</span>
-                      </td>
-                      <td>
-                        <span className={`role-badge ${roleContent.className}`}>
-                          {roleContent.icon}
-                          {roleContent.label}
-                        </span>
-                      </td>
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status === 'registered' ? 'Active' : 'Invited'}
-                        </span>
-                      </td>
-                      <td>
-                        {user.status === 'invited' ? (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleResendAdmin(user.id)}
-                          >
-                            Resend
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleEditAdmin(user.id)}
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        )}
-
-        {/* Client Users Section */}
-        <div className="client-users-section">
-          <h3>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            Client Users ({filteredClientUsers.length})
-          </h3>
-          <div className="users-table-container">
-            <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '15%' }}>Name</th>
-                  <th style={{ width: '10%' }}>Client</th>
-                  <th style={{ width: '10%' }}>Phone</th>
-                  <th style={{ width: '30%' }}>Email</th>
-                  <th style={{ width: '15%' }}>Status</th>
-                  <th style={{ width: '20%' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClientUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      No client users found
+      {/* Admin Users Section (Super Admin + Admin only) */}
+      {adminOnlyUsers.length > 0 && (
+      <div className="admin-users-section" style={{ marginBottom: '32px' }}>
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Admin Users ({adminOnlyUsers.length})
+        </h3>
+        <div className="users-table-container">
+          <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '20%' }}>Name</th>
+                <th style={{ width: '15%' }}>Role</th>
+                <th style={{ width: '30%' }}>Email</th>
+                <th style={{ width: '15%' }}>Status</th>
+                <th style={{ width: '20%' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {adminOnlyUsers.map((user) => {
+                const roleContent = getRoleBadgeContent(user.role)
+                return (
+                  <tr key={user.id}>
+                    <td className="user-name">
+                      <div className="user-avatar" style={{ background: user.avatarColor }}>
+                        {user.initials}
+                      </div>
+                      <span>{user.name}</span>
+                    </td>
+                    <td>
+                      <span className={`role-badge ${roleContent.className}`}>
+                        {roleContent.icon}
+                        {roleContent.label}
+                      </span>
+                    </td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className={`status-badge status-${user.status}`}>
+                        {user.status === 'registered' ? 'Active' : 'Invited'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.isOwner ? (
+                        <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
+                      ) : user.status === 'invited' ? (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleResendAdmin(user.id)}
+                        >
+                          Resend
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleEditAdmin(user.id)}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ) : (
-                  filteredClientUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td className="user-name">
-                        <div className="user-avatar" style={{ background: user.avatarColor }}>
-                          {user.initials}
-                        </div>
-                        <span>{user.name}</span>
-                      </td>
-                      <td>
-                        <Link href={`/admin/clients/${user.clientId}`} style={{ color: 'var(--pyrus-brown)', textDecoration: 'none' }}>
-                          {user.clientName}
-                        </Link>
-                      </td>
-                      <td>{user.phone || '-'}</td>
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`status-badge status-${user.status}`}>
-                          {user.status === 'registered' ? 'Registered' : 'Invited'}
-                        </span>
-                      </td>
-                      <td>
-                        <Link
-                          href={`/admin/clients/${user.clientId}`}
-                          className="btn btn-sm btn-outline"
-                        >
-                          View Client
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
+      </div>
+      )}
 
-        {/* Pagination */}
-        <div className="table-pagination">
-          <span className="pagination-info">Showing {totalUsers} user{totalUsers !== 1 ? 's' : ''}</span>
+      {/* Sales Users Section */}
+      {salesUsers.length > 0 && (
+      <div className="admin-users-section" style={{ marginBottom: '32px' }}>
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          Sales Users ({salesUsers.length})
+        </h3>
+        <div className="users-table-container">
+          <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '20%' }}>Name</th>
+                <th style={{ width: '15%' }}>Role</th>
+                <th style={{ width: '30%' }}>Email</th>
+                <th style={{ width: '15%' }}>Status</th>
+                <th style={{ width: '20%' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {salesUsers.map((user) => {
+                const roleContent = getRoleBadgeContent(user.role)
+                return (
+                  <tr key={user.id}>
+                    <td className="user-name">
+                      <div className="user-avatar" style={{ background: user.avatarColor }}>
+                        {user.initials}
+                      </div>
+                      <span>{user.name}</span>
+                    </td>
+                    <td>
+                      <span className={`role-badge ${roleContent.className}`}>
+                        {roleContent.icon}
+                        {roleContent.label}
+                      </span>
+                    </td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className={`status-badge status-${user.status}`}>
+                        {user.status === 'registered' ? 'Active' : 'Invited'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.status === 'invited' ? (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleResendAdmin(user.id)}
+                        >
+                          Resend
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleEditAdmin(user.id)}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
-          </>
-        )}
+      </div>
+      )}
+
+      {/* Production Users Section */}
+      {productionUsers.length > 0 && (
+      <div className="admin-users-section" style={{ marginBottom: '32px' }}>
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          Production Users ({productionUsers.length})
+        </h3>
+        <div className="users-table-container">
+          <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '20%' }}>Name</th>
+                <th style={{ width: '15%' }}>Role</th>
+                <th style={{ width: '30%' }}>Email</th>
+                <th style={{ width: '15%' }}>Status</th>
+                <th style={{ width: '20%' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productionUsers.map((user) => {
+                const roleContent = getRoleBadgeContent(user.role)
+                return (
+                  <tr key={user.id}>
+                    <td className="user-name">
+                      <div className="user-avatar" style={{ background: user.avatarColor }}>
+                        {user.initials}
+                      </div>
+                      <span>{user.name}</span>
+                    </td>
+                    <td>
+                      <span className={`role-badge ${roleContent.className}`}>
+                        {roleContent.icon}
+                        {roleContent.label}
+                      </span>
+                    </td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className={`status-badge status-${user.status}`}>
+                        {user.status === 'registered' ? 'Active' : 'Invited'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.status === 'invited' ? (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleResendAdmin(user.id)}
+                        >
+                          Resend
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleEditAdmin(user.id)}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      )}
+
+      {/* Client Users Section */}
+      <div className="client-users-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Client Users ({filteredClientUsers.length})
+        </h3>
+        <div className="users-table-container">
+          <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '15%' }}>Name</th>
+                <th style={{ width: '10%' }}>Client</th>
+                <th style={{ width: '10%' }}>Phone</th>
+                <th style={{ width: '30%' }}>Email</th>
+                <th style={{ width: '15%' }}>Status</th>
+                <th style={{ width: '20%' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClientUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    No client users found
+                  </td>
+                </tr>
+              ) : (
+                filteredClientUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td className="user-name">
+                      <div className="user-avatar" style={{ background: user.avatarColor }}>
+                        {user.initials}
+                      </div>
+                      <span>{user.name}</span>
+                    </td>
+                    <td>
+                      <Link href={`/admin/clients/${user.clientId}`} style={{ color: 'var(--pyrus-brown)', textDecoration: 'none' }}>
+                        {user.clientName}
+                      </Link>
+                    </td>
+                    <td>{user.phone || '-'}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className={`status-badge status-${user.status}`}>
+                        {user.status === 'registered' ? 'Registered' : 'Invited'}
+                      </span>
+                    </td>
+                    <td>
+                      <Link
+                        href={`/admin/clients/${user.clientId}`}
+                        className="btn btn-sm btn-outline"
+                      >
+                        View Client
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="table-pagination">
+        <span className="pagination-info">Showing {totalUsers} user{totalUsers !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Unified Invite User Modal */}

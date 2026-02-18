@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { AdminHeader } from '@/components/layout'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { StatusProgressBar } from '@/components/content'
 
@@ -73,7 +72,7 @@ interface Stats {
 }
 
 export default function AdminContentPage() {
-  const { user, profile, hasNotifications } = useUserProfile()
+  const { profile, hasNotifications } = useUserProfile()
   const [contentItems, setContentItems] = useState<ContentItem[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -95,25 +94,6 @@ export default function AdminContentPage() {
   // Rush interstitial state
   const [showRushInterstitial, setShowRushInterstitial] = useState(false)
   const [rushItems, setRushItems] = useState<ContentItem[]>([])
-
-  // Tabs state
-  const [activeTab, setActiveTab] = useState<'content' | 'files'>('content')
-
-  // Files list state
-  interface FileItem {
-    id: string
-    name: string
-    type: 'docs' | 'images' | 'video'
-    category: string
-    url: string
-    client_id: string
-    client_name: string
-    created_at: string
-  }
-  const [files, setFiles] = useState<FileItem[]>([])
-  const [filesLoading, setFilesLoading] = useState(false)
-  const [deletingFileId, setDeletingFileId] = useState<string | null>(null)
-  const [filesClientFilter, setFilesClientFilter] = useState('')
 
   // Add Files modal state
   const [showFilesModal, setShowFilesModal] = useState(false)
@@ -175,51 +155,6 @@ export default function AdminContentPage() {
     }
     fetchData()
   }, [statusFilter, clientFilter, platformFilter])
-
-  // Fetch files when files tab is active
-  useEffect(() => {
-    if (activeTab !== 'files') return
-
-    async function fetchFiles() {
-      setFilesLoading(true)
-      try {
-        const params = new URLSearchParams()
-        if (filesClientFilter) params.set('clientId', filesClientFilter)
-
-        const res = await fetch(`/api/admin/files?${params.toString()}`)
-        if (res.ok) {
-          const data = await res.json()
-          setFiles(data.files || [])
-        }
-      } catch (error) {
-        console.error('Error fetching files:', error)
-      } finally {
-        setFilesLoading(false)
-      }
-    }
-    fetchFiles()
-  }, [activeTab, filesClientFilter])
-
-  // Handle file delete
-  const handleDeleteFile = async (fileId: string) => {
-    if (!confirm('Are you sure you want to delete this file?')) return
-
-    setDeletingFileId(fileId)
-    try {
-      const res = await fetch(`/api/admin/files/${fileId}`, { method: 'DELETE' })
-      if (res.ok) {
-        setFiles(prev => prev.filter(f => f.id !== fileId))
-      } else {
-        const data = await res.json()
-        alert(data.error || 'Failed to delete file')
-      }
-    } catch (error) {
-      console.error('Error deleting file:', error)
-      alert('Failed to delete file')
-    } finally {
-      setDeletingFileId(null)
-    }
-  }
 
   // Separate effect to check for rush items once profile is loaded
   useEffect(() => {
@@ -525,557 +460,369 @@ export default function AdminContentPage() {
 
   return (
     <>
-      <AdminHeader
-        title="Content Management"
-        user={user}
-        hasNotifications={hasNotifications}
-      />
+      {/* Action Buttons */}
+      <div className="header-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '24px', marginTop: '-16px' }}>
+        <button
+          className="btn"
+          style={{ background: '#3B82F6', borderColor: '#3B82F6', color: 'white' }}
+          onClick={() => {
+            resetFileModal()
+            setShowFilesModal(true)
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+          Add Files
+        </button>
+        <Link href="/admin/content/new" className="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Create Content
+        </Link>
+      </div>
 
-      <div className="admin-content">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="page-header-content">
-            <p>Review and manage content across all client accounts</p>
+      {/* Stat Cards - 6 cards in a row */}
+      <div className="stats-grid stats-grid-6" style={{ marginBottom: '24px' }}>
+        {/* Active Clients */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">{stats.active_clients}</span>
+            <span className="stat-label">Active Clients</span>
           </div>
         </div>
 
-        {/* Tabs with action buttons */}
-        <div className="tabs-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', gap: '0' }}>
-            <button
-              className={`tab ${activeTab === 'content' ? 'active' : ''}`}
-              onClick={() => setActiveTab('content')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: activeTab === 'content' ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: 500,
-                fontSize: '14px',
-                borderBottom: activeTab === 'content' ? '2px solid var(--primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-              </svg>
-              Content
-            </button>
-            <button
-              className={`tab ${activeTab === 'files' ? 'active' : ''}`}
-              onClick={() => setActiveTab('files')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: activeTab === 'files' ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: 500,
-                fontSize: '14px',
-                borderBottom: activeTab === 'files' ? '2px solid var(--primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              Files
-            </button>
+        {/* Drafts */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
           </div>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
-            <button
-              className="btn"
-              style={{ background: '#3B82F6', borderColor: '#3B82F6', color: 'white' }}
-              onClick={() => {
-                resetFileModal()
-                setShowFilesModal(true)
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                <line x1="12" y1="11" x2="12" y2="17"></line>
-                <line x1="9" y1="14" x2="15" y2="14"></line>
-              </svg>
-              Add Files
-            </button>
-            <Link href="/admin/content/new" className="btn btn-primary">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Create Content
-            </Link>
+          <div className="stat-content">
+            <span className="stat-value">{stats.drafts}</span>
+            <span className="stat-label">Drafts</span>
           </div>
         </div>
 
-        {/* Content Tab */}
-        {activeTab === 'content' && (
-          <>
-        {/* Stat Cards - 6 cards in a row */}
-        <div className="stats-grid stats-grid-6" style={{ marginBottom: '24px' }}>
-          {/* Active Clients */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#EDE9FE', color: '#7C3AED' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.active_clients}</span>
-              <span className="stat-label">Active Clients</span>
-            </div>
+        {/* In Review */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
           </div>
-
-          {/* Drafts */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#F3F4F6', color: '#6B7280' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.drafts}</span>
-              <span className="stat-label">Drafts</span>
-            </div>
-          </div>
-
-          {/* In Review */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#CCFBF1', color: '#0D9488' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.in_review}</span>
-              <span className="stat-label">In Review</span>
-            </div>
-          </div>
-
-          {/* Revisions */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.revisions}</span>
-              <span className="stat-label">Revisions</span>
-            </div>
-          </div>
-
-          {/* In Production */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#E0E7FF', color: '#6366F1' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.in_production}</span>
-              <span className="stat-label">In Production</span>
-            </div>
-          </div>
-
-          {/* Published This Month */}
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.posted_this_month}</span>
-              <span className="stat-label">Published This Month</span>
-            </div>
+          <div className="stat-content">
+            <span className="stat-value">{stats.in_review}</span>
+            <span className="stat-label">In Review</span>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="content-filters">
-          <div className="filter-group">
-            <label htmlFor="statusFilter">Status</label>
-            <select
-              id="statusFilter"
-              className="form-control"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <optgroup label="Writing">
-                <option value="draft">Draft</option>
-              </optgroup>
-              <optgroup label="Client Review">
-                <option value="in_review">All In Review</option>
-                <option value="sent_for_review">Sent for Review</option>
-                <option value="client_reviewing">Client Reviewing</option>
-                <option value="revisions_requested">Revisions Requested</option>
-              </optgroup>
-              <optgroup label="Production">
-                <option value="in_production">All In Production</option>
-                <option value="approved">Approved</option>
-                <option value="internal_review">Internal Review</option>
-                <option value="final_optimization">Final Optimization</option>
-                <option value="image_selection">Image Selection</option>
-              </optgroup>
-              <optgroup label="Complete">
-                <option value="scheduled">Scheduled</option>
-                <option value="posted">Published</option>
-              </optgroup>
-            </select>
+        {/* Revisions */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
           </div>
-          <div className="filter-group">
-            <label htmlFor="clientFilter">Client</label>
-            <select
-              id="clientFilter"
-              className="form-control"
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="platformFilter">Platform</label>
-            <select
-              id="platformFilter"
-              className="form-control"
-              value={platformFilter}
-              onChange={(e) => setPlatformFilter(e.target.value)}
-            >
-              <option value="">All Platforms</option>
-              <option value="website">Website</option>
-              <option value="gbp">Google Business</option>
-              <option value="social">Social</option>
-              <option value="ai-creative">AI Creative</option>
-            </select>
-          </div>
-          <div className="filter-actions">
-            <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
-              Clear Filters
-            </button>
+          <div className="stat-content">
+            <span className="stat-value">{stats.revisions}</span>
+            <span className="stat-label">Revisions</span>
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="loading-state" style={{ textAlign: 'center', padding: '48px' }}>
-            <p>Loading content...</p>
+        {/* In Production */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#E0E7FF', color: '#6366F1' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
           </div>
-        )}
+          <div className="stat-content">
+            <span className="stat-value">{stats.in_production}</span>
+            <span className="stat-label">In Production</span>
+          </div>
+        </div>
 
-        {/* Content Table */}
-        {!loading && (
-        <div className="content-table-wrapper">
-          <table className="content-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Client</th>
-                <th>Type</th>
-                <th>Progress</th>
-                <th>Status</th>
-                <th>Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contentItems.map((item) => (
-                <tr key={item.id} className="content-row" data-status={item.status}>
-                  <td>
-                    <div className="content-title-cell">
-                      {item.urgent && (
-                        <span className="urgent-indicator" title="Urgent - 24hr deadline">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        {/* Published This Month */}
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#DCFCE7', color: '#16A34A' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div className="stat-content">
+            <span className="stat-value">{stats.posted_this_month}</span>
+            <span className="stat-label">Published This Month</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="content-filters">
+        <div className="filter-group">
+          <label htmlFor="statusFilter">Status</label>
+          <select
+            id="statusFilter"
+            className="form-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            <optgroup label="Writing">
+              <option value="draft">Draft</option>
+            </optgroup>
+            <optgroup label="Client Review">
+              <option value="in_review">All In Review</option>
+              <option value="sent_for_review">Sent for Review</option>
+              <option value="client_reviewing">Client Reviewing</option>
+              <option value="revisions_requested">Revisions Requested</option>
+            </optgroup>
+            <optgroup label="Production">
+              <option value="in_production">All In Production</option>
+              <option value="approved">Approved</option>
+              <option value="internal_review">Internal Review</option>
+              <option value="final_optimization">Final Optimization</option>
+              <option value="image_selection">Image Selection</option>
+            </optgroup>
+            <optgroup label="Complete">
+              <option value="scheduled">Scheduled</option>
+              <option value="posted">Published</option>
+            </optgroup>
+          </select>
+        </div>
+        <div className="filter-group">
+          <label htmlFor="clientFilter">Client</label>
+          <select
+            id="clientFilter"
+            className="form-control"
+            value={clientFilter}
+            onChange={(e) => setClientFilter(e.target.value)}
+          >
+            <option value="">All Clients</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label htmlFor="platformFilter">Platform</label>
+          <select
+            id="platformFilter"
+            className="form-control"
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value)}
+          >
+            <option value="">All Platforms</option>
+            <option value="website">Website</option>
+            <option value="gbp">Google Business</option>
+            <option value="social">Social</option>
+            <option value="ai-creative">AI Creative</option>
+          </select>
+        </div>
+        <div className="filter-actions">
+          <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-state" style={{ textAlign: 'center', padding: '48px' }}>
+          <p>Loading content...</p>
+        </div>
+      )}
+
+      {/* Content Table */}
+      {!loading && (
+      <div className="content-table-wrapper">
+        <table className="content-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Progress</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contentItems.map((item) => (
+              <tr key={item.id} className="content-row" data-status={item.status}>
+                <td>
+                  <div className="content-title-cell">
+                    {item.urgent && (
+                      <span className="urgent-indicator" title="Urgent - 24hr deadline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                      </span>
+                    )}
+                    <Link
+                      href={`/admin/content/${item.id}`}
+                      className="content-title-link"
+                    >
+                      {item.title}
+                    </Link>
+                    {(item.review_round ?? 0) > 0 && (
+                      <span className="revision-badge" title={`Revision round ${item.review_round}`}>
+                        R{item.review_round}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td>{item.client_name}</td>
+                <td>
+                  <span className={`platform-badge ${getPlatformClass(item.platform, item.content_type)}`}>
+                    {getContentTypeLabel(item.content_type, item.platform)}
+                  </span>
+                </td>
+                <td>
+                  <StatusProgressBar
+                    currentStatus={item.status}
+                    approvalRequired={item.approval_required ?? true}
+                    reviewRound={item.review_round ?? 0}
+                    compact
+                  />
+                </td>
+                <td>
+                  <span className={`status-badge ${getStatusClass(item.status)}`}>
+                    {getStatusLabel(item.status)}
+                  </span>
+                </td>
+                <td>{formatDate(item.status_changed_at || item.created_at)}</td>
+                <td>
+                  <div className="action-buttons">
+                    {(() => {
+                      const action = getPrimaryAction(item)
+                      return (
+                        <Link
+                          href={`/admin/content/${item.id}`}
+                          className={`btn btn-sm btn-${action.variant}`}
+                        >
+                          {action.label}
+                        </Link>
+                      )
+                    })()}
+                    {/* More actions dropdown */}
+                    {(isSuperAdmin || ((item.status === 'posted' || item.status === 'published') && item.published_url)) && (
+                      <div className="dropdown-container">
+                        <button
+                          className="btn btn-sm btn-outline btn-icon"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenDropdown(openDropdown === item.id ? null : item.id)
+                          }}
+                          title="More actions"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="12" cy="5" r="1"></circle>
+                            <circle cx="12" cy="19" r="1"></circle>
                           </svg>
-                        </span>
-                      )}
-                      <Link
-                        href={`/admin/content/${item.id}`}
-                        className="content-title-link"
-                      >
-                        {item.title}
-                      </Link>
-                      {(item.review_round ?? 0) > 0 && (
-                        <span className="revision-badge" title={`Revision round ${item.review_round}`}>
-                          R{item.review_round}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{item.client_name}</td>
-                  <td>
-                    <span className={`platform-badge ${getPlatformClass(item.platform, item.content_type)}`}>
-                      {getContentTypeLabel(item.content_type, item.platform)}
-                    </span>
-                  </td>
-                  <td>
-                    <StatusProgressBar
-                      currentStatus={item.status}
-                      approvalRequired={item.approval_required ?? true}
-                      reviewRound={item.review_round ?? 0}
-                      compact
-                    />
-                  </td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(item.status)}`}>
-                      {getStatusLabel(item.status)}
-                    </span>
-                  </td>
-                  <td>{formatDate(item.status_changed_at || item.created_at)}</td>
-                  <td>
-                    <div className="action-buttons">
-                      {(() => {
-                        const action = getPrimaryAction(item)
-                        return (
-                          <Link
-                            href={`/admin/content/${item.id}`}
-                            className={`btn btn-sm btn-${action.variant}`}
-                          >
-                            {action.label}
-                          </Link>
-                        )
-                      })()}
-                      {/* More actions dropdown */}
-                      {(isSuperAdmin || ((item.status === 'posted' || item.status === 'published') && item.published_url)) && (
-                        <div className="dropdown-container">
-                          <button
-                            className="btn btn-sm btn-outline btn-icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setOpenDropdown(openDropdown === item.id ? null : item.id)
-                            }}
-                            title="More actions"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                              <circle cx="12" cy="12" r="1"></circle>
-                              <circle cx="12" cy="5" r="1"></circle>
-                              <circle cx="12" cy="19" r="1"></circle>
-                            </svg>
-                          </button>
-                          {openDropdown === item.id && (
-                            <div className="dropdown-menu" onClick={() => setOpenDropdown(null)}>
-                              {(item.status === 'posted' || item.status === 'published') && item.published_url && (
-                                <a
-                                  href={item.published_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="dropdown-item"
-                                >
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                    <polyline points="15 3 21 3 21 9"></polyline>
-                                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                                  </svg>
-                                  View Live
-                                </a>
-                              )}
-                              {isSuperAdmin && (
-                                <button
-                                  className="dropdown-item dropdown-item-danger"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setDeleteConfirm({ id: item.id, title: item.title })
-                                    setOpenDropdown(null)
-                                  }}
-                                >
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                  </svg>
-                                  Delete
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        )}
-
-        {/* No Results */}
-        {!loading && contentItems.length === 0 && (
-          <div className="no-results">
-            <p>No content found matching your filters.</p>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {contentItems.length > 0 && (
-          <div className="table-pagination">
-            <span className="pagination-info">Showing 1-{contentItems.length} items</span>
-            <div className="pagination-buttons">
-              <button className="btn btn-sm btn-secondary" disabled>
-                Previous
-              </button>
-              <button className="btn btn-sm btn-secondary">Next</button>
-            </div>
-          </div>
-        )}
-
-        {/* Legend */}
-        <div className="table-legend">
-          <div className="legend-item">
-            <span className="urgent-indicator">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-              </svg>
-            </span>
-            <span className="legend-text">Urgent - 24 hour deadline</span>
-          </div>
-          <div className="legend-item">
-            <span className="revision-badge">R1</span>
-            <span className="legend-text">Revision round indicator</span>
-          </div>
-        </div>
-          </>
-        )}
-
-        {/* Files Tab */}
-        {activeTab === 'files' && (
-          <div className="files-tab-content">
-            {/* Files Filter */}
-            <div className="clients-toolbar" style={{ marginBottom: '20px' }}>
-              <select
-                className="sort-select"
-                value={filesClientFilter}
-                onChange={(e) => setFilesClientFilter(e.target.value)}
-                style={{ minWidth: '200px' }}
-              >
-                <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Files Table */}
-            {filesLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                Loading files...
-              </div>
-            ) : files.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                No files found. Click "Add Files" to upload files for clients.
-              </div>
-            ) : (
-              <div className="content-table-wrapper">
-                <table className="content-table" style={{ tableLayout: 'fixed', width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '25%' }}>Name</th>
-                      <th style={{ width: '15%' }}>Client</th>
-                      <th style={{ width: '12%' }}>Type</th>
-                      <th style={{ width: '18%' }}>Category</th>
-                      <th style={{ width: '12%' }}>Date</th>
-                      <th style={{ width: '18%' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {files.map((file) => (
-                      <tr key={file.id}>
-                        <td style={{ fontWeight: 500 }}>{file.name}</td>
-                        <td>{file.client_name}</td>
-                        <td>
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            background: file.type === 'docs' ? '#EFF6FF' : file.type === 'images' ? '#F0FDF4' : '#FEF3C7',
-                            color: file.type === 'docs' ? '#1D4ED8' : file.type === 'images' ? '#15803D' : '#B45309',
-                          }}>
-                            {file.type === 'docs' && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                              </svg>
+                        </button>
+                        {openDropdown === item.id && (
+                          <div className="dropdown-menu" onClick={() => setOpenDropdown(null)}>
+                            {(item.status === 'posted' || item.status === 'published') && item.published_url && (
+                              <a
+                                href={item.published_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="dropdown-item"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                  <polyline points="15 3 21 3 21 9"></polyline>
+                                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                View Live
+                              </a>
                             )}
-                            {file.type === 'images' && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                              </svg>
+                            {isSuperAdmin && (
+                              <button
+                                className="dropdown-item dropdown-item-danger"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteConfirm({ id: item.id, title: item.title })
+                                  setOpenDropdown(null)
+                                }}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Delete
+                              </button>
                             )}
-                            {file.type === 'video' && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
-                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                              </svg>
-                            )}
-                            {file.type}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{file.category}</td>
-                        <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                          {new Date(file.created_at).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-sm btn-outline"
-                            >
-                              View
-                            </a>
-                            <button
-                              className="btn btn-sm btn-outline"
-                              onClick={() => handleDeleteFile(file.id)}
-                              disabled={deletingFileId === file.id}
-                              style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}
-                            >
-                              {deletingFileId === file.id ? '...' : 'Delete'}
-                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      )}
+
+      {/* No Results */}
+      {!loading && contentItems.length === 0 && (
+        <div className="no-results">
+          <p>No content found matching your filters.</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {contentItems.length > 0 && (
+        <div className="table-pagination">
+          <span className="pagination-info">Showing 1-{contentItems.length} items</span>
+          <div className="pagination-buttons">
+            <button className="btn btn-sm btn-secondary" disabled>
+              Previous
+            </button>
+            <button className="btn btn-sm btn-secondary">Next</button>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="table-legend">
+        <div className="legend-item">
+          <span className="urgent-indicator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </span>
+          <span className="legend-text">Urgent - 24 hour deadline</span>
+        </div>
+        <div className="legend-item">
+          <span className="revision-badge">R1</span>
+          <span className="legend-text">Revision round indicator</span>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -1750,34 +1497,6 @@ export default function AdminContentPage() {
       )}
 
       <style jsx>{`
-        .tabs-container {
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 0;
-        }
-        .tabs {
-          display: flex;
-          gap: 0;
-          margin-bottom: -1px;
-        }
-        .tab {
-          padding: 0.75rem 1.5rem;
-          background: none;
-          border: none;
-          border-bottom: 2px solid transparent;
-          color: var(--text-secondary);
-          font-size: 0.875rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .tab:hover {
-          color: var(--text-primary);
-          background: var(--bg-tertiary);
-        }
-        .tab.active {
-          color: var(--primary);
-          border-bottom-color: var(--primary);
-        }
         .stats-grid-6 {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
@@ -1896,49 +1615,6 @@ export default function AdminContentPage() {
           color: #6B7280;
         }
 
-        .btn-danger-outline {
-          background: transparent;
-          border: 1px solid #FCA5A5;
-          color: #DC2626;
-          padding: 4px 8px;
-          border-radius: 6px;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.15s ease;
-        }
-
-        .btn-danger-outline:hover {
-          background: #FEF2F2;
-          border-color: #DC2626;
-        }
-
-        .btn-danger {
-          background: #DC2626;
-          border: 1px solid #DC2626;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.15s ease;
-        }
-
-        .btn-danger:hover {
-          background: #B91C1C;
-        }
-
-        .btn-danger:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-icon {
-          padding: 6px;
-          min-width: auto;
-        }
-
         .dropdown-container {
           position: relative;
         }
@@ -1983,80 +1659,6 @@ export default function AdminContentPage() {
 
         .dropdown-item-danger:hover {
           background: #FEF2F2;
-        }
-
-        /* Modal styles */
-        .modal-backdrop {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .modal-content {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-          max-width: 90vw;
-          max-height: 90vh;
-          overflow: auto;
-        }
-
-        .modal-content.modal-sm {
-          width: 400px;
-        }
-
-        .modal-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 20px;
-          border-bottom: 1px solid #E5E7EB;
-        }
-
-        .modal-header h3 {
-          font-size: 18px;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-        }
-
-        .modal-close {
-          background: none;
-          border: none;
-          padding: 4px;
-          cursor: pointer;
-          color: #6B7280;
-          border-radius: 6px;
-          transition: all 0.15s ease;
-        }
-
-        .modal-close:hover {
-          background: #F3F4F6;
-          color: #111827;
-        }
-
-        .modal-close:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .modal-body {
-          padding: 20px;
-        }
-
-        .modal-footer {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          padding: 16px 20px;
-          border-top: 1px solid #E5E7EB;
         }
       `}</style>
     </>
