@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { AdminSidebar } from '@/components/layout'
+import { AdminAnnouncementPopup } from '@/components/admin/AdminAnnouncementPopup'
 import type { Profile } from '@/types/database'
 
 type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
@@ -143,6 +145,9 @@ export default async function AdminPrefixLayout({
       <main className="admin-main">
         {children}
       </main>
+      <Suspense fallback={null}>
+        <AdminAnnouncementPopup />
+      </Suspense>
     </div>
   )
 }
