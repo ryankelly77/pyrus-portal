@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { AdminHeader } from '@/components/layout'
-import Link from 'next/link'
 
 interface Announcement {
   id: string
@@ -90,10 +88,6 @@ export default function AnnouncementsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formTab, setFormTab] = useState<'basic' | 'html' | 'preview'>('basic')
-  const [hasNotifications, setHasNotifications] = useState(false)
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -123,23 +117,7 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     fetchAnnouncements()
     fetchClients()
-    fetchProfile()
   }, [])
-
-  async function fetchProfile() {
-    try {
-      const res = await fetch('/api/auth/me')
-      if (res.ok) {
-        const data = await res.json()
-        const nameParts = (data.fullName || '').split(' ')
-        setFirstName(nameParts[0] || '')
-        setLastName(nameParts.slice(1).join(' ') || '')
-        setProfilePhotoUrl(data.avatarUrl || null)
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    }
-  }
 
   async function fetchAnnouncements() {
     try {
@@ -356,43 +334,21 @@ export default function AnnouncementsPage() {
 
   return (
     <>
-      <AdminHeader
-        title="Announcements"
-        user={{
-          name: `${firstName} ${lastName}`.trim() || 'User',
-          initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U',
-          avatarUrl: profilePhotoUrl,
-        }}
-        hasNotifications={hasNotifications}
-      />
+      {/* Toolbar */}
+      <div className="announcements-toolbar">
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowForm(true)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Create Announcement
+        </button>
+      </div>
 
-      <div className="admin-content">
-        {/* Breadcrumb */}
-        <div className="breadcrumb">
-          <Link href="/admin/settings">Settings</Link>
-          <span>/</span>
-          <span>Announcements</span>
-        </div>
-
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="page-header-content">
-            <h1>Client Announcements</h1>
-            <p>Create and manage popup announcements displayed to clients</p>
-          </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowForm(true)}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create Announcement
-          </button>
-        </div>
-
-        {/* Filters */}
+      {/* Filters */}
         <div className="clients-toolbar">
           <div className="filter-buttons">
             {['all', 'active', 'draft', 'archived'].map(status => (
@@ -517,9 +473,8 @@ export default function AnnouncementsPage() {
             })}
           </div>
         )}
-      </div>
 
-      {/* Form Modal - Rendered outside admin-content to avoid overflow issues */}
+      {/* Form Modal */}
       {showForm && (
         <div className="modal-overlay active" onClick={() => { setShowForm(false); resetForm(); }}>
           <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
@@ -995,44 +950,10 @@ export default function AnnouncementsPage() {
       )}
 
       <style jsx global>{`
-        .breadcrumb {
+        .announcements-toolbar {
           display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 16px 24px;
-          font-size: 14px;
-          color: #6B7280;
-        }
-
-        .breadcrumb a {
-          color: #3B82F6;
-          text-decoration: none;
-        }
-
-        .breadcrumb a:hover {
-          text-decoration: underline;
-        }
-
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          padding: 0 24px 24px;
-          border-bottom: 1px solid #E5E7EB;
-          margin-bottom: 24px;
-        }
-
-        .page-header-content h1 {
-          margin: 0 0 4px;
-          font-size: 24px;
-          font-weight: 600;
-          color: #111827;
-        }
-
-        .page-header-content p {
-          margin: 0;
-          color: #6B7280;
-          font-size: 14px;
+          justify-content: flex-end;
+          padding: 0 0 16px;
         }
 
         .loading-state, .empty-state {
@@ -1056,7 +977,6 @@ export default function AnnouncementsPage() {
         }
 
         .announcements-list {
-          padding: 0 24px 24px;
           display: flex;
           flex-direction: column;
           gap: 16px;
@@ -1506,11 +1426,6 @@ export default function AnnouncementsPage() {
 
           .form-group.full-width {
             grid-column: span 1;
-          }
-
-          .page-header {
-            flex-direction: column;
-            gap: 16px;
           }
         }
       `}</style>
