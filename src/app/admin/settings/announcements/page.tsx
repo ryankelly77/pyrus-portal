@@ -14,8 +14,10 @@ interface Announcement {
   persistence_type: string
   show_duration_days: number | null
   allow_permanent_dismiss: boolean
+  target_audience: string
   target_all_clients: boolean
   target_client_ids: string[]
+  target_admin_roles: string[]
   start_date: string | null
   end_date: string | null
   has_detail_page: boolean
@@ -66,6 +68,19 @@ const PERSISTENCE_TYPES = [
   { value: 'required_action', label: 'Required Action', description: 'Cannot be dismissed (requires end date)' },
 ]
 
+const TARGET_AUDIENCES = [
+  { value: 'clients', label: 'Clients Only' },
+  { value: 'admin', label: 'Admin Only' },
+  { value: 'both', label: 'Both Clients & Admin' },
+]
+
+const ADMIN_ROLES = [
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'production_team', label: 'Production Team' },
+  { value: 'sales', label: 'Sales' },
+]
+
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -89,8 +104,10 @@ export default function AnnouncementsPage() {
     persistence_type: 'dismissable',
     show_duration_days: 7,
     allow_permanent_dismiss: true,
+    target_audience: 'clients',
     target_all_clients: true,
     target_client_ids: [] as string[],
+    target_admin_roles: [] as string[],
     start_date: '',
     end_date: '',
     has_detail_page: false,
@@ -160,8 +177,10 @@ export default function AnnouncementsPage() {
       persistence_type: 'dismissable',
       show_duration_days: 7,
       allow_permanent_dismiss: true,
+      target_audience: 'clients',
       target_all_clients: true,
       target_client_ids: [],
+      target_admin_roles: [],
       start_date: '',
       end_date: '',
       has_detail_page: false,
@@ -185,8 +204,10 @@ export default function AnnouncementsPage() {
       persistence_type: announcement.persistence_type,
       show_duration_days: announcement.show_duration_days || 7,
       allow_permanent_dismiss: announcement.allow_permanent_dismiss,
+      target_audience: announcement.target_audience || 'clients',
       target_all_clients: announcement.target_all_clients,
       target_client_ids: announcement.target_client_ids || [],
+      target_admin_roles: announcement.target_admin_roles || [],
       start_date: announcement.start_date ? announcement.start_date.split('T')[0] : '',
       end_date: announcement.end_date ? announcement.end_date.split('T')[0] : '',
       has_detail_page: announcement.has_detail_page,
@@ -303,6 +324,15 @@ export default function AnnouncementsPage() {
         ? prev.target_client_ids.filter(id => id !== clientId)
         : [...prev.target_client_ids, clientId]
       return { ...prev, target_client_ids: newIds }
+    })
+  }
+
+  function toggleAdminRole(role: string) {
+    setForm(prev => {
+      const newRoles = prev.target_admin_roles.includes(role)
+        ? prev.target_admin_roles.filter(r => r !== role)
+        : [...prev.target_admin_roles, role]
+      return { ...prev, target_admin_roles: newRoles }
     })
   }
 
@@ -652,42 +682,85 @@ export default function AnnouncementsPage() {
                     </div>
                   )}
 
-                  {/* Targeting */}
+                  {/* Target Audience */}
                   <div className="form-group full-width">
-                    <label>Targeting</label>
+                    <label>Target Audience</label>
                     <div className="radio-group">
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          checked={form.target_all_clients}
-                          onChange={() => setForm({ ...form, target_all_clients: true, target_client_ids: [] })}
-                        />
-                        All clients
-                      </label>
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          checked={!form.target_all_clients}
-                          onChange={() => setForm({ ...form, target_all_clients: false })}
-                        />
-                        Specific clients
-                      </label>
+                      {TARGET_AUDIENCES.map(audience => (
+                        <label key={audience.value} className="radio-label">
+                          <input
+                            type="radio"
+                            checked={form.target_audience === audience.value}
+                            onChange={() => setForm({ ...form, target_audience: audience.value })}
+                          />
+                          {audience.label}
+                        </label>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Client Selection */}
-                  {!form.target_all_clients && (
+                  {/* Client Targeting - show when audience includes clients */}
+                  {(form.target_audience === 'clients' || form.target_audience === 'both') && (
+                    <>
+                      <div className="form-group full-width">
+                        <label>Client Targeting</label>
+                        <div className="radio-group">
+                          <label className="radio-label">
+                            <input
+                              type="radio"
+                              checked={form.target_all_clients}
+                              onChange={() => setForm({ ...form, target_all_clients: true, target_client_ids: [] })}
+                            />
+                            All clients
+                          </label>
+                          <label className="radio-label">
+                            <input
+                              type="radio"
+                              checked={!form.target_all_clients}
+                              onChange={() => setForm({ ...form, target_all_clients: false })}
+                            />
+                            Specific clients
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Client Selection */}
+                      {!form.target_all_clients && (
+                        <div className="form-group full-width">
+                          <label>Select Clients</label>
+                          <div className="client-selector">
+                            {clients.map(client => (
+                              <label key={client.id} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={form.target_client_ids.includes(client.id)}
+                                  onChange={() => toggleTargetClient(client.id)}
+                                />
+                                {client.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Admin Role Targeting - show when audience includes admin */}
+                  {(form.target_audience === 'admin' || form.target_audience === 'both') && (
                     <div className="form-group full-width">
-                      <label>Select Clients</label>
-                      <div className="client-selector">
-                        {clients.map(client => (
-                          <label key={client.id} className="checkbox-label">
+                      <label>Admin Roles</label>
+                      <p className="help-text" style={{ marginBottom: '8px' }}>
+                        Select which admin roles will see this announcement. Leave empty for all admin roles.
+                      </p>
+                      <div className="checkbox-group">
+                        {ADMIN_ROLES.map(role => (
+                          <label key={role.value} className="checkbox-label">
                             <input
                               type="checkbox"
-                              checked={form.target_client_ids.includes(client.id)}
-                              onChange={() => toggleTargetClient(client.id)}
+                              checked={form.target_admin_roles.includes(role.value)}
+                              onChange={() => toggleAdminRole(role.value)}
                             />
-                            {client.name}
+                            {role.label}
                           </label>
                         ))}
                       </div>

@@ -42,8 +42,10 @@ export async function GET(
       return NextResponse.json({ error: 'Announcement not found' }, { status: 404 })
     }
 
-    // Get client names for dismissals
-    const clientIds = announcement.dismissals.map(d => d.client_id)
+    // Get client names for dismissals (filter out null client_ids from admin dismissals)
+    const clientIds = announcement.dismissals
+      .map(d => d.client_id)
+      .filter((id): id is string => id !== null)
     const clients = clientIds.length > 0
       ? await prisma.clients.findMany({
           where: { id: { in: clientIds } },
@@ -51,7 +53,20 @@ export async function GET(
         })
       : []
 
+    // Get admin user names for admin dismissals
+    const userIds = announcement.dismissals
+      .filter(d => d.user_id && !d.client_id)
+      .map(d => d.user_id)
+      .filter((id): id is string => id !== null)
+    const adminUsers = userIds.length > 0
+      ? await prisma.profiles.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, full_name: true },
+        })
+      : []
+
     const clientMap = new Map(clients.map(c => [c.id, c.name]))
+    const userMap = new Map(adminUsers.map(u => [u.id, u.full_name]))
 
     // Calculate stats
     const viewStats = await prisma.announcement_dismissals.aggregate({
@@ -67,7 +82,8 @@ export async function GET(
         ...announcement,
         dismissals: announcement.dismissals.map(d => ({
           ...d,
-          client_name: clientMap.get(d.client_id) || 'Unknown',
+          client_name: d.client_id ? (clientMap.get(d.client_id) || 'Unknown') : null,
+          user_name: d.user_id && !d.client_id ? (userMap.get(d.user_id) || 'Unknown Admin') : null,
         })),
       },
       stats: {
@@ -121,6 +137,8 @@ export async function PATCH(
       allow_permanent_dismiss,
       target_all_clients,
       target_client_ids,
+      target_audience,
+      target_admin_roles,
       start_date,
       end_date,
       has_detail_page,
@@ -144,6 +162,8 @@ export async function PATCH(
     if (allow_permanent_dismiss !== undefined) updateData.allow_permanent_dismiss = allow_permanent_dismiss
     if (target_all_clients !== undefined) updateData.target_all_clients = target_all_clients
     if (target_client_ids !== undefined) updateData.target_client_ids = target_client_ids
+    if (target_audience !== undefined) updateData.target_audience = target_audience
+    if (target_admin_roles !== undefined) updateData.target_admin_roles = target_admin_roles
     if (start_date !== undefined) updateData.start_date = start_date ? new Date(start_date) : null
     if (end_date !== undefined) updateData.end_date = end_date ? new Date(end_date) : null
     if (has_detail_page !== undefined) updateData.has_detail_page = has_detail_page
