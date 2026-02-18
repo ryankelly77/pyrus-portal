@@ -1,19 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { AdminHeader } from '@/components/layout'
-import { useUserProfile } from '@/hooks/useUserProfile'
 import { MRRChart, MRRDataPoint } from '@/components/charts/MRRChart'
-
-// Dynamically import Pipeline component to avoid large bundle
-const PipelineDashboardEmbed = dynamic(
-  () => import('@/components/pipeline/PipelineDashboardEmbed').then(mod => ({ default: mod.PipelineDashboardEmbed })),
-  { loading: () => <div style={{ padding: '60px', textAlign: 'center', color: '#6B7280' }}>Loading pipeline...</div> }
-)
-
-type MainTab = 'revenue' | 'pipeline'
 
 interface VolumeDataPoint {
   month: string
@@ -242,12 +231,7 @@ interface ScheduledCancellation {
   monthsRemaining: number
 }
 
-export default function AdminRevenuePage() {
-  const { user, hasNotifications } = useUserProfile()
-
-  // Main tab state
-  const [mainTab, setMainTab] = useState<MainTab>('revenue')
-
+export default function RevenueMRRPage() {
   const [mrrChartData, setMrrChartData] = useState<MRRDataPoint[]>([])
   const [volumeData, setVolumeData] = useState<{ month: string; label: string; volume: number; cumulative: number }[]>([])
   const [stats, setStats] = useState({
@@ -342,7 +326,6 @@ export default function AdminRevenuePage() {
     try {
       const res = await fetch('/api/pipeline/recalculate', { method: 'POST' })
       if (res.ok) {
-        // Refetch pipeline summary after recalculation
         const summaryRes = await fetch('/api/admin/revenue/pipeline-summary')
         if (summaryRes.ok) {
           const data = await summaryRes.json()
@@ -372,586 +355,512 @@ export default function AdminRevenuePage() {
 
   return (
     <>
-      <AdminHeader
-        title="Revenue & Pipeline"
-        user={user}
-        hasNotifications={hasNotifications}
-      />
-
-      <div className="admin-content">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="page-header-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <p style={{ margin: 0 }}>Track your monthly recurring revenue and growth metrics</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
-                Updated {formatLastUpdated(lastUpdated)}
-              </span>
-              <button
-                onClick={() => fetchMRRData(true)}
-                disabled={refreshingData}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '0.813rem',
-                  fontWeight: 500,
-                  cursor: refreshingData ? 'wait' : 'pointer',
-                  background: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-color)',
-                  opacity: refreshingData ? 0.7 : 1,
-                }}
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="page-header-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <p style={{ margin: 0 }}>Track your monthly recurring revenue and growth metrics</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
+              Updated {formatLastUpdated(lastUpdated)}
+            </span>
+            <button
+              onClick={() => fetchMRRData(true)}
+              disabled={refreshingData}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '0.813rem',
+                fontWeight: 500,
+                cursor: refreshingData ? 'wait' : 'pointer',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                opacity: refreshingData ? 0.7 : 1,
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                width="14"
+                height="14"
+                style={{ animation: refreshingData ? 'spin 1s linear infinite' : 'none' }}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  width="14"
-                  height="14"
-                  style={{ animation: refreshingData ? 'spin 1s linear infinite' : 'none' }}
-                >
-                  <path d="M21 12a9 9 0 1 1-9-9"></path>
-                  <polyline points="21 3 21 9 15 9"></polyline>
-                </svg>
-                {refreshingData ? 'Refreshing...' : 'Refresh'}
-              </button>
+                <path d="M21 12a9 9 0 1 1-9-9"></path>
+                <polyline points="21 3 21 9 15 9"></polyline>
+              </svg>
+              {refreshingData ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout: Pipeline Cards on LEFT, Charts on RIGHT */}
+      <div className="revenue-layout">
+        {/* Left Column: Pipeline Projection Cards */}
+        <div className="pipeline-projection-column">
+          {/* Focal Card: Projected MRR */}
+          <div className="projected-mrr-card">
+            <div className="projected-mrr-header">
+              <span className="projected-mrr-label">Projected MRR</span>
+              <Link href="/admin/revenue/pipeline" className="view-pipeline-link">
+                View Pipeline →
+              </Link>
             </div>
-          </div>
-        </div>
+            <div className="projected-mrr-value">
+              {pipelineLoading ? '...' : (() => {
+                const pendingBillingDate = new Date('2026-02-17')
+                const hasPending = new Date() < pendingBillingDate
+                const pendingAmount = 300
+                const displayProjected = hasPending
+                  ? (pipelineSummary?.projected_mrr || 0) + pendingAmount
+                  : (pipelineSummary?.projected_mrr || 0)
+                return `$${displayProjected.toLocaleString()}/mo`
+              })()}
+            </div>
 
-        {/* Main Tabs */}
-        <div className="tabs-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', gap: '0' }}>
-            <button
-              className={`tab ${mainTab === 'revenue' ? 'active' : ''}`}
-              onClick={() => setMainTab('revenue')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: mainTab === 'revenue' ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: 500,
-                fontSize: '14px',
-                borderBottom: mainTab === 'revenue' ? '2px solid var(--primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-              Revenue & MRR
-            </button>
-            <button
-              className={`tab ${mainTab === 'pipeline' ? 'active' : ''}`}
-              onClick={() => setMainTab('pipeline')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: mainTab === 'pipeline' ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: 500,
-                fontSize: '14px',
-                borderBottom: mainTab === 'pipeline' ? '2px solid var(--primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-              </svg>
-              Sales Pipeline
-            </button>
-          </div>
-        </div>
-
-        {/* Revenue Tab */}
-        {mainTab === 'revenue' && (
-          <>
-        {/* Main Layout: Pipeline Cards on LEFT, Charts on RIGHT */}
-        <div className="revenue-layout">
-          {/* Left Column: Pipeline Projection Cards */}
-          <div className="pipeline-projection-column">
-            {/* Focal Card: Projected MRR */}
-            <div className="projected-mrr-card">
-              <div className="projected-mrr-header">
-                <span className="projected-mrr-label">Projected MRR</span>
-                <Link href="/admin/pipeline" className="view-pipeline-link">
-                  View Pipeline →
-                </Link>
+            {!pipelineLoading && pipelineSummary && (
+              <div className="projected-mrr-breakdown">
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Current MRR</span>
+                  <span className="breakdown-value">
+                    {(() => {
+                      const pendingBillingDate = new Date('2026-02-17')
+                      const hasPending = new Date() < pendingBillingDate
+                      const pendingAmount = 300
+                      const displayMRR = hasPending
+                        ? pipelineSummary.current_mrr + pendingAmount
+                        : pipelineSummary.current_mrr
+                      return (
+                        <>
+                          ${displayMRR.toLocaleString()}
+                          {hasPending && <span className="breakdown-detail">(incl. $300 pending)</span>}
+                        </>
+                      )
+                    })()}
+                  </span>
+                </div>
+                {pipelineSummary.closing_soon.deal_count > 0 && (
+                  <div className="breakdown-row">
+                    <span className="breakdown-label">Closing Soon</span>
+                    <span className="breakdown-value green">
+                      +${pipelineSummary.closing_soon.weighted_mrr.toLocaleString()}
+                      <span className="breakdown-detail">({pipelineSummary.closing_soon.deal_count} deals, avg {pipelineSummary.closing_soon.avg_confidence}%)</span>
+                    </span>
+                  </div>
+                )}
+                {pipelineSummary.in_pipeline.deal_count > 0 && (
+                  <div className="breakdown-row">
+                    <span className="breakdown-label">In Pipeline</span>
+                    <span className="breakdown-value blue">
+                      +${pipelineSummary.in_pipeline.weighted_mrr.toLocaleString()}
+                      <span className="breakdown-detail">({pipelineSummary.in_pipeline.deal_count} deals, avg {pipelineSummary.in_pipeline.avg_confidence}%)</span>
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="projected-mrr-value">
+            )}
+
+            {!pipelineLoading && pipelineSummary && pipelineSummary.potential_growth > 0 && (
+              <div className="potential-growth">
+                ▲ ${pipelineSummary.potential_growth.toLocaleString()} potential growth from active pipeline
+              </div>
+            )}
+
+            {!pipelineLoading && pipelineSummary && pipelineSummary.potential_growth === 0 && (
+              <div className="no-pipeline">
+                No active pipeline deals. Projected MRR equals current MRR.
+              </div>
+            )}
+          </div>
+
+          {/* Supporting Cards Grid */}
+          <div className="supporting-cards-grid">
+            {/* Current MRR Card */}
+            <div className="supporting-card">
+              <div className="supporting-card-header">
+                <span className="supporting-card-label">Current MRR</span>
+              </div>
+              <div className="supporting-card-value">
                 {pipelineLoading ? '...' : (() => {
                   const pendingBillingDate = new Date('2026-02-17')
                   const hasPending = new Date() < pendingBillingDate
                   const pendingAmount = 300
-                  const displayProjected = hasPending
-                    ? (pipelineSummary?.projected_mrr || 0) + pendingAmount
-                    : (pipelineSummary?.projected_mrr || 0)
-                  return `$${displayProjected.toLocaleString()}/mo`
+                  const displayMRR = hasPending
+                    ? (pipelineSummary?.current_mrr || 0) + pendingAmount
+                    : (pipelineSummary?.current_mrr || 0)
+                  return `$${displayMRR.toLocaleString()}`
                 })()}
               </div>
+              <div className="supporting-card-detail">
+                {pipelineLoading ? '' : (() => {
+                  const pendingBillingDate = new Date('2026-02-17')
+                  const hasPending = new Date() < pendingBillingDate
+                  const clientCount = pipelineSummary?.active_client_count || 0
+                  return hasPending
+                    ? `${clientCount} active clients (incl. pending)`
+                    : `${clientCount} active clients`
+                })()}
+              </div>
+              <div className="supporting-card-subtitle">Confirmed recurring revenue</div>
+            </div>
 
-              {!pipelineLoading && pipelineSummary && (
-                <div className="projected-mrr-breakdown">
-                  <div className="breakdown-row">
-                    <span className="breakdown-label">Current MRR</span>
-                    <span className="breakdown-value">
-                      {(() => {
-                        const pendingBillingDate = new Date('2026-02-17')
-                        const hasPending = new Date() < pendingBillingDate
-                        const pendingAmount = 300
-                        const displayMRR = hasPending
-                          ? pipelineSummary.current_mrr + pendingAmount
-                          : pipelineSummary.current_mrr
+            {/* Closing Soon Card */}
+            <div className="supporting-card closing-soon">
+              <div className="supporting-card-header">
+                <span className="supporting-card-label">Closing Soon</span>
+              </div>
+              <div className="supporting-card-value green">
+                {pipelineLoading ? '...' : `$${pipelineSummary?.closing_soon.weighted_mrr.toLocaleString()}`}
+              </div>
+              <div className="supporting-card-detail">
+                {pipelineLoading ? '' : pipelineSummary?.closing_soon.deal_count === 0
+                  ? 'No deals'
+                  : `${pipelineSummary?.closing_soon.deal_count} deals, ${pipelineSummary?.closing_soon.avg_confidence}% avg`}
+              </div>
+              <div className="supporting-card-subtitle">High confidence, 2+ weeks active</div>
+            </div>
+
+            {/* In Pipeline Card */}
+            <div className="supporting-card in-pipeline">
+              <div className="supporting-card-header">
+                <span className="supporting-card-label">In Pipeline</span>
+              </div>
+              <div className="supporting-card-value blue">
+                {pipelineLoading ? '...' : `$${pipelineSummary?.in_pipeline.weighted_mrr.toLocaleString()}`}
+              </div>
+              <div className="supporting-card-detail">
+                {pipelineLoading ? '' : pipelineSummary?.in_pipeline.deal_count === 0
+                  ? 'No deals'
+                  : `${pipelineSummary?.in_pipeline.deal_count} deals, ${pipelineSummary?.in_pipeline.avg_confidence}% avg`}
+              </div>
+              <div className="supporting-card-subtitle">Active deals in progress</div>
+            </div>
+
+            {/* At Risk Card */}
+            <div className="supporting-card at-risk">
+              <div className="supporting-card-header">
+                <span className="supporting-card-label">At Risk</span>
+              </div>
+              <div className="supporting-card-value orange">
+                {pipelineLoading ? '...' : `$${pipelineSummary?.at_risk.weighted_mrr.toLocaleString()}`}
+              </div>
+              <div className="supporting-card-detail">
+                {pipelineLoading ? '' : pipelineSummary?.at_risk.deal_count === 0
+                  ? 'No deals'
+                  : `${pipelineSummary?.at_risk.deal_count} deals, ${pipelineSummary?.at_risk.avg_confidence}% avg`}
+              </div>
+              <div className="supporting-card-subtitle">Needs attention or archiving</div>
+            </div>
+          </div>
+
+          {/* On Hold Indicator */}
+          {!pipelineLoading && pipelineSummary && pipelineSummary.on_hold.deal_count > 0 && (
+            <div className="on-hold-indicator">
+              ⏸️ {pipelineSummary.on_hold.deal_count} deal{pipelineSummary.on_hold.deal_count !== 1 ? 's' : ''} on hold (${pipelineSummary.on_hold.raw_mrr.toLocaleString()}/mo) — snoozed with specific resume dates
+            </div>
+          )}
+
+          {/* Closing Soon Mini Table */}
+          {!pipelineLoading && pipelineSummary && pipelineSummary.closing_soon_deals.length > 0 && (
+            <div className="closing-soon-table-card">
+              <div className="closing-soon-table-header">
+                <h3>Closing Soon</h3>
+                <span className="closing-soon-count">{pipelineSummary.closing_soon_deals.length} deals</span>
+              </div>
+              <div className="closing-soon-table">
+                <div className="closing-soon-row closing-soon-row-header">
+                  <div className="closing-soon-col col-client">Client</div>
+                  <div className="closing-soon-col col-rep">Rep</div>
+                  <div className="closing-soon-col col-monthly">Monthly</div>
+                  <div className="closing-soon-col col-confidence">Confidence</div>
+                  <div className="closing-soon-col col-weighted">Weighted</div>
+                </div>
+                {pipelineSummary.closing_soon_deals.map((deal) => (
+                  <Link
+                    href="/admin/revenue/pipeline"
+                    key={deal.id}
+                    className="closing-soon-row"
+                  >
+                    <div className="closing-soon-col col-client">
+                      <span className="deal-client-name">{deal.client_name}</span>
+                    </div>
+                    <div className="closing-soon-col col-rep">
+                      {deal.rep_full_name?.split(' ')[0] || '—'}
+                    </div>
+                    <div className="closing-soon-col col-monthly">
+                      ${deal.predicted_monthly.toLocaleString()}
+                    </div>
+                    <div className="closing-soon-col col-confidence">
+                      <span className="confidence-badge">{deal.confidence_score}%</span>
+                    </div>
+                    <div className="closing-soon-col col-weighted">
+                      ${deal.weighted_monthly.toLocaleString()}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Data Freshness */}
+          <div className="pipeline-freshness">
+            <div className="freshness-left">
+              <span className="freshness-label">Last updated: {formatLastUpdated(pipelineSummary?.last_updated || null)}</span>
+              <button
+                className="refresh-btn"
+                onClick={handleRefreshScores}
+                disabled={refreshingScores}
+              >
+                {refreshingScores ? (
+                  <span className="refresh-spinner">↻</span>
+                ) : (
+                  <span>↻</span>
+                )}
+              </button>
+            </div>
+            <span className="freshness-note">Scores recalculate on every deal event and daily at midnight CST</span>
+          </div>
+        </div>
+
+        {/* Right Column: Charts + Scheduled Cancellations */}
+        <div className="revenue-right-column">
+          <div className="revenue-charts-grid">
+            {/* MRR Chart */}
+            <div className="revenue-chart-card">
+              <div className="chart-header">
+                <div>
+                  <span className="chart-label">MRR</span>
+                  <div className="chart-value">
+                    {loading ? '...' : (() => {
+                      const pendingBillingDate = new Date('2026-02-17')
+                      const hasPending = new Date() < pendingBillingDate
+                      const displayMRR = hasPending ? stats.currentMRR + 300 : stats.currentMRR
+                      return (
+                        <>
+                          ${displayMRR.toLocaleString()}
+                          {hasPending && <span className="pending-note"> (incl. $300 pending)</span>}
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div className="chart-change">
+                  {!loading && stats.mrrChange !== 0 && (
+                    <span className={stats.mrrChange >= 0 ? 'positive' : 'negative'}>
+                      {stats.mrrChange >= 0 ? '+' : ''}{stats.mrrChange.toLocaleString()} this month
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="chart-body mrr-chart-body">
+                {loading ? (
+                  <div className="chart-loading">Loading...</div>
+                ) : (
+                  <MRRChart data={mrrChartData} height={200} />
+                )}
+              </div>
+            </div>
+
+            {/* MRR Growth Chart */}
+            <div className="revenue-chart-card">
+              <div className="chart-header">
+                <div>
+                  <span className="chart-label">MRR growth rate</span>
+                  <div className="chart-value">
+                    {loading ? '...' : (() => {
+                      const pendingBillingDate = new Date('2026-02-17')
+                      const hasPending = new Date() < pendingBillingDate
+
+                      if (hasPending) {
+                        const adjustedMRR = stats.currentMRR + 300
+                        const adjustmentFactor = adjustedMRR / stats.currentMRR
+                        const estimatedMonths = 12
+                        const adjustedRate = Math.pow(Math.pow(1 + stats.avgGrowthPercent/100, estimatedMonths) * adjustmentFactor, 1/estimatedMonths) - 1
+                        const adjustedPercent = Math.round(adjustedRate * 1000) / 10
                         return (
                           <>
-                            ${displayMRR.toLocaleString()}
-                            {hasPending && <span className="breakdown-detail">(incl. $300 pending)</span>}
+                            {adjustedPercent >= 0 ? '+' : ''}{adjustedPercent}%
+                            <span className="pending-note"> (incl. $300 pending)</span>
                           </>
                         )
-                      })()}
+                      }
+                      return `${stats.avgGrowthPercent >= 0 ? '+' : ''}${stats.avgGrowthPercent}%`
+                    })()}
+                  </div>
+                </div>
+                <div className="chart-change">
+                  <span className="neutral">avg. month over month</span>
+                </div>
+              </div>
+              <div className="chart-body">
+                {loading ? (
+                  <div className="chart-loading">Loading...</div>
+                ) : mrrChartData.length > 1 ? (
+                  <GrowthBarsChart data={mrrChartData} />
+                ) : (
+                  <div className="chart-loading">No data</div>
+                )}
+              </div>
+            </div>
+
+            {/* Net Volume Chart */}
+            <div className="revenue-chart-card">
+              <div className="chart-header">
+                <div>
+                  <span className="chart-label">Net volume</span>
+                  <div className="chart-value">
+                    {loading ? '...' : `$${stats.totalNetVolume.toLocaleString()}`}
+                  </div>
+                </div>
+                <div className="chart-change">
+                  <span className="neutral">all time</span>
+                </div>
+              </div>
+              <div className="chart-body">
+                {loading ? (
+                  <div className="chart-loading">Loading...</div>
+                ) : (
+                  <NetVolumeChart data={volumeData} height={200} />
+                )}
+              </div>
+            </div>
+
+            {/* Churn */}
+            <div className="revenue-chart-card">
+              <div className="chart-header">
+                <div>
+                  <span className="chart-label">Churn</span>
+                  <div className="chart-value">
+                    {loading ? '...' : (() => {
+                      const totalSubs = Math.round(stats.churnedSubscriptions / (stats.churnRate / 100))
+                      const realChurn = ((stats.churnedSubscriptions - 1) / (totalSubs - 1)) * 100
+                      return `${Math.round(realChurn * 10) / 10}%`
+                    })()}
+                    <span className="test-note"> ({stats.churnRate}% incl. test)</span>
+                  </div>
+                </div>
+                <div className="chart-change">
+                  {!loading && stats.churnedSubscriptions > 1 && (
+                    <span className="negative">
+                      {stats.churnedSubscriptions - 1} canceled (+ 1 test)
+                    </span>
+                  )}
+                  {!loading && stats.churnedSubscriptions === 1 && (
+                    <span className="positive">No real cancellations</span>
+                  )}
+                  {!loading && stats.churnedSubscriptions === 0 && (
+                    <span className="positive">No cancellations</span>
+                  )}
+                </div>
+              </div>
+              <div className="chart-body">
+                <div className="churn-stats">
+                  <div className="churn-stat">
+                    <span className="churn-stat-label">Lost MRR</span>
+                    <span className="churn-stat-value negative">
+                      {loading ? '...' : (
+                        <>
+                          ${(stats.churnedMRR - 300).toLocaleString()}
+                          <span className="test-note"> ($300 test)</span>
+                        </>
+                      )}
                     </span>
                   </div>
-                  {pipelineSummary.closing_soon.deal_count > 0 && (
-                    <div className="breakdown-row">
-                      <span className="breakdown-label">Closing Soon</span>
-                      <span className="breakdown-value green">
-                        +${pipelineSummary.closing_soon.weighted_mrr.toLocaleString()}
-                        <span className="breakdown-detail">({pipelineSummary.closing_soon.deal_count} deals, avg {pipelineSummary.closing_soon.avg_confidence}%)</span>
-                      </span>
-                    </div>
-                  )}
-                  {pipelineSummary.in_pipeline.deal_count > 0 && (
-                    <div className="breakdown-row">
-                      <span className="breakdown-label">In Pipeline</span>
-                      <span className="breakdown-value blue">
-                        +${pipelineSummary.in_pipeline.weighted_mrr.toLocaleString()}
-                        <span className="breakdown-detail">({pipelineSummary.in_pipeline.deal_count} deals, avg {pipelineSummary.in_pipeline.avg_confidence}%)</span>
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!pipelineLoading && pipelineSummary && pipelineSummary.potential_growth > 0 && (
-                <div className="potential-growth">
-                  ▲ ${pipelineSummary.potential_growth.toLocaleString()} potential growth from active pipeline
-                </div>
-              )}
-
-              {!pipelineLoading && pipelineSummary && pipelineSummary.potential_growth === 0 && (
-                <div className="no-pipeline">
-                  No active pipeline deals. Projected MRR equals current MRR.
-                </div>
-              )}
-            </div>
-
-            {/* Supporting Cards Grid */}
-            <div className="supporting-cards-grid">
-              {/* Current MRR Card */}
-              <div className="supporting-card">
-                <div className="supporting-card-header">
-                  <span className="supporting-card-label">Current MRR</span>
-                </div>
-                <div className="supporting-card-value">
-                  {pipelineLoading ? '...' : (() => {
-                    const pendingBillingDate = new Date('2026-02-17')
-                    const hasPending = new Date() < pendingBillingDate
-                    const pendingAmount = 300
-                    const displayMRR = hasPending
-                      ? (pipelineSummary?.current_mrr || 0) + pendingAmount
-                      : (pipelineSummary?.current_mrr || 0)
-                    return `$${displayMRR.toLocaleString()}`
-                  })()}
-                </div>
-                <div className="supporting-card-detail">
-                  {pipelineLoading ? '' : (() => {
-                    const pendingBillingDate = new Date('2026-02-17')
-                    const hasPending = new Date() < pendingBillingDate
-                    const clientCount = pipelineSummary?.active_client_count || 0
-                    return hasPending
-                      ? `${clientCount} active clients (incl. pending)`
-                      : `${clientCount} active clients`
-                  })()}
-                </div>
-                <div className="supporting-card-subtitle">Confirmed recurring revenue</div>
-              </div>
-
-              {/* Closing Soon Card */}
-              <div className="supporting-card closing-soon">
-                <div className="supporting-card-header">
-                  <span className="supporting-card-label">Closing Soon</span>
-                </div>
-                <div className="supporting-card-value green">
-                  {pipelineLoading ? '...' : `$${pipelineSummary?.closing_soon.weighted_mrr.toLocaleString()}`}
-                </div>
-                <div className="supporting-card-detail">
-                  {pipelineLoading ? '' : pipelineSummary?.closing_soon.deal_count === 0
-                    ? 'No deals'
-                    : `${pipelineSummary?.closing_soon.deal_count} deals, ${pipelineSummary?.closing_soon.avg_confidence}% avg`}
-                </div>
-                <div className="supporting-card-subtitle">High confidence, 2+ weeks active</div>
-              </div>
-
-              {/* In Pipeline Card */}
-              <div className="supporting-card in-pipeline">
-                <div className="supporting-card-header">
-                  <span className="supporting-card-label">In Pipeline</span>
-                </div>
-                <div className="supporting-card-value blue">
-                  {pipelineLoading ? '...' : `$${pipelineSummary?.in_pipeline.weighted_mrr.toLocaleString()}`}
-                </div>
-                <div className="supporting-card-detail">
-                  {pipelineLoading ? '' : pipelineSummary?.in_pipeline.deal_count === 0
-                    ? 'No deals'
-                    : `${pipelineSummary?.in_pipeline.deal_count} deals, ${pipelineSummary?.in_pipeline.avg_confidence}% avg`}
-                </div>
-                <div className="supporting-card-subtitle">Active deals in progress</div>
-              </div>
-
-              {/* At Risk Card */}
-              <div className="supporting-card at-risk">
-                <div className="supporting-card-header">
-                  <span className="supporting-card-label">At Risk</span>
-                </div>
-                <div className="supporting-card-value orange">
-                  {pipelineLoading ? '...' : `$${pipelineSummary?.at_risk.weighted_mrr.toLocaleString()}`}
-                </div>
-                <div className="supporting-card-detail">
-                  {pipelineLoading ? '' : pipelineSummary?.at_risk.deal_count === 0
-                    ? 'No deals'
-                    : `${pipelineSummary?.at_risk.deal_count} deals, ${pipelineSummary?.at_risk.avg_confidence}% avg`}
-                </div>
-                <div className="supporting-card-subtitle">Needs attention or archiving</div>
-              </div>
-            </div>
-
-            {/* On Hold Indicator */}
-            {!pipelineLoading && pipelineSummary && pipelineSummary.on_hold.deal_count > 0 && (
-              <div className="on-hold-indicator">
-                ⏸️ {pipelineSummary.on_hold.deal_count} deal{pipelineSummary.on_hold.deal_count !== 1 ? 's' : ''} on hold (${pipelineSummary.on_hold.raw_mrr.toLocaleString()}/mo) — snoozed with specific resume dates
-              </div>
-            )}
-
-            {/* Closing Soon Mini Table */}
-            {!pipelineLoading && pipelineSummary && pipelineSummary.closing_soon_deals.length > 0 && (
-              <div className="closing-soon-table-card">
-                <div className="closing-soon-table-header">
-                  <h3>Closing Soon</h3>
-                  <span className="closing-soon-count">{pipelineSummary.closing_soon_deals.length} deals</span>
-                </div>
-                <div className="closing-soon-table">
-                  <div className="closing-soon-row closing-soon-row-header">
-                    <div className="closing-soon-col col-client">Client</div>
-                    <div className="closing-soon-col col-rep">Rep</div>
-                    <div className="closing-soon-col col-monthly">Monthly</div>
-                    <div className="closing-soon-col col-confidence">Confidence</div>
-                    <div className="closing-soon-col col-weighted">Weighted</div>
+                  <div className="churn-stat">
+                    <span className="churn-stat-label">Canceled subscriptions</span>
+                    <span className="churn-stat-value">
+                      {loading ? '...' : (
+                        <>
+                          {stats.churnedSubscriptions - 1}
+                          <span className="test-note"> (+ 1 test)</span>
+                        </>
+                      )}
+                    </span>
                   </div>
-                  {pipelineSummary.closing_soon_deals.map((deal) => (
-                    <Link
-                      href="/admin/pipeline"
-                      key={deal.id}
-                      className="closing-soon-row"
-                    >
-                      <div className="closing-soon-col col-client">
-                        <span className="deal-client-name">{deal.client_name}</span>
+                  <div className="churn-stat">
+                    <span className="churn-stat-label">Active subscriptions</span>
+                    <span className="churn-stat-value positive">
+                      {loading ? '...' : stats.currentMRR > 0 ? Math.round(stats.currentMRR / (stats.currentMRR + stats.churnedMRR - 300) * 100) + '%' : '100%'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Scheduled Cancellations Section */}
+          {scheduledCancellations.length > 0 && (
+            <div className="scheduled-cancellations-section">
+              <div className="scheduled-card">
+                <div className="scheduled-header">
+                  <div>
+                    <h2>Scheduled Cancellations</h2>
+                    <p className="scheduled-subtitle">Term-based subscriptions ending soon</p>
+                  </div>
+                  <div className="scheduled-summary">
+                    <div className="scheduled-stat">
+                      <span className="scheduled-total">{scheduledStats.totalItems}</span>
+                      <span className="scheduled-label">active terms</span>
+                    </div>
+                    <div className="scheduled-stat">
+                      <span className="scheduled-total warning">${scheduledStats.totalScheduledMRR.toLocaleString()}</span>
+                      <span className="scheduled-label">MRR at risk</span>
+                    </div>
+                    {scheduledStats.itemsEndingSoon > 0 && (
+                      <div className="scheduled-stat">
+                        <span className="scheduled-total alert">{scheduledStats.itemsEndingSoon}</span>
+                        <span className="scheduled-label">ending in 2 mo</span>
                       </div>
-                      <div className="closing-soon-col col-rep">
-                        {deal.rep_full_name?.split(' ')[0] || '—'}
+                    )}
+                  </div>
+                </div>
+
+                <div className="scheduled-table">
+                  <div className="scheduled-row scheduled-row-header">
+                    <div className="scheduled-col col-client">Client</div>
+                    <div className="scheduled-col col-product">Product</div>
+                    <div className="scheduled-col col-amount">Monthly</div>
+                    <div className="scheduled-col col-term">Term</div>
+                    <div className="scheduled-col col-ends">Ends</div>
+                    <div className="scheduled-col col-remaining">Remaining</div>
+                  </div>
+
+                  {scheduledCancellations.map((item) => (
+                    <div key={item.id} className="scheduled-row">
+                      <div className="scheduled-col col-client">
+                        <div className="client-info">
+                          <span className="client-name">{item.clientName}</span>
+                        </div>
                       </div>
-                      <div className="closing-soon-col col-monthly">
-                        ${deal.predicted_monthly.toLocaleString()}
+                      <div className="scheduled-col col-product">
+                        <span className="product-name">{item.productName}</span>
                       </div>
-                      <div className="closing-soon-col col-confidence">
-                        <span className="confidence-badge">{deal.confidence_score}%</span>
+                      <div className="scheduled-col col-amount">
+                        <span className="amount-value">${item.monthlyAmount.toLocaleString()}</span>
                       </div>
-                      <div className="closing-soon-col col-weighted">
-                        ${deal.weighted_monthly.toLocaleString()}
+                      <div className="scheduled-col col-term">
+                        <span className="term-badge">{item.billingTermMonths} mo</span>
                       </div>
-                    </Link>
+                      <div className="scheduled-col col-ends">
+                        <span className="date-value">{item.termEndDateFormatted}</span>
+                      </div>
+                      <div className="scheduled-col col-remaining">
+                        <span className={`remaining-badge ${item.monthsRemaining <= 2 ? 'urgent' : item.monthsRemaining <= 4 ? 'warning' : ''}`}>
+                          {item.monthsRemaining} mo left
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Data Freshness */}
-            <div className="pipeline-freshness">
-              <div className="freshness-left">
-                <span className="freshness-label">Last updated: {formatLastUpdated(pipelineSummary?.last_updated || null)}</span>
-                <button
-                  className="refresh-btn"
-                  onClick={handleRefreshScores}
-                  disabled={refreshingScores}
-                >
-                  {refreshingScores ? (
-                    <span className="refresh-spinner">↻</span>
-                  ) : (
-                    <span>↻</span>
-                  )}
-                </button>
-              </div>
-              <span className="freshness-note">Scores recalculate on every deal event and daily at midnight CST</span>
             </div>
-          </div>
-
-          {/* Right Column: Charts + Scheduled Cancellations */}
-          <div className="revenue-right-column">
-            <div className="revenue-charts-grid">
-              {/* MRR Chart */}
-              <div className="revenue-chart-card">
-                <div className="chart-header">
-                  <div>
-                    <span className="chart-label">MRR</span>
-                    <div className="chart-value">
-                      {loading ? '...' : (() => {
-                        const pendingBillingDate = new Date('2026-02-17')
-                        const hasPending = new Date() < pendingBillingDate
-                        const displayMRR = hasPending ? stats.currentMRR + 300 : stats.currentMRR
-                        return (
-                          <>
-                            ${displayMRR.toLocaleString()}
-                            {hasPending && <span className="pending-note"> (incl. $300 pending)</span>}
-                          </>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                  <div className="chart-change">
-                    {!loading && stats.mrrChange !== 0 && (
-                      <span className={stats.mrrChange >= 0 ? 'positive' : 'negative'}>
-                        {stats.mrrChange >= 0 ? '+' : ''}{stats.mrrChange.toLocaleString()} this month
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="chart-body mrr-chart-body">
-                  {loading ? (
-                    <div className="chart-loading">Loading...</div>
-                  ) : (
-                    <MRRChart data={mrrChartData} height={200} />
-                  )}
-                </div>
-              </div>
-
-              {/* MRR Growth Chart */}
-              <div className="revenue-chart-card">
-                <div className="chart-header">
-                  <div>
-                    <span className="chart-label">MRR growth rate</span>
-                    <div className="chart-value">
-                      {loading ? '...' : (() => {
-                        const pendingBillingDate = new Date('2026-02-17')
-                        const hasPending = new Date() < pendingBillingDate
-
-                        if (hasPending) {
-                          const adjustedMRR = stats.currentMRR + 300
-                          const adjustmentFactor = adjustedMRR / stats.currentMRR
-                          const estimatedMonths = 12
-                          const adjustedRate = Math.pow(Math.pow(1 + stats.avgGrowthPercent/100, estimatedMonths) * adjustmentFactor, 1/estimatedMonths) - 1
-                          const adjustedPercent = Math.round(adjustedRate * 1000) / 10
-                          return (
-                            <>
-                              {adjustedPercent >= 0 ? '+' : ''}{adjustedPercent}%
-                              <span className="pending-note"> (incl. $300 pending)</span>
-                            </>
-                          )
-                        }
-                        return `${stats.avgGrowthPercent >= 0 ? '+' : ''}${stats.avgGrowthPercent}%`
-                      })()}
-                    </div>
-                  </div>
-                  <div className="chart-change">
-                    <span className="neutral">avg. month over month</span>
-                  </div>
-                </div>
-                <div className="chart-body">
-                  {loading ? (
-                    <div className="chart-loading">Loading...</div>
-                  ) : mrrChartData.length > 1 ? (
-                    <GrowthBarsChart data={mrrChartData} />
-                  ) : (
-                    <div className="chart-loading">No data</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Net Volume Chart */}
-              <div className="revenue-chart-card">
-                <div className="chart-header">
-                  <div>
-                    <span className="chart-label">Net volume</span>
-                    <div className="chart-value">
-                      {loading ? '...' : `$${stats.totalNetVolume.toLocaleString()}`}
-                    </div>
-                  </div>
-                  <div className="chart-change">
-                    <span className="neutral">all time</span>
-                  </div>
-                </div>
-                <div className="chart-body">
-                  {loading ? (
-                    <div className="chart-loading">Loading...</div>
-                  ) : (
-                    <NetVolumeChart data={volumeData} height={200} />
-                  )}
-                </div>
-              </div>
-
-              {/* Churn */}
-              <div className="revenue-chart-card">
-                <div className="chart-header">
-                  <div>
-                    <span className="chart-label">Churn</span>
-                    <div className="chart-value">
-                      {loading ? '...' : (() => {
-                        const totalSubs = Math.round(stats.churnedSubscriptions / (stats.churnRate / 100))
-                        const realChurn = ((stats.churnedSubscriptions - 1) / (totalSubs - 1)) * 100
-                        return `${Math.round(realChurn * 10) / 10}%`
-                      })()}
-                      <span className="test-note"> ({stats.churnRate}% incl. test)</span>
-                    </div>
-                  </div>
-                  <div className="chart-change">
-                    {!loading && stats.churnedSubscriptions > 1 && (
-                      <span className="negative">
-                        {stats.churnedSubscriptions - 1} canceled (+ 1 test)
-                      </span>
-                    )}
-                    {!loading && stats.churnedSubscriptions === 1 && (
-                      <span className="positive">No real cancellations</span>
-                    )}
-                    {!loading && stats.churnedSubscriptions === 0 && (
-                      <span className="positive">No cancellations</span>
-                    )}
-                  </div>
-                </div>
-                <div className="chart-body">
-                  <div className="churn-stats">
-                    <div className="churn-stat">
-                      <span className="churn-stat-label">Lost MRR</span>
-                      <span className="churn-stat-value negative">
-                        {loading ? '...' : (
-                          <>
-                            ${(stats.churnedMRR - 300).toLocaleString()}
-                            <span className="test-note"> ($300 test)</span>
-                          </>
-                        )}
-                      </span>
-                    </div>
-                    <div className="churn-stat">
-                      <span className="churn-stat-label">Canceled subscriptions</span>
-                      <span className="churn-stat-value">
-                        {loading ? '...' : (
-                          <>
-                            {stats.churnedSubscriptions - 1}
-                            <span className="test-note"> (+ 1 test)</span>
-                          </>
-                        )}
-                      </span>
-                    </div>
-                    <div className="churn-stat">
-                      <span className="churn-stat-label">Active subscriptions</span>
-                      <span className="churn-stat-value positive">
-                        {loading ? '...' : stats.currentMRR > 0 ? Math.round(stats.currentMRR / (stats.currentMRR + stats.churnedMRR - 300) * 100) + '%' : '100%'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Scheduled Cancellations Section */}
-            {scheduledCancellations.length > 0 && (
-              <div className="scheduled-cancellations-section">
-                <div className="scheduled-card">
-                  <div className="scheduled-header">
-                    <div>
-                      <h2>Scheduled Cancellations</h2>
-                      <p className="scheduled-subtitle">Term-based subscriptions ending soon</p>
-                    </div>
-                    <div className="scheduled-summary">
-                      <div className="scheduled-stat">
-                        <span className="scheduled-total">{scheduledStats.totalItems}</span>
-                        <span className="scheduled-label">active terms</span>
-                      </div>
-                      <div className="scheduled-stat">
-                        <span className="scheduled-total warning">${scheduledStats.totalScheduledMRR.toLocaleString()}</span>
-                        <span className="scheduled-label">MRR at risk</span>
-                      </div>
-                      {scheduledStats.itemsEndingSoon > 0 && (
-                        <div className="scheduled-stat">
-                          <span className="scheduled-total alert">{scheduledStats.itemsEndingSoon}</span>
-                          <span className="scheduled-label">ending in 2 mo</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="scheduled-table">
-                    <div className="scheduled-row scheduled-row-header">
-                      <div className="scheduled-col col-client">Client</div>
-                      <div className="scheduled-col col-product">Product</div>
-                      <div className="scheduled-col col-amount">Monthly</div>
-                      <div className="scheduled-col col-term">Term</div>
-                      <div className="scheduled-col col-ends">Ends</div>
-                      <div className="scheduled-col col-remaining">Remaining</div>
-                    </div>
-
-                    {scheduledCancellations.map((item) => (
-                      <div key={item.id} className="scheduled-row">
-                        <div className="scheduled-col col-client">
-                          <div className="client-info">
-                            <span className="client-name">{item.clientName}</span>
-                          </div>
-                        </div>
-                        <div className="scheduled-col col-product">
-                          <span className="product-name">{item.productName}</span>
-                        </div>
-                        <div className="scheduled-col col-amount">
-                          <span className="amount-value">${item.monthlyAmount.toLocaleString()}</span>
-                        </div>
-                        <div className="scheduled-col col-term">
-                          <span className="term-badge">{item.billingTermMonths} mo</span>
-                        </div>
-                        <div className="scheduled-col col-ends">
-                          <span className="date-value">{item.termEndDateFormatted}</span>
-                        </div>
-                        <div className="scheduled-col col-remaining">
-                          <span className={`remaining-badge ${item.monthsRemaining <= 2 ? 'urgent' : item.monthsRemaining <= 4 ? 'warning' : ''}`}>
-                            {item.monthsRemaining} mo left
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
-          </>
-        )}
-
-        {/* Pipeline Tab */}
-        {mainTab === 'pipeline' && (
-          <PipelineDashboardEmbed />
-        )}
-
       </div>
 
       <style jsx>{`
