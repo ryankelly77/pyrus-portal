@@ -110,14 +110,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get list of unique clients for the filter dropdown
-    // For sales/production_team, only show their clients
+    // Get list of all active clients for the invite dropdown
+    // For sales/production_team, only show clients they have recommendations for
     let clientsResult
     if (canSeeAdminUsers) {
       clientsResult = await dbPool.query(
-        `SELECT DISTINCT c.id, c.name
+        `SELECT c.id, c.name
          FROM clients c
-         JOIN profiles p ON p.client_id = c.id
+         WHERE c.status = 'active' OR c.status IS NULL
          ORDER BY c.name`
       )
     } else {
@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
         `SELECT DISTINCT c.id, c.name
          FROM clients c
          WHERE c.id IN (SELECT DISTINCT client_id FROM recommendations WHERE created_by = $1)
+           AND (c.status = 'active' OR c.status IS NULL)
          ORDER BY c.name`,
         [user.id]
       )
