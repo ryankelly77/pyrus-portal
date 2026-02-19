@@ -167,7 +167,7 @@ export default function ProfileSettingsPage() {
     <>
       <div className="settings-layout">
         {/* Role & Access Section */}
-        <div className="settings-card">
+        <div className="settings-card amber-accent">
           <div className="settings-card-header">
             <h2>Role & Access</h2>
             <p>Your admin role and permissions</p>
@@ -543,6 +543,10 @@ export default function ProfileSettingsPage() {
           border: 1px solid var(--border-color);
           border-radius: 12px;
           overflow: hidden;
+        }
+        .settings-card.amber-accent {
+          border-color: rgba(245, 158, 11, 0.3);
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), var(--bg-secondary) 50%);
         }
         .settings-card-header {
           display: flex;
