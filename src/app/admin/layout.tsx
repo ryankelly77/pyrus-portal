@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { AdminSidebar } from '@/components/layout'
 import { AdminAnnouncementPopup } from '@/components/admin/AdminAnnouncementPopup'
+import { ImpersonationBanner } from '@/components/client/ImpersonationBanner'
 import type { Profile } from '@/types/database'
 
 type AdminRole = 'super_admin' | 'admin' | 'production_team' | 'sales'
@@ -143,6 +144,9 @@ export default async function AdminPrefixLayout({
     <div className="admin-layout">
       <AdminSidebar role={sidebarRole} permissions={permissions} />
       <main className="admin-main">
+        <Suspense fallback={null}>
+          <ImpersonationBanner />
+        </Suspense>
         {children}
       </main>
       <Suspense fallback={null}>

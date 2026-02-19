@@ -47,13 +47,17 @@ export async function POST(request: NextRequest) {
 
     const targetUser = userResult.rows[0]
 
-    // Don't allow impersonating admin users
-    if (['super_admin', 'admin', 'production_team', 'sales'].includes(targetUser.role)) {
+    // Don't allow impersonating yourself
+    if (targetUser.id === auth.user.id) {
       return NextResponse.json(
-        { error: 'Cannot impersonate admin users' },
+        { error: 'Cannot impersonate yourself' },
         { status: 403 }
       )
     }
+
+    // Determine redirect path based on user role
+    const isAdminUser = ['super_admin', 'admin', 'production_team', 'sales'].includes(targetUser.role)
+    const redirectPath = isAdminUser ? '/admin' : '/'
 
     // Set impersonation cookie
     const cookieStore = await cookies()
@@ -85,7 +89,9 @@ export async function POST(request: NextRequest) {
         id: targetUser.id,
         name: targetUser.full_name || targetUser.email,
         clientId: targetUser.client_id,
+        role: targetUser.role,
       },
+      redirectPath,
     })
   } catch (error) {
     console.error('Error starting impersonation:', error)

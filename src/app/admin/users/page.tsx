@@ -112,11 +112,12 @@ export default function UsersPage() {
         body: JSON.stringify({ userId }),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
-        // Redirect to client dashboard
-        window.location.href = '/'
+        // Redirect based on user role
+        window.location.href = data.redirectPath || '/'
       } else {
-        const data = await res.json()
         alert(data.error || 'Failed to impersonate user')
       }
     } catch (error) {
@@ -598,23 +599,41 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      {user.isOwner ? (
-                        <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
-                      ) : user.status === 'invited' ? (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleResendAdmin(user.id)}
-                        >
-                          Resend
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEditAdmin(user.id)}
-                        >
-                          Edit
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {user.isOwner ? (
+                          <span className="text-muted" style={{ fontSize: '12px' }}>Owner</span>
+                        ) : user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleEditAdmin(user.id)}
+                            >
+                              Edit
+                            </button>
+                            {currentUserRole === 'super_admin' && (
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => handleLoginAsUser(user.id)}
+                                disabled={impersonating === user.id}
+                                style={{
+                                  background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                }}
+                              >
+                                {impersonating === user.id ? '...' : 'Login as'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -670,21 +689,39 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      {user.status === 'invited' ? (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleResendAdmin(user.id)}
-                        >
-                          Resend
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEditAdmin(user.id)}
-                        >
-                          Edit
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleEditAdmin(user.id)}
+                            >
+                              Edit
+                            </button>
+                            {currentUserRole === 'super_admin' && (
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => handleLoginAsUser(user.id)}
+                                disabled={impersonating === user.id}
+                                style={{
+                                  background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                }}
+                              >
+                                {impersonating === user.id ? '...' : 'Login as'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -739,21 +776,39 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      {user.status === 'invited' ? (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleResendAdmin(user.id)}
-                        >
-                          Resend
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEditAdmin(user.id)}
-                        >
-                          Edit
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {user.status === 'invited' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => handleResendAdmin(user.id)}
+                          >
+                            Resend
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleEditAdmin(user.id)}
+                            >
+                              Edit
+                            </button>
+                            {currentUserRole === 'super_admin' && (
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => handleLoginAsUser(user.id)}
+                                disabled={impersonating === user.id}
+                                style={{
+                                  background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                }}
+                              >
+                                {impersonating === user.id ? '...' : 'Login as'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
