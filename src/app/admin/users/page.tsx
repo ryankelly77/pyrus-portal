@@ -62,6 +62,8 @@ export default function UsersPage() {
   const [clientUsers, setClientUsers] = useState<ClientUser[]>([])
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [clients, setClients] = useState<ClientOption[]>([])
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const [impersonating, setImpersonating] = useState<string | null>(null)
 
   // Unified invite form state
   type InviteRole = 'client' | 'admin' | 'super_admin' | 'production_team' | 'sales'
@@ -90,6 +92,7 @@ export default function UsersPage() {
           setClientUsers(data.clientUsers || [])
           setPendingInvites(data.pendingInvites || [])
           setClients(data.clients || [])
+          setCurrentUserRole(data.currentUserRole || null)
         }
       } catch (error) {
         console.error('Failed to fetch users:', error)
@@ -99,6 +102,30 @@ export default function UsersPage() {
     }
     fetchUsers()
   }, [])
+
+  const handleLoginAsUser = async (userId: string) => {
+    setImpersonating(userId)
+    try {
+      const res = await fetch('/api/admin/users/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+
+      if (res.ok) {
+        // Redirect to client dashboard
+        window.location.href = '/'
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to impersonate user')
+      }
+    } catch (error) {
+      console.error('Failed to impersonate:', error)
+      alert('Failed to impersonate user')
+    } finally {
+      setImpersonating(null)
+    }
+  }
 
   const filteredAdminUsers = useMemo(() => {
     return adminUsers.filter((user) => {
@@ -789,12 +816,28 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      <Link
-                        href={`/admin/clients/${user.clientId}`}
-                        className="btn btn-sm btn-outline"
-                      >
-                        View Client
-                      </Link>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Link
+                          href={`/admin/clients/${user.clientId}`}
+                          className="btn btn-sm btn-outline"
+                        >
+                          View Client
+                        </Link>
+                        {currentUserRole === 'super_admin' && user.status === 'registered' && (
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => handleLoginAsUser(user.id)}
+                            disabled={impersonating === user.id}
+                            style={{
+                              background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+                              color: 'white',
+                              border: 'none',
+                            }}
+                          >
+                            {impersonating === user.id ? 'Loading...' : 'Login as User'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
