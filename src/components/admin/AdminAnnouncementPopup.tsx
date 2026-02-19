@@ -19,6 +19,18 @@ interface Announcement {
   view_count: number
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  general: 'General',
+  billing: 'Billing',
+  platform_update: 'Platform Update',
+  offer: 'Special Offer',
+  maintenance: 'Maintenance',
+}
+
+function getTypeLabel(type: string): string {
+  return TYPE_LABELS[type] || 'General'
+}
+
 const TYPE_STYLES: Record<string, { bg: string; accent: string; icon: React.ReactNode }> = {
   general: {
     bg: '#EFF6FF',
@@ -473,7 +485,7 @@ export function AdminAnnouncementPopup() {
       <div className="announcement-overlay" onClick={canDismiss ? closeWithoutDismiss : undefined}>
         <div className="announcement-popup" onClick={(e) => e.stopPropagation()}>
           <div className="popup-header">
-            <div className="popup-icon">{typeStyle.icon}</div>
+            <span className="popup-type-badge">{getTypeLabel(announcement.announcement_type)}</span>
             <span className="popup-title">{announcement.title}</span>
             {canDismiss && (
               <button
@@ -572,16 +584,16 @@ export function AdminAnnouncementPopup() {
           border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .popup-icon {
-          width: 28px;
-          height: 28px;
-          color: ${typeStyle.accent};
+        .popup-type-badge {
+          background: ${typeStyle.accent};
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
           flex-shrink: 0;
-        }
-
-        .popup-icon :global(svg) {
-          width: 100%;
-          height: 100%;
         }
 
         .popup-title {
