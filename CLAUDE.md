@@ -298,6 +298,40 @@ Tests use Vitest. Test files are colocated with source files or in `__tests__` f
 
 ---
 
+## QA & Deployment Safety
+
+### Pre-Deployment Checklist
+Before deploying changes that touch billing, onboarding, or subscription logic:
+
+1. **Blast radius mapping**: Tag each changed file with what it touches (billing, onboarding, UI-only, API, database). Anything touching multiple domains gets extra scrutiny.
+
+2. **Database diff audit**: Snapshot key fields before/after deployment for active clients:
+   - `status`, `start_date`, `onboarding_completed_at`, `growth_stage`
+   - Stripe `billing_cycle_anchor`
+   - If any established client's values changed unexpectedly, investigate immediately.
+
+3. **Smoke test checklist** for subscription changes:
+   - Add product to existing client → verify growth stage and billing anchor unchanged
+   - Remove product → verify no onboarding state reset
+   - Upgrade/downgrade → verify start_date preserved
+   - New client purchase → verify proper initialization
+
+### Automated Tests
+Run `npm test` before deploying. Key test coverage areas:
+- Subscription changes (adding/removing products)
+- Onboarding state transitions
+- Admin/client data parity
+- Billing logic
+
+### High-Risk Areas
+These areas have caused production issues — extra caution required:
+- `subscription_items` changes that also touch `clients` table
+- Onboarding state (`onboarding_completed_at`, `growth_stage`)
+- Billing anchors and proration logic
+- Any code that runs for both new and existing clients
+
+---
+
 ## Deployment
 
 1. Push to `main` branch
