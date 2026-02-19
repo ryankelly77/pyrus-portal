@@ -483,7 +483,15 @@ export default function AnnouncementsPage() {
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                       </svg>
-                      {announcement.target_all_clients ? 'All clients' : `${announcement.target_client_ids?.length || 0} clients`}
+                      {announcement.target_audience === 'admin' ? (
+                        announcement.target_admin_roles?.length
+                          ? `${announcement.target_admin_roles.length} admin roles`
+                          : 'All admins'
+                      ) : announcement.target_audience === 'both' ? (
+                        'Clients & Admins'
+                      ) : (
+                        announcement.target_all_clients ? 'All clients' : `${announcement.target_client_ids?.length || 0} clients`
+                      )}
                     </span>
                     {announcement.has_detail_page && (
                       <span className="meta-item has-detail">

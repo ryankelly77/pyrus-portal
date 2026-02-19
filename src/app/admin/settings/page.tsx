@@ -650,11 +650,11 @@ export default function ProfileSettingsPage() {
           border-radius: 8px;
         }
         .role-badge-large.super-admin {
-          background: linear-gradient(135deg, rgba(136, 84, 48, 0.1), rgba(136, 84, 48, 0.05));
-          border: 1px solid rgba(136, 84, 48, 0.2);
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+          border: 1px solid rgba(245, 158, 11, 0.3);
         }
-        .role-badge-large svg {
-          color: var(--primary);
+        .role-badge-large.super-admin svg {
+          color: #F59E0B;
         }
         .role-info {
           display: flex;

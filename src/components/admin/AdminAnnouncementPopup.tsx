@@ -114,11 +114,16 @@ export function AdminAnnouncementPopup() {
 
     async function fetchAnnouncements() {
       try {
+        console.log('[AdminAnnouncement] Fetching for page:', currentPage, 'pathname:', pathname)
         const res = await fetch(`/api/admin/announcements/active?page=${currentPage}`)
         if (res.ok) {
           const data = await res.json()
+          console.log('[AdminAnnouncement] API returned:', data.announcements?.length, 'announcements')
           const filtered = filterByFrequency(data.announcements || [])
+          console.log('[AdminAnnouncement] After frequency filter:', filtered.length, 'announcements')
           setAnnouncements(filtered)
+        } else {
+          console.error('[AdminAnnouncement] API error:', res.status)
         }
       } catch (error) {
         console.error('Failed to fetch admin announcements:', error)
@@ -127,7 +132,7 @@ export function AdminAnnouncementPopup() {
       }
     }
     fetchAnnouncements()
-  }, [mounted, currentPage])
+  }, [mounted, currentPage, pathname])
 
   // Log view when announcement is displayed
   useEffect(() => {

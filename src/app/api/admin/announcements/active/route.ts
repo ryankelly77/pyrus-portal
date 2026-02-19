@@ -62,22 +62,27 @@ export async function GET(request: NextRequest) {
 
     const dismissalMap = new Map(dismissals.map(d => [d.announcement_id, d]))
 
+    console.log('[AdminAnnouncements] Query returned', announcements.length, 'announcements, filtering for page:', page)
+
     // Filter announcements based on role targeting, page, and dismissal status
     const filteredAnnouncements = announcements.filter(announcement => {
       // Check admin role targeting
       const targetRoles = announcement.target_admin_roles as string[] | null
       if (targetRoles && targetRoles.length > 0) {
         if (!targetRoles.includes(userRole)) {
+          console.log('[AdminAnnouncements] Filtered out', announcement.id, '- role mismatch')
           return false
         }
       }
 
       // Check page filter - for admin pages, we need to match admin_ prefixed pages
       const displayPages = announcement.display_pages as string[]
+      const adminPage = `admin_${page}`
+      console.log('[AdminAnnouncements] Checking', announcement.id, '- displayPages:', displayPages, 'looking for:', adminPage)
       if (!displayPages.includes('all')) {
         // Check if any admin page matches
-        const adminPage = `admin_${page}`
         if (!displayPages.includes(adminPage) && !displayPages.includes(page)) {
+          console.log('[AdminAnnouncements] Filtered out', announcement.id, '- page mismatch')
           return false
         }
       }
