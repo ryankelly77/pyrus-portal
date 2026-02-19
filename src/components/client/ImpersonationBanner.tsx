@@ -25,12 +25,11 @@ export function ImpersonationBanner() {
         method: 'DELETE',
       })
       if (res.ok) {
-        // Redirect back to admin users page
-        router.push('/admin/users')
+        // Force full page reload to ensure server-side layout re-runs
+        window.location.href = '/admin/users'
       }
     } catch (error) {
       console.error('Failed to exit impersonation:', error)
-    } finally {
       setExiting(false)
     }
   }

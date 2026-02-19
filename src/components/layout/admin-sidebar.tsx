@@ -207,7 +207,7 @@ export function AdminSidebar({ role, isSuperAdmin = true, permissions }: AdminSi
             {!isCollapsed && <span>Products</span>}
           </Link>
         )}
-        {hasAccess('revenue') && (
+        {(hasAccess('revenue') || hasAccess('pipeline')) && (
           <Link
             href="/admin/revenue"
             className={`admin-nav-item ${pathname === '/admin/revenue' || pathname.startsWith('/admin/revenue/') ? 'active' : ''}`}
