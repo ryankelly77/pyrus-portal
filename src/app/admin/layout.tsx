@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { dbPool } from '@/lib/prisma'
 import { AdminSidebar } from '@/components/layout'
@@ -66,12 +66,35 @@ export default async function AdminPrefixLayout({
     redirect('/login')
   }
 
+  // Check for impersonation cookie
+  const cookieStore = await cookies()
+  const impersonatingUserId = cookieStore.get('impersonating_user_id')?.value
+  const impersonatingAdminId = cookieStore.get('impersonating_admin_id')?.value
+
+  // Determine which user ID to use for permissions
+  // If impersonating, use the impersonated user's profile
+  // But first verify the real user is a super_admin
+  let effectiveUserId = user.id
+  let isImpersonating = false
+
+  if (impersonatingUserId && impersonatingAdminId) {
+    // Verify the real logged-in user is a super_admin
+    const realUserResult = await dbPool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [user.id]
+    )
+    if (realUserResult.rows[0]?.role === 'super_admin') {
+      effectiveUserId = impersonatingUserId
+      isImpersonating = true
+    }
+  }
+
   // Get user profile to check role - use direct DB to bypass RLS recursion issue
   let profile: Pick<Profile, 'role' | 'full_name'> | null = null
   try {
     const profileResult = await dbPool.query(
       'SELECT role, full_name FROM profiles WHERE id = $1',
-      [user.id]
+      [effectiveUserId]
     )
     if (profileResult.rows.length > 0) {
       profile = profileResult.rows[0]
@@ -81,7 +104,11 @@ export default async function AdminPrefixLayout({
   }
 
   // Only admin roles can access admin routes
+  // If impersonating a client user, redirect to client area
   if (profile?.role === 'client') {
+    if (isImpersonating) {
+      redirect('/')
+    }
     redirect('/getting-started')
   }
 
