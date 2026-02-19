@@ -90,6 +90,18 @@ src/
 - `email_automations`, `email_automation_steps` - Automation workflows
 - `email_automation_enrollments`, `email_automation_step_logs` - Execution tracking
 
+### Email Template Conventions
+Standard variables available in templates:
+- `${firstName}` - Recipient's first name
+- `${clientName}` - Client/company name
+- `${inviteUrl}` - Recommendation invite URL
+- `${portalUrl}` - Link to client portal
+
+Template slugs follow pattern: `[feature]-[action]-[stage]`
+Examples: `recommendation-reminder-soft`, `recommendation-viewed-thanks`
+
+Templates require both HTML body and plain text body for email client compatibility.
+
 ### Recommendations & Performance
 - `recommendations`, `recommendation_history` - Manual recommendations
 - `smart_recommendations`, `smart_recommendation_items` - AI-powered recommendations
@@ -166,6 +178,18 @@ Pages with tabs use route-based navigation (not client state):
 
 Layout file renders tab navigation, child `page.tsx` renders content.
 
+### Large Component Refactoring Pattern
+When a page exceeds ~2000 lines:
+1. Extract types to `src/types/[feature].ts`
+2. Extract modals to `src/components/admin/[feature]/modals/`
+3. Create barrel export: `src/components/admin/[feature]/modals/index.ts`
+4. Extract data fetching to `src/hooks/use-[feature]-data.ts`
+5. Keep page.tsx as orchestrator only
+
+Example (client page refactor):
+- Before: 5,141 lines in one file
+- After: 2,710 lines in page.tsx + extracted modals + data hook
+
 ---
 
 ## API Conventions
@@ -222,6 +246,22 @@ UPTIMEROBOT_API_KEY=
 | `/api/cron/pipeline-scores` | Daily 6am | Update lead pipeline scores |
 | `/api/cron/process-automations` | Hourly | Execute email automation steps |
 
+### Email Automation System
+**Triggers** (fire via Mailgun webhooks or app events):
+- `recommendation_sent` - When recommendation email is sent
+- `recommendation_email_opened` - Mailgun webhook on open
+- `recommendation_email_clicked` - Mailgun webhook on click
+- `recommendation_viewed` - When client views recommendation
+
+**Exit Conditions** (checked before each email send):
+- `on_purchase` - Client makes a purchase
+- `on_email_open` - Client opens any email in sequence
+- `on_email_click` - Client clicks link in any email
+- `on_recommendation_viewed` - Client views their recommendation
+- `on_unsubscribe` - Client unsubscribes
+
+Duplicate enrollment prevention: Users cannot be enrolled in the same automation twice while active.
+
 ---
 
 ## Common Tasks
@@ -263,6 +303,17 @@ Tests use Vitest. Test files are colocated with source files or in `__tests__` f
 1. Push to `main` branch
 2. Vercel auto-deploys
 3. Database migrations: Run via Supabase dashboard or `npx prisma migrate deploy`
+
+---
+
+## Dev Server Troubleshooting
+If dev server crashes or becomes slow:
+1. Clear cache: `rm -rf .next && npm run dev`
+2. Check system memory - quit heavy apps if needed
+3. Webpack cache corruption: Delete `.next` folder entirely and restart
+4. Check for 500 errors in API routes - these can cascade
+
+**File size limits**: Keep page files under 3000 lines. Files over 5000 lines cause webpack serialization issues and slow hot reload.
 
 ---
 
