@@ -207,30 +207,48 @@ export async function POST(
     const userId = authData.user.id
 
     // Create profile
-    // For client users, use the first client_id; for admins, no client_id
-    const clientId = invite.role === 'client' && invite.client_ids?.length > 0
-      ? invite.client_ids[0]
-      : null
+    // For users with client access, use the first client_id as the primary/active client
+    const clientIds = invite.client_ids || []
+    const primaryClientId = clientIds.length > 0 ? clientIds[0] : null
 
     try {
       // Use upsert to handle case where Supabase trigger already created profile
       await dbPool.query(
-        `INSERT INTO profiles (id, email, full_name, role, client_id, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        `INSERT INTO profiles (id, email, full_name, role, client_id, active_client_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $5, NOW(), NOW())
          ON CONFLICT (id) DO UPDATE SET
            email = EXCLUDED.email,
            full_name = EXCLUDED.full_name,
            role = EXCLUDED.role,
            client_id = EXCLUDED.client_id,
+           active_client_id = EXCLUDED.active_client_id,
            updated_at = NOW()`,
         [
           userId,
           invite.email.trim().toLowerCase(),
           invite.full_name,
           invite.role,
-          clientId
+          primaryClientId
         ]
       )
+
+      // Create client_users entries for all linked clients (for any role)
+      for (let i = 0; i < clientIds.length; i++) {
+        const clientId = clientIds[i]
+        const isPrimary = i === 0
+        await dbPool.query(
+          `INSERT INTO client_users (client_id, user_id, role, is_primary, receives_alerts, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+           ON CONFLICT (client_id, user_id) DO NOTHING`,
+          [
+            clientId,
+            userId,
+            'member',
+            isPrimary,
+            true // Default to receiving alerts
+          ]
+        )
+      }
     } catch (profileError) {
       const errorMessage = profileError instanceof Error ? profileError.message : String(profileError)
       console.error('Failed to create profile:', errorMessage)
@@ -241,9 +259,6 @@ export async function POST(
         { status: 500 }
       )
     }
-
-    // If client user has multiple clients, we might need to handle that separately
-    // For now, primary client is set in profile
 
     // Mark invite as accepted
     await dbPool.query(

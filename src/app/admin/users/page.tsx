@@ -984,13 +984,19 @@ export default function UsersPage() {
                 />
               </div>
 
-              {/* Client Selection - only shown for client role */}
-              {inviteForm.role === 'client' && (
-                <div className="form-group">
-                  <label className="form-label">Assign to Clients</label>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                    Select one or more clients this user will have access to.
-                  </p>
+              {/* Client Selection - shown for all roles, required for client role */}
+              <div className="form-group">
+                <label className="form-label">
+                  Assign to Clients
+                  {inviteForm.role !== 'client' && (
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 'normal' }}> (optional)</span>
+                  )}
+                </label>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  {inviteForm.role === 'client'
+                    ? 'Select one or more clients this user will have access to.'
+                    : 'Optionally link this user to clients they also work with.'}
+                </p>
                   <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px' }}>
                     {clients.length === 0 ? (
                       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', padding: '8px' }}>No clients available</p>
@@ -1026,7 +1032,6 @@ export default function UsersPage() {
                     </p>
                   )}
                 </div>
-              )}
             </div>
             <div className="modal-footer">
               <button
