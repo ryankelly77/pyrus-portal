@@ -259,38 +259,86 @@ export async function POST(
     // Determine initial status - will be updated after email send
     let emailStatus = status
     let emailMessageId: string | undefined
+    const sentToEmails: string[] = []
 
-    // Send email for result alerts if recipient email is provided
-    if (type === 'result_alert' && recipientEmail && isEmailConfigured()) {
+    // Send email for result alerts to ALL users linked to this client with receives_alerts = true
+    if (type === 'result_alert' && isEmailConfigured()) {
       try {
-        const firstName = client?.contact_name?.split(' ')[0] || 'there'
+        // Get all users who should receive alerts for this client
+        const clientUsers = await prisma.client_users.findMany({
+          where: {
+            client_id: clientId,
+            receives_alerts: true,
+          },
+          include: {
+            user: {
+              select: { email: true, full_name: true },
+            },
+          },
+        })
+
         const clientName = client?.name || 'your business'
         const portalUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.pyrusdigitalmedia.com'
 
-        const result = await sendTemplatedEmail({
-          templateSlug: 'result-alert',
-          to: recipientEmail,
-          variables: {
-            firstName,
-            clientName,
-            alertType: metadata?.alertType || 'other',
-            alertTypeLabel: metadata?.alertTypeLabel || 'Result Alert',
-            subject: subject || title,
-            message: commBody || '',
-            portalUrl,
-          },
-          clientId,
-          tags: ['result-alert', metadata?.alertType || 'other'],
-        })
+        // Build list of recipients - linked users + legacy contact_email if not already included
+        const recipients: Array<{ email: string; firstName: string }> = []
 
-        if (result.success) {
+        for (const cu of clientUsers) {
+          const firstName = cu.user.full_name?.split(' ')[0] || 'there'
+          recipients.push({ email: cu.user.email, firstName })
+        }
+
+        // Also include the legacy contact_email if provided and not already in list
+        if (recipientEmail && !recipients.some(r => r.email.toLowerCase() === recipientEmail.toLowerCase())) {
+          const firstName = client?.contact_name?.split(' ')[0] || 'there'
+          recipients.push({ email: recipientEmail, firstName })
+        }
+
+        // Send to each recipient
+        let successCount = 0
+        for (const recipient of recipients) {
+          try {
+            const result = await sendTemplatedEmail({
+              templateSlug: 'result-alert',
+              to: recipient.email,
+              variables: {
+                firstName: recipient.firstName,
+                clientName,
+                alertType: metadata?.alertType || 'other',
+                alertTypeLabel: metadata?.alertTypeLabel || 'Result Alert',
+                subject: subject || title,
+                message: commBody || '',
+                portalUrl,
+              },
+              clientId,
+              tags: ['result-alert', metadata?.alertType || 'other'],
+            })
+
+            if (result.success) {
+              successCount++
+              sentToEmails.push(recipient.email)
+              if (!emailMessageId) emailMessageId = result.messageId
+              console.log(`[Communications] Result alert email sent to ${recipient.email}`)
+            } else {
+              console.error(`[Communications] Failed to send result alert to ${recipient.email}: ${result.error}`)
+            }
+          } catch (err: any) {
+            console.error(`[Communications] Error sending to ${recipient.email}:`, err.message)
+          }
+        }
+
+        // Set status based on results
+        if (recipients.length === 0) {
+          emailStatus = 'sent' // No recipients, just log it
+        } else if (successCount === recipients.length) {
           emailStatus = 'delivered'
-          emailMessageId = result.messageId
-          console.log(`[Communications] Result alert email sent to ${recipientEmail}`)
+        } else if (successCount > 0) {
+          emailStatus = 'delivered' // Partial success
         } else {
           emailStatus = 'failed'
-          console.error(`[Communications] Failed to send result alert: ${result.error}`)
         }
+
+        console.log(`[Communications] Result alert sent to ${successCount}/${recipients.length} recipients`)
       } catch (emailError: any) {
         console.error('[Communications] Error sending result alert email:', emailError)
         logEmailError(
@@ -314,9 +362,10 @@ export async function POST(
         metadata: {
           ...metadata,
           ...(emailMessageId && { mailgunMessageId: emailMessageId }),
+          ...(sentToEmails.length > 0 && { sentToEmails }),
         },
         highlight_type: highlightType,
-        recipient_email: recipientEmail,
+        recipient_email: sentToEmails.length > 0 ? sentToEmails.join(', ') : recipientEmail,
         created_by: createdBy,
         sent_at: new Date(),
       },

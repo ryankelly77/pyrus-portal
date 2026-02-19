@@ -20,7 +20,20 @@ interface EditClientModalProps {
   onSave: () => Promise<void>
 }
 
-type ModalTab = 'general' | 'integrations' | 'billing' | 'notifications'
+type ModalTab = 'general' | 'integrations' | 'billing' | 'notifications' | 'users'
+
+interface ClientUser {
+  id: string
+  userId: string
+  email: string
+  fullName: string | null
+  avatarUrl: string | null
+  userRole: string
+  clientRole: string
+  isPrimary: boolean
+  receivesAlerts: boolean
+  createdAt: string
+}
 
 interface EditFormData {
   companyName: string
@@ -117,6 +130,13 @@ export function EditClientModal({
   const [showApprovalConfirm, setShowApprovalConfirm] = useState(false)
   const [originalApprovalMode, setOriginalApprovalMode] = useState<'full_approval' | 'initial_approval' | 'auto'>('full_approval')
 
+  // Client users state (for Users tab)
+  const [clientUsers, setClientUsers] = useState<ClientUser[]>([])
+  const [clientUsersLoading, setClientUsersLoading] = useState(false)
+  const [addUserEmail, setAddUserEmail] = useState('')
+  const [addUserError, setAddUserError] = useState('')
+  const [addingUser, setAddingUser] = useState(false)
+
   // Initialize form data when client changes or modal opens
   useEffect(() => {
     if (isOpen && client) {
@@ -180,6 +200,101 @@ export function EditClientModal({
       console.error('Failed to fetch payment methods:', error)
     } finally {
       setPaymentMethodsLoading(false)
+    }
+  }
+
+  // Fetch client users when Users tab is selected
+  useEffect(() => {
+    if (isOpen && activeTab === 'users') {
+      fetchClientUsers()
+    }
+  }, [isOpen, activeTab, clientId])
+
+  const fetchClientUsers = async () => {
+    setClientUsersLoading(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/users`)
+      if (res.ok) {
+        const data = await res.json()
+        setClientUsers(data.users || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch client users:', error)
+    } finally {
+      setClientUsersLoading(false)
+    }
+  }
+
+  const handleAddUser = async () => {
+    if (!addUserEmail.trim()) return
+    setAddingUser(true)
+    setAddUserError('')
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: addUserEmail.trim(), receivesAlerts: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAddUserError(data.error || 'Failed to add user')
+        return
+      }
+      setAddUserEmail('')
+      fetchClientUsers()
+    } catch (error) {
+      setAddUserError('Failed to add user')
+    } finally {
+      setAddingUser(false)
+    }
+  }
+
+  const handleRemoveUser = async (clientUserId: string) => {
+    if (!confirm('Remove this user from the client?')) return
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/users?clientUserId=${clientUserId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        fetchClientUsers()
+      }
+    } catch (error) {
+      console.error('Failed to remove user:', error)
+    }
+  }
+
+  const handleToggleAlerts = async (clientUserId: string, currentValue: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUserId, receivesAlerts: !currentValue }),
+      })
+      if (res.ok) {
+        setClientUsers(prev => prev.map(u =>
+          u.id === clientUserId ? { ...u, receivesAlerts: !currentValue } : u
+        ))
+      }
+    } catch (error) {
+      console.error('Failed to toggle alerts:', error)
+    }
+  }
+
+  const handleSetPrimary = async (clientUserId: string) => {
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUserId, isPrimary: true }),
+      })
+      if (res.ok) {
+        setClientUsers(prev => prev.map(u => ({
+          ...u,
+          isPrimary: u.id === clientUserId,
+        })))
+      }
+    } catch (error) {
+      console.error('Failed to set primary:', error)
     }
   }
 
@@ -293,6 +408,12 @@ export function EditClientModal({
               onClick={() => setActiveTab('notifications')}
             >
               Notifications
+            </button>
+            <button
+              className={`modal-tab ${activeTab === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveTab('users')}
+            >
+              Users
             </button>
           </div>
 
@@ -491,6 +612,185 @@ export function EditClientModal({
                 formData={formData}
                 setFormData={setFormData}
               />
+            )}
+
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <div>
+                <p style={{ marginBottom: '1rem', color: '#6B7280', fontSize: '0.875rem' }}>
+                  Manage users who have access to this client. Users with access can view the client portal and receive alerts.
+                </p>
+
+                {/* Add User Form */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="Enter user email to add..."
+                    value={addUserEmail}
+                    onChange={(e) => { setAddUserEmail(e.target.value); setAddUserError(''); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleAddUser}
+                    disabled={addingUser || !addUserEmail.trim()}
+                  >
+                    {addingUser ? 'Adding...' : 'Add User'}
+                  </button>
+                </div>
+                {addUserError && (
+                  <p style={{ color: '#DC2626', fontSize: '0.875rem', marginTop: '-1rem', marginBottom: '1rem' }}>
+                    {addUserError}
+                  </p>
+                )}
+
+                {/* Users List */}
+                {clientUsersLoading ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#6B7280' }}>
+                    Loading users...
+                  </div>
+                ) : clientUsers.length === 0 ? (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: '#6B7280',
+                    background: '#F9FAFB',
+                    borderRadius: '8px',
+                    border: '1px dashed #D1D5DB',
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="32" height="32" style={{ opacity: 0.5, margin: '0 auto 0.5rem' }}>
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <p style={{ margin: 0 }}>No users linked to this client yet.</p>
+                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem' }}>Add users above to give them portal access.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {clientUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem 1rem',
+                          background: user.isPrimary ? '#F0FDF4' : '#F9FAFB',
+                          border: user.isPrimary ? '1px solid #BBF7D0' : '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        {/* Avatar */}
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: user.avatarUrl ? `url(${user.avatarUrl}) center/cover` : '#885430',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}>
+                          {!user.avatarUrl && (user.fullName?.[0] || user.email[0]).toUpperCase()}
+                        </div>
+
+                        {/* User Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                              {user.fullName || user.email}
+                            </span>
+                            {user.isPrimary && (
+                              <span style={{
+                                background: '#22C55E',
+                                color: 'white',
+                                padding: '0.125rem 0.5rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.7rem',
+                                fontWeight: 500,
+                              }}>Primary</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                            {user.email}
+                          </div>
+                        </div>
+
+                        {/* Receives Alerts Toggle */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <label style={{ fontSize: '0.75rem', color: '#6B7280', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={user.receivesAlerts}
+                              onChange={() => handleToggleAlerts(user.id, user.receivesAlerts)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            Alerts
+                          </label>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          {!user.isPrimary && (
+                            <button
+                              onClick={() => handleSetPrimary(user.id)}
+                              title="Set as primary contact"
+                              style={{
+                                padding: '0.375rem',
+                                background: 'transparent',
+                                border: '1px solid #D1D5DB',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: '#6B7280',
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                              </svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleRemoveUser(user.id)}
+                            title="Remove user"
+                            style={{
+                              padding: '0.375rem',
+                              background: 'transparent',
+                              border: '1px solid #FECACA',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#DC2626',
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Help text */}
+                <div style={{
+                  marginTop: '1.5rem',
+                  padding: '0.75rem 1rem',
+                  background: '#EFF6FF',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  color: '#1E40AF',
+                }}>
+                  <strong>Note:</strong> Users must have an account to be added. The "Alerts" checkbox controls whether they receive Result Alerts and notifications for this client. Primary contact is used for display purposes.
+                </div>
+              </div>
             )}
           </div>
 

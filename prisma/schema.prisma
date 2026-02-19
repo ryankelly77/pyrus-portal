@@ -47,7 +47,8 @@ model clients {
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
-  profiles              profiles[]
+  profiles              profiles[]               @relation("ProfileClient")
+  active_client_users   profiles[]               @relation("ProfileActiveClient")
   activity_log          activity_log[]
   content               content[]
   recommendations       recommendations[]
@@ -70,6 +71,27 @@ model clients {
   activity_feed         activity_feed[]
   email_logs            email_logs[]             @relation("EmailLogRecipientClient")
   bug_reports           bug_reports[]
+  client_users          client_users[]
+}
+
+// Many-to-many join table for users linked to clients
+// Enables users to be associated with multiple clients (consultants, franchise owners)
+model client_users {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id       String    @db.Uuid
+  user_id         String    @db.Uuid
+  role            String    @default("member")  // 'owner', 'admin', 'member', 'viewer'
+  is_primary      Boolean   @default(false)
+  receives_alerts Boolean   @default(true)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+
+  client  clients  @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  user    profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([client_id, user_id])
+  @@index([client_id])
+  @@index([user_id])
 }
 
 // Centralized activity log for all significant portal activities
@@ -111,16 +133,19 @@ model client_products {
 }
 
 model profiles {
-  id         String    @id @db.Uuid
-  email      String    @unique
-  full_name  String?
-  avatar_url String?
-  role       String
-  client_id  String?   @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  id               String    @id @db.Uuid
+  email            String    @unique
+  full_name        String?
+  avatar_url       String?
+  role             String
+  client_id        String?   @db.Uuid      // Legacy: single client link (being replaced by client_users)
+  active_client_id String?   @db.Uuid      // Currently selected client for multi-client users
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
 
-  client                    clients?                   @relation(fields: [client_id], references: [id])
+  client                    clients?                   @relation("ProfileClient", fields: [client_id], references: [id])
+  active_client             clients?                   @relation("ProfileActiveClient", fields: [active_client_id], references: [id])
+  client_users              client_users[]             // All clients this user is linked to
   activity_log              activity_log[]
   content_authored          content[]                  @relation("content_author")
   content_assigned          content[]                  @relation("content_assigned")

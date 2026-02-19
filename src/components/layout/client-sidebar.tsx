@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { useState, useEffect } from 'react'
+import { ClientSwitcher } from '@/components/client/ClientSwitcher'
 
 const COLLAPSED_KEY = 'client-sidebar-collapsed'
 
@@ -154,6 +155,12 @@ export function ClientSidebar() {
         />
         {!isCollapsed && <span>Pyrus Portal</span>}
       </div>
+      {/* Client Switcher for users with multiple clients */}
+      {!isCollapsed && !viewingAs && (
+        <div style={{ padding: '0 0.75rem', marginBottom: '0.75rem' }}>
+          <ClientSwitcher />
+        </div>
+      )}
       <nav className="client-nav">
         <Link
           href={buildHref('/getting-started')}
