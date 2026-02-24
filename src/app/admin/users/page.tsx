@@ -37,7 +37,7 @@ interface PendingInvite {
   email: string
   role: string
   clientIds: string[]
-  status: 'pending'
+  status: 'pending' | 'expired'
   invitedBy: string
   createdAt: string
   expiresAt: string
@@ -478,7 +478,7 @@ export default function UsersPage() {
         </select>
       </div>
 
-      {/* Pending Invites Section */}
+      {/* Pending & Expired Invites Section */}
       {pendingInvites.length > 0 && (
         <div className="admin-users-section" style={{ marginBottom: '32px' }}>
           <h3>
@@ -486,7 +486,7 @@ export default function UsersPage() {
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
-            Pending Invites ({pendingInvites.length})
+            Invites ({pendingInvites.length})
           </h3>
           <div className="users-table-container">
             <table className="users-table" style={{ tableLayout: 'fixed', width: '100%' }}>
@@ -505,8 +505,9 @@ export default function UsersPage() {
                   const roleContent = getRoleBadgeContent(invite.role as AdminRole)
                   const expiresDate = new Date(invite.expiresAt)
                   const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  const isExpired = invite.status === 'expired'
                   return (
-                    <tr key={invite.id}>
+                    <tr key={invite.id} style={{ opacity: isExpired ? 0.6 : 1 }}>
                       <td className="user-name">
                         <div className="user-avatar" style={{ background: invite.avatarColor, opacity: 0.7 }}>
                           {invite.initials}
@@ -522,12 +523,22 @@ export default function UsersPage() {
                       <td>{invite.email}</td>
                       <td style={{ color: 'var(--text-secondary)' }}>{invite.invitedBy || '-'}</td>
                       <td>
-                        <span style={{
-                          color: daysLeft <= 2 ? 'var(--error-color)' : 'var(--text-secondary)',
-                          fontSize: '13px'
-                        }}>
-                          {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-                        </span>
+                        {isExpired ? (
+                          <span style={{
+                            color: 'var(--error-color)',
+                            fontSize: '13px',
+                            fontWeight: 500
+                          }}>
+                            Expired
+                          </span>
+                        ) : (
+                          <span style={{
+                            color: daysLeft <= 2 ? 'var(--error-color)' : 'var(--text-secondary)',
+                            fontSize: '13px'
+                          }}>
+                            {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
+                          </span>
+                        )}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -535,7 +546,7 @@ export default function UsersPage() {
                             className="btn btn-sm btn-outline"
                             onClick={() => handleResendInvite(invite.id)}
                           >
-                            Resend
+                            {isExpired ? 'Resend' : 'Resend'}
                           </button>
                           <button
                             className="btn btn-sm btn-outline"

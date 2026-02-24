@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           p.avatar_url,
           p.created_at
         FROM profiles p
-        WHERE p.role IN ('admin', 'super_admin', 'production_team', 'sales')
+        WHERE LOWER(p.role) IN ('admin', 'super_admin', 'production_team', 'sales')
         ORDER BY p.created_at ASC`
       )
 
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     }
     const clients = clientsResult.rows.map(c => ({ id: c.id, name: c.name }))
 
-    // Fetch pending invites
+    // Fetch pending and expired invites (not accepted ones)
     // Sales/production_team can only see client invites they sent
     let pendingInvitesResult
     if (canSeeAdminUsers) {
@@ -149,8 +149,8 @@ export async function GET(request: NextRequest) {
           p.full_name as invited_by_name
         FROM user_invites ui
         LEFT JOIN profiles p ON p.id = ui.invited_by
-        WHERE ui.status = 'pending' AND ui.expires_at > NOW()
-        ORDER BY ui.created_at DESC`
+        WHERE ui.status = 'pending'
+        ORDER BY ui.expires_at > NOW() DESC, ui.created_at DESC`
       )
     } else {
       pendingInvitesResult = await dbPool.query(
@@ -166,9 +166,9 @@ export async function GET(request: NextRequest) {
           p.full_name as invited_by_name
         FROM user_invites ui
         LEFT JOIN profiles p ON p.id = ui.invited_by
-        WHERE ui.status = 'pending' AND ui.expires_at > NOW()
+        WHERE ui.status = 'pending'
           AND ui.role = 'client' AND ui.invited_by = $1
-        ORDER BY ui.created_at DESC`,
+        ORDER BY ui.expires_at > NOW() DESC, ui.created_at DESC`,
         [user.id]
       )
     }
@@ -181,6 +181,9 @@ export async function GET(request: NextRequest) {
         .toUpperCase()
         .slice(0, 2)
 
+      // Determine if invite is expired
+      const isExpired = new Date(invite.expires_at) < new Date()
+
       return {
         id: invite.id,
         name: invite.name || invite.email?.split('@')[0] || 'Unknown',
@@ -188,7 +191,7 @@ export async function GET(request: NextRequest) {
         email: invite.email,
         role: invite.role,
         clientIds: invite.client_ids || [],
-        status: 'pending',
+        status: isExpired ? 'expired' : 'pending',
         invitedBy: invite.invited_by_name,
         createdAt: invite.created_at,
         expiresAt: invite.expires_at,
