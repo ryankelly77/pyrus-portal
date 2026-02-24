@@ -34,9 +34,14 @@ export default function ClientsLayout({ children }: { children: ReactNode }) {
   const { user, hasNotifications } = useUserProfile()
   const pathname = usePathname()
 
-  // Don't show tabs on client detail pages
+  // Client detail pages have their own header - don't render layout header/wrapper
   const isDetailPage = pathname.match(/\/admin\/clients\/[^/]+$/) &&
     pathname !== '/admin/clients/performance'
+
+  // Detail pages render their own AdminHeader and admin-content wrapper
+  if (isDetailPage) {
+    return <>{children}</>
+  }
 
   const isActive = (href: string) => {
     if (href === '/admin/clients') {
@@ -61,38 +66,36 @@ export default function ClientsLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Tabs - only show on main pages */}
-        {!isDetailPage && (
-          <div className="tabs-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', gap: '0' }}>
-              {tabs.map((tab) => (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '12px 20px',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    color: isActive(tab.href) ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: 500,
-                    fontSize: '14px',
-                    borderBottom: isActive(tab.href) ? '2px solid var(--primary)' : '2px solid transparent',
-                    marginBottom: '-1px',
-                    transition: 'all 0.2s',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {tab.icon}
-                  {tab.name}
-                </Link>
-              ))}
-            </div>
+        {/* Tabs */}
+        <div className="tabs-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '0' }}>
+            {tabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: isActive(tab.href) ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: 500,
+                  fontSize: '14px',
+                  borderBottom: isActive(tab.href) ? '2px solid var(--primary)' : '2px solid transparent',
+                  marginBottom: '-1px',
+                  transition: 'all 0.2s',
+                  textDecoration: 'none',
+                }}
+              >
+                {tab.icon}
+                {tab.name}
+              </Link>
+            ))}
           </div>
-        )}
+        </div>
 
         {children}
       </div>
