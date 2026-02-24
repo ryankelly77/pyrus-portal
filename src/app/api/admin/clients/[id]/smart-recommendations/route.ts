@@ -25,9 +25,8 @@ export async function GET(
       include: {
         items: {
           where: {
-            NOT: {
-              status: 'declined'
-            }
+            // Only include active items (exclude purchased and declined)
+            status: 'active'
           },
           select: {
             id: true,
@@ -158,9 +157,8 @@ export async function POST(
       include: {
         items: {
           where: {
-            NOT: {
-              status: 'declined'
-            }
+            // Only include active items (exclude purchased and declined)
+            status: 'active'
           },
           select: {
             id: true,
