@@ -33,21 +33,35 @@ function verifyCronAuth(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  // Vercel cron jobs include this header
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+  // Vercel cron jobs include this header (check for any truthy value)
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
+  const isVercelCron = vercelCronHeader && vercelCronHeader.length > 0;
 
-  // If it's a Vercel cron job, allow it
+  // Log for debugging
+  console.log('[Cron Auth] Vercel cron header:', vercelCronHeader);
+  console.log('[Cron Auth] Has auth header:', !!authHeader);
+  console.log('[Cron Auth] Has CRON_SECRET env:', !!cronSecret);
+
+  // If it's a Vercel cron job (header present), allow it
   if (isVercelCron) {
+    console.log('[Cron Auth] Authorized via x-vercel-cron header');
     return true;
   }
 
-  // If no secret configured, only allow in development
-  if (!cronSecret) {
-    return process.env.NODE_ENV === 'development';
+  // Check bearer token if CRON_SECRET is configured
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    console.log('[Cron Auth] Authorized via CRON_SECRET');
+    return true;
   }
 
-  // Check bearer token
-  return authHeader === `Bearer ${cronSecret}`;
+  // Allow in development mode without secret
+  if (!cronSecret && process.env.NODE_ENV === 'development') {
+    console.log('[Cron Auth] Authorized via development mode');
+    return true;
+  }
+
+  console.log('[Cron Auth] Authorization failed');
+  return false;
 }
 
 export async function GET(request: NextRequest) {
