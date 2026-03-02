@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import {
   type ClientPageDBClient,
   type PaymentMethod,
+  type AvailableProduct,
+  type ManualProduct,
   AVATAR_COLORS,
 } from '@/types'
 
@@ -139,6 +141,12 @@ export function EditClientModal({
   const [addUserError, setAddUserError] = useState('')
   const [addingUser, setAddingUser] = useState(false)
 
+  // Pro bono products state
+  const [proBonoProducts, setProBonoProducts] = useState<ManualProduct[]>([])
+  const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([])
+  const [proBonoProductsLoading, setProBonoProductsLoading] = useState(false)
+  const [addingProBonoProduct, setAddingProBonoProduct] = useState(false)
+
   // Initialize form data when client changes or modal opens
   useEffect(() => {
     if (isOpen && client) {
@@ -212,6 +220,77 @@ export function EditClientModal({
       fetchClientUsers()
     }
   }, [isOpen, activeTab, clientId])
+
+  // Fetch pro bono products when modal opens and client is pro bono
+  useEffect(() => {
+    if (isOpen && (client?.is_pro_bono || formData.isProBono)) {
+      fetchProBonoProducts()
+      fetchAvailableProducts()
+    }
+  }, [isOpen, client?.is_pro_bono, formData.isProBono, clientId])
+
+  const fetchProBonoProducts = async () => {
+    setProBonoProductsLoading(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`)
+      if (res.ok) {
+        const data = await res.json()
+        setProBonoProducts(data.manual || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch pro bono products:', error)
+    } finally {
+      setProBonoProductsLoading(false)
+    }
+  }
+
+  const fetchAvailableProducts = async () => {
+    try {
+      const res = await fetch('/api/admin/products')
+      if (res.ok) {
+        const data = await res.json()
+        setAvailableProducts(data.products || data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch available products:', error)
+    }
+  }
+
+  const handleAddProBonoProduct = async (productId: string) => {
+    if (!productId) return
+    setAddingProBonoProduct(true)
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      })
+      if (res.ok) {
+        fetchProBonoProducts()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to add product')
+      }
+    } catch (error) {
+      console.error('Failed to add pro bono product:', error)
+    } finally {
+      setAddingProBonoProduct(false)
+    }
+  }
+
+  const handleRemoveProBonoProduct = async (clientProductId: string) => {
+    if (!confirm('Remove this product from the client?')) return
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/products?clientProductId=${clientProductId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setProBonoProducts(prev => prev.filter(p => p.id !== clientProductId))
+      }
+    } catch (error) {
+      console.error('Failed to remove pro bono product:', error)
+    }
+  }
 
   const fetchClientUsers = async () => {
     setClientUsersLoading(true)
@@ -455,34 +534,159 @@ export function EditClientModal({
 
                 {/* Pro Bono Toggle */}
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem 1rem',
                   background: formData.isProBono ? '#F0FDF4' : '#F9FAFB',
                   border: formData.isProBono ? '1px solid #BBF7D0' : '1px solid #E5E7EB',
                   borderRadius: '8px',
                   marginBottom: '1rem',
+                  overflow: 'hidden',
                 }}>
-                  <div>
-                    <div style={{ fontWeight: 500, color: '#1F2937', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke={formData.isProBono ? '#22C55E' : '#6B7280'} strokeWidth="2" width="18" height="18">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                      </svg>
-                      Pro Bono Client
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 500, color: '#1F2937', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke={formData.isProBono ? '#22C55E' : '#6B7280'} strokeWidth="2" width="18" height="18">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Pro Bono Client
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                        Skip recommendation flow, manually assign products
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>
-                      Skip recommendation flow, manually assign products
+                    <div className="edit-toggle-wrap">
+                      <input
+                        type="checkbox"
+                        checked={formData.isProBono}
+                        onChange={(e) => setFormData({ ...formData, isProBono: e.target.checked })}
+                      />
+                      <span className="edit-toggle-track"></span>
                     </div>
                   </div>
-                  <div className="edit-toggle-wrap">
-                    <input
-                      type="checkbox"
-                      checked={formData.isProBono}
-                      onChange={(e) => setFormData({ ...formData, isProBono: e.target.checked })}
-                    />
-                    <span className="edit-toggle-track"></span>
-                  </div>
+
+                  {/* Pro Bono Products Section - shown when Pro Bono is enabled */}
+                  {formData.isProBono && (
+                    <div style={{
+                      borderTop: '1px solid #BBF7D0',
+                      padding: '1rem',
+                      background: 'rgba(255,255,255,0.5)',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#166534' }}>
+                          Assigned Products ({proBonoProducts.length})
+                        </div>
+                        <select
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #BBF7D0',
+                            background: 'white',
+                            color: '#166534',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                          }}
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleAddProBonoProduct(e.target.value)
+                              e.target.value = ''
+                            }
+                          }}
+                          disabled={addingProBonoProduct}
+                        >
+                          <option value="">+ Add Product...</option>
+                          {availableProducts
+                            .filter(p => !proBonoProducts.some(pp => pp.productId === p.id))
+                            .map(p => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.category})</option>
+                            ))}
+                        </select>
+                      </div>
+
+                      {proBonoProductsLoading ? (
+                        <div style={{ padding: '1rem', textAlign: 'center', color: '#166534', fontSize: '0.85rem' }}>
+                          Loading products...
+                        </div>
+                      ) : proBonoProducts.length === 0 ? (
+                        <div style={{
+                          padding: '1.5rem',
+                          textAlign: 'center',
+                          background: 'rgba(255,255,255,0.8)',
+                          borderRadius: '6px',
+                          color: '#6B7280',
+                          fontSize: '0.85rem',
+                        }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" style={{ opacity: 0.5, margin: '0 auto 0.5rem' }}>
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                          </svg>
+                          <p style={{ margin: 0 }}>No products assigned yet</p>
+                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem' }}>Use the dropdown above to add products</p>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {proBonoProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0.5rem 0.75rem',
+                                background: 'white',
+                                borderRadius: '6px',
+                                border: '1px solid #E5E7EB',
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontWeight: 500, fontSize: '0.85rem', color: '#1F2937' }}>
+                                  {product.name}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                                  {product.category}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveProBonoProduct(product.id)}
+                                style={{
+                                  padding: '0.25rem',
+                                  background: 'transparent',
+                                  border: '1px solid #FECACA',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  color: '#DC2626',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                                title="Remove product"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{
+                        marginTop: '0.75rem',
+                        padding: '0.5rem 0.75rem',
+                        background: '#ECFDF5',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        color: '#065F46',
+                      }}>
+                        <strong>Note:</strong> Products can be added/removed at any time. Client can still purchase through recommendations later.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-row">
