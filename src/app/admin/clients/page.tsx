@@ -25,6 +25,7 @@ interface Client {
   visitors: number | null
   leads: number | null
   growth: number | null
+  isProBono: boolean
 }
 
 interface DBClient {
@@ -38,6 +39,7 @@ interface DBClient {
   created_at: string
   start_date: string | null
   services_count: number
+  is_pro_bono: boolean
 }
 
 // Helper to generate initials from name
@@ -184,6 +186,7 @@ export default function ClientsPage() {
           visitors,
           leads,
           growth,
+          isProBono: c.is_pro_bono || false,
         }
       })
 
@@ -512,9 +515,30 @@ export default function ClientsPage() {
                   >
                     {client.initials}
                   </div>
-                  <span className={`status-badge ${client.status}`}>
-                    {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-                  </span>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {client.isProBono && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        background: '#F0FDF4',
+                        color: '#166534',
+                        border: '1px solid #BBF7D0',
+                      }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Pro Bono
+                      </span>
+                    )}
+                    <span className={`status-badge ${client.status}`}>
+                      {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
                 <div className="client-card-body">
                   <h3>{client.name}</h3>
