@@ -69,6 +69,7 @@ export async function getClientActivity(
   let communications: any[] = []
   let recommendationHistory: any[] = []
   let websiteEditRequests: any[] = []
+  let clientFiles: any[] = []
 
   // Get client's basecamp_project_id
   try {
@@ -192,6 +193,20 @@ export async function getClientActivity(
     })
   } catch (error) {
     console.error('Error fetching website edit activity logs:', error)
+  }
+
+  // Fetch client files (e.g., branding documents, onboarding materials)
+  try {
+    clientFiles = await prisma.client_files.findMany({
+      where: {
+        client_id: clientId,
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching client files:', error)
+    // Table may not exist yet, don't log as critical
   }
 
   // Map Basecamp activities to unified format
@@ -401,8 +416,51 @@ export async function getClientActivity(
     }
   })
 
+  // Map client files to unified format
+  const mappedClientFiles = clientFiles.map((row) => {
+    const type: 'task' | 'update' | 'alert' | 'content' = 'content'
+
+    // Determine title based on file category
+    let title: string
+    const fileName = row.name || 'File'
+    const category = row.category || 'document'
+
+    switch (category.toLowerCase()) {
+      case 'branding':
+        title = `Branding document shared: ${fileName}`
+        break
+      case 'onboarding':
+        title = `Onboarding material shared: ${fileName}`
+        break
+      case 'content':
+        title = `Content file shared: ${fileName}`
+        break
+      default:
+        title = `File shared: ${fileName}`
+    }
+
+    const iconStyle = { background: 'var(--info-bg)', color: 'var(--info)' }
+    const date = new Date(row.created_at || new Date())
+
+    return {
+      id: row.id,
+      type,
+      title,
+      description: row.type ? `Type: ${row.type}` : '',
+      time: formatTime(date),
+      timestamp: date.getTime(),
+      iconStyle,
+      metadata: {
+        source: 'client_file',
+        fileCategory: row.category,
+        fileType: row.type,
+        fileUrl: row.url,
+      },
+    }
+  })
+
   // Merge and sort by timestamp (most recent first)
-  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests, ...mappedWebsiteEditActivityLogs]
+  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests, ...mappedWebsiteEditActivityLogs, ...mappedClientFiles]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit)
     .map(({ timestamp, ...rest }) => rest as ActivityItem)
