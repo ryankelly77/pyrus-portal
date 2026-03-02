@@ -202,6 +202,19 @@ export async function GET(request: NextRequest) {
     )
     const hasActualContent = parseInt(contentCountResult.rows[0].count) > 0
 
+    // Check if client has files assigned (e.g., branding documents)
+    let hasFiles = false
+    try {
+      const filesCountResult = await dbPool.query(
+        `SELECT COUNT(*) FROM client_files WHERE client_id = $1`,
+        [clientId]
+      )
+      hasFiles = parseInt(filesCountResult.rows[0].count) > 0
+    } catch (e) {
+      // Table may not exist yet
+      console.log('client_files table may not exist yet')
+    }
+
     // Aggregate content and website services across all active products
     const contentServices = aggregateServices(allActiveProducts, 'content_services')
     const websiteServices = aggregateServices(allActiveProducts, 'website_services')
@@ -244,8 +257,8 @@ export async function GET(request: NextRequest) {
         hasActivity: hasActivityAccess,
         hasWebsite: hasWebsiteAccess,
         hasWebsiteProducts,
-        // For content: hasContent is true if client has actual content OR has content products with activity access
-        hasContent: hasActualContent || (hasActivityAccess && hasContentProducts),
+        // For content: hasContent is true if client has actual content, files, OR has content products with activity access
+        hasContent: hasActualContent || hasFiles || (hasActivityAccess && hasContentProducts),
         hasContentProducts,
         // Aggregated services for "Your Plan Includes" display
         contentServices,
