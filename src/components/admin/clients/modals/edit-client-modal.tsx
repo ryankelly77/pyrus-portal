@@ -46,6 +46,7 @@ interface EditFormData {
   referredBy: string
   referralSource: string
   avatarColor: string
+  isProBono: boolean
   // Website
   websiteUrl: string
   hostingType: '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted'
@@ -98,6 +99,7 @@ export function EditClientModal({
     referredBy: '',
     referralSource: '',
     avatarColor: '#885430',
+    isProBono: false,
     websiteUrl: '',
     hostingType: '',
     hostingProvider: '',
@@ -152,6 +154,7 @@ export function EditClientModal({
         referredBy: client.referred_by || '',
         referralSource: client.referral_source || '',
         avatarColor: client.avatar_color || '#885430',
+        isProBono: client.is_pro_bono || false,
         websiteUrl: client.website_url || '',
         hostingType: (client.hosting_type as '' | 'ai_site' | 'pyrus_hosted' | 'client_hosted') || '',
         hostingProvider: client.hosting_provider || '',
@@ -321,6 +324,7 @@ export function EditClientModal({
           referredBy: formData.referredBy,
           referralSource: formData.referralSource,
           avatarColor: formData.avatarColor,
+          isProBono: formData.isProBono,
           // Website fields
           websiteUrl: formData.websiteUrl,
           hostingType: formData.hostingType || null,
@@ -446,6 +450,38 @@ export function EditClientModal({
                       <option value="paused">Paused</option>
                       <option value="test">Test</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Pro Bono Toggle */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 1rem',
+                  background: formData.isProBono ? '#F0FDF4' : '#F9FAFB',
+                  border: formData.isProBono ? '1px solid #BBF7D0' : '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 500, color: '#1F2937', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={formData.isProBono ? '#22C55E' : '#6B7280'} strokeWidth="2" width="18" height="18">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      Pro Bono Client
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                      Skip recommendation flow, manually assign products
+                    </div>
+                  </div>
+                  <div className="edit-toggle-wrap">
+                    <input
+                      type="checkbox"
+                      checked={formData.isProBono}
+                      onChange={(e) => setFormData({ ...formData, isProBono: e.target.checked })}
+                    />
+                    <span className="edit-toggle-track"></span>
                   </div>
                 </div>
 

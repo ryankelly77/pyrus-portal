@@ -44,6 +44,8 @@ model clients {
   // Content approval workflow settings
   content_approval_mode     String?   @default("full_approval") // 'full_approval', 'initial_approval', 'auto'
   approval_threshold        Int?      // Number of pieces to approve before auto-approving (for initial_approval mode)
+  // Pro bono clients skip recommendation flow and have products manually assigned
+  is_pro_bono               Boolean   @default(false)
   created_at         DateTime? @default(now()) @db.Timestamptz(6)
   updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 

@@ -129,6 +129,8 @@ export async function PATCH(
       // Content approval workflow
       contentApprovalMode,
       approvalThreshold,
+      // Pro bono
+      isProBono,
     } = body
 
     // Use dashboardToken if provided, otherwise use agencyDashboardShareKey
@@ -161,6 +163,8 @@ export async function PATCH(
         // Content approval workflow
         ...(contentApprovalMode !== undefined && { content_approval_mode: contentApprovalMode || 'full_approval' }),
         ...(approvalThreshold !== undefined && { approval_threshold: approvalThreshold }),
+        // Pro bono
+        ...(isProBono !== undefined && { is_pro_bono: isProBono }),
         updated_at: new Date(),
       },
     })

@@ -53,6 +53,8 @@ export interface ClientPageDBClient {
   // Content approval workflow settings
   content_approval_mode: 'full_approval' | 'initial_approval' | 'auto' | null
   approval_threshold: number | null
+  // Pro bono
+  is_pro_bono: boolean
 }
 
 export type RequestStatus = 'completed' | 'in-progress' | 'pending'
