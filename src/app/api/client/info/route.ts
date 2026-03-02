@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
     const isActiveClient = hasActiveSubscriptions || hasManualProducts || isManuallyActive
     const clientStatus = isActiveClient ? (client.status || 'active') : 'pending'
     const hasResultsAccess = !!client.agency_dashboard_share_key
-    const hasActivityAccess = !!client.basecamp_id || !!client.basecamp_project_id
+    const hasBasecampAccess = !!client.basecamp_id || !!client.basecamp_project_id
     // Website access: has a website URL configured
     const hasWebsiteAccess = !!client.website_url
 
@@ -214,6 +214,9 @@ export async function GET(request: NextRequest) {
       // Table may not exist yet
       console.log('client_files table may not exist yet')
     }
+
+    // Activity access: has Basecamp OR has files (for pro bono clients)
+    const hasActivityAccess = hasBasecampAccess || hasFiles
 
     // Aggregate content and website services across all active products
     const contentServices = aggregateServices(allActiveProducts, 'content_services')
