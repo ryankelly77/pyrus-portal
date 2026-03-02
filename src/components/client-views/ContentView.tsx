@@ -1105,7 +1105,13 @@ export function ContentView({
         {/* Upsell buttons — both roles, different callbacks */}
         {availableContentProducts && availableContentProducts.length > 0 && (
           <div style={{ display: 'flex', gap: '8px' }}>
-            {availableContentProducts.map(product => {
+            {availableContentProducts
+              .filter(product => {
+                // Only show buttons for known product types
+                const name = product.name.toLowerCase()
+                return name.includes('writing') || name.includes('creative') || name.includes('branding')
+              })
+              .map(product => {
               const isWriting = product.name.toLowerCase().includes('writing')
               const isCreative = product.name.toLowerCase().includes('creative')
               const isBranding = product.name.toLowerCase().includes('branding')
@@ -1114,9 +1120,7 @@ export function ContentView({
                 ? { background: '#7C3AED', borderColor: '#7C3AED', color: 'white' }
                 : isCreative
                   ? { background: '#F59E0B', borderColor: '#F59E0B', color: 'white' }
-                  : isBranding
-                    ? { background: '#0EA5E9', borderColor: '#0EA5E9', color: 'white' }
-                    : {}
+                  : { background: '#0EA5E9', borderColor: '#0EA5E9', color: 'white' }
 
               return (
                 <button
@@ -1149,7 +1153,7 @@ export function ContentView({
                       <path d="M2 12l10 5 10-5"></path>
                     </svg>
                   )}
-                  {isWriting ? 'Add More Content' : isCreative ? 'Add AI Creative' : isBranding ? 'Add Branding' : 'Add to Plan'}
+                  {isWriting ? 'Add More Content' : isCreative ? 'Add AI Creative' : 'Add Branding'}
                 </button>
               )
             })}
