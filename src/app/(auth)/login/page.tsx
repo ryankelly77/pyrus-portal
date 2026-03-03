@@ -45,6 +45,14 @@ function LoginForm() {
       return
     }
 
+    // First, check for pending user_invite and apply if found
+    // This handles cases where the invite was sent but user registered separately
+    try {
+      await fetch('/api/auth/apply-user-invite', { method: 'POST' })
+    } catch (e) {
+      // Non-blocking
+    }
+
     // Fetch user's profile and permissions to determine redirect
     let finalRedirect = redirectUrl
     try {

@@ -82,6 +82,27 @@ function RegisterForm() {
 
     // If we have a session, the user is logged in
     if (data.session) {
+      // First, check for pending user_invite (admin/staff invites)
+      // This handles cases where someone registers through /register instead of /accept-invite
+      try {
+        const userInviteRes = await fetch('/api/auth/apply-user-invite', {
+          method: 'POST',
+        })
+        const userInviteResult = await userInviteRes.json()
+        if (userInviteResult.applied) {
+          console.log('Applied user invite:', userInviteResult)
+          // If they had an admin invite, redirect to admin area
+          const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
+          if (adminRoles.includes(userInviteResult.role)) {
+            router.push('/admin/dashboard')
+            router.refresh()
+            return
+          }
+        }
+      } catch (e) {
+        console.error('Failed to check/apply user invite:', e)
+      }
+
       // Associate with pending client if available
       // Check URL param first (more reliable), then localStorage
       const urlInviteToken = searchParams.get('invite')

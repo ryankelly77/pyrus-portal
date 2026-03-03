@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { logAuthError } from '@/lib/alerts'
-import { prisma } from '@/lib/prisma'
+import { prisma, dbPool } from '@/lib/prisma'
 import { enrollInAutomations } from '@/lib/email/automation-service'
 
 export async function GET(request: Request) {
@@ -38,6 +38,9 @@ export async function GET(request: Request) {
         )
         return NextResponse.redirect(new URL('/login?error=auth_callback_failed', requestUrl.origin))
       }
+
+      // Check for pending user_invite and apply role if found
+      await applyPendingUserInvite(supabase).catch(console.error)
 
       // Track client login for automations (non-blocking)
       trackClientLogin(supabase).catch(console.error)
@@ -102,5 +105,75 @@ async function trackClientLogin(supabase: Awaited<ReturnType<typeof createClient
     console.log(`Tracked client login for ${profile.email}`)
   } catch (error) {
     console.error('Failed to track client login:', error)
+  }
+}
+
+/**
+ * Check for pending user_invite by email and apply the role
+ * This handles cases where users register through /register instead of /accept-invite
+ */
+async function applyPendingUserInvite(supabase: Awaited<ReturnType<typeof createClient>>) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.email) return
+
+    // Check for pending user_invite
+    const inviteResult = await dbPool.query(
+      `SELECT id, role, client_ids, full_name FROM user_invites
+       WHERE email = $1 AND status = 'pending' AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [user.email.toLowerCase()]
+    )
+
+    if (inviteResult.rows.length === 0) return
+
+    const invite = inviteResult.rows[0]
+    const clientIds = invite.client_ids || []
+    const primaryClientId = clientIds.length > 0 ? clientIds[0] : null
+
+    // Update the profile with the correct role from the invite
+    await dbPool.query(
+      `UPDATE profiles SET
+        role = $1,
+        client_id = COALESCE($2, client_id),
+        active_client_id = COALESCE($2, active_client_id),
+        full_name = COALESCE(full_name, $3),
+        updated_at = NOW()
+       WHERE id = $4`,
+      [invite.role, primaryClientId, invite.full_name, user.id]
+    )
+
+    // Create client_users entries if needed
+    for (let i = 0; i < clientIds.length; i++) {
+      const clientId = clientIds[i]
+      await dbPool.query(
+        `INSERT INTO client_users (client_id, user_id, role, is_primary, receives_alerts)
+         VALUES ($1, $2, 'member', $3, true)
+         ON CONFLICT (client_id, user_id) DO NOTHING`,
+        [clientId, user.id, i === 0]
+      )
+    }
+
+    // Mark invite as accepted
+    await dbPool.query(
+      `UPDATE user_invites SET status = 'accepted', accepted_at = NOW() WHERE id = $1`,
+      [invite.id]
+    )
+
+    // Log activity
+    await dbPool.query(
+      `INSERT INTO activity_log (user_id, activity_type, description, metadata)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        user.id,
+        'accepted_invite',
+        `${invite.full_name || user.email} accepted invitation as ${invite.role}`,
+        JSON.stringify({ email: user.email, role: invite.role, invite_id: invite.id })
+      ]
+    ).catch(() => {})
+
+    console.log(`Applied pending user_invite for ${user.email} with role ${invite.role}`)
+  } catch (error) {
+    console.error('Failed to apply pending user_invite:', error)
   }
 }
