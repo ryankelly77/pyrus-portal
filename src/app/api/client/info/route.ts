@@ -215,8 +215,20 @@ export async function GET(request: NextRequest) {
       console.log('client_files table may not exist yet')
     }
 
-    // Activity access: has Basecamp OR has files (for pro bono clients)
-    const hasActivityAccess = hasBasecampAccess || hasFiles
+    // Check if client has activity log entries (onboarding, etc.)
+    let hasActivityLogs = false
+    try {
+      const activityCountResult = await dbPool.query(
+        `SELECT COUNT(*) FROM activity_log WHERE client_id = $1`,
+        [clientId]
+      )
+      hasActivityLogs = parseInt(activityCountResult.rows[0].count) > 0
+    } catch (e) {
+      // Table may not exist
+    }
+
+    // Activity access: has Basecamp OR has files OR has activity logs
+    const hasActivityAccess = hasBasecampAccess || hasFiles || hasActivityLogs
 
     // Aggregate content and website services across all active products
     const contentServices = aggregateServices(allActiveProducts, 'content_services')
