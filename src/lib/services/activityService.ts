@@ -202,7 +202,7 @@ export async function getClientActivity(
       where: {
         client_id: clientId,
         activity_type: {
-          in: ['onboarding_completed', 'client_onboarding_completed', 'questionnaire_completed'],
+          in: ['onboarding_completed', 'client_onboarding_completed', 'questionnaire_completed', 'questionnaire_submitted'],
         },
       },
       orderBy: { created_at: 'desc' },
@@ -488,7 +488,8 @@ export async function getClientActivity(
         title = 'Onboarding questionnaire completed'
         break
       case 'questionnaire_completed':
-        title = 'Questionnaire completed'
+      case 'questionnaire_submitted':
+        title = 'Questionnaire submitted'
         break
       default:
         title = row.description || 'Milestone reached'

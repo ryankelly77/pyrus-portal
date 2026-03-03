@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (!type || type === 'all') {
       activityTypes.push('login', 'client_login', 'admin_login', 'page_view', 'registration',
         'client_created', 'client_onboarding', 'onboarding_completed', 'client_onboarding_completed',
-        'accepted_invite', 'purchase', 'payment', 'website_edit_request',
+        'questionnaire_submitted', 'accepted_invite', 'purchase', 'payment', 'website_edit_request',
         'website_edit_request_started', 'website_edit_request_completed', 'website_edit_request_cancelled')
     } else if (type === 'website_edit_request') {
       activityTypes.push('website_edit_request', 'website_edit_request_started',
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       activityTypes.push('page_view')
     } else if (type === 'onboarding') {
       // Only actual onboarding milestones
-      activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed')
+      activityTypes.push('client_onboarding', 'onboarding_completed', 'client_onboarding_completed', 'questionnaire_submitted')
     } else if (type === 'purchase') {
       // Purchases and payment events from activity_log
       activityTypes.push('purchase', 'payment')
@@ -240,6 +240,7 @@ function mapActivityType(activityType: string): { type: string, title: string } 
     'client_onboarding': { type: 'onboarding', title: 'Onboarding Started' },
     'onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
     'client_onboarding_completed': { type: 'onboarding', title: 'Onboarding Completed' },
+    'questionnaire_submitted': { type: 'onboarding', title: 'Questionnaire Submitted' },
     'purchase': { type: 'purchase', title: 'Purchase' },
     'payment': { type: 'purchase', title: 'Payment' },
     'website_edit_request': { type: 'website_edit_request', title: 'Website Edit Request' },

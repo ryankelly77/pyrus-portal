@@ -284,6 +284,29 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    // Get client name for activity log
+    const clientData = await prisma.clients.findUnique({
+      where: { id: clientId },
+      select: { name: true },
+    })
+
+    // Log questionnaire submission to activity_log
+    try {
+      await prisma.activity_log.create({
+        data: {
+          client_id: clientId,
+          activity_type: 'questionnaire_submitted',
+          description: `${clientData?.name || 'Client'} submitted onboarding questionnaire`,
+          metadata: {
+            clientName: clientData?.name,
+            responsesCount: results.length,
+          },
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log questionnaire submission (non-critical):', logError)
+    }
+
     return NextResponse.json({ saved: results.length }, { status: 201 })
   } catch (error) {
     console.error('Failed to save onboarding responses:', error)
