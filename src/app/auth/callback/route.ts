@@ -40,7 +40,15 @@ export async function GET(request: Request) {
       }
 
       // Check for pending user_invite and apply role if found
-      await applyPendingUserInvite(supabase).catch(console.error)
+      const appliedInvite = await applyPendingUserInvite(supabase).catch(() => null)
+
+      // If an admin invite was applied, redirect to admin area
+      if (appliedInvite?.applied && appliedInvite.role) {
+        const adminRoles = ['super_admin', 'admin', 'production_team', 'sales']
+        if (adminRoles.includes(appliedInvite.role)) {
+          return NextResponse.redirect(new URL('/admin/dashboard', requestUrl.origin))
+        }
+      }
 
       // Track client login for automations (non-blocking)
       trackClientLogin(supabase).catch(console.error)
@@ -111,11 +119,12 @@ async function trackClientLogin(supabase: Awaited<ReturnType<typeof createClient
 /**
  * Check for pending user_invite by email and apply the role
  * This handles cases where users register through /register instead of /accept-invite
+ * Returns { applied: true, role: string } if an invite was applied
  */
-async function applyPendingUserInvite(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function applyPendingUserInvite(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ applied: boolean; role?: string } | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user?.email) return
+    if (!user?.email) return null
 
     // Check for pending user_invite
     const inviteResult = await dbPool.query(
@@ -125,7 +134,7 @@ async function applyPendingUserInvite(supabase: Awaited<ReturnType<typeof create
       [user.email.toLowerCase()]
     )
 
-    if (inviteResult.rows.length === 0) return
+    if (inviteResult.rows.length === 0) return { applied: false }
 
     const invite = inviteResult.rows[0]
     const clientIds = invite.client_ids || []
@@ -173,7 +182,9 @@ async function applyPendingUserInvite(supabase: Awaited<ReturnType<typeof create
     ).catch(() => {})
 
     console.log(`Applied pending user_invite for ${user.email} with role ${invite.role}`)
+    return { applied: true, role: invite.role }
   } catch (error) {
     console.error('Failed to apply pending user_invite:', error)
+    return null
   }
 }
