@@ -20191,19 +20191,25 @@ input[type="date"].form-control {
 }
 
 .activity-date-header {
-    padding: 12px 24px;
+    padding: 8px 20px;
     background: var(--bg-page);
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     border-bottom: 1px solid var(--border-light);
+}
+
+.activity-detail {
+    color: var(--text-muted);
 }
 
 .activity-item {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 16px 24px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
     border-bottom: 1px solid var(--border-light);
     transition: background 0.15s ease;
 }
@@ -20245,20 +20251,20 @@ input[type="date"].form-control {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     background: var(--pyrus-brown);
     color: white;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    border-radius: 10px;
-    margin-left: 8px;
+    border-radius: 9px;
+    margin-left: 6px;
 }
 
 .activity-icon {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -20267,8 +20273,8 @@ input[type="date"].form-control {
 }
 
 .activity-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
 }
 
 .activity-icon.login {
@@ -20299,30 +20305,37 @@ input[type="date"].form-control {
 .activity-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.activity-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .activity-user {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .activity-company {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 .activity-company::before {
     content: "•";
-    margin-right: 8px;
+    margin-right: 6px;
 }
 
 .activity-description {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-secondary);
     margin: 0;
+    line-height: 1.4;
 }
 
 .activity-description strong {
@@ -20331,7 +20344,7 @@ input[type="date"].form-control {
 }
 
 .activity-time {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
@@ -30240,18 +30253,27 @@ input[type="date"].form-control {
 }
 
 .activity-meta {
-    margin-top: 0.25rem;
+    display: inline;
 }
 
 .activity-client {
-    font-size: 0.8125rem;
-    color: #6B7280;
+    font-size: 12px;
+    color: var(--pyrus-green);
     text-decoration: none;
+    font-weight: 500;
 }
 
 .activity-client:hover {
-    color: #324438;
+    color: #1a2a1d;
     text-decoration: underline;
+}
+
+/* Inline description and client */
+.activity-description-row {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
 }
 
 /* Notifications Filters */

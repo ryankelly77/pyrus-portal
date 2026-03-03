@@ -195,6 +195,23 @@ export async function getClientActivity(
     console.error('Error fetching website edit activity logs:', error)
   }
 
+  // Fetch onboarding and other milestone activity logs
+  let milestoneActivityLogs: any[] = []
+  try {
+    milestoneActivityLogs = await prisma.activity_log.findMany({
+      where: {
+        client_id: clientId,
+        activity_type: {
+          in: ['onboarding_completed', 'client_onboarding_completed', 'questionnaire_completed'],
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    })
+  } catch (error) {
+    console.error('Error fetching milestone activity logs:', error)
+  }
+
   // Fetch client files (e.g., branding documents, onboarding materials)
   try {
     clientFiles = await prisma.client_files.findMany({
@@ -459,8 +476,44 @@ export async function getClientActivity(
     }
   })
 
+  // Map milestone activity logs (onboarding completion, etc.) to unified format
+  const mappedMilestoneActivities = milestoneActivityLogs.map((row) => {
+    const type: 'task' | 'update' | 'alert' | 'content' = 'update'
+
+    // Determine title based on activity type
+    let title: string
+    switch (row.activity_type) {
+      case 'onboarding_completed':
+      case 'client_onboarding_completed':
+        title = 'Onboarding questionnaire completed'
+        break
+      case 'questionnaire_completed':
+        title = 'Questionnaire completed'
+        break
+      default:
+        title = row.description || 'Milestone reached'
+    }
+
+    const iconStyle = { background: 'var(--success-bg)', color: 'var(--success)' }
+    const date = new Date(row.created_at || new Date())
+
+    return {
+      id: row.id,
+      type,
+      title,
+      description: '',
+      time: formatTime(date),
+      timestamp: date.getTime(),
+      iconStyle,
+      metadata: {
+        source: 'milestone_activity',
+        activityType: row.activity_type,
+      },
+    }
+  })
+
   // Merge and sort by timestamp (most recent first)
-  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests, ...mappedWebsiteEditActivityLogs, ...mappedClientFiles]
+  const allActivities = [...mappedBasecampActivities, ...mappedCommunications, ...mappedRecommendationHistory, ...mappedWebsiteEditRequests, ...mappedWebsiteEditActivityLogs, ...mappedClientFiles, ...mappedMilestoneActivities]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit)
     .map(({ timestamp, ...rest }) => rest as ActivityItem)

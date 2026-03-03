@@ -573,8 +573,7 @@ export default function AdminNotificationsPage() {
                         <span className="activity-title">{notification.title}</span>
                         {getStatusBadge(notification.type, notification.status)}
                       </div>
-                      <p className="activity-description">{cleanDescription(notification.description, notification.clientName)}</p>
-                      <div className="activity-meta">
+                      <p className="activity-description">
                         {notification.clientId ? (
                           <Link href={`/admin/clients/${notification.clientId}`} className="activity-client">
                             {notification.clientName}
@@ -582,7 +581,10 @@ export default function AdminNotificationsPage() {
                         ) : (
                           <span className="activity-client">{notification.clientName}</span>
                         )}
-                      </div>
+                        {cleanDescription(notification.description, notification.clientName) && (
+                          <span className="activity-detail"> — {cleanDescription(notification.description, notification.clientName)}</span>
+                        )}
+                      </p>
                     </div>
                     <div className="activity-time">{formatTimestamp(notification.timestamp)}</div>
                   </div>
