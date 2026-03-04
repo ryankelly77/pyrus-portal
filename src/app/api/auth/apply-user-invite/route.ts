@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/auth/apply-user-invite
  * Check for pending user_invite by email and apply the role
  * This handles cases where users register through /register instead of /accept-invite
+ * Also handles cases where invite was accepted but role wasn't properly applied
  */
 export async function POST() {
   try {
@@ -18,13 +19,33 @@ export async function POST() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Check for pending user_invite
-    const inviteResult = await dbPool.query(
-      `SELECT id, role, client_ids, full_name FROM user_invites
+    // Check for pending user_invite first
+    let inviteResult = await dbPool.query(
+      `SELECT id, role, client_ids, full_name, status FROM user_invites
        WHERE email = $1 AND status = 'pending' AND expires_at > NOW()
        ORDER BY created_at DESC LIMIT 1`,
       [user.email.toLowerCase()]
     )
+
+    // If no pending invite, check for accepted invite where profile role doesn't match
+    // This handles cases where invite was marked accepted but role update failed
+    if (inviteResult.rows.length === 0) {
+      const profileResult = await dbPool.query(
+        `SELECT role FROM profiles WHERE id = $1`,
+        [user.id]
+      )
+      const currentRole = profileResult.rows[0]?.role
+
+      // Only look for accepted invites if user currently has 'client' role
+      if (currentRole === 'client') {
+        inviteResult = await dbPool.query(
+          `SELECT id, role, client_ids, full_name, status FROM user_invites
+           WHERE email = $1 AND status = 'accepted' AND role != 'client'
+           ORDER BY accepted_at DESC LIMIT 1`,
+          [user.email.toLowerCase()]
+        )
+      }
+    }
 
     if (inviteResult.rows.length === 0) {
       return NextResponse.json({ applied: false, message: 'No pending invite found' })
@@ -57,25 +78,28 @@ export async function POST() {
       )
     }
 
-    // Mark invite as accepted
-    await dbPool.query(
-      `UPDATE user_invites SET status = 'accepted', accepted_at = NOW() WHERE id = $1`,
-      [invite.id]
-    )
+    // Only mark as accepted and log if it was pending (not already accepted)
+    if (invite.status === 'pending') {
+      // Mark invite as accepted
+      await dbPool.query(
+        `UPDATE user_invites SET status = 'accepted', accepted_at = NOW() WHERE id = $1`,
+        [invite.id]
+      )
 
-    // Log activity
-    await dbPool.query(
-      `INSERT INTO activity_log (user_id, activity_type, description, metadata)
-       VALUES ($1, $2, $3, $4)`,
-      [
-        user.id,
-        'accepted_invite',
-        `${invite.full_name || user.email} accepted invitation as ${invite.role}`,
-        JSON.stringify({ email: user.email, role: invite.role, invite_id: invite.id })
-      ]
-    ).catch(() => {})
+      // Log activity
+      await dbPool.query(
+        `INSERT INTO activity_log (user_id, activity_type, description, metadata)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          user.id,
+          'accepted_invite',
+          `${invite.full_name || user.email} accepted invitation as ${invite.role}`,
+          JSON.stringify({ email: user.email, role: invite.role, invite_id: invite.id })
+        ]
+      ).catch(() => {})
+    }
 
-    console.log(`Applied pending user_invite for ${user.email} with role ${invite.role}`)
+    console.log(`Applied user_invite for ${user.email} with role ${invite.role} (was ${invite.status})`)
 
     return NextResponse.json({
       applied: true,
