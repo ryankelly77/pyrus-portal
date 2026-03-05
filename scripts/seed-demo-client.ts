@@ -372,7 +372,8 @@ async function seedDemoClient() {
 
   // Create demo content items
   // Valid content types: 'blog', 'social', 'email', 'landing_page', 'other'
-  // Valid statuses: 'draft', 'pending_review', 'revision_requested', 'approved', 'published', 'rejected'
+  // Valid statuses: 'draft', 'sent_for_review', 'client_reviewing', 'revisions_requested', 'approved',
+  //                 'internal_review', 'final_optimization', 'image_selection', 'scheduled', 'posted'
   console.log('Creating demo content items...')
   const contentItems = [
     {
@@ -380,7 +381,7 @@ async function seedDemoClient() {
       title: '5 Benefits of Micromarkets for Your Workplace',
       content_type: 'blog',
       body: 'Discover how micromarkets can boost employee satisfaction, increase productivity, and provide healthier options than traditional vending...',
-      status: 'published',
+      status: 'posted',
       published_at: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
     },
     {
@@ -388,7 +389,7 @@ async function seedDemoClient() {
       title: 'Why San Antonio Businesses Are Switching to Micromarkets',
       content_type: 'blog',
       body: 'Local businesses share their experience upgrading from traditional vending to modern micromarket solutions...',
-      status: 'published',
+      status: 'posted',
       published_at: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
     },
     {
@@ -396,7 +397,7 @@ async function seedDemoClient() {
       title: 'The Complete Guide to Office Coffee Service',
       content_type: 'blog',
       body: 'Everything you need to know about providing quality coffee solutions for your workplace...',
-      status: 'published',
+      status: 'posted',
       published_at: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000),
     },
     {
@@ -404,7 +405,7 @@ async function seedDemoClient() {
       title: 'Monthly Newsletter - January',
       content_type: 'email',
       body: 'This month: New healthy snack options, micromarket spotlight at USAA, and winter promotions...',
-      status: 'pending_review',
+      status: 'client_reviewing',
       due_date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
     },
     {
@@ -420,7 +421,7 @@ async function seedDemoClient() {
       title: 'Free Workplace Assessment Landing Page',
       content_type: 'landing_page',
       body: 'Lead generation page for free workplace vending and micromarket assessment...',
-      status: 'published',
+      status: 'posted',
       published_at: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
     },
     {
