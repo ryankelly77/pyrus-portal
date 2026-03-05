@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { ReportsView } from './ReportsView'
 
 interface ResultsViewProps {
   clientId: string
@@ -139,8 +141,13 @@ function KpiCard({ icon, label, value, changeFormatted, trend }: {
 }
 
 export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDashboardUrl }: ResultsViewProps) {
-  // Default to pro-dashboard while overview is under construction
-  const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard'>('pro-dashboard')
+  const searchParams = useSearchParams()
+  const reportPreviewId = searchParams.get('reportPreview')
+
+  // Default to pro-dashboard while overview is under construction, or reports if preview mode
+  const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard' | 'reports'>(
+    reportPreviewId ? 'reports' : 'pro-dashboard'
+  )
   const [loading, setLoading] = useState(true)
   const [resultsData, setResultsData] = useState<ResultsData | null>(null)
 
@@ -192,6 +199,17 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDash
           </svg>
           Pro Dashboard
           <span className="pro-badge">PRO</span>
+        </button>
+        <button
+          className={`results-subtab ${activeSubtab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveSubtab('reports')}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+            <path d="M12 12l8.5-5" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Reports
         </button>
       </div>
 
@@ -518,6 +536,13 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDash
               allowFullScreen
             ></iframe>
           </div>
+        </div>
+      )}
+
+      {/* Reports Content */}
+      {activeSubtab === 'reports' && (
+        <div className="results-tab-content active" id="reports">
+          <ReportsView clientId={clientId} previewReportId={reportPreviewId} />
         </div>
       )}
     </div>
