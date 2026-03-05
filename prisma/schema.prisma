@@ -75,6 +75,7 @@ model clients {
   email_logs            email_logs[]             @relation("EmailLogRecipientClient")
   bug_reports           bug_reports[]
   client_users          client_users[]
+  campaign_reports      campaign_reports[]
 }
 
 // Many-to-many join table for users linked to clients
@@ -1276,4 +1277,48 @@ model announcement_dismissals {
   @@index([announcement_id])
   @@index([client_id])
   @@index([user_id])
+}
+
+// ============ Campaign Reports (Harvest Reports) ============
+
+model campaign_reports {
+  id             String    @id @default(cuid())
+  client_id      String    @db.Uuid
+  title          String    // e.g. "Q4 2025 Harvest Report"
+  period_label   String    // e.g. "Months 7–9 · Nov 2025 – Feb 2026"
+  period_start   DateTime  @db.Timestamptz(6)
+  period_end     DateTime  @db.Timestamptz(6)
+  campaign_month Int       // the "month number" shown on the report (e.g. 9)
+  service_types  String[]  // e.g. ["SEO", "Local", "Content"]
+  status         String    @default("draft") // 'draft' | 'published'
+  published_at   DateTime? @db.Timestamptz(6)
+  manager_note   String?   // freeform closing note from campaign manager
+  manager_name   String?   // who wrote it
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @updatedAt @db.Timestamptz(6)
+
+  client   clients          @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  sections report_sections[]
+
+  @@index([client_id])
+  @@index([status])
+  @@index([period_start])
+  @@index([published_at(sort: Desc)])
+}
+
+model report_sections {
+  id           String   @id @default(cuid())
+  report_id    String
+  section_type String   // see REPORT_SECTION_TYPES in src/lib/reportSections.ts
+  sort_order   Int      @default(0)
+  data         Json     // all section-specific fields stored here
+  notes        String?  // optional admin annotation
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @updatedAt @db.Timestamptz(6)
+
+  report campaign_reports @relation(fields: [report_id], references: [id], onDelete: Cascade)
+
+  @@index([report_id])
+  @@index([section_type])
+  @@index([sort_order])
 }

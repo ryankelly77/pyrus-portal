@@ -9,6 +9,7 @@ import { useClientPageData, type ClientPageTab } from '@/hooks/use-client-page-d
 import { CommunicationItem, formatTimelineDate } from '@/components'
 import { ContentView, ResultsView, WebsiteView, ActivityView, RecommendationsView, CommunicationView, WelcomeView } from '@/components/client-views'
 import { EditClientModal, ResultAlertModal, AddProductModal } from '@/components/admin/clients/modals'
+import { ReportsTab } from '@/components/admin/ReportsTab'
 import {
   type MainTab,
   type GettingStartedSubtab,
@@ -1192,6 +1193,9 @@ export default function ClientDetailPage() {
             Communication
             {!hasActiveSubscriptions && <svg className="tab-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>}
           </button>
+          <button className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
+            Reports
+          </button>
         </div>
 
         {/* ==================== GETTING STARTED TAB ==================== */}
@@ -2258,6 +2262,14 @@ export default function ClientDetailPage() {
             stripeCustomerId={dbClient?.stripe_customer_id || null}
             onRecommendationChange={refetchSmartRecsCount}
             isSuperAdmin={isSuperAdmin}
+          />
+        )}
+
+        {/* ==================== REPORTS TAB ==================== */}
+        {activeTab === 'reports' && dbClient && (
+          <ReportsTab
+            clientId={clientId}
+            clientName={dbClient.name}
           />
         )}
 

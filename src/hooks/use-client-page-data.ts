@@ -26,7 +26,7 @@ import {
 // TYPES
 // ============================================================================
 
-export type ClientPageTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'recommendations' | 'communication'
+export type ClientPageTab = 'getting-started' | 'results' | 'activity' | 'website' | 'content' | 'recommendations' | 'communication' | 'reports'
 
 export interface ClientPageData {
   // Core client data
