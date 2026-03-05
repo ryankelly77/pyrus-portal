@@ -514,6 +514,131 @@ async function seedDemoClient() {
   await prisma.activity_log.createMany({ data: activities })
   console.log(`Created ${activities.length} activity log entries`)
 
+  // Create demo Harvest Report
+  console.log('Creating demo Harvest Report...')
+  const DEMO_REPORT_ID = 'demo-report-001'
+
+  // Clean up any existing demo report
+  await prisma.report_sections.deleteMany({ where: { report_id: DEMO_REPORT_ID } })
+  await prisma.campaign_reports.deleteMany({ where: { id: DEMO_REPORT_ID } })
+
+  // Create the demo report
+  await prisma.campaign_reports.create({
+    data: {
+      id: DEMO_REPORT_ID,
+      client_id: DEMO_CLIENT_ID,
+      title: 'Q4 2025 Harvest Report',
+      period_label: 'October - December 2025',
+      period_start: new Date('2025-10-01'),
+      period_end: new Date('2025-12-31'),
+      campaign_month: 6,
+      service_types: ['SEO', 'Content Marketing', 'Local SEO'],
+      status: 'published',
+      published_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      manager_name: 'Sarah Chen',
+      manager_note: 'Great quarter! Your website traffic has increased significantly and we\'re seeing strong keyword growth. The micromarket content is resonating well with your target audience. Looking forward to building on this momentum in Q1.',
+    }
+  })
+
+  // Create report sections
+  const reportSections = [
+    {
+      report_id: DEMO_REPORT_ID,
+      section_type: 'search_visibility',
+      sort_order: 1,
+      data: {
+        currentImpressions: 28500,
+        previousImpressions: 19200,
+        currentClicks: 2140,
+        previousClicks: 1480,
+        currentCTR: 7.5,
+        previousCTR: 7.7,
+        currentAvgPosition: 8.4,
+        previousAvgPosition: 12.6,
+      },
+    },
+    {
+      report_id: DEMO_REPORT_ID,
+      section_type: 'keyword_rankings',
+      sort_order: 2,
+      data: {
+        totalTracked: 47,
+        top3: 5,
+        top3Delta: 3,
+        top10: 12,
+        top10Delta: 5,
+        top20: 24,
+        top20Delta: 8,
+        top30: 32,
+        top30Delta: 10,
+        top100: 45,
+        top100Delta: 12,
+        totalImproved: 38,
+      },
+    },
+    {
+      report_id: DEMO_REPORT_ID,
+      section_type: 'keyword_growth',
+      sort_order: 3,
+      data: {
+        months: [
+          { label: 'Jun 25', isCampaignStart: true, top3: 0, pos4to20: 5, pos21to50: 12, pos51to100: 8, serpFeatures: 0 },
+          { label: 'Jul 25', isCampaignStart: false, top3: 1, pos4to20: 8, pos21to50: 15, pos51to100: 10, serpFeatures: 1 },
+          { label: 'Aug 25', isCampaignStart: false, top3: 2, pos4to20: 10, pos21to50: 18, pos51to100: 12, serpFeatures: 2 },
+          { label: 'Sep 25', isCampaignStart: false, top3: 3, pos4to20: 14, pos21to50: 20, pos51to100: 10, serpFeatures: 3 },
+          { label: 'Oct 25', isCampaignStart: false, top3: 4, pos4to20: 18, pos21to50: 16, pos51to100: 8, serpFeatures: 4 },
+          { label: 'Nov 25', isCampaignStart: false, top3: 4, pos4to20: 20, pos21to50: 14, pos51to100: 6, serpFeatures: 5 },
+          { label: 'Dec 25', isCampaignStart: false, top3: 5, pos4to20: 22, pos21to50: 12, pos51to100: 5, serpFeatures: 6 },
+        ],
+      },
+    },
+    {
+      report_id: DEMO_REPORT_ID,
+      section_type: 'link_building',
+      sort_order: 4,
+      data: {
+        campaignTotal: 24,
+        monthlyBreakdown: [
+          { month: 'October 2025', total: 8, guestPosts: 2, linkTypes: ['Contextual', 'Web 2.0', 'Directory'] },
+          { month: 'November 2025', total: 9, guestPosts: 3, linkTypes: ['Contextual', 'Guest Post', 'PR'] },
+          { month: 'December 2025', total: 7, guestPosts: 2, linkTypes: ['Contextual', 'Web 2.0'] },
+        ],
+      },
+    },
+    {
+      report_id: DEMO_REPORT_ID,
+      section_type: 'coming_next',
+      sort_order: 5,
+      data: {
+        items: [
+          {
+            title: 'Local SEO Expansion',
+            description: 'Expanding Google Business Profile optimization to cover additional service areas in South Texas.',
+            iconColor: 'green',
+          },
+          {
+            title: 'Video Content Strategy',
+            description: 'Creating video testimonials and micromarket installation showcases for YouTube and website.',
+            iconColor: 'blue',
+          },
+          {
+            title: 'Email Nurture Campaign',
+            description: 'Launching automated email sequences for lead nurturing and customer retention.',
+            iconColor: 'purple',
+          },
+          {
+            title: 'AI Visibility Audit',
+            description: 'Analyzing your visibility in AI search tools like ChatGPT and Perplexity.',
+            iconColor: 'teal',
+          },
+        ],
+      },
+    },
+  ]
+
+  await prisma.report_sections.createMany({ data: reportSections })
+  console.log(`Created demo Harvest Report with ${reportSections.length} sections`)
+
   console.log('\n✅ Demo client seeded successfully!')
   console.log(`\nDemo Client ID: ${DEMO_CLIENT_ID}`)
   console.log(`Demo Recommendation ID: ${DEMO_RECOMMENDATION_ID}`)
@@ -523,6 +648,7 @@ async function seedDemoClient() {
   console.log('  - Activity page: enabled (basecamp_id set)')
   console.log('  - Website page: enabled (landingsite_preview_url set)')
   console.log('  - Content page: enabled (has content products)')
+  console.log('  - Reports: 1 published Harvest Report (Q4 2025)')
   console.log('  - Sample data on all pages')
   console.log('\nView the demo at: /getting-started?viewingAs=' + DEMO_CLIENT_ID)
 }

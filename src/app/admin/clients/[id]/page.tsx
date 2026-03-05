@@ -301,6 +301,26 @@ export default function ClientDetailPage() {
   const [isResendingInvite, setIsResendingInvite] = useState(false)
   const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Draft reports count for Reports tab badge
+  const [draftReportsCount, setDraftReportsCount] = useState(0)
+
+  // Fetch draft reports count
+  useEffect(() => {
+    async function fetchDraftReportsCount() {
+      try {
+        const res = await fetch(`/api/admin/reports?clientId=${clientId}`)
+        if (res.ok) {
+          const reports = await res.json()
+          const drafts = reports.filter((r: { status: string }) => r.status === 'draft')
+          setDraftReportsCount(drafts.length)
+        }
+      } catch (err) {
+        console.error('Failed to fetch draft reports count:', err)
+      }
+    }
+    fetchDraftReportsCount()
+  }, [clientId])
+
   // Fetch available products when add modal opens
   useEffect(() => {
     if (showAddProductModal) {
@@ -1195,6 +1215,9 @@ export default function ClientDetailPage() {
           </button>
           <button className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
             Reports
+            {draftReportsCount > 0 && (
+              <span className={`tab-badge count${activeTab === 'reports' ? ' active' : ''}`}>{draftReportsCount} draft{draftReportsCount > 1 ? 's' : ''}</span>
+            )}
           </button>
         </div>
 

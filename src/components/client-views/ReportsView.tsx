@@ -47,6 +47,7 @@ interface Section {
 interface ReportsViewProps {
   clientId: string
   previewReportId?: string | null
+  showComingSoon?: boolean
 }
 
 // ============================================================================
@@ -178,12 +179,45 @@ const icons = {
 // COMPONENT
 // ============================================================================
 
-export function ReportsView({ clientId, previewReportId }: ReportsViewProps) {
+export function ReportsView({ clientId, previewReportId, showComingSoon = false }: ReportsViewProps) {
   const [reports, setReports] = useState<Report[]>([])
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingReport, setLoadingReport] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Coming Soon state - show when client doesn't have access yet
+  if (showComingSoon) {
+    return (
+      <div className="reports-view">
+        <div className="coming-soon-placeholder">
+          <div className="coming-soon-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+              <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+              <path d="M12 12l8.5-5" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h2>Reports Coming Soon</h2>
+          <p>Your campaign manager will publish periodic Harvest Reports here once your campaigns are active. These reports provide a comprehensive overview of your marketing performance.</p>
+          <div className="coming-soon-timeline">
+            <div className="timeline-item">
+              <div className="timeline-dot active"></div>
+              <span>Account setup complete</span>
+            </div>
+            <div className="timeline-item">
+              <div className="timeline-dot pending"></div>
+              <span>Campaign configuration in progress</span>
+            </div>
+            <div className="timeline-item">
+              <div className="timeline-dot pending"></div>
+              <span>First report after 30-90 days of data</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Fetch reports list
   const fetchReports = useCallback(async () => {

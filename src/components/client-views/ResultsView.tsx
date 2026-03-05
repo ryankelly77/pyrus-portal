@@ -542,7 +542,7 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDash
       {/* Reports Content */}
       {activeSubtab === 'reports' && (
         <div className="results-tab-content active" id="reports">
-          <ReportsView clientId={clientId} previewReportId={reportPreviewId} />
+          <ReportsView clientId={clientId} previewReportId={reportPreviewId} showComingSoon={showOverviewComingSoon} />
         </div>
       )}
     </div>

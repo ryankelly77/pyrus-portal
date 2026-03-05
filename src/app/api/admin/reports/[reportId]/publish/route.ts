@@ -43,10 +43,31 @@ export async function POST(
           select: {
             id: true,
             name: true,
+            contact_email: true,
           },
         },
       },
     })
+
+    // TODO: Trigger client notification on publish
+    // Follow the pattern in /api/admin/clients/[id]/communications:
+    // 1. Create in-app notification: "Your {title} is ready to view."
+    // 2. If email notifications enabled, send via sendTemplatedEmail:
+    //    Subject: "Your {title} is ready"
+    //    Body: Link to /results with reportPreview query param
+    // Example:
+    // await prisma.client_communications.create({
+    //   data: {
+    //     client_id: report.client_id,
+    //     comm_type: 'harvest_report',
+    //     title: `Your ${report.title} is ready to view`,
+    //     subject: `Your ${report.title} is ready`,
+    //     body: `Your Harvest Report for ${report.period_label} has been published. Log in to view your campaign performance.`,
+    //     status: 'sent',
+    //     highlight_type: 'success',
+    //     sent_at: new Date(),
+    //   }
+    // })
 
     return NextResponse.json(report)
   } catch (error) {
