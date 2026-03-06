@@ -13,9 +13,32 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     let clientId = searchParams.get('clientId')
     const isPreview = searchParams.get('preview') === 'true'
+    const viewingAs = searchParams.get('viewingAs')
 
+    // If viewingAs is provided, check if user is admin and use that clientId
+    if (viewingAs) {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+
+      // Check if user is admin
+      const profileResult = await dbPool.query(
+        `SELECT role FROM profiles WHERE id = $1`,
+        [user.id]
+      )
+
+      const isAdmin = profileResult.rows[0]?.role === 'admin' || profileResult.rows[0]?.role === 'production_team'
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+
+      clientId = viewingAs
+    }
     // If no clientId provided, get the current user's client
-    if (!clientId) {
+    else if (!clientId) {
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
 

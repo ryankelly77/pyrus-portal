@@ -28,6 +28,16 @@ const tabs = [
       </svg>
     ),
   },
+  {
+    name: 'Harvest Reports',
+    href: '/admin/clients/reports',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+        <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function ClientsLayout({ children }: { children: ReactNode }) {
@@ -36,7 +46,8 @@ export default function ClientsLayout({ children }: { children: ReactNode }) {
 
   // Client detail pages have their own header - don't render layout header/wrapper
   const isDetailPage = pathname.match(/\/admin\/clients\/[^/]+$/) &&
-    pathname !== '/admin/clients/performance'
+    pathname !== '/admin/clients/performance' &&
+    pathname !== '/admin/clients/reports'
 
   // Detail pages render their own AdminHeader and admin-content wrapper
   if (isDetailPage) {

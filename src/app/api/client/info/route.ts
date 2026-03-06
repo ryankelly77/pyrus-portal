@@ -175,6 +175,18 @@ export async function GET(request: NextRequest) {
     // Combine all active products with full details for flag-based access
     const allActiveProducts = [...subscriptionResult.rows, ...manualProductsResult.rows]
 
+    // Check if client has published Harvest Reports (check early since it's used for hasResultsAccess)
+    let hasPublishedReports = false
+    try {
+      const reportsCountResult = await dbPool.query(
+        `SELECT COUNT(*) FROM campaign_reports WHERE client_id = $1 AND status = 'published'`,
+        [clientId]
+      )
+      hasPublishedReports = parseInt(reportsCountResult.rows[0].count) > 0
+    } catch (e) {
+      // Table may not exist
+    }
+
     // Check if admin has manually set the client as active
     // A client is "active" if:
     // 1. They have active subscriptions, OR
@@ -185,7 +197,8 @@ export async function GET(request: NextRequest) {
     const isManuallyActive = client.status === 'active' && client.growth_stage && client.growth_stage !== 'prospect'
     const isActiveClient = hasActiveSubscriptions || hasManualProducts || isManuallyActive
     const clientStatus = isActiveClient ? (client.status || 'active') : 'pending'
-    const hasResultsAccess = !!client.agency_dashboard_share_key
+    // Results access: has Pro Dashboard key OR has published Harvest Reports
+    const hasResultsAccess = !!client.agency_dashboard_share_key || hasPublishedReports
     const hasBasecampAccess = !!client.basecamp_id || !!client.basecamp_project_id
     // Website access: has a website URL configured
     const hasWebsiteAccess = !!client.website_url

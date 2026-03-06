@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 // ============================================================================
 // TYPES
@@ -214,13 +215,21 @@ export function ReportsTab({ clientId, clientName }: ReportsTabProps) {
           <h2>Harvest Reports</h2>
           <p>Publish periodic campaign reports for {clientName}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          New Report
-        </button>
+        <div className="reports-header-actions">
+          <Link href={`/admin/clients/reports?clientId=${clientId}`} className="view-all-link">
+            View in all reports
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </Link>
+          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Report
+          </button>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -264,73 +273,75 @@ export function ReportsTab({ clientId, clientName }: ReportsTabProps) {
         <div className="reports-list">
           {reports.map(report => (
             <div key={report.id} className="report-card">
-              <div className="report-card-main">
-                <div className="report-card-info">
-                  <h3 className="report-title">{report.title}</h3>
-                  <p className="report-period">{report.period_label}</p>
+              <div className="report-card-row">
+                <div className="report-card-main">
+                  <div className="report-card-info">
+                    <h3 className="report-title">{report.title}</h3>
+                    <p className="report-period">{report.period_label}</p>
+                  </div>
+                  <div className="report-card-meta">
+                    <span className={`status-badge ${report.status === 'published' ? 'published' : 'draft'}`}>
+                      {report.status === 'published' ? 'Published' : 'Draft'}
+                    </span>
+                    <span className="report-date">
+                      {report.status === 'published' && report.published_at
+                        ? formatDate(report.published_at)
+                        : 'Draft'}
+                    </span>
+                  </div>
                 </div>
-                <div className="report-card-meta">
-                  <span className={`status-badge ${report.status === 'published' ? 'published' : 'draft'}`}>
-                    {report.status === 'published' ? 'Published' : 'Draft'}
-                  </span>
-                  <span className="report-date">
-                    {report.status === 'published' && report.published_at
-                      ? formatDate(report.published_at)
-                      : 'Draft'}
-                  </span>
-                </div>
-              </div>
-              <div className="report-card-actions">
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => router.push(`/admin/reports/${report.id}`)}
-                >
-                  Edit
-                </button>
-                <div className="dropdown-container">
+                <div className="report-card-actions">
                   <button
-                    className="btn btn-icon"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setOpenMenuId(openMenuId === report.id ? null : report.id)
-                    }}
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => router.push(`/admin/reports/${report.id}`)}
                   >
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                      <circle cx="12" cy="5" r="1.5"></circle>
-                      <circle cx="12" cy="12" r="1.5"></circle>
-                      <circle cx="12" cy="19" r="1.5"></circle>
-                    </svg>
+                    Edit
                   </button>
-                  {openMenuId === report.id && (
-                    <div className="dropdown-menu" onClick={e => e.stopPropagation()}>
-                      {report.status !== 'published' && (
+                  <div className="dropdown-container">
+                    <button
+                      className="btn btn-icon"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOpenMenuId(openMenuId === report.id ? null : report.id)
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <circle cx="12" cy="5" r="1.5"></circle>
+                        <circle cx="12" cy="12" r="1.5"></circle>
+                        <circle cx="12" cy="19" r="1.5"></circle>
+                      </svg>
+                    </button>
+                    {openMenuId === report.id && (
+                      <div className="dropdown-menu" onClick={e => e.stopPropagation()}>
+                        {report.status !== 'published' && (
+                          <button
+                            className="dropdown-item"
+                            onClick={() => handlePublish(report.id)}
+                            disabled={publishingId === report.id}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            {publishingId === report.id ? 'Publishing...' : 'Publish'}
+                          </button>
+                        )}
                         <button
-                          className="dropdown-item"
-                          onClick={() => handlePublish(report.id)}
-                          disabled={publishingId === report.id}
+                          className="dropdown-item danger"
+                          onClick={() => {
+                            setOpenMenuId(null)
+                            setDeleteConfirmId(report.id)
+                          }}
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                           </svg>
-                          {publishingId === report.id ? 'Publishing...' : 'Publish'}
+                          Delete
                         </button>
-                      )}
-                      <button
-                        className="dropdown-item danger"
-                        onClick={() => {
-                          setOpenMenuId(null)
-                          setDeleteConfirmId(report.id)
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -533,6 +544,31 @@ export function ReportsTab({ clientId, clientName }: ReportsTabProps) {
           margin: 0;
         }
 
+        .reports-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .view-all-link {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          color: var(--pyrus-brown, #885430);
+          text-decoration: none;
+          font-weight: 500;
+          transition: opacity 0.15s ease;
+        }
+
+        .view-all-link:hover {
+          opacity: 0.8;
+        }
+
+        .view-all-link svg {
+          flex-shrink: 0;
+        }
+
         .reports-loading,
         .reports-error,
         .reports-empty {
@@ -587,11 +623,19 @@ export function ReportsTab({ clientId, clientName }: ReportsTabProps) {
           position: relative;
         }
 
+        .report-card-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
         .report-card-main {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
+          flex: 1;
+          min-width: 0;
         }
 
         .report-card-info {
@@ -646,7 +690,7 @@ export function ReportsTab({ clientId, clientName }: ReportsTabProps) {
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-left: 16px;
+          flex-shrink: 0;
         }
 
         .btn-icon {

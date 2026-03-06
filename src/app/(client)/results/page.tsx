@@ -5,17 +5,35 @@ import { useSearchParams } from 'next/navigation'
 import { useClientData } from '@/hooks/useClientData'
 import { usePageView } from '@/hooks/usePageView'
 import { ResultsView } from '@/components/client-views'
+import { ReportsView } from '@/components/client-views/ReportsView'
 
 const DEMO_CLIENT_ID = '00000000-0000-0000-0000-000000000001'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const viewingAs = searchParams.get('viewingAs')
+  const reportPreviewId = searchParams.get('reportPreview')
   const { client, loading } = useClientData(viewingAs)
   usePageView({ page: '/results', pageName: 'Results' })
 
   const isDemo = viewingAs === DEMO_CLIENT_ID
   const demoState = searchParams.get('demoState')
+
+  // Admin preview mode - skip client data loading and show report directly
+  if (reportPreviewId) {
+    return (
+      <>
+        <div className="client-top-header">
+          <div className="client-top-header-left">
+            <h1>Report Preview</h1>
+          </div>
+        </div>
+        <div className="client-content">
+          <ReportsView clientId="" previewReportId={reportPreviewId} viewingAs={viewingAs} />
+        </div>
+      </>
+    )
+  }
 
   // Check if client is pending (prospect only) or doesn't have results data yet
   const isPending = isDemo

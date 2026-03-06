@@ -6,12 +6,22 @@ import { useRouter } from 'next/navigation'
 import {
   SECTION_TYPES,
   SECTION_LABELS,
+  SECTION_NAV_GROUPS,
   type SectionType,
   type SearchVisibilityData,
   type OrganicTrafficData,
   type KeywordRankingsData,
   type KeywordGrowthData,
   type LinkBuildingData,
+  type PaidSearchData,
+  type PaidSocialData,
+  type LocalServiceAdsData,
+  type OrganicSocialData,
+  type LeadTrackingData,
+  type ReviewManagementData,
+  type ContentWritingData,
+  type AiVisibilityData,
+  type EmailSmsData,
   type LocalSeoData,
   type TechnicalAuditData,
   type WorkCompletedData,
@@ -71,6 +81,7 @@ function getEmptyData(sectionType: SectionType): Record<string, unknown> {
         previousCTR: 0,
         currentAvgPosition: 0,
         previousAvgPosition: 0,
+        monthlyHistory: [],
       }
     case 'organic_traffic':
       return {
@@ -78,6 +89,7 @@ function getEmptyData(sectionType: SectionType): Record<string, unknown> {
         previousUsers: 0,
         currentSessions: 0,
         previousSessions: 0,
+        monthlyHistory: [],
       }
     case 'keyword_rankings':
       return {
@@ -88,11 +100,73 @@ function getEmptyData(sectionType: SectionType): Record<string, unknown> {
         top30: 0, top30Delta: 0,
         top100: 0, top100Delta: 0,
         totalImproved: 0,
+        notRanking: 0,
       }
     case 'keyword_growth':
       return { months: [] }
     case 'link_building':
-      return { campaignTotal: 0, monthlyBreakdown: [] }
+      return { campaignTotal: 0, monthlyBreakdown: [], months: [] }
+    case 'paid_search':
+      return {
+        currentSpend: 0, previousSpend: 0,
+        currentConversions: 0, previousConversions: 0,
+        currentCPL: 0, previousCPL: 0,
+        currentCTR: 0, previousCTR: 0,
+        currentImpressions: 0, previousImpressions: 0,
+        currentClicks: 0, previousClicks: 0,
+        months: [],
+      }
+    case 'paid_social':
+      return {
+        currentSpend: 0, previousSpend: 0,
+        currentConversions: 0, previousConversions: 0,
+        currentCPL: 0, previousCPL: 0,
+        currentImpressions: 0, previousImpressions: 0,
+        platforms: [],
+        months: [],
+      }
+    case 'local_service_ads':
+      return {
+        currentLeads: 0, previousLeads: 0,
+        currentSpend: 0, previousSpend: 0,
+        currentCPL: 0, previousCPL: 0,
+        currentRating: 0, totalReviews: 0,
+        notes: '',
+      }
+    case 'organic_social':
+      return {
+        platforms: [],
+        monthlyPosts: [],
+        followerHistory: [],
+      }
+    case 'lead_tracking':
+      return {
+        currentLeads: 0, previousLeads: 0,
+        currentFormSubmissions: 0, previousFormSubmissions: 0,
+        currentPhoneCalls: 0, previousPhoneCalls: 0,
+        currentWebChat: 0, previousWebChat: 0,
+        leadSources: [],
+        monthlyLeads: [],
+      }
+    case 'review_management':
+      return {
+        platforms: [],
+        monthlyReviews: [],
+      }
+    case 'content_writing':
+      return { articles: [] }
+    case 'ai_visibility':
+      return {
+        platforms: [],
+        queriesTracked: 0,
+        queriesMentioned: 0,
+        notes: '',
+      }
+    case 'email_sms':
+      return {
+        channels: [],
+        monthlySends: [],
+      }
     case 'local_seo':
       return { monthlyPosts: [], notes: '' }
     case 'technical_audit':
@@ -320,16 +394,18 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
           </div>
         </div>
         <div className="topbar-right">
-          <button
+          <a
+            href={`/results?reportPreview=${reportId}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn btn-secondary"
-            onClick={() => window.open(`/results?reportPreview=${reportId}`, '_blank')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
             Preview
-          </button>
+          </a>
           <button
             className="btn btn-primary"
             onClick={() => setShowPublishConfirm(true)}
@@ -350,19 +426,24 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
         <aside className="section-nav">
           <h3>Sections</h3>
           <nav>
-            {SECTION_TYPES.map(type => (
-              <button
-                key={type}
-                className="section-nav-item"
-                onClick={() => scrollToSection(type)}
-              >
-                <span className="section-nav-label">{SECTION_LABELS[type]}</span>
-                {savedSections.has(type) && (
-                  <svg className="section-nav-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )}
-              </button>
+            {SECTION_NAV_GROUPS.map(group => (
+              <div key={group.label} className="nav-group">
+                <div className="nav-group-label">{group.label}</div>
+                {group.sections.map(type => (
+                  <button
+                    key={type}
+                    className="section-nav-item"
+                    onClick={() => scrollToSection(type)}
+                  >
+                    <span className="section-nav-label">{SECTION_LABELS[type]}</span>
+                    {savedSections.has(type) && (
+                      <svg className="section-nav-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
         </aside>
@@ -446,6 +527,150 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
             <LinkBuildingForm
               data={sectionData.link_building as unknown as LinkBuildingData}
               onChange={(data) => setSectionData(prev => ({ ...prev, link_building: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Paid Search */}
+          <SectionCard
+            type="paid_search"
+            label={SECTION_LABELS.paid_search}
+            isSaved={savedSections.has('paid_search')}
+            isSaving={savingSection === 'paid_search'}
+            showSavedFlash={savedFlash === 'paid_search'}
+            onSave={() => saveSection('paid_search')}
+            ref={(el) => { sectionRefs.current.paid_search = el }}
+          >
+            <PaidSearchForm
+              data={sectionData.paid_search as unknown as PaidSearchData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, paid_search: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Paid Social */}
+          <SectionCard
+            type="paid_social"
+            label={SECTION_LABELS.paid_social}
+            isSaved={savedSections.has('paid_social')}
+            isSaving={savingSection === 'paid_social'}
+            showSavedFlash={savedFlash === 'paid_social'}
+            onSave={() => saveSection('paid_social')}
+            ref={(el) => { sectionRefs.current.paid_social = el }}
+          >
+            <PaidSocialForm
+              data={sectionData.paid_social as unknown as PaidSocialData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, paid_social: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Local Service Ads */}
+          <SectionCard
+            type="local_service_ads"
+            label={SECTION_LABELS.local_service_ads}
+            isSaved={savedSections.has('local_service_ads')}
+            isSaving={savingSection === 'local_service_ads'}
+            showSavedFlash={savedFlash === 'local_service_ads'}
+            onSave={() => saveSection('local_service_ads')}
+            ref={(el) => { sectionRefs.current.local_service_ads = el }}
+          >
+            <LocalServiceAdsForm
+              data={sectionData.local_service_ads as unknown as LocalServiceAdsData}
+              onChange={(updates) => updateSectionData('local_service_ads', updates)}
+            />
+          </SectionCard>
+
+          {/* Organic Social */}
+          <SectionCard
+            type="organic_social"
+            label={SECTION_LABELS.organic_social}
+            isSaved={savedSections.has('organic_social')}
+            isSaving={savingSection === 'organic_social'}
+            showSavedFlash={savedFlash === 'organic_social'}
+            onSave={() => saveSection('organic_social')}
+            ref={(el) => { sectionRefs.current.organic_social = el }}
+          >
+            <OrganicSocialForm
+              data={sectionData.organic_social as unknown as OrganicSocialData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, organic_social: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Lead Tracking */}
+          <SectionCard
+            type="lead_tracking"
+            label={SECTION_LABELS.lead_tracking}
+            isSaved={savedSections.has('lead_tracking')}
+            isSaving={savingSection === 'lead_tracking'}
+            showSavedFlash={savedFlash === 'lead_tracking'}
+            onSave={() => saveSection('lead_tracking')}
+            ref={(el) => { sectionRefs.current.lead_tracking = el }}
+          >
+            <LeadTrackingForm
+              data={sectionData.lead_tracking as unknown as LeadTrackingData}
+              onChange={(updates) => updateSectionData('lead_tracking', updates)}
+            />
+          </SectionCard>
+
+          {/* Review Management */}
+          <SectionCard
+            type="review_management"
+            label={SECTION_LABELS.review_management}
+            isSaved={savedSections.has('review_management')}
+            isSaving={savingSection === 'review_management'}
+            showSavedFlash={savedFlash === 'review_management'}
+            onSave={() => saveSection('review_management')}
+            ref={(el) => { sectionRefs.current.review_management = el }}
+          >
+            <ReviewManagementForm
+              data={sectionData.review_management as unknown as ReviewManagementData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, review_management: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Content Writing */}
+          <SectionCard
+            type="content_writing"
+            label={SECTION_LABELS.content_writing}
+            isSaved={savedSections.has('content_writing')}
+            isSaving={savingSection === 'content_writing'}
+            showSavedFlash={savedFlash === 'content_writing'}
+            onSave={() => saveSection('content_writing')}
+            ref={(el) => { sectionRefs.current.content_writing = el }}
+          >
+            <ContentWritingForm
+              data={sectionData.content_writing as unknown as ContentWritingData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, content_writing: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* AI Visibility */}
+          <SectionCard
+            type="ai_visibility"
+            label={SECTION_LABELS.ai_visibility}
+            isSaved={savedSections.has('ai_visibility')}
+            isSaving={savingSection === 'ai_visibility'}
+            showSavedFlash={savedFlash === 'ai_visibility'}
+            onSave={() => saveSection('ai_visibility')}
+            ref={(el) => { sectionRefs.current.ai_visibility = el }}
+          >
+            <AiVisibilityForm
+              data={sectionData.ai_visibility as unknown as AiVisibilityData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, ai_visibility: data as unknown as Record<string, unknown> }))}
+            />
+          </SectionCard>
+
+          {/* Email & SMS */}
+          <SectionCard
+            type="email_sms"
+            label={SECTION_LABELS.email_sms}
+            isSaved={savedSections.has('email_sms')}
+            isSaving={savingSection === 'email_sms'}
+            showSavedFlash={savedFlash === 'email_sms'}
+            onSave={() => saveSection('email_sms')}
+            ref={(el) => { sectionRefs.current.email_sms = el }}
+          >
+            <EmailSmsForm
+              data={sectionData.email_sms as unknown as EmailSmsData}
+              onChange={(data) => setSectionData(prev => ({ ...prev, email_sms: data as unknown as Record<string, unknown> }))}
             />
           </SectionCard>
 
@@ -680,6 +905,20 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
 
         .section-nav-check {
           color: #059669;
+        }
+
+        .nav-group {
+          margin-bottom: 16px;
+        }
+
+        .nav-group-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 4px 12px;
+          margin-bottom: 4px;
         }
 
         .section-content {
@@ -1973,6 +2212,759 @@ function ComingNextForm({
           padding: 6px 12px;
           font-size: 13px;
         }
+      `}</style>
+    </div>
+  )
+}
+
+// Paid Search Form
+function PaidSearchForm({
+  data,
+  onChange,
+}: {
+  data: PaidSearchData
+  onChange: (data: PaidSearchData) => void
+}) {
+  const months = data.months || []
+
+  const addMonth = () => {
+    onChange({
+      ...data,
+      months: [...months, { month: '', spend: 0, conversions: 0 }],
+    })
+  }
+
+  const updateMonth = (index: number, updates: Partial<PaidSearchData['months'][0]>) => {
+    const newMonths = [...months]
+    newMonths[index] = { ...newMonths[index], ...updates }
+    onChange({ ...data, months: newMonths })
+  }
+
+  const removeMonth = (index: number) => {
+    onChange({ ...data, months: months.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="paid-search-form">
+      <div className="two-period-form">
+        <div className="period-column">
+          <h4>This Period</h4>
+          <div className="form-group">
+            <label>Ad Spend ($)</label>
+            <input type="number" className="form-input" value={data.currentSpend || ''} onChange={e => onChange({ ...data, currentSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Conversions</label>
+            <input type="number" className="form-input" value={data.currentConversions || ''} onChange={e => onChange({ ...data, currentConversions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.currentCPL || ''} onChange={e => onChange({ ...data, currentCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CTR (%)</label>
+            <input type="number" step="0.01" className="form-input" value={data.currentCTR || ''} onChange={e => onChange({ ...data, currentCTR: parseFloat(e.target.value) || 0 })} />
+          </div>
+        </div>
+        <div className="period-column">
+          <h4>Previous Period</h4>
+          <div className="form-group">
+            <label>Ad Spend ($)</label>
+            <input type="number" className="form-input" value={data.previousSpend || ''} onChange={e => onChange({ ...data, previousSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Conversions</label>
+            <input type="number" className="form-input" value={data.previousConversions || ''} onChange={e => onChange({ ...data, previousConversions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.previousCPL || ''} onChange={e => onChange({ ...data, previousCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CTR (%)</label>
+            <input type="number" step="0.01" className="form-input" value={data.previousCTR || ''} onChange={e => onChange({ ...data, previousCTR: parseFloat(e.target.value) || 0 })} />
+          </div>
+        </div>
+      </div>
+      <div className="monthly-breakdown" style={{ marginTop: '20px' }}>
+        <h4>Monthly Spend/Conversions (for chart)</h4>
+        {months.length === 0 && <p className="empty-message">No monthly data yet.</p>}
+        {months.map((month, index) => (
+          <div key={index} className="breakdown-row">
+            <input type="text" className="form-input" placeholder="e.g., Nov 25" value={month.month} onChange={e => updateMonth(index, { month: e.target.value })} style={{ width: '100px' }} />
+            <input type="number" className="form-input" placeholder="Spend" value={month.spend || ''} onChange={e => updateMonth(index, { spend: parseFloat(e.target.value) || 0 })} style={{ width: '100px' }} />
+            <input type="number" className="form-input" placeholder="Conversions" value={month.conversions || ''} onChange={e => updateMonth(index, { conversions: parseInt(e.target.value) || 0 })} style={{ width: '100px' }} />
+            <button type="button" className="btn-remove" onClick={() => removeMonth(index)}>×</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-secondary btn-sm" onClick={addMonth}>+ Add Month</button>
+      </div>
+      <style jsx>{`
+        .paid-search-form { }
+        .two-period-form { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .period-column h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; }
+        .monthly-breakdown h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .breakdown-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Paid Social Form
+function PaidSocialForm({
+  data,
+  onChange,
+}: {
+  data: PaidSocialData
+  onChange: (data: PaidSocialData) => void
+}) {
+  const platforms = data.platforms || []
+  const platformOptions = ['Facebook', 'Instagram', 'TikTok', 'LinkedIn', 'Pinterest', 'Other'] as const
+
+  const addPlatform = () => {
+    onChange({
+      ...data,
+      platforms: [...platforms, {
+        platform: 'Facebook',
+        currentSpend: 0, previousSpend: 0,
+        currentConversions: 0, previousConversions: 0,
+        currentCPL: 0, previousCPL: 0,
+      }],
+    })
+  }
+
+  const updatePlatform = (index: number, updates: Partial<PaidSocialData['platforms'][0]>) => {
+    const newPlatforms = [...platforms]
+    newPlatforms[index] = { ...newPlatforms[index], ...updates }
+    onChange({ ...data, platforms: newPlatforms })
+  }
+
+  const removePlatform = (index: number) => {
+    onChange({ ...data, platforms: platforms.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="paid-social-form">
+      <div className="two-period-form">
+        <div className="period-column">
+          <h4>This Period (All Platforms)</h4>
+          <div className="form-group">
+            <label>Total Spend ($)</label>
+            <input type="number" className="form-input" value={data.currentSpend || ''} onChange={e => onChange({ ...data, currentSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Total Conversions</label>
+            <input type="number" className="form-input" value={data.currentConversions || ''} onChange={e => onChange({ ...data, currentConversions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.currentCPL || ''} onChange={e => onChange({ ...data, currentCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Impressions</label>
+            <input type="number" className="form-input" value={data.currentImpressions || ''} onChange={e => onChange({ ...data, currentImpressions: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+        <div className="period-column">
+          <h4>Previous Period</h4>
+          <div className="form-group">
+            <label>Total Spend ($)</label>
+            <input type="number" className="form-input" value={data.previousSpend || ''} onChange={e => onChange({ ...data, previousSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Total Conversions</label>
+            <input type="number" className="form-input" value={data.previousConversions || ''} onChange={e => onChange({ ...data, previousConversions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.previousCPL || ''} onChange={e => onChange({ ...data, previousCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Impressions</label>
+            <input type="number" className="form-input" value={data.previousImpressions || ''} onChange={e => onChange({ ...data, previousImpressions: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+      </div>
+      <div className="platform-breakdown" style={{ marginTop: '20px' }}>
+        <h4>Platform Breakdown</h4>
+        {platforms.length === 0 && <p className="empty-message">No platforms added yet.</p>}
+        {platforms.map((platform, index) => (
+          <div key={index} className="platform-row">
+            <select className="form-input" value={platform.platform} onChange={e => updatePlatform(index, { platform: e.target.value as typeof platformOptions[number] })} style={{ width: '120px' }}>
+              {platformOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <input type="number" className="form-input" placeholder="Spend" value={platform.currentSpend || ''} onChange={e => updatePlatform(index, { currentSpend: parseFloat(e.target.value) || 0 })} style={{ width: '80px' }} />
+            <input type="number" className="form-input" placeholder="Conv" value={platform.currentConversions || ''} onChange={e => updatePlatform(index, { currentConversions: parseInt(e.target.value) || 0 })} style={{ width: '80px' }} />
+            <button type="button" className="btn-remove" onClick={() => removePlatform(index)}>×</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-secondary btn-sm" onClick={addPlatform}>+ Add Platform</button>
+      </div>
+      <style jsx>{`
+        .paid-social-form { }
+        .two-period-form { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .period-column h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; }
+        .platform-breakdown h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .platform-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Local Service Ads Form
+function LocalServiceAdsForm({
+  data,
+  onChange,
+}: {
+  data: LocalServiceAdsData
+  onChange: (updates: Partial<LocalServiceAdsData>) => void
+}) {
+  return (
+    <div className="lsa-form">
+      <div className="two-period-form">
+        <div className="period-column">
+          <h4>This Period</h4>
+          <div className="form-group">
+            <label>Leads</label>
+            <input type="number" className="form-input" value={data.currentLeads || ''} onChange={e => onChange({ currentLeads: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Ad Spend ($)</label>
+            <input type="number" className="form-input" value={data.currentSpend || ''} onChange={e => onChange({ currentSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.currentCPL || ''} onChange={e => onChange({ currentCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+        </div>
+        <div className="period-column">
+          <h4>Previous Period</h4>
+          <div className="form-group">
+            <label>Leads</label>
+            <input type="number" className="form-input" value={data.previousLeads || ''} onChange={e => onChange({ previousLeads: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Ad Spend ($)</label>
+            <input type="number" className="form-input" value={data.previousSpend || ''} onChange={e => onChange({ previousSpend: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>CPL ($)</label>
+            <input type="number" step="0.01" className="form-input" value={data.previousCPL || ''} onChange={e => onChange({ previousCPL: parseFloat(e.target.value) || 0 })} />
+          </div>
+        </div>
+      </div>
+      <div className="extra-fields" style={{ marginTop: '20px' }}>
+        <div className="form-row">
+          <div className="form-group" style={{ flex: 1 }}>
+            <label>Google Guaranteed Rating</label>
+            <input type="number" step="0.1" className="form-input" value={data.currentRating || ''} onChange={e => onChange({ currentRating: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label>Total Reviews</label>
+            <input type="number" className="form-input" value={data.totalReviews || ''} onChange={e => onChange({ totalReviews: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label>Notes (optional)</label>
+          <textarea className="form-input" rows={2} value={data.notes || ''} onChange={e => onChange({ notes: e.target.value })} placeholder="Any notes about LSA performance..." />
+        </div>
+      </div>
+      <style jsx>{`
+        .lsa-form { }
+        .two-period-form { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .period-column h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; font-family: inherit; }
+        .form-row { display: flex; gap: 16px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Organic Social Form
+function OrganicSocialForm({
+  data,
+  onChange,
+}: {
+  data: OrganicSocialData
+  onChange: (data: OrganicSocialData) => void
+}) {
+  const platforms = data.platforms || []
+  const platformOptions = ['Facebook', 'Instagram', 'TikTok', 'LinkedIn', 'Pinterest', 'Other'] as const
+
+  const addPlatform = () => {
+    onChange({
+      ...data,
+      platforms: [...platforms, {
+        platform: 'Facebook',
+        currentFollowers: 0, previousFollowers: 0, followersAtStart: 0,
+        currentPeriodPosts: 0,
+      }],
+    })
+  }
+
+  const updatePlatform = (index: number, updates: Partial<OrganicSocialData['platforms'][0]>) => {
+    const newPlatforms = [...platforms]
+    newPlatforms[index] = { ...newPlatforms[index], ...updates }
+    onChange({ ...data, platforms: newPlatforms })
+  }
+
+  const removePlatform = (index: number) => {
+    onChange({ ...data, platforms: platforms.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="organic-social-form">
+      <h4>Platform Performance</h4>
+      {platforms.length === 0 && <p className="empty-message">No platforms added yet.</p>}
+      {platforms.map((platform, index) => (
+        <div key={index} className="platform-card">
+          <div className="platform-header">
+            <select className="form-input" value={platform.platform} onChange={e => updatePlatform(index, { platform: e.target.value as typeof platformOptions[number] })} style={{ width: '130px' }}>
+              {platformOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button type="button" className="btn-remove" onClick={() => removePlatform(index)}>×</button>
+          </div>
+          <div className="platform-fields">
+            <div className="form-group">
+              <label>Current Followers</label>
+              <input type="number" className="form-input" value={platform.currentFollowers || ''} onChange={e => updatePlatform(index, { currentFollowers: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Previous Followers</label>
+              <input type="number" className="form-input" value={platform.previousFollowers || ''} onChange={e => updatePlatform(index, { previousFollowers: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>At Campaign Start</label>
+              <input type="number" className="form-input" value={platform.followersAtStart || ''} onChange={e => updatePlatform(index, { followersAtStart: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Posts This Period</label>
+              <input type="number" className="form-input" value={platform.currentPeriodPosts || ''} onChange={e => updatePlatform(index, { currentPeriodPosts: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="btn btn-secondary btn-sm" onClick={addPlatform}>+ Add Platform</button>
+      <style jsx>{`
+        .organic-social-form { }
+        .organic-social-form h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .platform-card { background: var(--bg-page); padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .platform-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .platform-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .form-group { }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Lead Tracking Form
+function LeadTrackingForm({
+  data,
+  onChange,
+}: {
+  data: LeadTrackingData
+  onChange: (updates: Partial<LeadTrackingData>) => void
+}) {
+  return (
+    <div className="lead-tracking-form">
+      <div className="two-period-form">
+        <div className="period-column">
+          <h4>This Period</h4>
+          <div className="form-group">
+            <label>Total Leads</label>
+            <input type="number" className="form-input" value={data.currentLeads || ''} onChange={e => onChange({ currentLeads: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Form Submissions</label>
+            <input type="number" className="form-input" value={data.currentFormSubmissions || ''} onChange={e => onChange({ currentFormSubmissions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Phone Calls</label>
+            <input type="number" className="form-input" value={data.currentPhoneCalls || ''} onChange={e => onChange({ currentPhoneCalls: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Web Chat</label>
+            <input type="number" className="form-input" value={data.currentWebChat || ''} onChange={e => onChange({ currentWebChat: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+        <div className="period-column">
+          <h4>Previous Period</h4>
+          <div className="form-group">
+            <label>Total Leads</label>
+            <input type="number" className="form-input" value={data.previousLeads || ''} onChange={e => onChange({ previousLeads: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Form Submissions</label>
+            <input type="number" className="form-input" value={data.previousFormSubmissions || ''} onChange={e => onChange({ previousFormSubmissions: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Phone Calls</label>
+            <input type="number" className="form-input" value={data.previousPhoneCalls || ''} onChange={e => onChange({ previousPhoneCalls: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="form-group">
+            <label>Web Chat</label>
+            <input type="number" className="form-input" value={data.previousWebChat || ''} onChange={e => onChange({ previousWebChat: parseInt(e.target.value) || 0 })} />
+          </div>
+        </div>
+      </div>
+      <style jsx>{`
+        .lead-tracking-form { }
+        .two-period-form { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .period-column h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Review Management Form
+function ReviewManagementForm({
+  data,
+  onChange,
+}: {
+  data: ReviewManagementData
+  onChange: (data: ReviewManagementData) => void
+}) {
+  const platforms = data.platforms || []
+  const platformOptions = ['Google', 'Facebook', 'Yelp', 'Other'] as const
+
+  const addPlatform = () => {
+    onChange({
+      ...data,
+      platforms: [...platforms, {
+        platform: 'Google',
+        currentRating: 0, previousRating: 0,
+        currentTotal: 0, previousTotal: 0,
+        newThisPeriod: 0,
+      }],
+    })
+  }
+
+  const updatePlatform = (index: number, updates: Partial<ReviewManagementData['platforms'][0]>) => {
+    const newPlatforms = [...platforms]
+    newPlatforms[index] = { ...newPlatforms[index], ...updates }
+    onChange({ ...data, platforms: newPlatforms })
+  }
+
+  const removePlatform = (index: number) => {
+    onChange({ ...data, platforms: platforms.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="review-management-form">
+      <h4>Platform Reviews</h4>
+      {platforms.length === 0 && <p className="empty-message">No platforms added yet.</p>}
+      {platforms.map((platform, index) => (
+        <div key={index} className="platform-card">
+          <div className="platform-header">
+            <select className="form-input" value={platform.platform} onChange={e => updatePlatform(index, { platform: e.target.value as typeof platformOptions[number] })} style={{ width: '120px' }}>
+              {platformOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button type="button" className="btn-remove" onClick={() => removePlatform(index)}>×</button>
+          </div>
+          <div className="platform-fields">
+            <div className="form-group">
+              <label>Current Rating</label>
+              <input type="number" step="0.1" className="form-input" value={platform.currentRating || ''} onChange={e => updatePlatform(index, { currentRating: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Previous Rating</label>
+              <input type="number" step="0.1" className="form-input" value={platform.previousRating || ''} onChange={e => updatePlatform(index, { previousRating: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Current Total</label>
+              <input type="number" className="form-input" value={platform.currentTotal || ''} onChange={e => updatePlatform(index, { currentTotal: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>New This Period</label>
+              <input type="number" className="form-input" value={platform.newThisPeriod || ''} onChange={e => updatePlatform(index, { newThisPeriod: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="btn btn-secondary btn-sm" onClick={addPlatform}>+ Add Platform</button>
+      <style jsx>{`
+        .review-management-form { }
+        .review-management-form h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .platform-card { background: var(--bg-page); padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .platform-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .platform-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .form-group { }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Content Writing Form
+function ContentWritingForm({
+  data,
+  onChange,
+}: {
+  data: ContentWritingData
+  onChange: (data: ContentWritingData) => void
+}) {
+  const articles = data.articles || []
+
+  const addArticle = () => {
+    onChange({
+      articles: [...articles, { title: '', wordCount: 0, publishedDate: '', url: '', targetKeyword: '' }],
+    })
+  }
+
+  const updateArticle = (index: number, updates: Partial<ContentWritingData['articles'][0]>) => {
+    const newArticles = [...articles]
+    newArticles[index] = { ...newArticles[index], ...updates }
+    onChange({ articles: newArticles })
+  }
+
+  const removeArticle = (index: number) => {
+    onChange({ articles: articles.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="content-writing-form">
+      <h4>Published Articles</h4>
+      {articles.length === 0 && <p className="empty-message">No articles added yet.</p>}
+      {articles.map((article, index) => (
+        <div key={index} className="article-card">
+          <div className="article-header">
+            <input type="text" className="form-input" placeholder="Article title" value={article.title} onChange={e => updateArticle(index, { title: e.target.value })} style={{ flex: 1 }} />
+            <button type="button" className="btn-remove" onClick={() => removeArticle(index)}>×</button>
+          </div>
+          <div className="article-fields">
+            <input type="number" className="form-input" placeholder="Word count" value={article.wordCount || ''} onChange={e => updateArticle(index, { wordCount: parseInt(e.target.value) || 0 })} style={{ width: '100px' }} />
+            <input type="text" className="form-input" placeholder="Published date (e.g., Nov 2025)" value={article.publishedDate || ''} onChange={e => updateArticle(index, { publishedDate: e.target.value })} style={{ width: '150px' }} />
+            <input type="text" className="form-input" placeholder="Target keyword" value={article.targetKeyword || ''} onChange={e => updateArticle(index, { targetKeyword: e.target.value })} style={{ flex: 1 }} />
+          </div>
+          <input type="text" className="form-input" placeholder="URL (optional)" value={article.url || ''} onChange={e => updateArticle(index, { url: e.target.value })} />
+        </div>
+      ))}
+      <button type="button" className="btn btn-secondary btn-sm" onClick={addArticle}>+ Add Article</button>
+      <style jsx>{`
+        .content-writing-form { }
+        .content-writing-form h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .article-card { background: var(--bg-page); padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .article-header { display: flex; gap: 8px; align-items: center; }
+        .article-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+        .form-input { padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// AI Visibility Form
+function AiVisibilityForm({
+  data,
+  onChange,
+}: {
+  data: AiVisibilityData
+  onChange: (data: AiVisibilityData) => void
+}) {
+  const platforms = data.platforms || []
+  const platformOptions = ['ChatGPT', 'Google Gemini', 'Perplexity', 'Claude', 'Bing Copilot', 'Other'] as const
+  const sentimentOptions = ['positive', 'neutral', 'negative'] as const
+
+  const addPlatform = () => {
+    onChange({
+      ...data,
+      platforms: [...platforms, { platform: 'ChatGPT', mentioned: false }],
+    })
+  }
+
+  const updatePlatform = (index: number, updates: Partial<AiVisibilityData['platforms'][0]>) => {
+    const newPlatforms = [...platforms]
+    newPlatforms[index] = { ...newPlatforms[index], ...updates }
+    onChange({ ...data, platforms: newPlatforms })
+  }
+
+  const removePlatform = (index: number) => {
+    onChange({ ...data, platforms: platforms.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="ai-visibility-form">
+      <div className="summary-row">
+        <div className="form-group">
+          <label>Queries Tracked</label>
+          <input type="number" className="form-input" value={data.queriesTracked || ''} onChange={e => onChange({ ...data, queriesTracked: parseInt(e.target.value) || 0 })} style={{ width: '100px' }} />
+        </div>
+        <div className="form-group">
+          <label>Queries Mentioned</label>
+          <input type="number" className="form-input" value={data.queriesMentioned || ''} onChange={e => onChange({ ...data, queriesMentioned: parseInt(e.target.value) || 0 })} style={{ width: '100px' }} />
+        </div>
+      </div>
+      <h4>Platform Results</h4>
+      {platforms.length === 0 && <p className="empty-message">No platforms added yet.</p>}
+      {platforms.map((platform, index) => (
+        <div key={index} className="platform-card">
+          <div className="platform-header">
+            <select className="form-input" value={platform.platform} onChange={e => updatePlatform(index, { platform: e.target.value as typeof platformOptions[number] })} style={{ width: '140px' }}>
+              {platformOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <label className="checkbox-inline">
+              <input type="checkbox" checked={platform.mentioned} onChange={e => updatePlatform(index, { mentioned: e.target.checked })} />
+              Mentioned
+            </label>
+            <button type="button" className="btn-remove" onClick={() => removePlatform(index)}>×</button>
+          </div>
+          <div className="platform-fields">
+            <div className="form-group">
+              <label>Sentiment</label>
+              <select className="form-input" value={platform.sentiment || ''} onChange={e => updatePlatform(index, { sentiment: (e.target.value || undefined) as typeof sentimentOptions[number] | undefined })}>
+                <option value="">Select...</option>
+                {sentimentOptions.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Visibility Score (0-100)</label>
+              <input type="number" className="form-input" value={platform.visibilityScore || ''} onChange={e => updatePlatform(index, { visibilityScore: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Rank Position</label>
+              <input type="text" className="form-input" placeholder="e.g., #2 of 5" value={platform.rankPosition || ''} onChange={e => updatePlatform(index, { rankPosition: e.target.value })} />
+            </div>
+          </div>
+          <input type="text" className="form-input" placeholder="Notes (optional)" value={platform.notes || ''} onChange={e => updatePlatform(index, { notes: e.target.value })} />
+        </div>
+      ))}
+      <button type="button" className="btn btn-secondary btn-sm" onClick={addPlatform}>+ Add Platform</button>
+      <div className="form-group" style={{ marginTop: '16px' }}>
+        <label>General Notes</label>
+        <textarea className="form-input" rows={2} value={data.notes || ''} onChange={e => onChange({ ...data, notes: e.target.value })} placeholder="Overall AI visibility notes..." />
+      </div>
+      <style jsx>{`
+        .ai-visibility-form { }
+        .summary-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .ai-visibility-form h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .platform-card { background: var(--bg-page); padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .platform-header { display: flex; gap: 12px; align-items: center; }
+        .checkbox-inline { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+        .platform-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .form-group { }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px; font-family: inherit; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; margin-left: auto; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+      `}</style>
+    </div>
+  )
+}
+
+// Email & SMS Form
+function EmailSmsForm({
+  data,
+  onChange,
+}: {
+  data: EmailSmsData
+  onChange: (data: EmailSmsData) => void
+}) {
+  const channels = data.channels || []
+  const channelOptions = ['Email', 'SMS'] as const
+
+  const addChannel = () => {
+    if (channels.length >= 2) {
+      alert('Maximum 2 channels (Email and SMS)')
+      return
+    }
+    const existingChannels = channels.map(c => c.channel)
+    const availableChannel = channelOptions.find(c => !existingChannels.includes(c)) || 'Email'
+    onChange({
+      ...data,
+      channels: [...channels, { channel: availableChannel, campaignsSent: 0, delivered: 0 }],
+    })
+  }
+
+  const updateChannel = (index: number, updates: Partial<EmailSmsData['channels'][0]>) => {
+    const newChannels = [...channels]
+    newChannels[index] = { ...newChannels[index], ...updates }
+    onChange({ ...data, channels: newChannels })
+  }
+
+  const removeChannel = (index: number) => {
+    onChange({ ...data, channels: channels.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="email-sms-form">
+      <h4>Channel Performance</h4>
+      {channels.length === 0 && <p className="empty-message">No channels added yet.</p>}
+      {channels.map((channel, index) => (
+        <div key={index} className="channel-card">
+          <div className="channel-header">
+            <select className="form-input" value={channel.channel} onChange={e => updateChannel(index, { channel: e.target.value as typeof channelOptions[number] })} style={{ width: '100px' }}>
+              {channelOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button type="button" className="btn-remove" onClick={() => removeChannel(index)}>×</button>
+          </div>
+          <div className="channel-fields">
+            <div className="form-group">
+              <label>Campaigns Sent</label>
+              <input type="number" className="form-input" value={channel.campaignsSent || ''} onChange={e => updateChannel(index, { campaignsSent: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Delivered</label>
+              <input type="number" className="form-input" value={channel.delivered || ''} onChange={e => updateChannel(index, { delivered: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Open Rate (%)</label>
+              <input type="number" step="0.1" className="form-input" value={channel.openRate || ''} onChange={e => updateChannel(index, { openRate: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Click Rate (%)</label>
+              <input type="number" step="0.1" className="form-input" value={channel.clickRate || ''} onChange={e => updateChannel(index, { clickRate: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="form-group">
+              <label>Leads Generated</label>
+              <input type="number" className="form-input" value={channel.leadsGenerated || ''} onChange={e => updateChannel(index, { leadsGenerated: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+        </div>
+      ))}
+      {channels.length < 2 && (
+        <button type="button" className="btn btn-secondary btn-sm" onClick={addChannel}>+ Add Channel</button>
+      )}
+      <style jsx>{`
+        .email-sms-form { }
+        .email-sms-form h4 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; }
+        .empty-message { color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0; }
+        .channel-card { background: var(--bg-page); padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .channel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .channel-fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .form-group { }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-input { width: 100%; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px; }
+        .btn-remove { width: 24px; height: 24px; padding: 0; border: none; background: none; color: #DC2626; font-size: 18px; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
       `}</style>
     </div>
   )

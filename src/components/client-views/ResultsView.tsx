@@ -143,6 +143,7 @@ function KpiCard({ icon, label, value, changeFormatted, trend }: {
 export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDashboardUrl }: ResultsViewProps) {
   const searchParams = useSearchParams()
   const reportPreviewId = searchParams.get('reportPreview')
+  const viewingAs = searchParams.get('viewingAs')
 
   // Default to pro-dashboard while overview is under construction, or reports if preview mode
   const [activeSubtab, setActiveSubtab] = useState<'overview' | 'pro-dashboard' | 'reports'>(
@@ -542,7 +543,7 @@ export function ResultsView({ clientId, isAdmin = false, isDemo = false, proDash
       {/* Reports Content */}
       {activeSubtab === 'reports' && (
         <div className="results-tab-content active" id="reports">
-          <ReportsView clientId={clientId} previewReportId={reportPreviewId} showComingSoon={showOverviewComingSoon} />
+          <ReportsView clientId={clientId} previewReportId={reportPreviewId} viewingAs={viewingAs} />
         </div>
       )}
     </div>
